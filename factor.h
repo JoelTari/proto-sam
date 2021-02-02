@@ -103,17 +103,13 @@ public:
 
   Eigen::Matrix<double, META_INFO_T::aggrVarDim, META_INFO_T::mesDim> jacobian;
 
+  const Eigen::Matrix<double, META_INFO_T::mesDim, META_INFO_T::mesDim>
+                                                      mes_covariance;
+  const Eigen::Matrix<double, META_INFO_T::mesDim, 1> mes_vector;
+
   const std::array<std::string, META_INFO_T::numberOfVars> var_names;
 
   const std::map<std::string, int> var_names_ordering;
-  /* = */
-  /*     [this]() { */
-  /*       int i = 0; */
-  /*       for (const auto &var_name : var_names) { */
-  /*         var_names_ordering[var_name] = i; */
-  /*         i++; */
-  /*       }; */
-  /*     }; */
 
   BaseFactor(
       const std::array<std::string, META_INFO_T::numberOfVars> & var_names)
