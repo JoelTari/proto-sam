@@ -94,38 +94,64 @@ struct FactorMetaInfo {
                 "coherent with the total dimension");
 };
 
-template <typename META_INFO_T>
+template <typename Derived, typename META_INFO_T>
 class BaseFactor
 {
 public:
   // access meta info through meta_t type
   using meta_t = META_INFO_T;
+  // jacobian matrix type
+  using jacobian_matrix_t
+      = Eigen::Matrix<double, META_INFO_T::aggrVarDim, META_INFO_T::mesDim>;
+  // measure vector type
+  using measure_vector_t = Eigen::Matrix<double, META_INFO_T::mesDim, 1>;
+  // measure covariance type
+  using measure_covariance_matrix_t
+      = Eigen::Matrix<double, META_INFO_T::mesDim, META_INFO_T::mesDim>;
+  // state vector type
+  using state_vector_t = Eigen::Matrix<double, META_INFO_T::aggrVarDim, 1>;
 
-  Eigen::Matrix<double, META_INFO_T::aggrVarDim, META_INFO_T::mesDim> jacobian;
+  // the actual measurement made
+  const measure_covariance_matrix_t mes_covariance;
+  const measure_vector_t            mes_vector;
 
-  const Eigen::Matrix<double, META_INFO_T::mesDim, META_INFO_T::mesDim>
-                                                      mes_covariance;
-  const Eigen::Matrix<double, META_INFO_T::mesDim, 1> mes_vector;
+  jacobian_matrix_t jacobian;
 
-  const std::array<std::string, META_INFO_T::numberOfVars> var_names;
+  state_vector_t linearization_point;
 
-  const std::map<std::string, int> var_names_ordering;
+  const std::array<std::string, META_INFO_T::numberOfVars> variables;
 
+  const std::map<std::string, int> variable_position
+      = link_variables_to_state_vector_idx();
+
+  // constructor
   BaseFactor(
-      const std::array<std::string, META_INFO_T::numberOfVars> & var_names)
-      : var_names(var_names)
+      const std::array<std::string, META_INFO_T::numberOfVars> & variable_names)
+      : variables(variable_names)
   {
     std::cout << "creating factor with meta ";
-    for (const auto & varname : this->var_names) std::cout << varname << " ";
+    for (const auto & varname : this->variables) std::cout << varname << " ";
     std::cout << "\n";
   }
+
+  // TODO call static polymorphic methods here
+
+private:
+  std::map<std::string, int> link_variables_to_state_vector_idx()
+  {
+    std::map<std::string, int> m;
+    int                        i = 0;
+    for (const auto & e : this->variables) m[e] = i++;
+    return m;
+  };
 };
 
 // purely helper
 template <size_t S>
-std::string stringify_array_of_strings(const std::array<std::string, S> & array)
+std::string stringify_array_of_strings(
+    const std::array<std::string, S> & array_of_variable_names)
 {
   std::stringstream ss;
-  for (const auto & str : array) ss << str;
+  for (const auto & str : array_of_variable_names) ss << str;
   return ss.str();
 }
