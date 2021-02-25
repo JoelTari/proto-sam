@@ -135,6 +135,7 @@ public:
   }
 
   // TODO call static polymorphic methods here
+  //      cascades into the stationary factors and the linear factors
 
 private:
   std::map<std::string, int> link_variables_to_state_vector_idx()
@@ -146,7 +147,7 @@ private:
   };
 };
 
-// purely helper
+// purely helper: returns a string given an array of strings
 template <size_t S>
 std::string stringify_array_of_strings(
     const std::array<std::string, S> & array_of_variable_names)

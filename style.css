@@ -1,0 +1,10 @@
+.canvas {
+  margin: auto;
+  display: block;
+  border: 2px solid black;
+}
+
+.area {
+  fill: #88a8af;
+  /* background-color: #88a8af; */
+}
