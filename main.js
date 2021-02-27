@@ -1,4 +1,5 @@
 // DOM related
+const body = d3.select("body");
 const canvas = d3.select(".canvas");
 const canvas_mg = d3.select(".main_group");
 
@@ -6,11 +7,13 @@ const aratio = 0.6;
 let value = 250;
 // draw
 const vgGrobot1 = canvas_mg
-  .append("circle")
-  .attr("cx", 96)
-  .attr("cy", 5)
-  .attr("r", 4)
-  .classed("nono",true);
+  .append("g")
+  .attr("transform", "translate(96,5)")
+  .classed("nono", true);
+
+vgGrobot1.append("circle").attr("r", 4);
+// .attr("cx", 96)
+// .attr("cy", 5)
 
 const vgcov = canvas_mg
   .append("ellipse")
@@ -68,38 +71,33 @@ client.publish("presence", "Hello mqtt from JS script");
 /******************************************************************************
  *                            UI Events
  *****************************************************************************/
-document.addEventListener("click", () => console.log("document clicked!"));
 
-let keyPressedBuffer = [];
+let keyPressedBuffer = {
+  ArrowUp: false,
+  ArrowDown: false,
+  ArrowRight: false,
+  ArrowLeft: false,
+};
+
 // d3 selected robot
 let selectedRobot = vgGrobot1;
 
-document.addEventListener("keydown", (e) => {
-  // if (e.keys)
-  console.log(`${e.key} is pressed down`);
-  if (!keyPressedBuffer.includes(e.key)) keyPressedBuffer.push(e.key);
-
-  console.log(`keys detected down: ${keyPressedBuffer}`);
-
-  steer = inputToSteer(selectedRobot);
-  selectedRobot.attr("cy", steer[1]).attr("cx", steer[0]);
+body.on("keydown", (e) => {
+  if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
+  const [steerX, steerY] = inputToSteerXY(selectedRobot);
+  // console.log(steerX, steerY);
+  // current state
+  curx = selectedRobot.node().transform.baseVal[0].matrix.e;
+  cury = selectedRobot.node().transform.baseVal[0].matrix.f;
+  curth = selectedRobot.node().transform.baseVal[0].angle;
+  // always put rotate before translate
+  selectedRobot.attr(
+    "transform",
+    d3.zoomIdentity.translate(curx + steerX, cury + steerY).toString()
+  );
 });
 
-// canvas.on("keydown", (el,e,d) => {
-//   // if (e.keys)
-//   console.log(`${e.key} is pressed down`);
-//   if(!keyPressedBuffer.includes(e.key)) keyPressedBuffer.push(e.key)
-//   console.log(`keys detected down: ${keyPressedBuffer}`)
-
-//   if (keyPressedBuffer.includes("ArrowUp")){
-//       // vgGrobot1.attr('cy', vgGrobot1.attr('cy')+1);
-//     // vgGrobot1.attr('cy',()=>)
-//   }
-// });
-document.addEventListener("keyup", (e) => {
-  keyPressedBuffer.splice(keyPressedBuffer.indexOf(e.key), 1);
-  console.log(`the key ${e.key} is up`);
-});
+body.on("keyup", (e) => (keyPressedBuffer[e.key] = false));
 
 canvas.on("click", () => {
   const msg = {
@@ -114,26 +112,26 @@ canvas.on("click", () => {
  *                           KeyPresses Helper
  *****************************************************************************/
 
-function inputToSteer(sel_robot) {
+function inputToSteerXY(sel_robot) {
   // get key or combination from global buffer
-  up = keyPressedBuffer.includes("ArrowUp");
-  down = keyPressedBuffer.includes("ArrowDown");
-  left = keyPressedBuffer.includes("ArrowLeft");
-  right = keyPressedBuffer.includes("ArrowRight");
+  up = keyPressedBuffer["ArrowUp"];
+  down = keyPressedBuffer["ArrowDown"];
+  left = keyPressedBuffer["ArrowLeft"];
+  right = keyPressedBuffer["ArrowRight"];
 
-  steerX = parseFloat(sel_robot.attr("cx"));
-  steerY = parseFloat(sel_robot.attr("cy"));
+  steerX = 0;
+  steerY = 0;
 
-  const speed=0.25
+  const speed = 0.25;
 
   if ((up && down) || (right && left)) {
     // if contradictory order(s)
     // nothing to do
   } else {
-    steerX += speed*right;
-    steerX -= speed*left;
-    steerY += speed*up;
-    steerY -= speed*down;
+    steerX += speed * right;
+    steerX -= speed * left;
+    steerY += speed * up;
+    steerY -= speed * down;
   }
   return [steerX, steerY];
 }
