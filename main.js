@@ -1,20 +1,37 @@
 // DOM related
 const canvas = d3.select(".canvas");
-const svg = canvas.append("svg").attr("width", 600).attr("height", 600);
+const canvas_mg = d3.select(".main_group");
 
-// define scales here normally
-
-const rect = d3.selectAll("rect");
-
+const aratio = 0.6;
 let value = 250;
 // draw
-svg
-  .append("rect")
-  .attr("width", 30)
-  .attr("height", value)
-  .attr("class", "area")
-  .attr("x", 50)
-  .attr("y", 10);
+const vgGrobot1 = canvas_mg
+  .append("circle")
+  .attr("cx", 96)
+  .attr("cy", 5)
+  .attr("r", 4)
+  .classed("nono",true);
+
+const vgcov = canvas_mg
+  .append("ellipse")
+  .attr("cx", 50)
+  .attr("cy", 40)
+  .attr("rx", 20)
+  .attr("ry", 15);
+
+// canvas
+//   .append("rect")
+//   .attr("width", 30)
+//   .attr("height", value)
+//   .attr("class", "area")
+//   .attr("x", 50)
+//   .attr("y", 10);
+
+console.log(`svg height: ${canvas.attr("height")}`);
+
+/******************************************************************************
+ *                            MQTT events
+ *****************************************************************************/
 
 // mqtt log then join with d3
 // from the front end I can only access directly an mqtt broker
@@ -48,6 +65,42 @@ client.on("message", function (topic, message) {
 
 client.publish("presence", "Hello mqtt from JS script");
 
+/******************************************************************************
+ *                            UI Events
+ *****************************************************************************/
+document.addEventListener("click", () => console.log("document clicked!"));
+
+let keyPressedBuffer = [];
+// d3 selected robot
+let selectedRobot = vgGrobot1;
+
+document.addEventListener("keydown", (e) => {
+  // if (e.keys)
+  console.log(`${e.key} is pressed down`);
+  if (!keyPressedBuffer.includes(e.key)) keyPressedBuffer.push(e.key);
+
+  console.log(`keys detected down: ${keyPressedBuffer}`);
+
+  steer = inputToSteer(selectedRobot);
+  selectedRobot.attr("cy", steer[1]).attr("cx", steer[0]);
+});
+
+// canvas.on("keydown", (el,e,d) => {
+//   // if (e.keys)
+//   console.log(`${e.key} is pressed down`);
+//   if(!keyPressedBuffer.includes(e.key)) keyPressedBuffer.push(e.key)
+//   console.log(`keys detected down: ${keyPressedBuffer}`)
+
+//   if (keyPressedBuffer.includes("ArrowUp")){
+//       // vgGrobot1.attr('cy', vgGrobot1.attr('cy')+1);
+//     // vgGrobot1.attr('cy',()=>)
+//   }
+// });
+document.addEventListener("keyup", (e) => {
+  keyPressedBuffer.splice(keyPressedBuffer.indexOf(e.key), 1);
+  console.log(`the key ${e.key} is up`);
+});
+
 canvas.on("click", () => {
   const msg = {
     header: "some header",
@@ -57,9 +110,37 @@ canvas.on("click", () => {
   console.log("canvas clicked!");
 });
 
-document.addEventListener("click", () => console.log("document clicked!"));
-// // this method ends the client
-//  client.end();
+/******************************************************************************
+ *                           KeyPresses Helper
+ *****************************************************************************/
+
+function inputToSteer(sel_robot) {
+  // get key or combination from global buffer
+  up = keyPressedBuffer.includes("ArrowUp");
+  down = keyPressedBuffer.includes("ArrowDown");
+  left = keyPressedBuffer.includes("ArrowLeft");
+  right = keyPressedBuffer.includes("ArrowRight");
+
+  steerX = parseFloat(sel_robot.attr("cx"));
+  steerY = parseFloat(sel_robot.attr("cy"));
+
+  const speed=0.25
+
+  if ((up && down) || (right && left)) {
+    // if contradictory order(s)
+    // nothing to do
+  } else {
+    steerX += speed*right;
+    steerX -= speed*left;
+    steerY += speed*up;
+    steerY -= speed*down;
+  }
+  return [steerX, steerY];
+}
+
+/******************************************************************************
+ *                            ALTERNATE MQTT LIB
+ *****************************************************************************/
 
 // I prefer the API above for simplicity
 // but the few tests I did with paho were ok

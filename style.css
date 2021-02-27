@@ -1,10 +1,28 @@
-.canvas {
-  margin: auto;
-  display: block;
+/* .canvas { */
+/*   margin: auto; */
+/*   border: 2px solid grey; */
+/* } */
+
+svg {
+  background: lightgrey;
   border: 2px solid black;
+}
+
+.canvas > g {
+  transform: scaleY(-1) translate(0, -100%);
+  /* scaleY(-1); */
+}
+
+/* text of svg should be re-flip to normal */
+.canvas > g > text {
+  transform: scaleY(-1);
 }
 
 .area {
   fill: #88a8af;
   /* background-color: #88a8af; */
+}
+
+.nono {
+  fill: gold;
 }
