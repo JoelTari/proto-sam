@@ -23,6 +23,20 @@ svg {
   /* background-color: #88a8af; */
 }
 
-.nono {
+.agent {
   fill: gold;
+  stroke-width: 0.1;
+  stroke: black;
+  transition: fill 1s ease;
+}
+
+.landmark {
+  stroke-width: 0.1;
+  stroke: white;
+  fill: #18306d;
+}
+
+.agent:hover {
+  fill: green;
+  cursor: pointer;
 }

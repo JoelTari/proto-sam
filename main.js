@@ -8,8 +8,11 @@ let value = 250;
 // draw
 const vgGrobot1 = canvas_mg
   .append("g")
-  .attr("transform", "translate(96,5)")
-  .classed("nono", true);
+  .classed("agent", true);
+
+d3.selectAll('.agent')
+  .data([{'x':66,'y':10}])
+  .attr("transform", (d) => "translate("+ d['x'] +','+ d['y']+")")
 
 vgGrobot1.append("circle").attr("r", 4);
 // .attr("cx", 96)
@@ -17,20 +20,43 @@ vgGrobot1.append("circle").attr("r", 4);
 
 const vgcov = canvas_mg
   .append("ellipse")
-  .attr("cx", 50)
-  .attr("cy", 40)
+  .attr('transform', ' translate(50,40) rotate(0)')
   .attr("rx", 20)
-  .attr("ry", 15);
+  .attr("ry", 12);
+  // .attr("cx", 50)
+  // .attr("cy", 40)
 
-// canvas
-//   .append("rect")
-//   .attr("width", 30)
-//   .attr("height", value)
-//   .attr("class", "area")
-//   .attr("x", 50)
-//   .attr("y", 10);
 
 console.log(`svg height: ${canvas.attr("height")}`);
+
+
+/******************************************************************************
+ *                            FOR TESTING PURPOSE
+ *****************************************************************************/
+// bound new data, but doesnt 'recompute' the properties that depends on data
+setTimeout(_=> 
+d3.selectAll('.agent')
+  .data([{'x':26,'y':10}])
+,1000)
+// call a property, as the data refered is already stored (from the 1s timeout) 
+setTimeout(_=> 
+d3.selectAll('.agent')
+  .attr("transform", (d) => "translate("+ d['x'] +','+ d['y']+")")
+,1500)
+// if we want to change as soon as we update the data, we just call both in a chain
+setTimeout(_=> 
+d3.selectAll('.agent')
+  .data([{'x':86,'y':50}])
+  .attr("transform", (d) => "translate("+ d['x'] +','+ d['y']+")")
+,2000)
+
+// d3.select("body").transition()
+//     .duration(1000)
+//     .style("background-color", "red");
+
+// d3.selectAll('.agent')
+//   .transition()
+//   .duration()
 
 /******************************************************************************
  *                            MQTT events
@@ -42,14 +68,22 @@ var client = mqtt.connect("ws://localhost:9001");
 
 client.on("connect", function () {
   console.log("connected !");
+
   client.subscribe("presence", function (err) {
     if (!err) {
       console.log("[mqtt] subscribed to the topic >> presence");
     }
   });
+
   client.subscribe("atopic", function (err) {
     if (!err) {
       console.log("[mqtt] subscribed to the topic >> atopic");
+    }
+  });
+
+  client.subscribe("ground_truth", function (err) {
+    if (!err) {
+      console.log("[mqtt] subscribed to the topic >> ground_truth");
     }
   });
 });
@@ -57,16 +91,29 @@ client.on("connect", function () {
 // its a global callback fo rall mqtt subs it seems...
 client.on("message", function (topic, message) {
   // message is Buffer
-  console.log("$  " + message.toString() + "  << from topic >>  " + topic);
+  // console.log("$  " + message.toString() + "  << from topic >>  " + topic);
 
   // this is where I diverge from the example and update d3 stuff
   if (topic == "atopic") {
     const msg = JSON.parse(message.toString());
     d3.select("rect").attr("height", msg.value);
   }
+  else if (topic == "ground_truth"){
+    const msg = JSON.parse(message.toString());
+    canvas_mg.selectAll('.landmark')
+        .data(msg.landmarks)
+        .enter()
+        .append('circle')
+        .attr('cx',d => d.state.x)
+        .attr('cy',d => d.state.y)
+        .attr('r',0.42)
+        .classed('landmark',true)
+  }
 });
 
+
 client.publish("presence", "Hello mqtt from JS script");
+client.publish('request_ground_truth'," ");
 
 /******************************************************************************
  *                            UI Events
@@ -84,16 +131,17 @@ let selectedRobot = vgGrobot1;
 
 body.on("keydown", (e) => {
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
-  const [steerX, steerY] = inputToSteerXY(selectedRobot);
+  const [steerX, steerY] = inputToSteerXY();
   // console.log(steerX, steerY);
   // current state
   curx = selectedRobot.node().transform.baseVal[0].matrix.e;
   cury = selectedRobot.node().transform.baseVal[0].matrix.f;
   curth = selectedRobot.node().transform.baseVal[0].angle;
-  // always put rotate before translate
+  // always put translate before rotate 
   selectedRobot.attr(
     "transform",
     d3.zoomIdentity.translate(curx + steerX, cury + steerY).toString()
+    + ' rotate('+ curth +')' 
   );
 });
 
@@ -112,7 +160,7 @@ canvas.on("click", () => {
  *                           KeyPresses Helper
  *****************************************************************************/
 
-function inputToSteerXY(sel_robot) {
+function inputToSteerXY() {
   // get key or combination from global buffer
   up = keyPressedBuffer["ArrowUp"];
   down = keyPressedBuffer["ArrowDown"];
@@ -133,6 +181,7 @@ function inputToSteerXY(sel_robot) {
     steerY += speed * up;
     steerY -= speed * down;
   }
+  // TODO: split between order reading and state change effect
   return [steerX, steerY];
 }
 
