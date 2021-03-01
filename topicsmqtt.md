@@ -34,9 +34,11 @@ Topic name: `cmd_feedback`
 }
 ```
 
-## World: simu to JS
+## World: simu <-> JS
 
-Topic: `ground_truth`
+Topic request: `request_ground_truth`
+
+Topic response: `ground_truth`
 
 ```json
 {

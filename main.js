@@ -143,6 +143,7 @@ body.on("keydown", (e) => {
     d3.zoomIdentity.translate(curx + steerX, cury + steerY).toString()
     + ' rotate('+ curth +')' 
   );
+  // TODO: send cmd through client
 });
 
 body.on("keyup", (e) => (keyPressedBuffer[e.key] = false));
