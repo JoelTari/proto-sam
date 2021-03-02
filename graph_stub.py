@@ -15,6 +15,7 @@ estimation_graph_topic = 'estimation_graph'
 
 # the stub is a 5 vars sparsely connected graph
 # if the problem is EKF, there would only be
+
 full_estimation = {
     'map': [
         {'var_id': 'l1', 'state': {'x': 20, 'y': 37}},
@@ -43,6 +44,77 @@ full_estimation = {
         {'factor_id': 'f4',
             'type': 'odometry',
             'vars_id': ['l3', 'l4']},
+    ],
+    'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
+}
+
+full_estimation1 = {
+    'map': [
+        {'var_id': 'l1', 'state': {'x': 20, 'y': 37}},
+        {'var_id': 'l2', 'state': {'x': 25, 'y': 47}},
+        {'var_id': 'l3', 'state': {'x': 30, 'y': 32}},
+        {'var_id': 'l4', 'state': {'x': 55, 'y': 14}},
+        {'var_id': 'l5', 'state': {'x': 75, 'y': 25}},
+    ],
+    'mean': [],
+    'covariance': [],
+    'information': [],
+    'sqrtroot': [],
+    'factors': [
+        {'factor_id': 'f1',
+            'type': 'odometry',
+            'vars_id': ['l1', 'l2']},
+        {'factor_id': 'f2',
+            'type': 'odometry',
+            'vars_id': ['l3', 'l1']},
+        {'factor_id': 'f3',
+            'type': 'odometry',
+            'vars_id': ['l3', 'l2']},
+        {'factor_id': 'f5',
+            'type': 'odometry',
+            'vars_id': ['l4', 'l5']},
+        {'factor_id': 'f4',
+            'type': 'odometry',
+            'vars_id': ['l3', 'l4']},
+    ],
+    'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
+}
+
+full_estimation2 = {
+    'map': [
+        {'var_id': 'l1', 'state': {'x': 20, 'y': 37}},
+        {'var_id': 'l2', 'state': {'x': 25, 'y': 47}},
+        {'var_id': 'l3', 'state': {'x': 30, 'y': 32}},
+        {'var_id': 'l4', 'state': {'x': 55, 'y': 49}},
+        {'var_id': 'l5', 'state': {'x': 75, 'y': 25}},
+        {'var_id': 'l6', 'state': {'x': 26, 'y': 9}}
+    ],
+    'mean': [],
+    'covariance': [],
+    'information': [],
+    'sqrtroot': [],
+    'factors': [
+        {'factor_id': 'f1',
+            'type': 'odometry',
+            'vars_id': ['l1', 'l2']},
+        {'factor_id': 'f2',
+            'type': 'odometry',
+            'vars_id': ['l3', 'l1']},
+        {'factor_id': 'f3',
+            'type': 'odometry',
+            'vars_id': ['l3', 'l2']},
+        {'factor_id': 'f5',
+            'type': 'odometry',
+            'vars_id': ['l4', 'l5']},
+        {'factor_id': 'f4',
+            'type': 'odometry',
+            'vars_id': ['l3', 'l4']},
+        {'factor_id': 'f6',
+         'type': 'odometry',
+         'vars_id': ['l6', 'l1']},
+        {'factor_id': 'f7',
+         'type': 'odometry',
+         'vars_id': ['l6', 'l3']},
     ],
     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
 }
@@ -80,22 +152,17 @@ def on_message(client, userdata, message):
     # depending on the topic, disptach to the user defined functions
     if message.topic == request_estimation_graph_topic:
         # the graph change arbitrarily depending on the request
-        if str(message.payload) == '1':
-            full_estimation['map'][3] = {
-                'var_id': 'l4', 'state': {'x': 55, 'y': 14}}
-        elif str(message.payload) == '2':
-            full_estimation['map'].append(
-                {'var_id': 'l6', 'state': {'x': 26, 'y': 9}})
-            full_estimation['factors'].append(
-                {'factor_id': 'f6',
-                 'type': 'odometry',
-                 'vars_id': ['l6', 'l1']})
-            full_estimation['factors'].append(
-                {'factor_id': 'f7',
-                 'type': 'odometry',
-                 'vars_id': ['l6', 'l3']})
+        msg = message.payload.decode('utf-8')
+        print('Received (decoded as utf8 string) :  ' + msg)
+        if msg == '1':
+            client.publish(estimation_graph_topic,
+                           json.dumps(full_estimation1))
+        elif msg == '2':
+            client.publish(estimation_graph_topic,
+                           json.dumps(full_estimation2))
+        else:
+            client.publish(estimation_graph_topic, json.dumps(full_estimation))
 
-        client.publish(estimation_graph_topic, json.dumps(full_estimation))
     else:
         raise RuntimeError
 

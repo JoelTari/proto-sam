@@ -100,3 +100,44 @@ Answer position topic name: `position_ini`
   "covariance": cov
 }
 ```
+
+## Estimation resut:  JS <- Estimation (on request)
+
+Request estimation result topic name: `request_estimation_graph`
+
+Answer estimation result topic name:  `estimation_graph`
+
+```python
+full_estimation = {
+    'map': [
+        {'var_id': 'l1', 'state': {'x': 20, 'y': 37}},
+        {'var_id': 'l2', 'state': {'x': 25, 'y': 47}},
+        {'var_id': 'l3', 'state': {'x': 30, 'y': 32}},
+        {'var_id': 'l4', 'state': {'x': 55, 'y': 49}},
+        {'var_id': 'l5', 'state': {'x': 75, 'y': 25}},
+    ],
+    'mean': [],
+    'covariance': [],
+    'information': [],
+    'sqrtroot': [],
+    'factors': [
+        {'factor_id': 'f1',
+            'type': 'odometry',
+            'vars_id': ['l1', 'l2']},
+        {'factor_id': 'f2',
+            'type': 'odometry',
+            'vars_id': ['l3', 'l1']},
+        {'factor_id': 'f3',
+            'type': 'odometry',
+            'vars_id': ['l3', 'l2']},
+        {'factor_id': 'f5',
+            'type': 'odometry',
+            'vars_id': ['l4', 'l5']},
+        {'factor_id': 'f4',
+            'type': 'odometry',
+            'vars_id': ['l3', 'l4']},
+    ],
+    'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
+}
+```
+

@@ -310,6 +310,8 @@ def on_message(client, userdata, message):
     print("Received message '" + str(message.payload) + "' on topic '"
           + message.topic + "' with QoS " + str(message.qos) + "'\n")
 
+    # decode payload as string
+    msg = message.payload.decode('utf-8')
     # depending on the topic, disptach to the user defined functions
     if message.topic == cmd_topic:
         cmd_vel_callback(client, message)

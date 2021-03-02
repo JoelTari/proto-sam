@@ -67,25 +67,20 @@ d3.selectAll('.agent')
 var client = mqtt.connect("ws://localhost:9001");
 
 client.on("connect", function () {
-  console.log("connected !");
-
-  client.subscribe("presence", function (err) {
-    if (!err) {
-      console.log("[mqtt] subscribed to the topic >> presence");
-    }
-  });
-
-  client.subscribe("atopic", function (err) {
-    if (!err) {
-      console.log("[mqtt] subscribed to the topic >> atopic");
-    }
-  });
+  console.log("[mqtt] Connected to broker !");
 
   client.subscribe("ground_truth", function (err) {
     if (!err) {
       console.log("[mqtt] subscribed to the topic >> ground_truth");
     }
   });
+
+  client.subscribe("estimation_graph", function (err) {
+    if (!err) {
+      console.log("[mqtt] subscribed to the topic >> estimation_graph");
+    }
+  });
+
 });
 
 // its a global callback fo rall mqtt subs it seems...
@@ -93,12 +88,7 @@ client.on("message", function (topic, message) {
   // message is Buffer
   // console.log("$  " + message.toString() + "  << from topic >>  " + topic);
 
-  // this is where I diverge from the example and update d3 stuff
-  if (topic == "atopic") {
-    const msg = JSON.parse(message.toString());
-    d3.select("rect").attr("height", msg.value);
-  }
-  else if (topic == "ground_truth"){
+  if (topic == "ground_truth"){
     const msg = JSON.parse(message.toString());
     canvas_mg.selectAll('.landmark')
         .data(msg.landmarks)
@@ -108,6 +98,10 @@ client.on("message", function (topic, message) {
         .attr('cy',d => d.state.y)
         .attr('r',0.42)
         .classed('landmark',true)
+  }
+  else if (topic == "estimation_graph"){
+    console.log(`Estimation Graph received : `)
+    console.log(JSON.parse(message.toString()))
   }
 });
 
