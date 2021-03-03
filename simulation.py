@@ -209,9 +209,9 @@ def integrate_cumulative_odometry(cmd_cov: np.ndarray) -> None:
 # ----------------------------------------------------------------------------
 
 
-def cmd_vel_callback(client, message):
+def cmd_vel_callback(client, msg):
     print('cmd')
-    received_cmd = json.loads(message.payload)
+    received_cmd = json.loads(msg)
     # 1 noisify the order and update cumulative odom cov
     noisy_cmd, cov_cmd = nosify_cmd(received_cmd['cmd_vel'])
     print('cov')
@@ -314,7 +314,7 @@ def on_message(client, userdata, message):
     msg = message.payload.decode('utf-8')
     # depending on the topic, disptach to the user defined functions
     if message.topic == cmd_topic:
-        cmd_vel_callback(client, message)
+        cmd_vel_callback(client, msg)
     elif message.topic == request_ground_truth_topic:
         client.publish(ground_truth_topic, json.dumps(world))
     elif message.topic == request_position_ini_topic:

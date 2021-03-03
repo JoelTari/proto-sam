@@ -37,6 +37,6 @@ svg {
 }
 
 .agent:hover {
-  fill: green;
+  fill: indigo;
   cursor: pointer;
 }

@@ -18,11 +18,12 @@ vgGrobot1.append("circle").attr("r", 4);
 // .attr("cx", 96)
 // .attr("cy", 5)
 
-const vgcov = canvas_mg
-  .append("ellipse")
-  .attr('transform', ' translate(50,40) rotate(0)')
-  .attr("rx", 20)
-  .attr("ry", 12);
+// ellipse is kept in commentary as a template
+// const vgcov = canvas_mg
+//   .append("ellipse")
+//   .attr('transform', ' translate(50,40) rotate(0)')
+//   .attr("rx", 20)
+//   .attr("ry", 12);
   // .attr("cx", 50)
   // .attr("cy", 40)
 
@@ -49,7 +50,6 @@ d3.selectAll('.agent')
   .data([{'x':86,'y':50}])
   .attr("transform", (d) => "translate("+ d['x'] +','+ d['y']+")")
 ,2000)
-
 // d3.select("body").transition()
 //     .duration(1000)
 //     .style("background-color", "red");
@@ -102,6 +102,7 @@ client.on("message", function (topic, message) {
   else if (topic == "estimation_graph"){
     console.log(`Estimation Graph received : `)
     console.log(JSON.parse(message.toString()))
+    // TODO : continue
   }
 });
 
@@ -150,6 +151,14 @@ canvas.on("click", () => {
   client.publish("requestChan", JSON.stringify(msg));
   console.log("canvas clicked!");
 });
+
+/******************************************************************************
+ *                            FOR TESTING PURPOSE 2
+ *****************************************************************************/
+// sending estimation_graph request_position_ini
+setTimeout(_ => client.publish('request_estimation_graph',' '),2500)
+setTimeout(_ => client.publish('request_estimation_graph','1'),3500)
+setTimeout(_ => client.publish('request_estimation_graph','2'),4500)
 
 /******************************************************************************
  *                           KeyPresses Helper
