@@ -15,7 +15,7 @@ svg {
 
 /* text of svg should be re-flip to normal */
 /* Note use of selector between g and canvas : a g that descends directly from canva */
-/*             nothing between g and text : a text that descends (depthly) from g  */
+/*   nothing (space selector) between g and text : a text that descends (depthly) from g  */
 .canvas > g text {
   transform: scaleY(-1);
 }

@@ -6,13 +6,11 @@ const canvas_mg = d3.select(".main_group");
 const aratio = 0.6;
 let value = 250;
 // draw
-const vgGrobot1 = canvas_mg
-  .append("g")
-  .classed("agent", true);
+const vgGrobot1 = canvas_mg.append("g").classed("agent", true);
 
-d3.selectAll('.agent')
-  .data([{'x':66,'y':10}])
-  .attr("transform", (d) => "translate("+ d['x'] +','+ d['y']+")")
+d3.selectAll(".agent")
+  .data([{ x: 66, y: 10 }])
+  .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")");
 
 vgGrobot1.append("circle").attr("r", 4);
 // .attr("cx", 96)
@@ -24,32 +22,33 @@ vgGrobot1.append("circle").attr("r", 4);
 //   .attr('transform', ' translate(50,40) rotate(0)')
 //   .attr("rx", 20)
 //   .attr("ry", 12);
-  // .attr("cx", 50)
-  // .attr("cy", 40)
-
+// .attr("cx", 50)
+// .attr("cy", 40)
 
 console.log(`svg height: ${canvas.attr("height")}`);
-
 
 /******************************************************************************
  *                            FOR TESTING PURPOSE
  *****************************************************************************/
 // bound new data, but doesnt 'recompute' the properties that depends on data
-setTimeout(_=> 
-d3.selectAll('.agent')
-  .data([{'x':26,'y':10}])
-,1000)
-// call a property, as the data refered is already stored (from the 1s timeout) 
-setTimeout(_=> 
-d3.selectAll('.agent')
-  .attr("transform", (d) => "translate("+ d['x'] +','+ d['y']+")")
-,1500)
+setTimeout((_) => d3.selectAll(".agent").data([{ x: 26, y: 10 }]), 1000);
+// call a property, as the data refered is already stored (from the 1s timeout)
+setTimeout(
+  (_) =>
+    d3
+      .selectAll(".agent")
+      .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")"),
+  1500
+);
 // if we want to change as soon as we update the data, we just call both in a chain
-setTimeout(_=> 
-d3.selectAll('.agent')
-  .data([{'x':86,'y':50}])
-  .attr("transform", (d) => "translate("+ d['x'] +','+ d['y']+")")
-,2000)
+setTimeout(
+  (_) =>
+    d3
+      .selectAll(".agent")
+      .data([{ x: 86, y: 50 }])
+      .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")"),
+  2000
+);
 // d3.select("body").transition()
 //     .duration(1000)
 //     .style("background-color", "red");
@@ -80,7 +79,6 @@ client.on("connect", function () {
       console.log("[mqtt] subscribed to the topic >> estimation_graph");
     }
   });
-
 });
 
 // its a global callback fo rall mqtt subs it seems...
@@ -88,27 +86,26 @@ client.on("message", function (topic, message) {
   // message is Buffer
   // console.log("$  " + message.toString() + "  << from topic >>  " + topic);
 
-  if (topic == "ground_truth"){
+  if (topic == "ground_truth") {
     const msg = JSON.parse(message.toString());
-    canvas_mg.selectAll('.landmark')
-        .data(msg.landmarks)
-        .enter()
-        .append('circle')
-        .attr('cx',d => d.state.x)
-        .attr('cy',d => d.state.y)
-        .attr('r',0.42)
-        .classed('landmark',true)
-  }
-  else if (topic == "estimation_graph"){
-    console.log(`Estimation Graph received : `)
-    console.log(JSON.parse(message.toString()))
+    canvas_mg
+      .selectAll(".landmark")
+      .data(msg.landmarks)
+      .enter()
+      .append("circle")
+      .attr("cx", (d) => d.state.x)
+      .attr("cy", (d) => d.state.y)
+      .attr("r", 0.42)
+      .classed("landmark", true);
+  } else if (topic == "estimation_graph") {
+    console.log(`Estimation Graph received : `);
+    console.log(JSON.parse(message.toString()));
     // TODO : continue
   }
 });
 
-
 client.publish("presence", "Hello mqtt from JS script");
-client.publish('request_ground_truth'," ");
+client.publish("request_ground_truth", " ");
 
 /******************************************************************************
  *                            UI Events
@@ -132,11 +129,13 @@ body.on("keydown", (e) => {
   curx = selectedRobot.node().transform.baseVal[0].matrix.e;
   cury = selectedRobot.node().transform.baseVal[0].matrix.f;
   curth = selectedRobot.node().transform.baseVal[0].angle;
-  // always put translate before rotate 
+  // always put translate before rotate
   selectedRobot.attr(
     "transform",
-    d3.zoomIdentity.translate(curx + steerX, cury + steerY).toString()
-    + ' rotate('+ curth +')' 
+    d3.zoomIdentity.translate(curx + steerX, cury + steerY).toString() +
+      " rotate(" +
+      curth +
+      ")"
   );
   // TODO: send cmd through client
 });
@@ -156,9 +155,9 @@ canvas.on("click", () => {
  *                            FOR TESTING PURPOSE 2
  *****************************************************************************/
 // sending estimation_graph request_position_ini
-setTimeout(_ => client.publish('request_estimation_graph',' '),2500)
-setTimeout(_ => client.publish('request_estimation_graph','1'),3500)
-setTimeout(_ => client.publish('request_estimation_graph','2'),4500)
+setTimeout((_) => client.publish("request_estimation_graph", " "), 2500);
+setTimeout((_) => client.publish("request_estimation_graph", "1"), 3500);
+setTimeout((_) => client.publish("request_estimation_graph", "2"), 4500);
 
 /******************************************************************************
  *                           KeyPresses Helper
@@ -231,3 +230,77 @@ function inputToSteerXY() {
 // function onMessageArrived(message) {
 //   console.log("onMessageArrived:"+message.payloadString);
 // }
+//
+
+/******************************************************************************
+ *                            HELPER
+ *****************************************************************************/
+function getRandomInt(max) {
+  return Math.floor(Math.random() * Math.floor(max));
+}
+
+// Not an in-place method
+function randomArraySplice(my_array) {
+  return [...my_array].splice(Math.round(Math.random() * my_array.length));
+}
+
+// some derpery to prove concept
+const poc_data = [2, 14, 26, 35, 44, 52, 68, 81];
+
+let derp = d3.select(".main_group").selectAll("rect");
+
+// call as :       derp = derpery(derp)
+// Note: enter uses transition.selection() while update uses call() wrapper on the
+//  transition. Afaik there is no difference.
+function derpery(my_sel) {
+  return my_sel
+    .data(randomArraySplice(poc_data), (d) => d)
+    .join(
+      (enter) =>
+        enter
+          .append("rect")
+          .attr("stroke", "black")
+          .attr("stroke-width", 0.1)
+          .attr("width", 8)
+          .attr("x", (d) => d)
+          .transition()
+          .duration(750)
+          .attr("opacity", 1)
+          .attr("fill", "salmon")
+          .attr("height", (_) => Math.random() * 55 + 2)
+          .transition()
+          .duration(750)
+          .attr("fill", "lightblue")
+          .selection(),
+      (update) =>
+        update.call((u) =>
+          u
+            .transition()
+            .duration(750)
+            .ease(d3.easeCubic)
+            .attr("fill", "khaki")
+            .attr("height", (_) => Math.random() * 55 + 2)
+            .transition()
+            .duration(750)
+            .attr("fill", "lightblue")
+        ),
+      (exit) =>
+        exit.call((ex_sel) =>
+          ex_sel
+            .transition()
+            .duration(500)
+            .attr("fill", "indigo")
+            .transition()
+            .duration(700)
+            .ease(d3.easeCubicIn)
+            .attr("opacity", 0)
+            .attr("height", 0)
+            .remove()
+        )
+    );
+  // .transition()
+  // .delay(2250)
+  // .duration(750)
+  // .attr("fill", "lightblue")
+  // .selection();
+}
