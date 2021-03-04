@@ -28,6 +28,29 @@ vgGrobot1.append("circle").attr("r", 4);
 console.log(`svg height: ${canvas.attr("height")}`);
 
 /******************************************************************************
+ *                           SVG Group binding to d3
+ *****************************************************************************/
+const main_group = d3.select('.main_group')
+const agents_true_group = d3.select('.agents_true_group')
+const landmarks_true_group = d3.select('.landmarks_true_group')
+const agents_graphs_group = d3.select('.agents_graphs_group')
+const agents_estimated_group = d3.select('.agents_estimated_group')
+// The d_ means a dynamic group as opposed to the groups declared above
+//  (I just made that up). Since the names would be only 1-letter appart from
+//  their const counter part otherwise, better be safe than sorry with a hard
+//  to debug vicious bug.
+//  As per the d3 pattern, these selections are empty at this stage and will
+//  received elements during the d3 update pattern (in the mqtt callback)
+let d_agent_true_group = agents_true_group.selectAll('.agent_true_group')
+let d_landmark_true_group = landmarks_true_group.selectAll('.landmark_true_group')
+let d_agent_estimated_group = agents_estimated_group.selectAll('.agent_estimated_group')
+let d_agent_true_group = agents_true_group.selectAll('.agent_true_group')
+let d_agent_graph_group = agents_graphs_group.selectAll('.agent_graph_group')
+// For now assume only one hypothesis. TODO: revisit
+
+
+
+/******************************************************************************
  *                            FOR TESTING PURPOSE
  *****************************************************************************/
 // bound new data, but doesnt 'recompute' the properties that depends on data
