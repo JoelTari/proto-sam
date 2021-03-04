@@ -42,3 +42,8 @@ svg {
   fill: indigo;
   cursor: pointer;
 }
+
+/* test */
+.agents_true_group:hover > * {
+  fill: darksalmon;
+}

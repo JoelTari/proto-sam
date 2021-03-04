@@ -30,29 +30,44 @@ console.log(`svg height: ${canvas.attr("height")}`);
 /******************************************************************************
  *                           SVG Group binding to d3
  *****************************************************************************/
-const main_group = d3.select('.main_group')
-const agents_true_group = d3.select('.agents_true_group')
-const landmarks_true_group = d3.select('.landmarks_true_group')
-const agents_graphs_group = d3.select('.agents_graphs_group')
-const agents_estimated_group = d3.select('.agents_estimated_group')
+const main_group = d3.select(".main_group");
+const agents_true_group = d3.select(".agents_true_group");
+const landmarks_true_group = d3.select(".landmarks_true_group");
+const agents_graphs_group = d3.select(".agents_graphs_group");
+const agents_estimated_group = d3.select(".agents_estimated_group");
 // The d_ means a dynamic group as opposed to the groups declared above
 //  (I just made that up). Since the names would be only 1-letter appart from
 //  their const counter part otherwise, better be safe than sorry with a hard
 //  to debug vicious bug.
 //  As per the d3 pattern, these selections are empty at this stage and will
 //  received elements during the d3 update pattern (in the mqtt callback)
-let d_agent_true_group = agents_true_group.selectAll('.agent_true_group')
-let d_landmark_true_group = landmarks_true_group.selectAll('.landmark_true_group')
-let d_agent_estimated_group = agents_estimated_group.selectAll('.agent_estimated_group')
-let d_agent_true_group = agents_true_group.selectAll('.agent_true_group')
-let d_agent_graph_group = agents_graphs_group.selectAll('.agent_graph_group')
+//  those SelectAll can only be filled with join(), append() doesnt seem to work
+let d_agent_true_group = agents_true_group.selectAll(".agent_true_group");
+let d_landmark_true_group = landmarks_true_group.selectAll(
+  ".landmark_true_group"
+);
+let d_agent_estimated_group = agents_estimated_group.selectAll(
+  ".agent_estimated_group"
+);
+let d_agent_graph_group = agents_graphs_group.selectAll(".agent_graph_group");
 // For now assume only one hypothesis. TODO: revisit
-
 
 
 /******************************************************************************
  *                            FOR TESTING PURPOSE
  *****************************************************************************/
+// TODO: construct a fake json object here, with 1 and 2 robots
+//        ( alike the ground_truth structure that comes through mqtt)
+d_agent_true_group = d_agent_true_group
+  .data([12])
+  .join("polygon")
+  .attr("points", "0,-1 0,1 3,0")  // TODO: append a <g> first
+  .attr("fill", "linen")
+  .attr("stroke", "black")
+  .attr("stroke-width", 0.1)
+  .attr('transform','translate(50,30)')
+  .classed("agent_true_group",true);
+
 // bound new data, but doesnt 'recompute' the properties that depends on data
 setTimeout((_) => d3.selectAll(".agent").data([{ x: 26, y: 10 }]), 1000);
 // call a property, as the data refered is already stored (from the 1s timeout)
