@@ -4,28 +4,6 @@ const canvas = d3.select(".canvas");
 const canvas_mg = d3.select(".main_group");
 
 const aratio = 0.6;
-let value = 250;
-// draw
-const vgGrobot1 = canvas_mg.append("g").classed("agent", true);
-
-d3.selectAll(".agent")
-  .data([{ x: 66, y: 10 }])
-  .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")");
-
-vgGrobot1.append("circle").attr("r", 4);
-// .attr("cx", 96)
-// .attr("cy", 5)
-
-// ellipse is kept in commentary as a template
-// const vgcov = canvas_mg
-//   .append("ellipse")
-//   .attr('transform', ' translate(50,40) rotate(0)')
-//   .attr("rx", 20)
-//   .attr("ry", 12);
-// .attr("cx", 50)
-// .attr("cy", 40)
-
-console.log(`svg height: ${canvas.attr("height")}`);
 
 /******************************************************************************
  *                           SVG Group binding to d3
@@ -52,48 +30,74 @@ let d_agent_estimated_group = agents_estimated_group.selectAll(
 let d_agent_graph_group = agents_graphs_group.selectAll(".agent_graph_group");
 // For now assume only one hypothesis. TODO: revisit
 
-
 /******************************************************************************
  *                            FOR TESTING PURPOSE
  *****************************************************************************/
+// // draw
+// const vgGrobot1 = canvas_mg.append("g").classed("agent", true);
+// d3.selectAll(".agent")
+//   .data([{ x: 66, y: 10 }])
+//   .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")");
+// vgGrobot1.append("circle").attr("r", 4);
+// // .attr("cx", 96)
+// // .attr("cy", 5)
+
+// // ellipse is kept in commentary as a template
+// // const vgcov = canvas_mg
+// //   .append("ellipse")
+// //   .attr('transform', ' translate(50,40) rotate(0)')
+// //   .attr("rx", 20)
+// //   .attr("ry", 12);
+// // .attr("cx", 50)
+// // .attr("cy", 40)
+
+// console.log(`svg height: ${canvas.attr("height")}`);
 // TODO: construct a fake json object here, with 1 and 2 robots
 //        ( alike the ground_truth structure that comes through mqtt)
-d_agent_true_group = d_agent_true_group
-  .data([12])
-  .join("polygon")
-  .attr("points", "0,-1 0,1 3,0")  // TODO: append a <g> first
-  .attr("fill", "linen")
-  .attr("stroke", "black")
-  .attr("stroke-width", 0.1)
-  .attr('transform','translate(50,30)')
-  .classed("agent_true_group",true);
 
-// bound new data, but doesnt 'recompute' the properties that depends on data
-setTimeout((_) => d3.selectAll(".agent").data([{ x: 26, y: 10 }]), 1000);
-// call a property, as the data refered is already stored (from the 1s timeout)
-setTimeout(
-  (_) =>
-    d3
-      .selectAll(".agent")
-      .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")"),
-  1500
-);
-// if we want to change as soon as we update the data, we just call both in a chain
-setTimeout(
-  (_) =>
-    d3
-      .selectAll(".agent")
-      .data([{ x: 86, y: 50 }])
-      .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")"),
-  2000
-);
-// d3.select("body").transition()
-//     .duration(1000)
-//     .style("background-color", "red");
+// d_agent_true_group = d_agent_true_group
+//   .data([12, 24, 33, 54])
+//   .join("g")
+//   .transition().duration(1000)
+//   .attr('opacity', 1)
+//   .selection()
+//   .attr("transform", d =>  "translate("+ d +",30) rotate(30)")
+//   .classed("agent_true_group", true)
+//   .call((g) =>
+//     g
+//       .append("polygon")
+//       .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
+//       .attr("fill", "linen")
+//       .attr("stroke", "black")
+//       .attr("stroke-width", 0.1)
+//   );
 
-// d3.selectAll('.agent')
-//   .transition()
-//   .duration()
+// // bound new data, but doesnt 'recompute' the properties that depends on data
+// setTimeout((_) => d3.selectAll(".agent").data([{ x: 26, y: 10 }]), 1000);
+// // call a property, as the data refered is already stored (from the 1s timeout)
+// setTimeout(
+//   (_) =>
+//     d3
+//       .selectAll(".agent")
+//       .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")"),
+//   1500
+// );
+// // if we want to change as soon as we update the data, we just call both in a chain
+// setTimeout(
+//   (_) =>
+//     d3
+//       .selectAll(".agent")
+//       .data([{ x: 86, y: 50 }])
+//       .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")"),
+//   2000
+// );
+// // d3.select("body").transition()
+// //     .duration(1000)
+// //     .style("background-color", "red");
+
+// // d3.selectAll('.agent')
+// //   .transition()
+// //   .duration()
 
 /******************************************************************************
  *                            MQTT events
@@ -126,15 +130,76 @@ client.on("message", function (topic, message) {
 
   if (topic == "ground_truth") {
     const msg = JSON.parse(message.toString());
-    canvas_mg
-      .selectAll(".landmark")
-      .data(msg.landmarks)
-      .enter()
-      .append("circle")
+    // draw landmarks first, I dont do a group for each individual
+    // landmark  (TODO: might revisit)
+    d_landmark_true_group = d_landmark_true_group
+      .data(msg.landmarks, (d) => d.landmark_id)
+      .join("circle")
       .attr("cx", (d) => d.state.x)
       .attr("cy", (d) => d.state.y)
-      .attr("r", 0.42)
-      .classed("landmark", true);
+      .attr("r", 1)
+      .classed("landmark_true_group", true)
+      .transition()
+      .duration(1000)
+      .attr("opacity", 1)
+      .attr("r", 0.4)
+      .selection();
+
+    d_agent_true_group = d_agent_true_group
+      .data(msg.robots, (d) => d.rodot_id)
+      .join("g")
+      .attr(
+        "transform",
+        (d) =>
+          "translate(" +
+          d.state.x +
+          "," +
+          d.state.y +
+          ")"       )
+      .classed("agent_true_group", true)
+      .on("click", function (e, d) {
+        console.log(d3.select(this).selectChild("polygon"));
+        // console.log(d3.select(this).selectChildren('polygon'))
+
+        // I want to add the 'selected' class to the clicked agent
+        // but this should be exclusive, so first remove the 'selected'
+        // name from the class list of everybody
+        d_agent_true_group
+          .classed("selected", false)
+        // now set the concerned entity to 'selected' in the classlist
+        d3.select(this).classed("selected", true);
+        // maybe I just need to do that to control it
+        //  (but there is also the styling to consider anyway)
+        selectedRobot = d3.select(this);
+      })
+      .each( function(d) { 
+      d3.select(this)
+        .append('g')
+        .attr('transform',"rotate(" + d.state.th + ")")
+        .append("polygon")
+        .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
+        .attr("fill", "linen")
+        .attr("stroke", "black")
+        .attr("stroke-width", 0.1)
+      })
+      // add the triangle drawing
+      // .call((g,d) =>
+      //   g
+      //   .append('g')
+      //   .attr('transform',"rotate(" + d.state.th + ")")
+      //     .append("polygon")
+      //     .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
+      //     .attr("fill", "linen")
+      //     .attr("stroke", "black")
+      //     .attr("stroke-width", 0.1)
+      // )
+      .transition()
+      .duration(500)
+      .attr("opacity", 1)
+      .selection();
+    
+
+
   } else if (topic == "estimation_graph") {
     console.log(`Estimation Graph received : `);
     console.log(JSON.parse(message.toString()));
@@ -157,20 +222,22 @@ let keyPressedBuffer = {
 };
 
 // d3 selected robot
-let selectedRobot = vgGrobot1;
+let selectedRobot = null;
 
 body.on("keydown", (e) => {
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
-  const [steerX, steerY] = inputToSteerXY();
+  const [dX, dY] = inputToMove("AA");
   // console.log(steerX, steerY);
   // current state
   curx = selectedRobot.node().transform.baseVal[0].matrix.e;
   cury = selectedRobot.node().transform.baseVal[0].matrix.f;
   curth = selectedRobot.node().transform.baseVal[0].angle;
+  console.log('tf of selected rob: ')
+  console.log(selectedRobot.node().transform.baseVal[0])
   // always put translate before rotate
   selectedRobot.attr(
     "transform",
-    d3.zoomIdentity.translate(curx + steerX, cury + steerY).toString() +
+    d3.zoomIdentity.translate(curx + dX, cury + dY).toString() +
       " rotate(" +
       curth +
       ")"
@@ -180,14 +247,14 @@ body.on("keydown", (e) => {
 
 body.on("keyup", (e) => (keyPressedBuffer[e.key] = false));
 
-canvas.on("click", () => {
-  const msg = {
-    header: "some header",
-    message: "canvas clicked",
-  };
-  client.publish("requestChan", JSON.stringify(msg));
-  console.log("canvas clicked!");
-});
+// canvas.on("click", () => {
+//   const msg = {
+//     header: "some header",
+//     message: "canvas clicked",
+//   };
+//   client.publish("requestChan", JSON.stringify(msg));
+//   console.log("canvas clicked!");
+// });
 
 /******************************************************************************
  *                            FOR TESTING PURPOSE 2
@@ -201,7 +268,8 @@ setTimeout((_) => client.publish("request_estimation_graph", "2"), 4500);
  *                           KeyPresses Helper
  *****************************************************************************/
 
-function inputToSteerXY() {
+function inputToMove(model) {
+  console.log("Moving using model : " + model);
   // get key or combination from global buffer
   up = keyPressedBuffer["ArrowUp"];
   down = keyPressedBuffer["ArrowDown"];

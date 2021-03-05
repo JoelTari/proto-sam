@@ -32,18 +32,24 @@ svg {
   transition: fill 1s ease;
 }
 
-.landmark {
+.landmark_true_group {
   stroke-width: 0.1;
-  stroke: white;
-  fill: #18306d;
+  stroke: gold;
+  fill: #30ad8d;
 }
 
-.agent:hover {
-  fill: indigo;
+/* .agent:hover { */
+/*   fill: indigo; */
+/*   cursor: pointer; */
+/* } */
+
+/* test */
+.agent_true_group:hover > * {
+  fill: lightblue;
   cursor: pointer;
 }
 
-/* test */
-.agents_true_group:hover > * {
+/* any descendant polygon of those */
+.agent_true_group.selected polygon {
   fill: darksalmon;
 }
