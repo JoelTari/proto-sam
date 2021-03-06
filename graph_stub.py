@@ -18,11 +18,11 @@ estimation_graph_topic = 'estimation_graph'
 
 full_estimation = {
     'map': [
-        {'var_id': 'l1', 'state': {'x': 20, 'y': 37}},
-        {'var_id': 'l2', 'state': {'x': 25, 'y': 47}},
-        {'var_id': 'l3', 'state': {'x': 30, 'y': 32}},
-        {'var_id': 'l4', 'state': {'x': 55, 'y': 49}},
-        {'var_id': 'l5', 'state': {'x': 75, 'y': 25}},
+        {'var_id': 'l1', 'state': {'x': 20, 'y': 37}, 'covariance':[0,1,0,.3]},
+        {'var_id': 'l2', 'state': {'x': 25, 'y': 47}, 'covariance':[0,1,0,.3]},
+        {'var_id': 'l3', 'state': {'x': 30, 'y': 32}, 'covariance':[0,1,0,.3]},
+        {'var_id': 'l4', 'state': {'x': 55, 'y': 49}, 'covariance':[0,1,0,.3]},
+        {'var_id': 'l5', 'state': {'x': 75, 'y': 25}, 'covariance':[0,1,0,.3]},
     ],
     'mean': [],
     'covariance': [],
