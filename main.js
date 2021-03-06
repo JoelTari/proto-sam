@@ -5,6 +5,10 @@ const canvas_mg = d3.select(".main_group");
 
 const aratio = 0.6;
 
+GlobalUI = {
+  selected_robot_id: 'r1',
+}
+
 /******************************************************************************
  *                           SVG Group binding to d3
  *****************************************************************************/
@@ -131,75 +135,136 @@ client.on("message", function (topic, message) {
   if (topic == "ground_truth") {
     const msg = JSON.parse(message.toString());
     // draw landmarks first, I dont do a group for each individual
-    // landmark  (TODO: might revisit)
+    // landmark  (no updates as they are supposed fixed)
     d_landmark_true_group = d_landmark_true_group
       .data(msg.landmarks, (d) => d.landmark_id)
-      .join("circle")
-      .attr("cx", (d) => d.state.x)
-      .attr("cy", (d) => d.state.y)
-      .attr("r", 1)
-      .classed("landmark_true_group", true)
-      .transition()
-      .duration(1000)
-      .attr("opacity", 1)
-      .attr("r", 0.4)
-      .selection();
+      .join(
+        (enter) =>
+          enter
+            .append("circle")
+            .attr("cx", (d) => d.state.x)
+            .attr("cy", (d) => d.state.y)
+            .attr("r", 1)
+            .classed("landmark_true_group", true)
+            .transition()
+            .duration(1000)
+            .attr("opacity", 1)
+            .attr("r", 0.4)
+            .selection(),
+        (update) => update
+      );
+
+    // d_agent_true_group = d_agent_true_group
+    //   .data(msg.robots, (d) => d.rodot_id)
+    //   .join("g")
+    //   .classed("agent_true_group", true)
+    //   .attr("id", (d) => d.robot_id)
+    //   .on("click", function (e, d) {
+    //     console.log(d3.select(this).selectChild("polygon"));
+    //     // console.log(d3.select(this).selectChildren('polygon'))
+    //     // I want to add the 'selected' class to the clicked agent
+    //     // but this should be exclusive, so first remove the 'selected'
+    //     // name from the class list of everybody
+    //     d_agent_true_group.classed("selected", false);
+    //     // now set the concerned entity to 'selected' in the classlist
+    //     d3.select(this).classed("selected", true);
+    //     // maybe I just need to do that to control it
+    //     //  (but there is also the styling to consider anyway)
+    //     selectedRobot = d3.select(this);
+    //   })
+    //   .each(function (d) {
+    //     d3.select(this)
+    //       .append("g")
+    //       .attr(
+    //         "transform",
+    //         (d) => "translate(" + d.state.x + "," + d.state.y + ")"
+    //       )
+    //       .append("g")
+    //       .attr("transform", "rotate(" + d.state.th + ")")
+    //       .call(function (g) {
+    //         // adding all display components
+    //         g.append("polygon")
+    //           .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
+    //           .attr("fill", "linen")
+    //           .attr("stroke", "black")
+    //           .attr("stroke-width", 0.1);
+    //         g.append("line")
+    //           .attr("points", "0,0 0,1")
+    //           .attr("stroke", "black")
+    //           .attr("stroke-width", 0.1);
+    //       });
+    //   })
+    //   .transition()
+    //   .duration(500)
+    //   .attr("opacity", 1)
+    //   .selection();
+
+    // ugly, since updates remove my active/selected that is added outside of d3
+    // I got the impression that the general update pattern deletes any excess property added
+    // Im kinda joining data from MQTT and the UI
+    ////////////////////////////////////////////////////// msg.active = "r2"
+    msg.robots.forEach(r=> r.isSelected = (r.robot_id === GlobalUI.selected_robot_id))
+    // msg.robots.forEach(r=> console.log(r))
 
     d_agent_true_group = d_agent_true_group
-      .data(msg.robots, (d) => d.rodot_id)
-      .join("g")
-      .attr(
-        "transform",
-        (d) =>
-          "translate(" +
-          d.state.x +
-          "," +
-          d.state.y +
-          ")"       )
-      .classed("agent_true_group", true)
-      .on("click", function (e, d) {
-        console.log(d3.select(this).selectChild("polygon"));
-        // console.log(d3.select(this).selectChildren('polygon'))
-
-        // I want to add the 'selected' class to the clicked agent
-        // but this should be exclusive, so first remove the 'selected'
-        // name from the class list of everybody
-        d_agent_true_group
-          .classed("selected", false)
-        // now set the concerned entity to 'selected' in the classlist
+      .data(msg.robots, (d) => d.robot_id )
+      .join(
+        (enter) =>
+          enter
+            .append("g")
+            .classed("agent_true_group", true)
+            .classed("selected", d => d.isSelected)
+            .attr("id", (d) => d.robot_id)
+            .each(function (d) {
+              d3.select(this)
+                .append("g")
+                .attr(
+                  "transform",
+                  (d) => "translate(" + d.state.x + "," + d.state.y + ")"
+                )
+                .append("g")
+                .attr("transform", "rotate(" + d.state.th + ")")
+                .call(function (g) {
+                  console.log('enter')
+                  // adding all display components
+                  g.append("polygon")
+                    .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
+                    .attr("fill", "linen")
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 0.1);
+                  g.append("line")
+                    .attr("x1", 0)
+                    .attr("y1", 0)
+                    .attr("x2", 1)
+                    .attr("y2", 0)
+                    .attr("stroke", (d) => {
+                      if (d.robot_id === "r1") return "red";
+                      else if (d.robot_id === "r2") return "blue";
+                      else if (d.robot_id === "r3") return "green";
+                    })
+                    .attr("stroke-width", 0.3);
+                });
+            })
+        .transition()
+        .duration(500)
+        .attr("opacity", 1)
+        .selection()
+        ,
+        (update) =>
+          update
+            .classed("selected", d => d.isSelected)
+            .each(function (d) {
+                applyMove_gg(d3.select(this), [d.state.x, d.state.y, d.state.th]);
+                // applyMove_gg(d3.select(this), [10, 30, 30]);
+              })
+      )
+      .on("click", function (e, d ) {
+        // for next joining of data
+        GlobalUI.selected_robot_id = d3.select(this).attr('id');
+        // for current data session: put others to false, and the selected to true
+        d_agent_true_group.classed("selected", false);
         d3.select(this).classed("selected", true);
-        // maybe I just need to do that to control it
-        //  (but there is also the styling to consider anyway)
-        selectedRobot = d3.select(this);
-      })
-      .each( function(d) { 
-      d3.select(this)
-        .append('g')
-        .attr('transform',"rotate(" + d.state.th + ")")
-        .append("polygon")
-        .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-        .attr("fill", "linen")
-        .attr("stroke", "black")
-        .attr("stroke-width", 0.1)
-      })
-      // add the triangle drawing
-      // .call((g,d) =>
-      //   g
-      //   .append('g')
-      //   .attr('transform',"rotate(" + d.state.th + ")")
-      //     .append("polygon")
-      //     .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-      //     .attr("fill", "linen")
-      //     .attr("stroke", "black")
-      //     .attr("stroke-width", 0.1)
-      // )
-      .transition()
-      .duration(500)
-      .attr("opacity", 1)
-      .selection();
-    
-
-
+      });
   } else if (topic == "estimation_graph") {
     console.log(`Estimation Graph received : `);
     console.log(JSON.parse(message.toString()));
@@ -221,40 +286,45 @@ let keyPressedBuffer = {
   ArrowLeft: false,
 };
 
-// d3 selected robot
-let selectedRobot = null;
-
 body.on("keydown", (e) => {
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
   const [dX, dY] = inputToMove("AA");
-  // console.log(steerX, steerY);
-  // current state
-  curx = selectedRobot.node().transform.baseVal[0].matrix.e;
-  cury = selectedRobot.node().transform.baseVal[0].matrix.f;
-  curth = selectedRobot.node().transform.baseVal[0].angle;
-  console.log('tf of selected rob: ')
-  console.log(selectedRobot.node().transform.baseVal[0])
-  // always put translate before rotate
-  selectedRobot.attr(
-    "transform",
-    d3.zoomIdentity.translate(curx + dX, cury + dY).toString() +
-      " rotate(" +
-      curth +
-      ")"
+
+  client.publish(
+    "cmd",
+    JSON.stringify({ robot_id: GlobalUI.selected_robot_id, cmd: [dX, dY] })
   );
-  // TODO: send cmd through client
 });
 
 body.on("keyup", (e) => (keyPressedBuffer[e.key] = false));
 
-// canvas.on("click", () => {
-//   const msg = {
-//     header: "some header",
-//     message: "canvas clicked",
-//   };
-//   client.publish("requestChan", JSON.stringify(msg));
-//   console.log("canvas clicked!");
-// });
+function getTransform_gg(d3_single_selected) {
+  // only works on double group descendant framework
+  // (first descendant is translation, second is rotation)
+  curx = d3_single_selected.selectChild("g").node().transform.baseVal[0].matrix
+    .e;
+  cury = d3_single_selected.selectChild("g").node().transform.baseVal[0].matrix
+    .f;
+  curth = d3_single_selected.selectChild("g").selectChild("g").node().transform
+    .baseVal[0].angle;
+  return [curx, cury, curth];
+}
+
+function applyRelativeMove_gg(d3_single_selected, dmove) {
+  const [curx, cury, curth] = getTransform_gg(d3_single_selected);
+  const [dX, dY, dth] = dmove;
+  applyMove_gg(d3_single_selected, [curx+dX, cury+dY, curth+dth]);
+}
+
+function applyMove_gg(d3_single_selected, pose) {
+  [x, y, th] = pose;
+
+  d3_single_selected
+    .selectChild("g")
+    .attr("transform", "translate(" + x + "," + y + ")")
+    .selectChild("g")
+    .attr('transform','rotate('+ th +')')
+}
 
 /******************************************************************************
  *                            FOR TESTING PURPOSE 2

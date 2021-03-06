@@ -223,7 +223,7 @@ def cmd_vel_callback(client, msg):
     print('cmd')
     received_cmd = json.loads(msg)
     # 1 noisify the order and update cumulative odom cov
-    noisy_cmd, cov_cmd = nosify_cmd(received_cmd['cmd_vel'])
+    noisy_cmd, cov_cmd = nosify_cmd(received_cmd['cmd'])
     print('cov')
     print(cov_cmd)
     integrate_cumulative_odometry(cov_cmd)

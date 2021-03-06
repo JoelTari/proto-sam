@@ -17,7 +17,7 @@ Topic name: `cmd`
 {
   "robot_id":"r1",
   "type":"AAcmd",
-  "cmd_vel":[dx,dy] # depend on type, could be v,w
+  "cmd":[dx,dy] # depend on type, could be v,w
 }
 ```
 
