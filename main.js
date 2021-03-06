@@ -6,8 +6,8 @@ const canvas_mg = d3.select(".main_group");
 const aratio = 0.6;
 
 GlobalUI = {
-  selected_robot_id: 'r1',
-}
+  selected_robot_id: "r1",
+};
 
 /******************************************************************************
  *                           SVG Group binding to d3
@@ -203,17 +203,19 @@ client.on("message", function (topic, message) {
     // I got the impression that the general update pattern deletes any excess property added
     // Im kinda joining data from MQTT and the UI
     ////////////////////////////////////////////////////// msg.active = "r2"
-    msg.robots.forEach(r=> r.isSelected = (r.robot_id === GlobalUI.selected_robot_id))
+    msg.robots.forEach(
+      (r) => (r.isSelected = r.robot_id === GlobalUI.selected_robot_id)
+    );
     // msg.robots.forEach(r=> console.log(r))
 
     d_agent_true_group = d_agent_true_group
-      .data(msg.robots, (d) => d.robot_id )
+      .data(msg.robots, (d) => d.robot_id)
       .join(
         (enter) =>
           enter
             .append("g")
             .classed("agent_true_group", true)
-            .classed("selected", d => d.isSelected)
+            .classed("selected", (d) => d.isSelected)
             .attr("id", (d) => d.robot_id)
             .each(function (d) {
               d3.select(this)
@@ -226,40 +228,69 @@ client.on("message", function (topic, message) {
                 .attr("transform", "rotate(" + d.state.th + ")")
                 .call(function (g) {
                   // adding all display components
+                  // 1. the sensor
+                  if (d.sensor != null)
+                    g.append("path")
+                      .classed("sensor", true)
+                      .attr("d", function (d) {
+                        rx = d.sensor.range;
+                        ry = rx;
+                        if (d.sensor.angle_coverage > 1 || d.sensor.angle_coverage < 0)
+                          console.error('Sensor angle_coverage out of bound')
+                        // def px py as the starting point along the sensor range arc
+                        px = Math.cos(Math.PI*d.sensor.angle_coverage)*d.sensor.range
+                        py = Math.sin(Math.PI*d.sensor.angle_coverage)*d.sensor.range
+                        return (
+                          "M0,0 l" +
+                          px +
+                          "," +
+                          py +
+                          " A " +
+                          rx +
+                          " " +
+                          ry +
+                          " 0 " + true*( d.sensor.angle_coverage > 0.5 ) +" 0 " +
+                          px +
+                          " " +
+                          -py
+                        );
+                      });
+                  // 2. the robot
                   g.append("polygon")
+                    // .classed('agent_representation',true)
                     .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-                    .attr("fill", "linen")
-                    .attr("stroke", "black")
-                    .attr("stroke-width", 0.1);
+                    // .attr("fill", "linen")
+                    // .attr("stroke", "black")
+                    // .attr("stroke-width", 0.1);
                   g.append("line")
+                    // .classed('agent_representation',true)
                     .attr("x1", 0)
                     .attr("y1", 0)
                     .attr("x2", 1)
                     .attr("y2", 0)
-                    .attr("stroke", (d) => {
-                      if (d.robot_id === "r1") return "red";
-                      else if (d.robot_id === "r2") return "blue";
-                      else if (d.robot_id === "r3") return "green";
-                    })
-                    .attr("stroke-width", 0.3);
+                    // .attr("stroke-width", 0.3)
+                    // .attr("stroke", (d) => {
+                    //   if (d.robot_id === "r1") return "red";
+                    //   else if (d.robot_id === "r2") return "blue";
+                    //   else if (d.robot_id === "r3") return "green";
+                    // });
                 });
             })
-        .transition()
-        .duration(500)
-        .attr("opacity", 1)
-        .selection()
-        ,
+            .transition()
+            .duration(500)
+            .attr("opacity", 1)
+            .selection(),
         (update) =>
           update
-            .classed("selected", d => d.isSelected)
+            .classed("selected", (d) => d.isSelected)
             .each(function (d) {
-                applyMove_gg(d3.select(this), [d.state.x, d.state.y, d.state.th]);
-                // applyMove_gg(d3.select(this), [10, 30, 30]);
-              })
+              applyMove_gg(d3.select(this), [d.state.x, d.state.y, d.state.th]);
+              // applyMove_gg(d3.select(this), [10, 30, 30]);
+            })
       )
-      .on("click", function (e, d ) {
+      .on("click", function (e, d) {
         // for next joining of data
-        GlobalUI.selected_robot_id = d3.select(this).attr('id');
+        GlobalUI.selected_robot_id = d3.select(this).attr("id");
         // for current data session: put others to false, and the selected to true
         d_agent_true_group.classed("selected", false);
         d3.select(this).classed("selected", true);
@@ -271,13 +302,13 @@ client.on("message", function (topic, message) {
   }
 });
 
-client.publish("presence", "Hello mqtt from JS script");
 client.publish("request_ground_truth", " ");
 
 /******************************************************************************
  *                            UI Events
  *****************************************************************************/
 
+// TODO: put this var in globalUI
 let keyPressedBuffer = {
   ArrowUp: false,
   ArrowDown: false,
@@ -288,12 +319,16 @@ let keyPressedBuffer = {
 body.on("keydown", (e) => {
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
 
-  inputCmdModel = 'DD'; // TODO: centralize in globalUI
+  inputCmdModel = "AA"; // TODO: centralize in globalUI
   const cmdObj = inputToMove(inputCmdModel);
 
   client.publish(
     "cmd",
-    JSON.stringify({ robot_id: GlobalUI.selected_robot_id, type: inputCmdModel,cmd_vel: cmdObj })
+    JSON.stringify({
+      robot_id: GlobalUI.selected_robot_id,
+      type: inputCmdModel,
+      cmd_vel: cmdObj,
+    })
   );
 });
 
@@ -314,17 +349,16 @@ function getTransform_gg(d3_single_selected) {
 function applyRelativeMove_gg(d3_single_selected, dmove) {
   const [curx, cury, curth] = getTransform_gg(d3_single_selected);
   const [dX, dY, dth] = dmove;
-  applyMove_gg(d3_single_selected, [curx+dX, cury+dY, curth+dth]);
+  applyMove_gg(d3_single_selected, [curx + dX, cury + dY, curth + dth]);
 }
 
 function applyMove_gg(d3_single_selected, pose) {
   [x, y, th] = pose;
-
   d3_single_selected
     .selectChild("g")
     .attr("transform", "translate(" + x + "," + y + ")")
     .selectChild("g")
-    .attr('transform','rotate('+ th +')')
+    .attr("transform", "rotate(" + th + ")");
 }
 
 /******************************************************************************
@@ -349,8 +383,7 @@ function inputToMove(model) {
   console.log("Moving using model : " + model); // TODO globalUI
   const speed = 0.25; // TODO: globalUI
 
-  if (model==='AA')
-  {
+  if (model === "AA") {
     dx = 0;
     dy = 0;
 
@@ -363,24 +396,23 @@ function inputToMove(model) {
       dy += speed * up;
       dy -= speed * down;
     }
-    return {'x': dx ,'y':dy}
-  }
-  else if (model==='DD'){
-    dlinear =0
-    dangular=0
+    return { x: dx, y: dy };
+  } else if (model === "DD") {
+    dlinear = 0;
+    dangular = 0;
     if ((up && down) || (right && left)) {
       // if contradictory order(s)
       // nothing to do
-    } else { // TODO: decouple speeds
-      dangular -= speed/5.0 * right; // rads
-      dangular += speed/5.0 * left;
+    } else {
+      // TODO: decouple speeds
+      dangular -= (speed / 5.0) * right; // rads
+      dangular += (speed / 5.0) * left;
       dlinear += speed * up;
       dlinear -= speed * down;
     }
-    return {'linear':dlinear,'angular':dangular};
-  }
-  else{
-    console.error('Unknown model for sending cmd', model)
+    return { linear: dlinear, angular: dangular };
+  } else {
+    console.error("Unknown model for sending cmd", model);
   }
 }
 

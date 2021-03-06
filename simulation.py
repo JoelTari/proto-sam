@@ -21,17 +21,17 @@ world = {
         {
             "robot_id": "r1",
             "state": {"x": 5, "y": 6.1, "th": 30},
-            "sensor": {"range": 18, "angle-coverage": 0.75}
+            "sensor": {"range": 12, "angle_coverage": 0.75}
         },
         {
             "robot_id": "r2",
             "state": {"x": 53, "y": 16.1, "th": -150},
-            "sensor": {"range": 18, "angle-coverage": 0.75}
+            "sensor": {"range": 12, "angle_coverage": 0.167}
         },
         {
             "robot_id": "r3",
             "state": {"x": 25, "y": 56.1, "th": 100},
-            "sensor": {"range": 18, "angle-coverage": 0.75}
+            "sensor": {"range": 12, "angle_coverage": 0.5}
         },
     ],
     "landmarks":
