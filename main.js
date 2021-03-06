@@ -225,7 +225,6 @@ client.on("message", function (topic, message) {
                 .append("g")
                 .attr("transform", "rotate(" + d.state.th + ")")
                 .call(function (g) {
-                  console.log('enter')
                   // adding all display components
                   g.append("polygon")
                     .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
@@ -288,11 +287,13 @@ let keyPressedBuffer = {
 
 body.on("keydown", (e) => {
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
-  const [dX, dY] = inputToMove("AA");
+
+  inputCmdModel = 'DD'; // TODO: centralize in globalUI
+  const cmdObj = inputToMove(inputCmdModel);
 
   client.publish(
     "cmd",
-    JSON.stringify({ robot_id: GlobalUI.selected_robot_id, cmd: [dX, dY] })
+    JSON.stringify({ robot_id: GlobalUI.selected_robot_id, type: inputCmdModel,cmd_vel: cmdObj })
   );
 });
 
@@ -339,29 +340,48 @@ setTimeout((_) => client.publish("request_estimation_graph", "2"), 4500);
  *****************************************************************************/
 
 function inputToMove(model) {
-  console.log("Moving using model : " + model);
   // get key or combination from global buffer
   up = keyPressedBuffer["ArrowUp"];
   down = keyPressedBuffer["ArrowDown"];
   left = keyPressedBuffer["ArrowLeft"];
   right = keyPressedBuffer["ArrowRight"];
 
-  steerX = 0;
-  steerY = 0;
+  console.log("Moving using model : " + model); // TODO globalUI
+  const speed = 0.25; // TODO: globalUI
 
-  const speed = 0.25;
+  if (model==='AA')
+  {
+    dx = 0;
+    dy = 0;
 
-  if ((up && down) || (right && left)) {
-    // if contradictory order(s)
-    // nothing to do
-  } else {
-    steerX += speed * right;
-    steerX -= speed * left;
-    steerY += speed * up;
-    steerY -= speed * down;
+    if ((up && down) || (right && left)) {
+      // if contradictory order(s)
+      // nothing to do
+    } else {
+      dx += speed * right;
+      dx -= speed * left;
+      dy += speed * up;
+      dy -= speed * down;
+    }
+    return {'x': dx ,'y':dy}
   }
-  // TODO: split between order reading and state change effect
-  return [steerX, steerY];
+  else if (model==='DD'){
+    dlinear =0
+    dangular=0
+    if ((up && down) || (right && left)) {
+      // if contradictory order(s)
+      // nothing to do
+    } else { // TODO: decouple speeds
+      dangular -= speed/5.0 * right; // rads
+      dangular += speed/5.0 * left;
+      dlinear += speed * up;
+      dlinear -= speed * down;
+    }
+    return {'linear':dlinear,'angular':dangular};
+  }
+  else{
+    console.error('Unknown model for sending cmd', model)
+  }
 }
 
 /******************************************************************************

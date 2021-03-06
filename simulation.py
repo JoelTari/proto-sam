@@ -124,8 +124,10 @@ def dy(p_ref: dict, p_target: dict) -> float:
     return p_target['y']-p_ref['y']
 
 
-def nosify_cmd(cmd: list):
-    exact_cmd = np.array([cmd]).T
+def nosify_cmd(cmd: dict):
+    # TODO: deal with several type of model (only AA supported at first)
+    cmd_array = [cmd['x'],cmd['y']];
+    exact_cmd = np.array([cmd_array]).T
     print(f'exact_cmd is of shape {exact_cmd.shape}')
     # compute the covariance that will generate the noise
     cov = generate_covariance_noise(
@@ -222,8 +224,12 @@ def integrate_cumulative_odometry(cmd_cov: np.ndarray) -> None:
 def cmd_vel_callback(client, msg):
     print('cmd')
     received_cmd = json.loads(msg)
+    # 0 check if I support (TODO) 
+    if (received_cmd['type'] != 'AA'):
+        print('I dont support that YEEET')
+        raise NotImplementedError
     # 1 noisify the order and update cumulative odom cov
-    noisy_cmd, cov_cmd = nosify_cmd(received_cmd['cmd'])
+    noisy_cmd, cov_cmd = nosify_cmd(received_cmd['cmd_vel'])
     print('cov')
     print(cov_cmd)
     integrate_cumulative_odometry(cov_cmd)

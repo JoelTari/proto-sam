@@ -16,10 +16,11 @@ Topic name: `cmd`
 ```json
 {
   "robot_id":"r1",
-  "type":"AAcmd",
-  "cmd":[dx,dy] # depend on type, could be v,w
+  "type":"AA",       // or DD, ACKER
+  "cmd_vel":{"x": dx, "y":dy } # depend on type, could be v,w
 }
 ```
+Other types for `cmd_vel`: `"cmd_vel":{"linear": dlinear, "angular": dangular }` 
 
 ## Command: Simu/Robot to Estimation
 
