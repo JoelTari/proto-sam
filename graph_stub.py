@@ -17,12 +17,12 @@ estimation_graph_topic = 'estimation_graph'
 # if the problem is EKF, there would only be
 
 full_estimation = {
-    'map': [
-        {'var_id': 'l1', 'state': {'x': 20, 'y': 37}, 'covariance':[0,1,0,.3]},
-        {'var_id': 'l2', 'state': {'x': 25, 'y': 47}, 'covariance':[0,1,0,.3]},
-        {'var_id': 'l3', 'state': {'x': 30, 'y': 32}, 'covariance':[0,1,0,.3]},
-        {'var_id': 'l4', 'state': {'x': 55, 'y': 49}, 'covariance':[0,1,0,.3]},
-        {'var_id': 'l5', 'state': {'x': 75, 'y': 25}, 'covariance':[0,1,0,.3]},
+    'marginals': [
+        {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance':[0,1,0,.3]},
+        {'var_id': 'l2', 'mean': {'x': 25, 'y': 47}, 'covariance':[0,1,0,.3]},
+        {'var_id': 'l3', 'mean': {'x': 30, 'y': 32}, 'covariance':[0,1,0,.3]},
+        {'var_id': 'l4', 'mean': {'x': 55, 'y': 49}, 'covariance':[0,1,0,.3]},
+        {'var_id': 'l5', 'mean': {'x': 75, 'y': 25}, 'covariance':[0,1,0,.3]},
     ],
     'mean': [],
     'covariance': [],
