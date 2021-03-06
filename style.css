@@ -76,6 +76,10 @@ svg {
   fill: darksalmon;
 }
 
+/* .agent_true_group.selected * { */
+/*   transition: transform 100ms ease; */
+/* } */
+
 .agent_true_group .sensor {
   fill: #b8e5ef;
   opacity: 0.5;
