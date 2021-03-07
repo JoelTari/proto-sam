@@ -347,25 +347,22 @@ client.on("message", function (topic, message) {
             // .attr("y2", (d) => d.vars[1].mean.y)
             // .attr("stroke", "black")
             // .attr("stroke-width", 0.15)
-            .append("path")
+            .append("line")
             .classed("edge", true)
             .attr("id", (d) => d.factor_id)
-            .attr(
-              "d",
-              (d) =>
-                `M${d.vars[0].mean.x},${d.vars[0].mean.y} L${d.vars[1].mean.x},${d.vars[1].mean.y}`
-            ),
-        // .attr("stroke", "black")
-        // .attr("stroke-width", 0.15)
+            .attr("x1", (d) => d.vars[0].mean.x)
+            .attr("y1", (d) => d.vars[0].mean.y)
+            .attr("x2", (d) => d.vars[1].mean.x)
+            .attr("y2", (d) => d.vars[1].mean.y)
+        ,
         (update) =>
           update
             .transition(t_graph_motion)
-            .attr(
-              "d",
-              (d) =>
-                `M${d.vars[0].mean.x},${d.vars[0].mean.y} L${d.vars[1].mean.x},${d.vars[1].mean.y}`
-            )
-        .selection()
+            .attr("x1", (d) => d.vars[0].mean.x)
+            .attr("y1", (d) => d.vars[0].mean.y)
+            .attr("x2", (d) => d.vars[1].mean.x)
+            .attr("y2", (d) => d.vars[1].mean.y)
+            .selection()
       );
     // the vertices
     d_vertices_group = d_vertices_group
