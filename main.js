@@ -327,8 +327,9 @@ client.on("message", function (topic, message) {
     // let d_vertices_group = graph_test_group.select('.vertices')
     // filled by the marginals
 
-    // same transition object must applies to edges and vertices for when 
-    // the graph moves
+    // same transition object must applies to edges and vertices for consitent
+    // graph motion
+    const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut)
 
     // the edges (soon to be factors)
     // I need to use additional info from the marginal part
@@ -358,8 +359,7 @@ client.on("message", function (topic, message) {
         // .attr("stroke-width", 0.15)
         (update) =>
           update
-            .transition()
-            .duration(500)
+            .transition(t_graph_motion)
             .attr(
               "d",
               (d) =>
@@ -393,8 +393,7 @@ client.on("message", function (topic, message) {
           update.each(function (d) {
             d3.select(this)
               .selectChild("g")
-              .transition()
-              .duration(500)
+              .transition(t_graph_motion)
               .attr("transform", "translate(" + d.mean.x + "," + d.mean.y + ")")
               .selection();
           })
