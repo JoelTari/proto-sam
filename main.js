@@ -383,7 +383,13 @@ client.on("message", function (topic, message) {
                 .append("g")
                 .attr("transform", "rotate(0)")
                 .call(function (g) {
-                  g.append("circle").attr("r", 0.75);
+                  g.append("circle").attr("r", 1)
+                  g.append('text')
+                    .text(d=>d.var_id)
+                    .attr('font-size',1)
+                    .attr('stroke-width','0.1px')
+                    .attr('text-anchor','middle')
+                    .attr('alignment-baseline','central')
                 });
             }),
         (update) =>

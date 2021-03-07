@@ -86,10 +86,19 @@ svg {
 
 /* graph test: TODO: remove */
 .vertex circle {
-  fill: #eee;
+  fill: #e3e3e3;
   stroke: black;
   stroke-width: 0.1;
 }
+.vertex text {
+  font-family: Monospace;
+  /* font-size: 7%; */
+  /* text-anchor: "middle"; */
+  /* stroke: "red"; */
+  /* stroke-width: "1px"; */
+  /* alignment-baseline: "middle"; */
+}
+
 .edge {
   stroke: black;
   stroke-width: 0.15;
