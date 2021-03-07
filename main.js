@@ -40,10 +40,10 @@ let d_agent_graph_group = agents_graphs_group.selectAll(".agent_graph_group");
 const graph_test_group = canvas_mg
   .append("g")
   .classed("graph_test_group", true);
-let d_edges_group = graph_test_group
+let d_factors_group = graph_test_group
   .append("g")
-  .classed("edges_graph_test_group", true)
-  .selectAll(".edge");
+  .classed("factors_graph_test_group", true)
+  .selectAll(".factor");
 let d_vertices_group = graph_test_group
   .append("g")
   .classed("vertices_graph_test_group", true)
@@ -322,27 +322,27 @@ client.on("message", function (topic, message) {
 
     estimation_data = JSON.parse(message.toString());
 
-    // let d_edges_group = graph_test_group.select('.edges')
+    // let d_factors_group = graph_test_group.select('.factors')
     // filled by the factors
     // let d_vertices_group = graph_test_group.select('.vertices')
     // filled by the marginals
 
-    // same transition object must applies to edges and vertices for consitent
+    // same transition object must applies to factors and vertices for consitent
     // graph motion
     const t_graph_motion = d3
       .transition()
       .duration(1000)
       .ease(d3.easeCubicInOut);
 
-    // the edges (soon to be factors)
+    // the factors
     // I need to use additional info from the marginal part
-    d_edges_group = d_edges_group
+    d_factors_group = d_factors_group
       .data(estimation_data.factors, (d) => d.factor_id)
       .join(
         (enter) =>
           enter
             .append("g")
-            .classed("edge", true)
+            .classed("factor", true)
             .attr("id", (d) => d.factor_id)
             .each(function (d) {
               d3.select(this)
