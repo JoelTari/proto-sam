@@ -92,14 +92,12 @@ svg {
 }
 .vertex text {
   font-family: Monospace;
-  /* font-size: 7%; */
-  /* text-anchor: "middle"; */
-  /* stroke: "red"; */
-  /* stroke-width: "1px"; */
-  /* alignment-baseline: "middle"; */
 }
 
-.factor {
+.factor line {
   stroke: black;
   stroke-width: 0.15;
+}
+.factor circle {
+  fill: black;
 }

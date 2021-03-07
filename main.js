@@ -333,9 +333,11 @@ client.on("message", function (topic, message) {
       .transition()
       .duration(1000)
       .ease(d3.easeCubicInOut);
+    // some others transitions for eye-catching enter
+    const t_vertex_entry = d3.transition().duration(200);
+    const t_factor_entry = d3.transition().duration(200);
 
     // the factors
-    // I need to use additional info from the marginal part
     d_factors_group = d_factors_group
       .data(estimation_data.factors, (d) => d.factor_id)
       .join(
@@ -352,13 +354,15 @@ client.on("message", function (topic, message) {
                 .attr("transform", "rotate(0)")
                 .call(function (g) {
                   g.append("line") // TODO: replace if different than 2 vars per factor
-                    .attr("x1", (d) => d.vars[0].mean.x)
-                    .attr("y1", (d) => d.vars[0].mean.y)
-                    .attr("x2", (d) => d.vars[1].mean.x)
-                    .attr("y2", (d) => d.vars[1].mean.y);
+                    .attr("x1",  d.vars[0].mean.x)
+                    .attr("y1",  d.vars[0].mean.y)
+                    .attr("x2",  d.vars[1].mean.x)
+                    .attr("y2",  d.vars[1].mean.y)
+                    .transition(t_factor_entry)
+                    .attr('opacity',0.5)
+                    .transition(t_factor_entry)
+                    .attr('opacity',1)
                   g.append("circle")
-                    .attr("r", 0.3)
-                    .attr("fill", "black")
                     .attr(
                       "cx",
                       (d) => (d.vars[0].mean.x + d.vars[1].mean.x) / 2
@@ -366,7 +370,13 @@ client.on("message", function (topic, message) {
                     .attr(
                       "cy",
                       (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
-                    );
+                    )
+                    .transition(t_factor_entry)
+                    .attr("r", 0.7)
+                    .attr('opacity',0.5)
+                    .transition(t_factor_entry)
+                    .attr('opacity',1)
+                    .attr("r", 0.3)
                 });
             }),
         (update) =>
@@ -376,17 +386,17 @@ client.on("message", function (topic, message) {
               .selectChild("g")
               .selectChild("line")
               .transition(t_graph_motion)
-              .attr("x1", (d) => d.vars[0].mean.x)
-              .attr("y1", (d) => d.vars[0].mean.y)
-              .attr("x2", (d) => d.vars[1].mean.x)
-              .attr("y2", (d) => d.vars[1].mean.y)
+              .attr("x1",  d.vars[0].mean.x)
+              .attr("y1",  d.vars[0].mean.y)
+              .attr("x2",  d.vars[1].mean.x)
+              .attr("y2",  d.vars[1].mean.y)
               .selection();
             d3.select(this)
               .selectChild("g")
               .select("circle")
               .transition(t_graph_motion)
-              .attr("cx", (d) => (d.vars[0].mean.x + d.vars[1].mean.x) / 2)
-              .attr("cy", (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2)
+              .attr("cx",  (d.vars[0].mean.x + d.vars[1].mean.x) / 2)
+              .attr("cy",  (d.vars[0].mean.y + d.vars[1].mean.y) / 2)
               .selection();
           })
       );
@@ -409,13 +419,25 @@ client.on("message", function (topic, message) {
                 .append("g")
                 .attr("transform", "rotate(0)")
                 .call(function (g) {
-                  g.append("circle").attr("r", 1);
+                  g.append("circle")
+                    .transition(t_vertex_entry)
+                    .attr("r", 2)
+                    .attr('opacity', 0.7)
+                    .transition(t_vertex_entry)
+                    .attr("r", 1)
+                    .attr('opacity',1)
                   g.append("text")
                     .text((d) => d.var_id)
-                    .attr("font-size", 1)
                     .attr("stroke-width", "0.1px")
                     .attr("text-anchor", "middle")
-                    .attr("alignment-baseline", "central");
+                    .attr("alignment-baseline", "central")
+                    .transition(t_vertex_entry)
+                    .attr("font-size", 2)
+                    .attr('opacity', 0.7)
+                    .transition(t_vertex_entry)
+                    .attr("font-size", 1)
+                    .attr('opacity',1)
+                  ;
                 });
             }),
         (update) =>
