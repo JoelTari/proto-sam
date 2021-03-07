@@ -20,7 +20,7 @@ Topic name: `cmd`
   "cmd_vel":{"x": dx, "y":dy } # depend on type, could be v,w
 }
 ```
-Other types for `cmd_vel`: `"cmd_vel":{"linear": dlinear, "angular": dangular }` 
+Other types for `cmd_vel`: `"cmd_vel":{"linear": dlinear, "angular": dangular }`
 
 ## Command: Simu/Robot to Estimation
 
@@ -109,13 +109,14 @@ Request estimation result topic name: `request_estimation_graph`
 Answer estimation result topic name:  `estimation_graph`
 
 ```python
-full_estimation = {
-    'map': [
-        {'var_id': 'l1', 'state': {'x': 20, 'y': 37}},
-        {'var_id': 'l2', 'state': {'x': 25, 'y': 47}},
-        {'var_id': 'l3', 'state': {'x': 30, 'y': 32}},
-        {'var_id': 'l4', 'state': {'x': 55, 'y': 49}},
-        {'var_id': 'l5', 'state': {'x': 75, 'y': 25}},
+full_estimation2 = {
+    'marginals': [
+        {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+        {'var_id': 'l2', 'mean': {'x': 25, 'y': 47}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+        {'var_id': 'l3', 'mean': {'x': 30, 'y': 32}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+        {'var_id': 'l4', 'mean': {'x': 55, 'y': 49}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+        {'var_id': 'l5', 'mean': {'x': 75, 'y': 25}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+        {'var_id': 'l6', 'mean': {'x': 26, 'y': 9}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
     ],
     'mean': [],
     'covariance': [],
@@ -127,18 +128,55 @@ full_estimation = {
             'vars_id': ['l1', 'l2']},
         {'factor_id': 'f2',
             'type': 'odometry',
-            'vars_id': ['l3', 'l1']},
+            'vars':
+            [
+                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
+                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
+            ]
+         },
         {'factor_id': 'f3',
             'type': 'odometry',
-            'vars_id': ['l3', 'l2']},
+            'vars':
+            [
+                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
+                { 'var_id': 'l2', 'mean': {'x': 25, 'y': 47} },
+            ]
+            },
         {'factor_id': 'f5',
             'type': 'odometry',
-            'vars_id': ['l4', 'l5']},
+            'vars':
+            [
+                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 49} },
+                { 'var_id': 'l5', 'mean': {'x': 75, 'y': 25} },
+            ]
+            },
         {'factor_id': 'f4',
             'type': 'odometry',
-            'vars_id': ['l3', 'l4']},
+            'vars':
+            [
+                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 49} },
+                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
+            ]
+            },
+        {'factor_id': 'f6',
+         'type': 'odometry',
+            'vars':
+            [
+                { 'var_id': 'l6', 'mean': {'x': 26, 'y': 9} },
+                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
+            ]
+         },
+        {'factor_id': 'f7',
+         'type': 'odometry',
+            'vars':
+            [
+                { 'var_id': 'l6', 'mean': {'x': 26, 'y': 9} },
+                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
+            ]
+         },
     ],
     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
+}
 }
 ```
 

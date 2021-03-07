@@ -125,3 +125,29 @@ ID_agent_ID_graph_edges_group -> ID_agent_ID_graph_ID_edges_group
   agents_estimated_group -> ID_agent_estimated_group
   }
 ```
+
+## Additional notes
+ - `agents_true_group` goes 2 g's deep before the displayed elements are defined: first g for translation, and the other for rotation.
+
+```dot
+digraph G {
+  rankdir="TB"
+  penwidth=2;
+  labelloc="t";
+  label="agent true group breakdown"
+  labelloc="b";
+  node [fontname="Helvetica sans-serif",fontsize=11,style=filled,color=azure2];
+
+  subgraph cluster_0 {
+    style=rounded;
+    bgcolor=ivory;
+    color=red;
+    ID_agent_true_group;
+    label = "Number of agents";
+    ID_agent_true_group -> g_translation
+    g_translation -> g_rotation
+    g_rotation -> graphical_elements
+  }
+  agents_true_group -> ID_agent_true_group
+}
+```

@@ -37,6 +37,18 @@ let d_agent_graph_group = agents_graphs_group.selectAll(".agent_graph_group");
 /******************************************************************************
  *                            FOR TESTING PURPOSE
  *****************************************************************************/
+const graph_test_group = canvas_mg
+  .append("g")
+  .classed("graph_test_group", true);
+let d_edges_group = graph_test_group
+  .append("g")
+  .classed("edges_graph_test_group",true)
+  .selectAll(".edge");
+let d_vertices_group = graph_test_group
+  .append("g")
+  .classed("vertices_graph_test_group",true)
+  .selectAll(".vertex");
+
 // // draw
 // const vgGrobot1 = canvas_mg.append("g").classed("agent", true);
 // d3.selectAll(".agent")
@@ -235,11 +247,18 @@ client.on("message", function (topic, message) {
                       .attr("d", function (d) {
                         rx = d.sensor.range;
                         ry = rx;
-                        if (d.sensor.angle_coverage > 1 || d.sensor.angle_coverage < 0)
-                          console.error('Sensor angle_coverage out of bound')
+                        if (
+                          d.sensor.angle_coverage > 1 ||
+                          d.sensor.angle_coverage < 0
+                        )
+                          console.error("Sensor angle_coverage out of bound");
                         // def px py as the starting point along the sensor range arc
-                        px = Math.cos(Math.PI*d.sensor.angle_coverage)*d.sensor.range
-                        py = Math.sin(Math.PI*d.sensor.angle_coverage)*d.sensor.range
+                        px =
+                          Math.cos(Math.PI * d.sensor.angle_coverage) *
+                          d.sensor.range;
+                        py =
+                          Math.sin(Math.PI * d.sensor.angle_coverage) *
+                          d.sensor.range;
                         return (
                           "M0,0 l" +
                           px +
@@ -249,7 +268,9 @@ client.on("message", function (topic, message) {
                           rx +
                           " " +
                           ry +
-                          " 0 " + true*( d.sensor.angle_coverage > 0.5 ) +" 0 " +
+                          " 0 " +
+                          true * (d.sensor.angle_coverage > 0.5) +
+                          " 0 " +
                           px +
                           " " +
                           -py
@@ -258,22 +279,22 @@ client.on("message", function (topic, message) {
                   // 2. the robot
                   g.append("polygon")
                     // .classed('agent_representation',true)
-                    .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-                    // .attr("fill", "linen")
-                    // .attr("stroke", "black")
-                    // .attr("stroke-width", 0.1);
+                    .attr("points", "0,-1 0,1 3,0"); // TODO: append a <g> first
+                  // .attr("fill", "linen")
+                  // .attr("stroke", "black")
+                  // .attr("stroke-width", 0.1);
                   g.append("line")
                     // .classed('agent_representation',true)
                     .attr("x1", 0)
                     .attr("y1", 0)
                     .attr("x2", 1)
-                    .attr("y2", 0)
-                    // .attr("stroke-width", 0.3)
-                    // .attr("stroke", (d) => {
-                    //   if (d.robot_id === "r1") return "red";
-                    //   else if (d.robot_id === "r2") return "blue";
-                    //   else if (d.robot_id === "r3") return "green";
-                    // });
+                    .attr("y2", 0);
+                  // .attr("stroke-width", 0.3)
+                  // .attr("stroke", (d) => {
+                  //   if (d.robot_id === "r1") return "red";
+                  //   else if (d.robot_id === "r2") return "blue";
+                  //   else if (d.robot_id === "r3") return "green";
+                  // });
                 });
             })
             .transition()
@@ -298,11 +319,88 @@ client.on("message", function (topic, message) {
   } else if (topic == "estimation_graph") {
     console.log(`Estimation Graph received : `);
     console.log(JSON.parse(message.toString()));
-    // TODO : continue
+
+    estimation_data = JSON.parse(message.toString());
+
+    // let d_edges_group = graph_test_group.select('.edges')
+    // filled by the factors
+    // let d_vertices_group = graph_test_group.select('.vertices')
+    // filled by the marginals
+
+    // same transition object must applies to edges and vertices for when 
+    // the graph moves
+
+    // the edges (soon to be factors)
+    // I need to use additional info from the marginal part
+    d_edges_group = d_edges_group
+      .data(estimation_data.factors, (d) => d.factor_id)
+      .join(
+        (enter) =>
+          enter
+            // .append("line") // TODO: replace if different than 2 vars per factor
+            // .classed("edge", true)
+            // .attr("id", (d) => d.var_id)
+            // .attr("x1", (d) => d.vars[0].mean.x)
+            // .attr("y1", (d) => d.vars[0].mean.y)
+            // .attr("x2", (d) => d.vars[1].mean.x)
+            // .attr("y2", (d) => d.vars[1].mean.y)
+            // .attr("stroke", "black")
+            // .attr("stroke-width", 0.15)
+            .append("path")
+            .classed("edge", true)
+            .attr("id", (d) => d.factor_id)
+            .attr(
+              "d",
+              (d) =>
+                `M${d.vars[0].mean.x},${d.vars[0].mean.y} L${d.vars[1].mean.x},${d.vars[1].mean.y}`
+            ),
+        // .attr("stroke", "black")
+        // .attr("stroke-width", 0.15)
+        (update) =>
+          update
+            .transition()
+            .duration(500)
+            .attr(
+              "d",
+              (d) =>
+                `M${d.vars[0].mean.x},${d.vars[0].mean.y} L${d.vars[1].mean.x},${d.vars[1].mean.y}`
+            )
+        .selection()
+      );
+    // the vertices
+    d_vertices_group = d_vertices_group
+      .data(estimation_data.marginals, (d) => d.var_id)
+      .join(
+        (enter) =>
+          enter
+            .append("g")
+            .classed("vertex", true)
+            .attr("id", (d) => d.var_id)
+            .each(function (d) {
+              d3.select(this)
+                .append("g")
+                .attr(
+                  "transform",
+                  "translate(" + d.mean.x + "," + d.mean.y + ")"
+                )
+                .append("g")
+                .attr("transform", "rotate(0)")
+                .call(function (g) {
+                  g.append("circle").attr("r", 0.75);
+                });
+            }),
+        (update) =>
+          update.each(function (d) {
+            d3.select(this)
+              .selectChild("g")
+              .transition()
+              .duration(500)
+              .attr("transform", "translate(" + d.mean.x + "," + d.mean.y + ")")
+              .selection();
+          })
+      );
   }
 });
-
-client.publish("request_ground_truth", " ");
 
 /******************************************************************************
  *                            UI Events
@@ -354,10 +452,15 @@ function applyRelativeMove_gg(d3_single_selected, dmove) {
 
 function applyMove_gg(d3_single_selected, pose) {
   [x, y, th] = pose;
+  // I left the transitions related lines commented for posterity
   d3_single_selected
     .selectChild("g")
+    .transition("tra")
+    .duration(60)
     .attr("transform", "translate(" + x + "," + y + ")")
+    .selection()
     .selectChild("g")
+    // .transition('rot').duration(60)
     .attr("transform", "rotate(" + th + ")");
 }
 
@@ -365,6 +468,7 @@ function applyMove_gg(d3_single_selected, pose) {
  *                            FOR TESTING PURPOSE 2
  *****************************************************************************/
 // sending estimation_graph request_position_ini
+client.publish("request_ground_truth", " ");
 setTimeout((_) => client.publish("request_estimation_graph", " "), 2500);
 setTimeout((_) => client.publish("request_estimation_graph", "1"), 3500);
 setTimeout((_) => client.publish("request_estimation_graph", "2"), 4500);
@@ -381,7 +485,7 @@ function inputToMove(model) {
   right = keyPressedBuffer["ArrowRight"];
 
   console.log("Moving using model : " + model); // TODO globalUI
-  const speed = 0.25; // TODO: globalUI
+  const speed = 0.5; // TODO: globalUI
 
   if (model === "AA") {
     dx = 0;

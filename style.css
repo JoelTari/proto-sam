@@ -68,22 +68,29 @@ svg {
 .agent_true_group polygon {
   stroke: black;
   stroke-width: 0.1;
-  fill: beige;
+  fill: silver;
 }
 
 /* specialization for the selected agent */
 .agent_true_group.selected polygon {
-  fill: darksalmon;
+  fill: goldenrod;
 }
-
-/* .agent_true_group.selected * { */
-/*   transition: transform 100ms ease; */
-/* } */
 
 .agent_true_group .sensor {
   fill: #b8e5ef;
-  opacity: 0.5;
+  opacity: 0.25;
 }
 .agent_true_group.selected .sensor {
-  opacity: 0.9;
+  opacity: 0.6;
+}
+
+/* graph test: TODO: remove */
+.vertex circle {
+  fill: #eee;
+  stroke: black;
+  stroke-width: 0.1;
+}
+.edge {
+  stroke: black;
+  stroke-width: 0.15;
 }
