@@ -42,11 +42,11 @@ const graph_test_group = canvas_mg
   .classed("graph_test_group", true);
 let d_edges_group = graph_test_group
   .append("g")
-  .classed("edges_graph_test_group",true)
+  .classed("edges_graph_test_group", true)
   .selectAll(".edge");
 let d_vertices_group = graph_test_group
   .append("g")
-  .classed("vertices_graph_test_group",true)
+  .classed("vertices_graph_test_group", true)
   .selectAll(".vertex");
 
 // // draw
@@ -329,7 +329,10 @@ client.on("message", function (topic, message) {
 
     // same transition object must applies to edges and vertices for consitent
     // graph motion
-    const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut)
+    const t_graph_motion = d3
+      .transition()
+      .duration(1000)
+      .ease(d3.easeCubicInOut);
 
     // the edges (soon to be factors)
     // I need to use additional info from the marginal part
@@ -338,31 +341,54 @@ client.on("message", function (topic, message) {
       .join(
         (enter) =>
           enter
-            // .append("line") // TODO: replace if different than 2 vars per factor
-            // .classed("edge", true)
-            // .attr("id", (d) => d.var_id)
-            // .attr("x1", (d) => d.vars[0].mean.x)
-            // .attr("y1", (d) => d.vars[0].mean.y)
-            // .attr("x2", (d) => d.vars[1].mean.x)
-            // .attr("y2", (d) => d.vars[1].mean.y)
-            // .attr("stroke", "black")
-            // .attr("stroke-width", 0.15)
-            .append("line")
+            .append("g")
             .classed("edge", true)
             .attr("id", (d) => d.factor_id)
-            .attr("x1", (d) => d.vars[0].mean.x)
-            .attr("y1", (d) => d.vars[0].mean.y)
-            .attr("x2", (d) => d.vars[1].mean.x)
-            .attr("y2", (d) => d.vars[1].mean.y)
-        ,
+            .each(function (d) {
+              d3.select(this)
+                .append("g")
+                .attr("transform", "translate(0,0)")
+                .append("g")
+                .attr("transform", "rotate(0)")
+                .call(function (g) {
+                  g.append("line") // TODO: replace if different than 2 vars per factor
+                    .attr("x1", (d) => d.vars[0].mean.x)
+                    .attr("y1", (d) => d.vars[0].mean.y)
+                    .attr("x2", (d) => d.vars[1].mean.x)
+                    .attr("y2", (d) => d.vars[1].mean.y);
+                  g.append("circle")
+                    .attr("r", 0.3)
+                    .attr("fill", "black")
+                    .attr(
+                      "cx",
+                      (d) => (d.vars[0].mean.x + d.vars[1].mean.x) / 2
+                    )
+                    .attr(
+                      "cy",
+                      (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
+                    );
+                });
+            }),
         (update) =>
-          update
-            .transition(t_graph_motion)
-            .attr("x1", (d) => d.vars[0].mean.x)
-            .attr("y1", (d) => d.vars[0].mean.y)
-            .attr("x2", (d) => d.vars[1].mean.x)
-            .attr("y2", (d) => d.vars[1].mean.y)
-            .selection()
+          update.each(function (d) {
+            d3.select(this)
+              .selectChild("g")
+              .selectChild("g")
+              .selectChild("line")
+              .transition(t_graph_motion)
+              .attr("x1", (d) => d.vars[0].mean.x)
+              .attr("y1", (d) => d.vars[0].mean.y)
+              .attr("x2", (d) => d.vars[1].mean.x)
+              .attr("y2", (d) => d.vars[1].mean.y)
+              .selection();
+            d3.select(this)
+              .selectChild("g")
+              .select("circle")
+              .transition(t_graph_motion)
+              .attr("cx", (d) => (d.vars[0].mean.x + d.vars[1].mean.x) / 2)
+              .attr("cy", (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2)
+              .selection();
+          })
       );
     // the vertices
     d_vertices_group = d_vertices_group
@@ -383,13 +409,13 @@ client.on("message", function (topic, message) {
                 .append("g")
                 .attr("transform", "rotate(0)")
                 .call(function (g) {
-                  g.append("circle").attr("r", 1)
-                  g.append('text')
-                    .text(d=>d.var_id)
-                    .attr('font-size',1)
-                    .attr('stroke-width','0.1px')
-                    .attr('text-anchor','middle')
-                    .attr('alignment-baseline','central')
+                  g.append("circle").attr("r", 1);
+                  g.append("text")
+                    .text((d) => d.var_id)
+                    .attr("font-size", 1)
+                    .attr("stroke-width", "0.1px")
+                    .attr("text-anchor", "middle")
+                    .attr("alignment-baseline", "central");
                 });
             }),
         (update) =>
