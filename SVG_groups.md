@@ -151,3 +151,32 @@ digraph G {
   agents_true_group -> ID_agent_true_group
 }
 ```
+
+- The covariance confident ellipse is attached to the vertices elements of the graph.
+  An `ellipse` object is embedded into a group. This group is also the receptacle of
+  the rotation (because the ellipse is axis-aligned)
+
+> ```dot
+> digraph G {
+>   rankdir="TB"
+>   penwidth=2;
+>   labelloc="t";
+>   label="agent true group breakdown"
+>   labelloc="b";
+>   node [fontname="Helvetica sans-serif",fontsize=11,style=filled,color=azure2];
+
+>   subgraph cluster_0 {
+>     style=rounded;
+>     bgcolor=ivory;
+>     color=red;
+>     ID_agent_true_group;
+>     label = "Number of agents";
+>     vertex -> g_translation
+>     g_translation -> g_rotation
+>     ID_agent_true_group -> g_translation
+>     g_translation -> g_rotation_ellipse
+>     g_rotation_ellipse -> ellipse
+>   }
+>   agents_true_group -> ID_agent_true_group
+> }
+> ```
