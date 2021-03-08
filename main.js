@@ -446,8 +446,8 @@ client.on("message", function (topic, message) {
                       `rotate(${(d.covariance.rot * 180) / Math.PI})`
                     )
                     .append("ellipse")
-                    .attr("rx", d.covariance.sigma[0])
-                    .attr("ry", d.covariance.sigma[1])
+                    .attr("rx", d.covariance.sigma[0]*Math.sqrt(9.21))
+                    .attr("ry", d.covariance.sigma[1]*Math.sqrt(9.21))
                     .style("opacity", 0) // wow! (see next wow) Nota: doesnt  work with attr()
                     .transition(t_vertex_entry)
                     .style("opacity"); // wow! this will look for the CSS (has to a style)
@@ -470,8 +470,8 @@ client.on("message", function (topic, message) {
               .selection()
               .selectChild("ellipse")
               .transition(t_graph_motion)
-              .attr("rx", d.covariance.sigma[0])
-              .attr("ry", d.covariance.sigma[1])
+              .attr("rx", d.covariance.sigma[0]*Math.sqrt(9.21))
+              .attr("ry", d.covariance.sigma[1]*Math.sqrt(9.21))
               .selection();
           })
       );
@@ -545,9 +545,9 @@ function applyMove_gg(d3_single_selected, pose) {
  *****************************************************************************/
 // sending estimation_graph request_position_ini
 client.publish("request_ground_truth", " ");
-setTimeout((_) => client.publish("request_estimation_graph", " "), 2500);
+setTimeout((_) => client.publish("request_estimation_graph", " "), 1500);
 setTimeout((_) => client.publish("request_estimation_graph", "1"), 3500);
-setTimeout((_) => client.publish("request_estimation_graph", "2"), 4500);
+setTimeout((_) => client.publish("request_estimation_graph", "2"), 5500);
 
 /******************************************************************************
  *                           KeyPresses Helper
