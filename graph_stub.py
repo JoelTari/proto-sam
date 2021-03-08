@@ -16,14 +16,27 @@ estimation_graph_topic = 'estimation_graph'
 # the stub is a 5 vars sparsely connected graph
 # if the problem is EKF, there would only be
 
+# some randomness
+def rSig():
+    return rd.uniform(2,10)
+def rRot():
+    return rd.uniform(0,math.pi/2)
+# randomness at iteration
+def rDSig():
+    return rd.uniform(0,3)
+def rDRot():
+    return rd.uniform(-math.pi/12,math.pi/12)
+def rDxy():
+    return rd.normalvariate(0,4)
+
 # TODO: had RMSE, hypothesis_id, robot_it (perhaps separately in a header)
 full_estimation = {
     'marginals': [
-        {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l2', 'mean': {'x': 25, 'y': 47}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l3', 'mean': {'x': 30, 'y': 32}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l4', 'mean': {'x': 55, 'y': 49}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l5', 'mean': {'x': 75, 'y': 25}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+        {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
+        {'var_id': 'l2', 'mean': {'x': 25, 'y': 47}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
+        {'var_id': 'l3', 'mean': {'x': 30, 'y': 32}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
+        {'var_id': 'l4', 'mean': {'x': 55, 'y': 49}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
+        {'var_id': 'l5', 'mean': {'x': 75, 'y': 25}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
     ],
     'mean': [],
     'covariance': [],
@@ -56,6 +69,9 @@ full_estimation = {
 
 
 # TODO: just do deepcopies and modify or else its a pain
+# Change l4.y
+# some random increments to everything else
+full_estimation1 = copy.deepcopy(full_estimation)
 full_estimation1 = {
     'marginals': [
         {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
@@ -93,6 +109,7 @@ full_estimation1 = {
     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
 }
 
+# add new var l6 and some random change to everything else
 full_estimation2 = {
     'marginals': [
         {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},

@@ -341,8 +341,8 @@ client.on("message", function (topic, message) {
       .duration(1000)
       .ease(d3.easeCubicInOut);
     // some others transitions for eye-catching enter
-    const t_vertex_entry = d3.transition().duration(200);
-    const t_factor_entry = d3.transition().duration(200);
+    const t_vertex_entry = d3.transition().duration(400)
+    const t_factor_entry = d3.transition().duration(400)
 
     // the factors
     d_factors_group = d_factors_group
@@ -365,10 +365,9 @@ client.on("message", function (topic, message) {
                     .attr("y1", d.vars[0].mean.y)
                     .attr("x2", d.vars[1].mean.x)
                     .attr("y2", d.vars[1].mean.y)
+                    .style("opacity",0)
                     .transition(t_factor_entry)
-                    .attr("opacity", 0.5)
-                    .transition(t_factor_entry)
-                    .attr("opacity", 1);
+                    .style("opacity");
                   g.append("circle")
                     .attr(
                       "cx",
@@ -378,11 +377,10 @@ client.on("message", function (topic, message) {
                       "cy",
                       (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
                     )
+                    .style("opacity",0)
+                    .attr("r", 0.3*3)
                     .transition(t_factor_entry)
-                    .attr("r", 0.7)
-                    .attr("opacity", 0.5)
-                    .transition(t_factor_entry)
-                    .attr("opacity", 1)
+                    .style("opacity")
                     .attr("r", 0.3);
                 });
             }),
@@ -397,14 +395,13 @@ client.on("message", function (topic, message) {
               .attr("y1", d.vars[0].mean.y)
               .attr("x2", d.vars[1].mean.x)
               .attr("y2", d.vars[1].mean.y)
-              .selection();
+            // the factor circle (to visually differentiate from with MRF)
             d3.select(this)
               .selectChild("g")
               .select("circle")
               .transition(t_graph_motion)
               .attr("cx", (d.vars[0].mean.x + d.vars[1].mean.x) / 2)
               .attr("cy", (d.vars[0].mean.y + d.vars[1].mean.y) / 2)
-              .selection();
           })
       );
     // the vertices
@@ -427,23 +424,30 @@ client.on("message", function (topic, message) {
                 .attr("transform", "rotate(0)")
                 .call(function (g) {
                   g.append("circle")
-                    .transition(t_vertex_entry)
-                    .attr("r", 2)
-                    .attr("opacity", 0.7)
+                    .attr("r", 1*3)
+                    .style("opacity", 0)
                     .transition(t_vertex_entry)
                     .attr("r", 1)
-                    .attr("opacity", 1);
+                    .style("opacity");
+                  // text: variable name inside the circle
                   g.append("text")
                     .text((d) => d.var_id)
-                    .attr("stroke-width", "0.1px")
+                    // .attr("stroke-width", "0.1px")
                     .attr("text-anchor", "middle")
                     .attr("alignment-baseline", "central")
-                    .transition(t_vertex_entry)
-                    .attr("font-size", 2)
-                    .attr("opacity", 0.7)
+                    .style("opacity", 0)
                     .transition(t_vertex_entry)
                     .attr("font-size", 1)
-                    .attr("opacity", 1);
+                    .style("opacity");
+                  // covariance (-> a rotated group that holds an ellipse)
+                  g.append('g')
+                    .attr('transform',`rotate(${d.covariance.rot*180/Math.PI})`)
+                    .append('ellipse')
+                    .attr('rx',d.covariance.sigma[0])
+                    .attr('ry',d.covariance.sigma[1])
+                    .style('opacity',0) // wow! (see next wow) Nota: doesnt  work with attr()
+                    .transition(t_vertex_entry)
+                    .style('opacity')// wow! this will look for the CSS (has to a style)
                 });
             }),
         (update) =>
