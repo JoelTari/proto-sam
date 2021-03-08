@@ -104,9 +104,11 @@ svg {
 .factor line {
   stroke: black;
   stroke-width: 0.15;
+  opacity: 1;
 }
 .factor circle {
   fill: black;
+  opacity: 1;
 }
 
 /* CSS overrides attr, but won't override style. That's what tripped me up. */

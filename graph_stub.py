@@ -23,11 +23,20 @@ def rRot():
     return rd.uniform(0,math.pi/2)
 # randomness at iteration
 def rDSig():
-    return rd.uniform(0,3)
+    return rd.uniform(0,2)
 def rDRot():
-    return rd.uniform(-math.pi/12,math.pi/12)
+    return rd.uniform(-math.pi/3,math.pi/3)
 def rDxy():
     return rd.normalvariate(0,4)
+
+def increment_things_in_marginal(m) -> dict:
+    m['mean']['x']+= rDxy()
+    m['mean']['y']+= rDxy()
+    m['covariance']['sigma'][0]-=rDSig()
+    m['covariance']['sigma'][1]-=rDSig()
+    m['covariance']['rot']+=rDRot()
+    return m
+
 
 # TODO: had RMSE, hypothesis_id, robot_it (perhaps separately in a header)
 full_estimation = {
@@ -72,89 +81,69 @@ full_estimation = {
 # Change l4.y
 # some random increments to everything else
 full_estimation1 = copy.deepcopy(full_estimation)
-full_estimation1 = {
-    'marginals': [
-        {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l2', 'mean': {'x': 25, 'y': 47}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l3', 'mean': {'x': 30, 'y': 32}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l4', 'mean': {'x': 55, 'y': 14}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l5', 'mean': {'x': 75, 'y': 25}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-    ],
-    'mean': [],
-    'covariance': [],
-    'information': [],
-    'sqrtroot': [],
-    'factors': [
-        {'factor_id': 'f1',
-            'type': 'odometry',
-            'vars_id':['l1','l2'],
-            },
-        {'factor_id': 'f2',
-            'type': 'odometry',
-            'vars_id':['l3','l1'],
-         },
-        {'factor_id': 'f3',
-            'type': 'odometry',
-            'vars_id':['l3','l2'],
-            },
-        {'factor_id': 'f5',
-            'type': 'odometry',
-            'vars_id':['l4','l5'],
-            },
-        {'factor_id': 'f4',
-            'type': 'odometry',
-            'vars_id':['l4','l3'],
-            },
-    ],
-    'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
-}
+
+full_estimation1['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation['marginals']]
+full_estimation1['marginals'][3]['mean']['y']=14
+
+
+# full_estimation1 = {
+#     'marginals': [
+#         {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+#         {'var_id': 'l2', 'mean': {'x': 25, 'y': 47}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+#         {'var_id': 'l3', 'mean': {'x': 30, 'y': 32}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+#         {'var_id': 'l4', 'mean': {'x': 55, 'y': 14}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+#         {'var_id': 'l5', 'mean': {'x': 75, 'y': 25}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
+#     ],
+#     'mean': [],
+#     'covariance': [],
+#     'information': [],
+#     'sqrtroot': [],
+#     'factors': [
+#         {'factor_id': 'f1',
+#             'type': 'odometry',
+#             'vars_id':['l1','l2'],
+#             },
+#         {'factor_id': 'f2',
+#             'type': 'odometry',
+#             'vars_id':['l3','l1'],
+#          },
+#         {'factor_id': 'f3',
+#             'type': 'odometry',
+#             'vars_id':['l3','l2'],
+#             },
+#         {'factor_id': 'f5',
+#             'type': 'odometry',
+#             'vars_id':['l4','l5'],
+#             },
+#         {'factor_id': 'f4',
+#             'type': 'odometry',
+#             'vars_id':['l4','l3'],
+#             },
+#     ],
+#     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
+# }
 
 # add new var l6 and some random change to everything else
-full_estimation2 = {
-    'marginals': [
-        {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l2', 'mean': {'x': 25, 'y': 47}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l3', 'mean': {'x': 30, 'y': 32}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l4', 'mean': {'x': 55, 'y': 49}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l5', 'mean': {'x': 75, 'y': 25}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-        {'var_id': 'l6', 'mean': {'x': 26, 'y': 9}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-    ],
-    'mean': [],
-    'covariance': [],
-    'information': [],
-    'sqrtroot': [],
-    'factors': [
-        {'factor_id': 'f1',
-            'type': 'odometry',
-            'vars_id':['l1','l2'],
-            },
-        {'factor_id': 'f2',
-            'type': 'odometry',
-            'vars_id':['l3','l1'],
-         },
-        {'factor_id': 'f3',
-            'type': 'odometry',
-            'vars_id':['l3','l2'],
-            },
-        {'factor_id': 'f5',
-            'type': 'odometry',
-            'vars_id':['l4','l5'],
-            },
-        {'factor_id': 'f4',
-            'type': 'odometry',
-            'vars_id':['l4','l3'],
-            },
-        {'factor_id': 'f6',
-         'type': 'odometry',
-            'vars_id':['l6','l1'],
-         },
-        {'factor_id': 'f7',
-         'type': 'odometry',
-            'vars_id':['l6','l3'],
-         },
-    ],
-    'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
-}
+full_estimation2 = copy.deepcopy(full_estimation)
+full_estimation2['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation1['marginals']]
+full_estimation2['marginals'].append(
+        {'var_id': 'l6', 'mean': {'x': 26, 'y': 9}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
+        )
+full_estimation2['marginals'][3]['mean']['y']=31
+full_estimation2['factors'].extend(
+        [
+            {'factor_id': 'f6',
+                'type': 'odometry',
+                'vars_id':['l6','l1'],
+                },
+            {'factor_id': 'f7',
+                'type': 'odometry',
+                'vars_id':['l6','l3'],
+                }
+            ]
+        )
+full_estimation2['variable_ordering'].append('l6') # extend and append are different
+
 # the factor contains: its id, the type of factor,
 # most fields are optional, and depend on the problem (EKF,SAM,etc...)
 # map (maximum a posteriori) and mean have the same data but structured
