@@ -125,58 +125,34 @@ full_estimation2 = {
     'factors': [
         {'factor_id': 'f1',
             'type': 'odometry',
-            'vars_id': ['l1', 'l2']},
+            'vars_id':['l1','l2'],
+            },
         {'factor_id': 'f2',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
-            ]
+            'vars_id':['l3','l1'],
          },
         {'factor_id': 'f3',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-                { 'var_id': 'l2', 'mean': {'x': 25, 'y': 47} },
-            ]
+            'vars_id':['l3','l2'],
             },
         {'factor_id': 'f5',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 49} },
-                { 'var_id': 'l5', 'mean': {'x': 75, 'y': 25} },
-            ]
+            'vars_id':['l4','l5'],
             },
         {'factor_id': 'f4',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 49} },
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-            ]
+            'vars_id':['l4','l3'],
             },
         {'factor_id': 'f6',
          'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l6', 'mean': {'x': 26, 'y': 9} },
-                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
-            ]
+            'vars_id':['l6','l1'],
          },
         {'factor_id': 'f7',
          'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l6', 'mean': {'x': 26, 'y': 9} },
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-            ]
+            'vars_id':['l6','l3'],
          },
     ],
     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
-}
 }
 ```
 

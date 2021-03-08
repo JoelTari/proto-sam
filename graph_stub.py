@@ -16,6 +16,7 @@ estimation_graph_topic = 'estimation_graph'
 # the stub is a 5 vars sparsely connected graph
 # if the problem is EKF, there would only be
 
+# TODO: had RMSE, hypothesis_id, robot_it (perhaps separately in a header)
 full_estimation = {
     'marginals': [
         {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
@@ -31,48 +32,30 @@ full_estimation = {
     'factors': [
         {'factor_id': 'f1',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l2', 'mean': {'x': 25, 'y': 47} },
-                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
-            ]
+            'vars_id':['l1','l2'],
             },
         {'factor_id': 'f2',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
-            ]
+            'vars_id':['l3','l1'],
          },
         {'factor_id': 'f3',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-                { 'var_id': 'l2', 'mean': {'x': 25, 'y': 47} },
-            ]
+            'vars_id':['l3','l2'],
             },
         {'factor_id': 'f5',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 49} },
-                { 'var_id': 'l5', 'mean': {'x': 75, 'y': 25} },
-            ]
+            'vars_id':['l4','l5'],
             },
         {'factor_id': 'f4',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 49} },
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-            ]
+            'vars_id':['l4','l3'],
             },
     ],
     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
 }
 
+
+# TODO: just do deepcopies and modify or else its a pain
 full_estimation1 = {
     'marginals': [
         {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
@@ -88,43 +71,23 @@ full_estimation1 = {
     'factors': [
         {'factor_id': 'f1',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l2', 'mean': {'x': 25, 'y': 47} },
-                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
-            ]
+            'vars_id':['l1','l2'],
             },
         {'factor_id': 'f2',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
-            ]
+            'vars_id':['l3','l1'],
          },
         {'factor_id': 'f3',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-                { 'var_id': 'l2', 'mean': {'x': 25, 'y': 47} },
-            ]
+            'vars_id':['l3','l2'],
             },
         {'factor_id': 'f5',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 14} },
-                { 'var_id': 'l5', 'mean': {'x': 75, 'y': 25} },
-            ]
+            'vars_id':['l4','l5'],
             },
         {'factor_id': 'f4',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 14} },
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-            ]
+            'vars_id':['l4','l3'],
             },
     ],
     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
@@ -146,59 +109,31 @@ full_estimation2 = {
     'factors': [
         {'factor_id': 'f1',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l2', 'mean': {'x': 25, 'y': 47} },
-                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
-            ]
+            'vars_id':['l1','l2'],
             },
         {'factor_id': 'f2',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
-            ]
+            'vars_id':['l3','l1'],
          },
         {'factor_id': 'f3',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-                { 'var_id': 'l2', 'mean': {'x': 25, 'y': 47} },
-            ]
+            'vars_id':['l3','l2'],
             },
         {'factor_id': 'f5',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 49} },
-                { 'var_id': 'l5', 'mean': {'x': 75, 'y': 25} },
-            ]
+            'vars_id':['l4','l5'],
             },
         {'factor_id': 'f4',
             'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l4', 'mean': {'x': 55, 'y': 49} },
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-            ]
+            'vars_id':['l4','l3'],
             },
         {'factor_id': 'f6',
          'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l6', 'mean': {'x': 26, 'y': 9} },
-                { 'var_id': 'l1', 'mean': {'x': 20, 'y': 37} },
-            ]
+            'vars_id':['l6','l1'],
          },
         {'factor_id': 'f7',
          'type': 'odometry',
-            'vars':
-            [
-                { 'var_id': 'l6', 'mean': {'x': 26, 'y': 9} },
-                { 'var_id': 'l3', 'mean': {'x': 30, 'y': 32} },
-            ]
+            'vars_id':['l6','l3'],
          },
     ],
     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
