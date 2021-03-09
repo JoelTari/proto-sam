@@ -1,0 +1,40 @@
+session_name: proto-sam
+# environment:
+#   EDITOR: /usr/bin/vim
+#   DJANGO_SETTINGS_MODULE: my_app.settings.local
+#   SERVER_PORT: "8009"
+start-directory: ./
+windows:
+  - window_name: EXEC
+    layout: main-vertical
+    focus: true
+    # shell_command_before:
+    #   - ls
+    panes:
+      - ./simulation.py
+      - ./graph_stub.py
+      - live-server --browser=google-chrome
+  - window_name: MQTT_1
+    layout: tiled
+    panes:
+      - mosquitto_sub -t measures | jq
+      - mosquitto_sub -t cmd | jq
+      - mosquitto_sub -t cmd_feedback | jq
+      - focus: true
+  - window_name: MQTT_2
+    layout: tiled
+    panes:
+      - mosquitto_sub -t estimation_graph | jq
+      -
+      -
+      -
+  - window_name: PG
+    layout: main-vertical
+    panes:
+      -
+      - shell_command:
+        - echo 'hello'
+        focus: true
+
+# tmuxp load session_name
+# tmuxp freeze session_name
