@@ -27,7 +27,7 @@ def rDSig():
 def rDRot():
     return rd.uniform(-math.pi/3,math.pi/3)
 def rDxy():
-    return rd.normalvariate(0,4)
+    return rd.normalvariate(0,2)
 
 def increment_things_in_marginal(m) -> dict:
     m['mean']['x']+= rDxy()
@@ -46,12 +46,17 @@ full_estimation = {
         {'var_id': 'l3', 'mean': {'x': 30, 'y': 32}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
         {'var_id': 'l4', 'mean': {'x': 55, 'y': 49}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
         {'var_id': 'l5', 'mean': {'x': 75, 'y': 25}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
+        {'var_id': 'x0', 'mean': {'x': 75, 'y': 9}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
     ],
     'mean': [],
     'covariance': [],
     'information': [],
     'sqrtroot': [],
     'factors': [
+        {'factor_id': 'fp0',
+            'type': 'ini_position',
+            'vars_id':['x0'],
+            },
         {'factor_id': 'f0',
             'type': 'ini_position',
             'vars_id':['l3'],
@@ -143,7 +148,11 @@ full_estimation2['factors'].extend(
             {'factor_id': 'f7',
                 'type': 'odometry',
                 'vars_id':['l6','l3'],
-                }
+                },
+            {'factor_id': 'f8',
+                'type': 'range-bearing',
+                'vars_id':['l5','x0'],
+                },
             ]
         )
 full_estimation2['variable_ordering'].append('l6') # extend and append are different

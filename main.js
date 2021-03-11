@@ -339,12 +339,14 @@ client.on("message", function (topic, message) {
       // automagically compute the factor position
       // Obviously (or not), for an unary factor, the factor dot position will reduce
       // to its unique associated node, which is suboptimal...
-      f.dot_factor_position = {'x': f.vars.map(a_var=>a_var.mean.x)
-                                          .reduce((a,b)=>a+b,0)/f.vars.length 
-                               ,
-                               'y': f.vars.map(a_var=>a_var.mean.y)
-                                          .reduce((a,b)=>a+b,0)/f.vars.length
-                              };
+      f.dot_factor_position = {
+        x:
+          f.vars.map((a_var) => a_var.mean.x).reduce((a, b) => a + b, 0) /
+          f.vars.length,
+        y:
+          f.vars.map((a_var) => a_var.mean.y).reduce((a, b) => a + b, 0) /
+          f.vars.length,
+      };
     });
 
     // (2) the unary factors need the neighbors of their associated node to position
@@ -354,69 +356,78 @@ client.on("message", function (topic, message) {
     //      This rely on first step
     //      Seems that there is 2 cases, the node has neighbor(s) or has not (typicaly
     //      happens initially with the initial pose)
-    estimation_data.factors.filter((f) => f.vars_id.length == 1) // unary factor selection
-      .forEach(
-        uf => 
-        {
-          const unique_node=uf.vars_id[0];
-          //vectors of thetas
-          const neighbors = estimation_data.factors.filter(
-            f =>
-            f.factor_id !== uf.factor_id 
-            &&
-            f.vars_id.includes(unique_node)
-          ) // neighbors factors of the node associated with that unary factor
-          // TODO: care if no neighbor
-          if (neighbors.length>0){
-            // if there are neighbors factors, the unary factor position must be placed 
-            // at the biggest angle gap
-            // TODO: that gives us the angle theta_unary, but distance is still hard coded
-            const thetas = neighbors
-            .map(
-              neighbors_f=> Math.atan2(neighbors_f.dot_factor_position.y-uf.dot_factor_position.y
-                                     , neighbors_f.dot_factor_position.x-uf.dot_factor_position.x)
+    estimation_data.factors
+      .filter((f) => f.vars_id.length == 1) // unary factor selection
+      .forEach((uf) => {
+        const unique_node = uf.vars_id[0];
+        //vectors of thetas
+        const neighbors = estimation_data.factors.filter(
+          (f) => f.factor_id !== uf.factor_id && f.vars_id.includes(unique_node)
+        ); // neighbors factors of the node associated with that unary factor
+        // TODO: care if no neighbor
+        if (neighbors.length > 0) {
+          // if there are neighbors factors, the unary factor position must be placed
+          // at the biggest angle gap
+          // TODO: that gives us the angle theta_unary, but distance is still hard coded
+          const thetas = neighbors
+            .map((neighbors_f) =>
+              Math.atan2(
+                neighbors_f.dot_factor_position.y - uf.dot_factor_position.y,
+                neighbors_f.dot_factor_position.x - uf.dot_factor_position.x
+              )
             )
-            .sort((a,b)=>a-b) // mandatory sorting
-           
-           const thetas_2pi = thetas.map(t => t-thetas[0]);
-           const dthetas2=thetas_2pi.map((n,i)=>{
-             if (i !== thetas_2pi.length-1){
-               return thetas_2pi[i+1]-n;
-             }
-             else return 2*Math.PI-n;
-           })
-           // CONTINUE HERE       
-           const idx_max = indexOfMax(dthetas2);
-           const theta_unary = ecpi(thetas[idx_max]+dthetas2[idx_max]/2);
+            .sort((a, b) => a - b); // mandatory sorting
 
-            const u_distance=5;
-            const new_uf_position = {'x': uf.dot_factor_position.x+u_distance*Math.cos(theta_unary)
-                                    ,'y': uf.dot_factor_position.y+u_distance*Math.sin(theta_unary)}
-            // giving new position
-            uf.dot_factor_position=new_uf_position;
+          const thetas_2pi = thetas.map((t) => t - thetas[0]);
+          const dthetas2 = thetas_2pi.map((n, i) => {
+            if (i !== thetas_2pi.length - 1) {
+              return thetas_2pi[i + 1] - n;
+            } else return 2 * Math.PI - n;
+          });
+          const idx_max = indexOfMax(dthetas2);
+          const theta_unary = ecpi(thetas[idx_max] + dthetas2[idx_max] / 2);
 
-            // console.log(`Chosen theta for unary : ${theta_unary}`)
-          }
-          else{
-            const theta_unary = Math.PI/2;
-            const u_distance=5;
-            const new_uf_position = {'x': uf.dot_factor_position.x+u_distance*Math.cos(theta_unary)
-                                    ,'y': uf.dot_factor_position.y+u_distance*Math.sin(theta_unary)}
-            // giving new position
-            uf.dot_factor_position=new_uf_position;
+          // distance of the factor wrt the vertex.
+          const squares_distances = neighbors.map(
+            (nf) =>
+              (nf.dot_factor_position.y - uf.dot_factor_position.y) ** 2 +
+              (nf.dot_factor_position.x - uf.dot_factor_position.x) ** 2
+          );
+          const u_distance = Math.sqrt(
+            Math.min(25, Math.max(...squares_distances))
+          );
+          // TODO: place the hard-coded 25 in globalUI
 
-            console.log('Unary factor, with no neighboring factor for corresponding vertex')
-          }
+          // position of factor dot infered from polar coordinates
+          const new_uf_position = {
+            x: uf.dot_factor_position.x + u_distance * Math.cos(theta_unary),
+            y: uf.dot_factor_position.y + u_distance * Math.sin(theta_unary),
+          };
+          // giving new position
+          uf.dot_factor_position = new_uf_position;
 
-          
+          // console.log(`Chosen theta for unary : ${theta_unary}`)
+        } else {
+          const theta_unary = Math.PI / 2;
+          const u_distance = 5;
+          const new_uf_position = {
+            x: uf.dot_factor_position.x + u_distance * Math.cos(theta_unary),
+            y: uf.dot_factor_position.y + u_distance * Math.sin(theta_unary),
+          };
+          // giving new position
+          uf.dot_factor_position = new_uf_position;
+
+          console.log(
+            "Unary factor, with no neighboring factor for corresponding vertex"
+          );
         }
-      );
+      });
 
     // UNARY FACTOR
     // ths.sort((a,b)=>a-b).map((n,i)=>Math.abs(ecpi(n-ths[(i+1)%ths.length]))).sort((a,b)=>a-b)
 
-    function ecpi(a){
-      return Math.atan2(Math.sin(a), Math.cos(a))
+    function ecpi(a) {
+      return Math.atan2(Math.sin(a), Math.cos(a));
     }
 
     function indexOfMax(arr) {
@@ -437,8 +448,8 @@ client.on("message", function (topic, message) {
       return maxIndex;
     }
 
-    console.log('Estimation graph data massage :')
-    console.log(estimation_data)
+    console.log("Estimation graph data massage :");
+    console.log(estimation_data);
 
     // same transition object must applies to factors and vertices for consitent
     // graph motion
@@ -470,7 +481,8 @@ client.on("message", function (topic, message) {
                 .style("opacity")
                 .selection()
                 .call(function (g) {
-                  if (d.vars.length == 2) {// TODO: change in >1
+                  if (d.vars.length == 2) {
+                    // TODO: change in >1
                     // TODO: compute a barycenter (hard if only 1 vertex, easy if >= 2)
                     // each line will from the barycenter towards a vertex
                     g.append("line") // TODO: replace if different than 2 vars per factor
@@ -495,18 +507,17 @@ client.on("message", function (topic, message) {
                       .attr("y1", d.vars[0].mean.y)
                       .attr("x2", d.vars[1].mean.x)
                       .attr("y2", d.vars[1].mean.y);
-                  }
-                  else {
-                    g.append('line')
-                    .attr("x1", d.dot_factor_position.x)
-                    .attr("y1", d.dot_factor_position.y)
-                    .attr("x2", d.dot_factor_position.x)
-                    .attr("y2", d.dot_factor_position.y)
-                    .transition(t_graph_motion)
-                    .attr("x1", d.vars[0].mean.x)
-                    .attr("y1", d.vars[0].mean.y)
-                    .attr("x2", d.dot_factor_position.x)
-                    .attr("y2", d.dot_factor_position.y)
+                  } else {
+                    g.append("line")
+                      .attr("x1", d.dot_factor_position.x)
+                      .attr("y1", d.dot_factor_position.y)
+                      .attr("x2", d.dot_factor_position.x)
+                      .attr("y2", d.dot_factor_position.y)
+                      .transition(t_graph_motion)
+                      .attr("x1", d.vars[0].mean.x)
+                      .attr("y1", d.vars[0].mean.y)
+                      .attr("x2", d.dot_factor_position.x)
+                      .attr("y2", d.dot_factor_position.y);
                   }
 
                   g.append("circle")
@@ -534,37 +545,35 @@ client.on("message", function (topic, message) {
               .selectChild("g")
               .selectChild("g")
               .selectChild("line") // TODO: all children
-            .call(line => 
-              {
-                if (d.vars.length == 2){ // TODO: change in >1
+              .call((line) => {
+                if (d.vars.length == 2) {
+                  // TODO: change in >1
                   line
                     .transition(t_graph_motion)
                     .attr("x1", d.vars[0].mean.x)
                     .attr("y1", d.vars[0].mean.y)
                     .attr("x2", d.vars[1].mean.x)
                     .attr("y2", d.vars[1].mean.y);
-                }
-                else { // update unary factor
+                } else {
+                  // update unary factor
                   // WARN TODO: a factor_id should not change its vars_id
                   line
                     .transition(t_graph_motion)
                     .attr("x1", d.vars[0].mean.x)
                     .attr("y1", d.vars[0].mean.y)
                     .attr("x2", d.dot_factor_position.x)
-                    .attr("y2", d.dot_factor_position.y)
+                    .attr("y2", d.dot_factor_position.y);
                 }
-              }
-            )
+              });
             // the factor circle (to visually differentiate from with MRF)
             d3.select(this)
               .selectChild("g")
               .select("circle")
               .transition(t_graph_motion)
               .attr("cx", d.dot_factor_position.x)
-              .attr("cy", d.dot_factor_position.y)
+              .attr("cy", d.dot_factor_position.y);
           })
       );
-
 
     // the vertices
     d_vertices_group = d_vertices_group
