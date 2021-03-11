@@ -154,16 +154,22 @@ client.on("message", function (topic, message) {
       .join(
         (enter) =>
           enter
-            .append("circle")
-            .attr("cx", (d) => d.state.x)
-            .attr("cy", (d) => d.state.y)
-            .attr("r", 1)
+          .append("path")
+            .attr('d',`${d3.symbol(d3.symbolCross,1)()}`)
             .classed("landmark_true_group", true)
-            .transition()
-            .duration(1000)
-            .attr("opacity", 1)
-            .attr("r", 0.4)
-            .selection(),
+            .attr('transform',d=>`translate(${d.state.x},${d.state.y})`)
+
+            // .append("circle")
+            // .attr("cx", (d) => d.state.x)
+            // .attr("cy", (d) => d.state.y)
+            // .attr("r", 1)
+            // .classed("landmark_true_group", true)
+            // .transition()
+            // .duration(1000)
+            // .attr("opacity", 1)
+            // .attr("r", 0.4)
+            // .selection(),
+        ,
         (update) => update
       );
 
