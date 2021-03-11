@@ -155,7 +155,8 @@ client.on("message", function (topic, message) {
         (enter) =>
           enter
           .append("path")
-            .attr('d',`${d3.symbol(d3.symbolCross,1)()}`)
+           // size is the area, for a cross: area= desired_tot_length**2 *5
+            .attr('d',`${d3.symbol(d3.symbolCross,1*1)()}`)
             .classed("landmark_true_group", true)
             .attr('transform',d=>`translate(${d.state.x},${d.state.y})`)
 
