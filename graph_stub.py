@@ -52,6 +52,10 @@ full_estimation = {
     'information': [],
     'sqrtroot': [],
     'factors': [
+        {'factor_id': 'f0',
+            'type': 'ini_position',
+            'vars_id':['l3'],
+            },
         {'factor_id': 'f1',
             'type': 'odometry',
             'vars_id':['l1','l2'],
