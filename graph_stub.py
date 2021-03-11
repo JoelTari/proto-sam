@@ -18,12 +18,12 @@ estimation_graph_topic = 'estimation_graph'
 
 # some randomness
 def rSig():
-    return rd.uniform(2,10)
+    return rd.uniform(1,5)
 def rRot():
     return rd.uniform(0,math.pi/2)
 # randomness at iteration
 def rDSig():
-    return rd.uniform(0,2)
+    return rd.uniform(0.3,0.8)
 def rDRot():
     return rd.uniform(-math.pi/3,math.pi/3)
 def rDxy():
@@ -32,8 +32,8 @@ def rDxy():
 def increment_things_in_marginal(m) -> dict:
     m['mean']['x']+= rDxy()
     m['mean']['y']+= rDxy()
-    m['covariance']['sigma'][0]-=rDSig()
-    m['covariance']['sigma'][1]-=rDSig()
+    m['covariance']['sigma'][0]*=rDSig()
+    m['covariance']['sigma'][1]*=rDSig()
     m['covariance']['rot']+=rDRot()
     return m
 

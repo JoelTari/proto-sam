@@ -5,6 +5,7 @@ const canvas_mg = d3.select(".main_group");
 
 const aratio = 0.6;
 
+// initially r1 is selected
 GlobalUI = {
   selected_robot_id: "r1",
 };
@@ -342,7 +343,7 @@ client.on("message", function (topic, message) {
       .ease(d3.easeCubicInOut);
     // some others transitions for eye-catching enter
     const t_vertex_entry = d3.transition().duration(400);
-    const t_factor_entry = d3.transition().duration(400);
+    const t_factor_entry = d3.transition().duration(1200);
 
     // the factors
     d_factors_group = d_factors_group
@@ -359,15 +360,22 @@ client.on("message", function (topic, message) {
                 .attr("transform", "translate(0,0)")
                 .append("g")
                 .attr("transform", "rotate(0)")
+                .style("opacity", 0)
+                .transition(t_factor_entry) // ugly (im interest in the child opacity not this node) but necessary to run concurrent transitions on the line (which doesnt work if I place it below)
+                .style("opacity")
+                .selection()
                 .call(function (g) {
                   g.append("line") // TODO: replace if different than 2 vars per factor
+                    .attr("x1", d.vars[0].mean.x*0.55 + d.vars[1].mean.x*0.45)
+                    .attr("y1", d.vars[0].mean.y*0.55 + d.vars[1].mean.y*0.45)
+                    .attr("x2", d.vars[0].mean.x*0.45 + d.vars[1].mean.x*0.55)
+                    .attr("y2", d.vars[0].mean.y*0.45 + d.vars[1].mean.y*0.55)
+                    .transition(t_graph_motion)
                     .attr("x1", d.vars[0].mean.x)
                     .attr("y1", d.vars[0].mean.y)
                     .attr("x2", d.vars[1].mean.x)
                     .attr("y2", d.vars[1].mean.y)
-                    .style("opacity", 0)
-                    .transition(t_factor_entry)
-                    .style("opacity");
+
                   g.append("circle")
                     .attr(
                       "cx",
@@ -384,6 +392,7 @@ client.on("message", function (topic, message) {
                     .attr("r", 0.3);
                 });
             }),
+        // factor update
         (update) =>
           update.each(function (d) {
             d3.select(this)
@@ -408,6 +417,7 @@ client.on("message", function (topic, message) {
     d_vertices_group = d_vertices_group
       .data(estimation_data.marginals, (d) => d.var_id)
       .join(
+        // vertex enter
         (enter) =>
           enter
             .append("g")
@@ -453,6 +463,7 @@ client.on("message", function (topic, message) {
                     .style("opacity"); // wow! this will look for the CSS (has to a style)
                 });
             }),
+        // vertex update
         (update) =>
           update.each(function (d) {
             d3.select(this)

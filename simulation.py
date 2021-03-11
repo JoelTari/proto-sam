@@ -69,7 +69,7 @@ sensor_range = 15
 
 # seeding randomness (for the numpy stuff)
 # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
-rng = np.random.default_rng()
+rng = nprd.default_rng()
 
 # noise cmd (diag)
 # 0 -> no noise
