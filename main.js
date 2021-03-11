@@ -327,13 +327,34 @@ client.on("message", function (topic, message) {
     // filled by the factors
     // let d_vertices_group = graph_test_group.select('.vertices')
     // filled by the marginals
+    // data massage before integration: some data on the vertices array are needed
+    // for the factors (1), and the other way around is also true (2)
+    // (1) the factors need the position of the vertices (which is found in the data array)
+    //     in order to draw the factor/edge at the right position (a line between fact-vertex)
+    //     and the position of the full 'dot' representing the factor.
+    estimation_data.factors.forEach((f) => {
+      f.vars = estimation_data.marginals.filter((marginal) =>
+        f.vars_id.includes(marginal.var_id)
+      );
+      f.dot_factor_position = {'x': f.vars.map(a_var=>a_var.mean.x)
+                                          .reduce((a,b)=>a+b,0)/f.vars.length 
+                               ,
+                               'y': f.vars.map(a_var=>a_var.mean.y)
+                                          .reduce((a,b)=>a+b,0)/f.vars.length
+                              };
+    });
 
-    estimation_data.factors.forEach(
-      (f) =>
-        (f.vars = estimation_data.marginals.filter((marginal) =>
-          f.vars_id.includes(marginal.var_id)
-        ))
-    );
+    // (2) the unary factors need the neighbors of their associated node to position
+    //      intuitively this factor
+    //      So the proposed solution is to add a neighbors array to each vertex containing
+    //      the vertices id of its neighbors.
+    //      This rely on first step
+    //      TODO: case where where no neighbor exists: draw the factor dot 'above'
+    // estimation_data.factors.filter((f) => f.vars_id.length == 1);
+
+
+    console.log('Estimation graph data massage :')
+    console.log(estimation_data)
 
     // same transition object must applies to factors and vertices for consitent
     // graph motion
@@ -365,25 +386,43 @@ client.on("message", function (topic, message) {
                 .style("opacity")
                 .selection()
                 .call(function (g) {
-                  g.append("line") // TODO: replace if different than 2 vars per factor
-                    .attr("x1", d.vars[0].mean.x*0.55 + d.vars[1].mean.x*0.45)
-                    .attr("y1", d.vars[0].mean.y*0.55 + d.vars[1].mean.y*0.45)
-                    .attr("x2", d.vars[0].mean.x*0.45 + d.vars[1].mean.x*0.55)
-                    .attr("y2", d.vars[0].mean.y*0.45 + d.vars[1].mean.y*0.55)
-                    .transition(t_graph_motion)
-                    .attr("x1", d.vars[0].mean.x)
-                    .attr("y1", d.vars[0].mean.y)
-                    .attr("x2", d.vars[1].mean.x)
-                    .attr("y2", d.vars[1].mean.y)
+                  if (d.vars.length == 2) {
+                    // TODO: compute a barycenter (hard if only 1 vertex, easy if >= 2)
+                    // each line will from the barycenter towards a vertex
+                    g.append("line") // TODO: replace if different than 2 vars per factor
+                      .attr(
+                        "x1",
+                        d.vars[0].mean.x * 0.55 + d.vars[1].mean.x * 0.45
+                      )
+                      .attr(
+                        "y1",
+                        d.vars[0].mean.y * 0.55 + d.vars[1].mean.y * 0.45
+                      )
+                      .attr(
+                        "x2",
+                        d.vars[0].mean.x * 0.45 + d.vars[1].mean.x * 0.55
+                      )
+                      .attr(
+                        "y2",
+                        d.vars[0].mean.y * 0.45 + d.vars[1].mean.y * 0.55
+                      )
+                      .transition(t_graph_motion)
+                      .attr("x1", d.vars[0].mean.x)
+                      .attr("y1", d.vars[0].mean.y)
+                      .attr("x2", d.vars[1].mean.x)
+                      .attr("y2", d.vars[1].mean.y);
+                  }
 
                   g.append("circle")
                     .attr(
                       "cx",
-                      (d) => (d.vars[0].mean.x + d.vars[1].mean.x) / 2
+                      (d) => d.dot_factor_position.x
+                      // (d) => (d.vars[0].mean.x + d.vars[1].mean.x) / 2
                     )
                     .attr(
                       "cy",
-                      (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
+                      (d) => d.dot_factor_position.y
+                      // (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
                     )
                     .style("opacity", 0)
                     .attr("r", 0.3 * 3)
@@ -409,10 +448,14 @@ client.on("message", function (topic, message) {
               .selectChild("g")
               .select("circle")
               .transition(t_graph_motion)
-              .attr("cx", (d.vars[0].mean.x + d.vars[1].mean.x) / 2)
-              .attr("cy", (d.vars[0].mean.y + d.vars[1].mean.y) / 2);
+              .attr("cx", d.dot_factor_position.x)
+              .attr("cy", d.dot_factor_position.y)
           })
       );
+
+    // UNARY FACTOR
+    // ths.sort((a,b)=>a-b).map((n,i)=>n-ths[(i+1)%ths.length])
+
     // the vertices
     d_vertices_group = d_vertices_group
       .data(estimation_data.marginals, (d) => d.var_id)
@@ -456,8 +499,8 @@ client.on("message", function (topic, message) {
                       `rotate(${(d.covariance.rot * 180) / Math.PI})`
                     )
                     .append("ellipse")
-                    .attr("rx", d.covariance.sigma[0]*Math.sqrt(9.21))
-                    .attr("ry", d.covariance.sigma[1]*Math.sqrt(9.21))
+                    .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
+                    .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
                     .style("opacity", 0) // wow! (see next wow) Nota: doesnt  work with attr()
                     .transition(t_vertex_entry)
                     .style("opacity"); // wow! this will look for the CSS (has to a style)
@@ -477,12 +520,15 @@ client.on("message", function (topic, message) {
               .selectChild("g") //rotate
               .selectChild("g") // group (incl. rotate)
               .transition(t_graph_motion)
-              .attr( "transform", `rotate(${(d.covariance.rot * 180) / Math.PI})`)
+              .attr(
+                "transform",
+                `rotate(${(d.covariance.rot * 180) / Math.PI})`
+              )
               .selection()
               .selectChild("ellipse")
               .transition(t_graph_motion)
-              .attr("rx", d.covariance.sigma[0]*Math.sqrt(9.21))
-              .attr("ry", d.covariance.sigma[1]*Math.sqrt(9.21))
+              .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
+              .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
               .selection();
           })
       );
