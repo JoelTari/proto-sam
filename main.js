@@ -154,23 +154,22 @@ client.on("message", function (topic, message) {
       .join(
         (enter) =>
           enter
-          .append("path")
-           // size is the area, for a cross: area= desired_tot_length**2 *5
-            .attr('d',`${d3.symbol(d3.symbolCross,1*1)()}`)
+            .append("path")
+            // size is the area, for a cross: area= desired_tot_length**2 *5
+            .attr("d", `${d3.symbol(d3.symbolCross, 1 * 1)()}`)
             .classed("landmark_true_group", true)
-            .attr('transform',d=>`translate(${d.state.x},${d.state.y})`)
+            .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`),
 
-            // .append("circle")
-            // .attr("cx", (d) => d.state.x)
-            // .attr("cy", (d) => d.state.y)
-            // .attr("r", 1)
-            // .classed("landmark_true_group", true)
-            // .transition()
-            // .duration(1000)
-            // .attr("opacity", 1)
-            // .attr("r", 0.4)
-            // .selection(),
-        ,
+        // .append("circle")
+        // .attr("cx", (d) => d.state.x)
+        // .attr("cy", (d) => d.state.y)
+        // .attr("r", 1)
+        // .classed("landmark_true_group", true)
+        // .transition()
+        // .duration(1000)
+        // .attr("opacity", 1)
+        // .attr("r", 0.4)
+        // .selection(),
         (update) => update
       );
 
@@ -330,11 +329,7 @@ client.on("message", function (topic, message) {
 
     estimation_data = JSON.parse(message.toString());
 
-    // let d_factors_group = graph_test_group.select('.factors')
-    // filled by the factors
-    // let d_vertices_group = graph_test_group.select('.vertices')
-    // filled by the marginals
-    // data massage before integration: some data on the vertices array are needed
+    // Data massage before integration: some data on the vertices array are needed
     // for the factors (1), and the other way around is also true (2)
     // (1) the factors need the position of the vertices (which is found in the data array)
     //     in order to draw the factor/edge at the right position (a line between fact-vertex)
@@ -346,14 +341,22 @@ client.on("message", function (topic, message) {
       // automagically compute the factor position
       // Obviously (or not), for an unary factor, the factor dot position will reduce
       // to its unique associated node, which is suboptimal...
-      f.dot_factor_position = {
-        x:
+      if (f.vars.length>1){
+        f.dot_factor_position = {
+          x:
           f.vars.map((a_var) => a_var.mean.x).reduce((a, b) => a + b, 0) /
           f.vars.length,
-        y:
+          y:
           f.vars.map((a_var) => a_var.mean.y).reduce((a, b) => a + b, 0) /
           f.vars.length,
-      };
+        };
+      }
+      else{
+        f.dot_factor_position = {
+          x: f.vars[0].mean.x,
+          y: f.vars[0].mean.y+5
+        };
+      }
     });
 
     // (2) the unary factors need the neighbors of their associated node to position
@@ -375,12 +378,11 @@ client.on("message", function (topic, message) {
         if (neighbors.length > 0) {
           // if there are neighbors factors, the unary factor position must be placed
           // at the biggest angle gap
-          // TODO: that gives us the angle theta_unary, but distance is still hard coded
           const thetas = neighbors
             .map((neighbors_f) =>
               Math.atan2(
-                neighbors_f.dot_factor_position.y - uf.dot_factor_position.y,
-                neighbors_f.dot_factor_position.x - uf.dot_factor_position.x
+                neighbors_f.dot_factor_position.y - uf.vars[0].mean.y,
+                neighbors_f.dot_factor_position.x - uf.vars[0].mean.x
               )
             )
             .sort((a, b) => a - b); // mandatory sorting
@@ -397,8 +399,8 @@ client.on("message", function (topic, message) {
           // distance of the factor wrt the vertex.
           const squares_distances = neighbors.map(
             (nf) =>
-              (nf.dot_factor_position.y - uf.dot_factor_position.y) ** 2 +
-              (nf.dot_factor_position.x - uf.dot_factor_position.x) ** 2
+              (nf.dot_factor_position.y - uf.vars[0].mean.y) ** 2 +
+              (nf.dot_factor_position.x - uf.vars[0].mean.x) ** 2
           );
           const u_distance = Math.sqrt(
             Math.min(25, Math.max(...squares_distances))
@@ -407,53 +409,23 @@ client.on("message", function (topic, message) {
 
           // position of factor dot infered from polar coordinates
           const new_uf_position = {
-            x: uf.dot_factor_position.x + u_distance * Math.cos(theta_unary),
-            y: uf.dot_factor_position.y + u_distance * Math.sin(theta_unary),
+            x: uf.vars[0].mean.x + u_distance * Math.cos(theta_unary),
+            y: uf.vars[0].mean.y + u_distance * Math.sin(theta_unary),
           };
           // giving new position
           uf.dot_factor_position = new_uf_position;
 
-          // console.log(`Chosen theta for unary : ${theta_unary}`)
-        } else {
+        } else { // no neighbors
           const theta_unary = Math.PI / 2;
           const u_distance = 5;
           const new_uf_position = {
-            x: uf.dot_factor_position.x + u_distance * Math.cos(theta_unary),
-            y: uf.dot_factor_position.y + u_distance * Math.sin(theta_unary),
+            x: uf.vars[0].mean.x + u_distance * Math.cos(theta_unary),
+            y: uf.vars[0].mean.y + u_distance * Math.sin(theta_unary),
           };
           // giving new position
           uf.dot_factor_position = new_uf_position;
-
-          console.log(
-            "Unary factor, with no neighboring factor for corresponding vertex"
-          );
         }
       });
-
-    // UNARY FACTOR
-    // ths.sort((a,b)=>a-b).map((n,i)=>Math.abs(ecpi(n-ths[(i+1)%ths.length]))).sort((a,b)=>a-b)
-
-    function ecpi(a) {
-      return Math.atan2(Math.sin(a), Math.cos(a));
-    }
-
-    function indexOfMax(arr) {
-      if (arr.length === 0) {
-        return -1;
-      }
-
-      var max = arr[0];
-      var maxIndex = 0;
-
-      for (var i = 1; i < arr.length; i++) {
-        if (arr[i] > max) {
-          maxIndex = i;
-          max = arr[i];
-        }
-      }
-
-      return maxIndex;
-    }
 
     console.log("Estimation graph data massage :");
     console.log(estimation_data);
@@ -826,6 +798,29 @@ function inputToMove(model) {
 /******************************************************************************
  *                            HELPER
  *****************************************************************************/
+
+function ecpi(a) {
+  return Math.atan2(Math.sin(a), Math.cos(a));
+}
+
+function indexOfMax(arr) {
+  if (arr.length === 0) {
+    return -1;
+  }
+
+  var max = arr[0];
+  var maxIndex = 0;
+
+  for (var i = 1; i < arr.length; i++) {
+    if (arr[i] > max) {
+      maxIndex = i;
+      max = arr[i];
+    }
+  }
+
+  return maxIndex;
+}
+
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
