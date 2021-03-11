@@ -86,54 +86,29 @@ full_estimation = {
 }
 
 
-# TODO: just do deepcopies and modify or else its a pain
 # Change l4.y
 # some random increments to everything else
 full_estimation1 = copy.deepcopy(full_estimation)
 
 full_estimation1['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation['marginals']]
 full_estimation1['marginals'][3]['mean']['y']=14
+full_estimation1['factors'].extend(
+        [
+            {'factor_id': 'f00',
+                'type': 'odometry',
+                'vars_id':['x0'],
+                },
+            {'factor_id': 'f00bis',
+                'type': 'odometry',
+                'vars_id':['x0'],
+                },
+            ]
+        )
 
 
-# full_estimation1 = {
-#     'marginals': [
-#         {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-#         {'var_id': 'l2', 'mean': {'x': 25, 'y': 47}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-#         {'var_id': 'l3', 'mean': {'x': 30, 'y': 32}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-#         {'var_id': 'l4', 'mean': {'x': 55, 'y': 14}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-#         {'var_id': 'l5', 'mean': {'x': 75, 'y': 25}, 'covariance': {'sigma': [1, 0.3], 'rot':0.5}},
-#     ],
-#     'mean': [],
-#     'covariance': [],
-#     'information': [],
-#     'sqrtroot': [],
-#     'factors': [
-#         {'factor_id': 'f1',
-#             'type': 'odometry',
-#             'vars_id':['l1','l2'],
-#             },
-#         {'factor_id': 'f2',
-#             'type': 'odometry',
-#             'vars_id':['l3','l1'],
-#          },
-#         {'factor_id': 'f3',
-#             'type': 'odometry',
-#             'vars_id':['l3','l2'],
-#             },
-#         {'factor_id': 'f5',
-#             'type': 'odometry',
-#             'vars_id':['l4','l5'],
-#             },
-#         {'factor_id': 'f4',
-#             'type': 'odometry',
-#             'vars_id':['l4','l3'],
-#             },
-#     ],
-#     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
-# }
 
 # add new var l6 and some random change to everything else
-full_estimation2 = copy.deepcopy(full_estimation)
+full_estimation2 = copy.deepcopy(full_estimation1)
 full_estimation2['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation1['marginals']]
 full_estimation2['marginals'].append(
         {'var_id': 'l6', 'mean': {'x': 26, 'y': 9}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
@@ -157,7 +132,23 @@ full_estimation2['factors'].extend(
         )
 full_estimation2['variable_ordering'].append('l6') # extend and append are different
 
-# the factor contains: its id, the type of factor,
+
+# trifactor for the fun
+full_estimation3 = copy.deepcopy(full_estimation2)
+full_estimation3['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation2['marginals']]
+full_estimation3['factors'].extend(
+        [
+            {'factor_id': 'f9',
+                'type': 'smart',
+                'vars_id':['l4','l5','x0'],
+                },
+            ]
+        )
+
+# One last 
+full_estimation4 = copy.deepcopy(full_estimation3)
+full_estimation4['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation3['marginals']]
+
 # most fields are optional, and depend on the problem (EKF,SAM,etc...)
 # map (maximum a posteriori) and mean have the same data but structured
 # differently (mean is a raw vector)
@@ -199,6 +190,12 @@ def on_message(client, userdata, message):
         elif msg == '2':
             client.publish(estimation_graph_topic,
                            json.dumps(full_estimation2))
+        elif msg == '3':
+            client.publish(estimation_graph_topic,
+                           json.dumps(full_estimation3))
+        elif msg == '4':
+            client.publish(estimation_graph_topic,
+                           json.dumps(full_estimation4))
         else:
             client.publish(estimation_graph_topic, json.dumps(full_estimation))
 
