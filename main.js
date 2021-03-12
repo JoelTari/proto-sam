@@ -684,7 +684,8 @@ client.on("message", function (topic, message) {
               .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
               .selection();
           })
-      );
+        // TODO: exit selection
+      ); // end of vertex join
   }
 });
 
@@ -758,6 +759,8 @@ client.publish("request_ground_truth", " ");
 setTimeout((_) => client.publish("request_estimation_graph", " "), 1500);
 setTimeout((_) => client.publish("request_estimation_graph", "1"), 3500);
 setTimeout((_) => client.publish("request_estimation_graph", "2"), 5500);
+setTimeout((_) => client.publish("request_estimation_graph", "3"), 7500);
+setTimeout((_) => client.publish("request_estimation_graph", "4"), 9500);
 
 /******************************************************************************
  *                           KeyPresses Helper
