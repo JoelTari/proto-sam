@@ -92,6 +92,7 @@ full_estimation1 = copy.deepcopy(full_estimation)
 
 full_estimation1['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation['marginals']]
 full_estimation1['marginals'][3]['mean']['y']=14
+full_estimation1['factors'].pop(4)
 full_estimation1['factors'].extend(
         [
             {'factor_id': 'f00',

@@ -341,20 +341,19 @@ client.on("message", function (topic, message) {
       // automagically compute the factor position
       // Obviously (or not), for an unary factor, the factor dot position will reduce
       // to its unique associated node, which is suboptimal...
-      if (f.vars.length>1){
+      if (f.vars.length > 1) {
         f.dot_factor_position = {
           x:
-          f.vars.map((a_var) => a_var.mean.x).reduce((a, b) => a + b, 0) /
-          f.vars.length,
+            f.vars.map((a_var) => a_var.mean.x).reduce((a, b) => a + b, 0) /
+            f.vars.length,
           y:
-          f.vars.map((a_var) => a_var.mean.y).reduce((a, b) => a + b, 0) /
-          f.vars.length,
+            f.vars.map((a_var) => a_var.mean.y).reduce((a, b) => a + b, 0) /
+            f.vars.length,
         };
-      }
-      else{
+      } else {
         f.dot_factor_position = {
           x: f.vars[0].mean.x,
-          y: f.vars[0].mean.y+5
+          y: f.vars[0].mean.y + 5,
         };
       }
     });
@@ -414,8 +413,8 @@ client.on("message", function (topic, message) {
           };
           // giving new position
           uf.dot_factor_position = new_uf_position;
-
-        } else { // no neighbors
+        } else {
+          // no neighbors
           const theta_unary = Math.PI / 2;
           const u_distance = 5;
           const new_uf_position = {
@@ -460,33 +459,62 @@ client.on("message", function (topic, message) {
                 .style("opacity")
                 .selection()
                 .call(function (g) {
-                  if (d.vars.length == 2) {
+                  if (d.vars.length > 1) {
+                    // bi-factor, tri-factor etc...
+                    d.vars.forEach(
+                      (v) =>
+                        g
+                          .append("line")
+                          .attr("x1", d.dot_factor_position.x)
+                          .attr("y1", d.dot_factor_position.y)
+                          .attr(
+                            "x2",
+                            0.2 * v.mean.x + 0.8 * d.dot_factor_position.x
+                          )
+                          .attr(
+                            "y2",
+                            0.2 * v.mean.y + 0.8 * d.dot_factor_position.y
+                          )
+                          .classed(v.var_id, true)
+                          .transition(t_graph_motion)
+                          .attr("x1", d.dot_factor_position.x)
+                          .attr("y1", d.dot_factor_position.y)
+                          .attr("x2", v.mean.x)
+                          .attr("y2", v.mean.y)
+                      // TODO: dont make the line go to the center of the vertex
+                      //       but rather stops at the vertex circle bound
+                      //       because I may want the whole graph to be transparent
+                      //       and in that case the edges would be seen through the
+                      //       vertex circle which is not visually appeasing
+                    );
+
                     // TODO: change in >1
                     // TODO: compute a barycenter (hard if only 1 vertex, easy if >= 2)
-                    // each line will from the barycenter towards a vertex
-                    g.append("line") // TODO: replace if different than 2 vars per factor
-                      .attr(
-                        "x1",
-                        d.vars[0].mean.x * 0.55 + d.vars[1].mean.x * 0.45
-                      )
-                      .attr(
-                        "y1",
-                        d.vars[0].mean.y * 0.55 + d.vars[1].mean.y * 0.45
-                      )
-                      .attr(
-                        "x2",
-                        d.vars[0].mean.x * 0.45 + d.vars[1].mean.x * 0.55
-                      )
-                      .attr(
-                        "y2",
-                        d.vars[0].mean.y * 0.45 + d.vars[1].mean.y * 0.55
-                      )
-                      .transition(t_graph_motion)
-                      .attr("x1", d.vars[0].mean.x)
-                      .attr("y1", d.vars[0].mean.y)
-                      .attr("x2", d.vars[1].mean.x)
-                      .attr("y2", d.vars[1].mean.y);
+                    // each line will form the barycenter towards a vertex
+                    // g.append("line") // TODO: replace if different than 2 vars per factor
+                    //   .attr(
+                    //     "x1",
+                    //     d.vars[0].mean.x * 0.55 + d.vars[1].mean.x * 0.45
+                    //   )
+                    //   .attr(
+                    //     "y1",
+                    //     d.vars[0].mean.y * 0.55 + d.vars[1].mean.y * 0.45
+                    //   )
+                    //   .attr(
+                    //     "x2",
+                    //     d.vars[0].mean.x * 0.45 + d.vars[1].mean.x * 0.55
+                    //   )
+                    //   .attr(
+                    //     "y2",
+                    //     d.vars[0].mean.y * 0.45 + d.vars[1].mean.y * 0.55
+                    //   )
+                    //   .transition(t_graph_motion)
+                    //   .attr("x1", d.vars[0].mean.x)
+                    //   .attr("y1", d.vars[0].mean.y)
+                    //   .attr("x2", d.vars[1].mean.x)
+                    //   .attr("y2", d.vars[1].mean.y);
                   } else {
+                    // unifactor
                     g.append("line")
                       .attr("x1", d.dot_factor_position.x)
                       .attr("y1", d.dot_factor_position.y)
@@ -523,26 +551,36 @@ client.on("message", function (topic, message) {
             d3.select(this)
               .selectChild("g")
               .selectChild("g")
-              .selectChild("line") // TODO: all children
-              .call((line) => {
-                if (d.vars.length == 2) {
-                  // TODO: change in >1
-                  line
-                    .transition(t_graph_motion)
-                    .attr("x1", d.vars[0].mean.x)
-                    .attr("y1", d.vars[0].mean.y)
-                    .attr("x2", d.vars[1].mean.x)
-                    .attr("y2", d.vars[1].mean.y);
-                } else {
-                  // update unary factor
-                  // WARN TODO: a factor_id should not change its vars_id
-                  line
-                    .transition(t_graph_motion)
-                    .attr("x1", d.vars[0].mean.x)
-                    .attr("y1", d.vars[0].mean.y)
-                    .attr("x2", d.dot_factor_position.x)
-                    .attr("y2", d.dot_factor_position.y);
-                }
+              .selectChildren("line")
+              // .selectChild("line") // TODO: all children
+              .call(function (lines) {
+                lines.each(function (dd, i) {
+                  if (d.vars.length > 1) {
+                    // line
+                    d3.select(this)
+                      .transition(t_graph_motion)
+                      .attr("x1", d.dot_factor_position.x)
+                      .attr("y1", d.dot_factor_position.y)
+                      .attr("x2", d.vars[i].mean.x)
+                      .attr("y2", d.vars[i].mean.y);
+                    // )
+                    // .transition(t_graph_motion)
+                    // .attr("x1", d.vars[0].mean.x)
+                    // .attr("y1", d.vars[0].mean.y)
+                    // .attr("x2", d.vars[1].mean.x)
+                    // .attr("y2", d.vars[1].mean.y);
+                  } else {
+                    // update unary factor
+                    // WARN TODO: a factor_id should not change its vars_id
+                    // line
+                    d3.select(this)
+                      .transition(t_graph_motion)
+                      .attr("x1", d.vars[0].mean.x)
+                      .attr("y1", d.vars[0].mean.y)
+                      .attr("x2", d.dot_factor_position.x)
+                      .attr("y2", d.dot_factor_position.y);
+                  }
+                });
               });
             // the factor circle (to visually differentiate from with MRF)
             d3.select(this)
@@ -551,7 +589,24 @@ client.on("message", function (topic, message) {
               .transition(t_graph_motion)
               .attr("cx", d.dot_factor_position.x)
               .attr("cy", d.dot_factor_position.y);
-          })
+          }),
+        (exit) =>
+          exit
+            .call(ex=>ex
+              .selectChild("g")
+              .selectChild("g")
+              .selectChildren("line")
+              .style("stroke", "brown")
+            )
+            .call(ex=>ex
+              .selectChild("g")
+              .select("circle")
+              .style('fill','brown')
+            )
+            .transition('sdfsdfgsssg')
+            .duration(1000)
+            .style('opacity',0)
+            .remove()
       );
 
     // the vertices
