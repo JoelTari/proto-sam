@@ -5,9 +5,9 @@ const canvas_mg = d3.select(".main_group");
 
 const aratio = 0.6;
 
-// initially r1 is selected
+// initially no robot is selected
 GlobalUI = {
-  selected_robot_id: "r1",
+  selected_robot_id: "",
 };
 
 /******************************************************************************
@@ -160,63 +160,9 @@ client.on("message", function (topic, message) {
             .classed("landmark_true_group", true)
             .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`),
 
-        // .append("circle")
-        // .attr("cx", (d) => d.state.x)
-        // .attr("cy", (d) => d.state.y)
-        // .attr("r", 1)
-        // .classed("landmark_true_group", true)
-        // .transition()
-        // .duration(1000)
-        // .attr("opacity", 1)
-        // .attr("r", 0.4)
-        // .selection(),
-        (update) => update
+        (update) => update // the default if not specified
       );
 
-    // d_agent_true_group = d_agent_true_group
-    //   .data(msg.robots, (d) => d.rodot_id)
-    //   .join("g")
-    //   .classed("agent_true_group", true)
-    //   .attr("id", (d) => d.robot_id)
-    //   .on("click", function (e, d) {
-    //     console.log(d3.select(this).selectChild("polygon"));
-    //     // console.log(d3.select(this).selectChildren('polygon'))
-    //     // I want to add the 'selected' class to the clicked agent
-    //     // but this should be exclusive, so first remove the 'selected'
-    //     // name from the class list of everybody
-    //     d_agent_true_group.classed("selected", false);
-    //     // now set the concerned entity to 'selected' in the classlist
-    //     d3.select(this).classed("selected", true);
-    //     // maybe I just need to do that to control it
-    //     //  (but there is also the styling to consider anyway)
-    //     selectedRobot = d3.select(this);
-    //   })
-    //   .each(function (d) {
-    //     d3.select(this)
-    //       .append("g")
-    //       .attr(
-    //         "transform",
-    //         (d) => "translate(" + d.state.x + "," + d.state.y + ")"
-    //       )
-    //       .append("g")
-    //       .attr("transform", "rotate(" + d.state.th + ")")
-    //       .call(function (g) {
-    //         // adding all display components
-    //         g.append("polygon")
-    //           .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-    //           .attr("fill", "linen")
-    //           .attr("stroke", "black")
-    //           .attr("stroke-width", 0.1);
-    //         g.append("line")
-    //           .attr("points", "0,0 0,1")
-    //           .attr("stroke", "black")
-    //           .attr("stroke-width", 0.1);
-    //       });
-    //   })
-    //   .transition()
-    //   .duration(500)
-    //   .attr("opacity", 1)
-    //   .selection();
 
     // ugly, since updates remove my active/selected that is added outside of d3
     // I got the impression that the general update pattern deletes any excess property added
@@ -315,7 +261,7 @@ client.on("message", function (topic, message) {
               applyMove_gg(d3.select(this), [d.state.x, d.state.y, d.state.th]);
               // applyMove_gg(d3.select(this), [10, 30, 30]);
             })
-      )
+      ) // end of join agent_true_group
       .on("click", function (e, d) {
         // for next joining of data
         GlobalUI.selected_robot_id = d3.select(this).attr("id");
@@ -871,11 +817,12 @@ function derpery(my_sel) {
           .attr("stroke-width", 0.1)
           .attr("width", 8)
           .attr("x", (d) => d)
+          .attr("y",2)
           .transition()
           .duration(750)
           .attr("opacity", 1)
           .attr("fill", "salmon")
-          .attr("height", (_) => Math.random() * 55 + 2)
+          .attr("height", (_) => getRandomInt(25))
           .transition()
           .duration(750)
           .attr("fill", "lightblue")
@@ -887,7 +834,7 @@ function derpery(my_sel) {
             .duration(750)
             .ease(d3.easeCubic)
             .attr("fill", "khaki")
-            .attr("height", (_) => Math.random() * 55 + 2)
+            .attr("height", (_) => getRandomInt(25))
             .transition()
             .duration(750)
             .attr("fill", "lightblue")
@@ -906,9 +853,4 @@ function derpery(my_sel) {
             .remove()
         )
     );
-  // .transition()
-  // .delay(2250)
-  // .duration(750)
-  // .attr("fill", "lightblue")
-  // .selection();
 }

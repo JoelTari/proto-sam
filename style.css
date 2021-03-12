@@ -35,7 +35,7 @@ svg {
 .landmark_true_group {
   stroke-width: 0.1;
   stroke: gold;
-  fill: #30ad8d;
+  fill: #6e6060;
 }
 
 /* .agent:hover { */
@@ -54,16 +54,6 @@ svg {
   stroke: yellow;
 }
 
-.agent_true_group#r1 line {
-  stroke: red;
-}
-.agent_true_group#r2 line {
-  stroke: blue;
-}
-.agent_true_group#r3 line {
-  stroke: green;
-}
-
 /* any descendant polygon of those */
 .agent_true_group polygon {
   stroke: black;
@@ -71,17 +61,39 @@ svg {
   fill: silver;
 }
 
+.agent_true_group#r1 polygon,
+.agent_true_group#r1 line {
+  stroke: red;
+}
+.agent_true_group#r2 polygon,
+.agent_true_group#r2 line {
+  stroke: green;
+}
+.agent_true_group#r3 polygon,
+.agent_true_group#r3 line {
+  stroke: blue;
+}
+
 /* specialization for the selected agent */
 .agent_true_group.selected polygon {
   fill: goldenrod;
 }
+.agent_true_group.selected .sensor {
+  opacity: 0.2;
+}
 
 .agent_true_group .sensor {
   fill: #b8e5ef;
-  opacity: 0.25;
+  opacity: 0.1;
 }
-.agent_true_group.selected .sensor {
-  opacity: 0.6;
+.agent_true_group#r1 .sensor {
+  fill: red;
+}
+.agent_true_group#r2 .sensor {
+  fill: green;
+}
+.agent_true_group#r3 .sensor {
+  fill: blue;
 }
 
 /* graph test: TODO: remove */
@@ -99,6 +111,7 @@ svg {
   fill: #ece281;
   opacity: 0.4;
   transition: opacity 1s ease;
+  display: none;
 }
 
 .factor line {
