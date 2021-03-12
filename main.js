@@ -437,7 +437,7 @@ client.on("message", function (topic, message) {
       .ease(d3.easeCubicInOut);
     // some others transitions for eye-catching enter
     const t_vertex_entry = d3.transition().duration(400);
-    const t_factor_entry = d3.transition().duration(1200);
+    const t_factor_entry = d3.transition().duration(2200);
 
     // the factors
     d_factors_group = d_factors_group
@@ -481,38 +481,7 @@ client.on("message", function (topic, message) {
                           .attr("y1", d.dot_factor_position.y)
                           .attr("x2", v.mean.x)
                           .attr("y2", v.mean.y)
-                      // TODO: dont make the line go to the center of the vertex
-                      //       but rather stops at the vertex circle bound
-                      //       because I may want the whole graph to be transparent
-                      //       and in that case the edges would be seen through the
-                      //       vertex circle which is not visually appeasing
                     );
-
-                    // TODO: change in >1
-                    // TODO: compute a barycenter (hard if only 1 vertex, easy if >= 2)
-                    // each line will form the barycenter towards a vertex
-                    // g.append("line") // TODO: replace if different than 2 vars per factor
-                    //   .attr(
-                    //     "x1",
-                    //     d.vars[0].mean.x * 0.55 + d.vars[1].mean.x * 0.45
-                    //   )
-                    //   .attr(
-                    //     "y1",
-                    //     d.vars[0].mean.y * 0.55 + d.vars[1].mean.y * 0.45
-                    //   )
-                    //   .attr(
-                    //     "x2",
-                    //     d.vars[0].mean.x * 0.45 + d.vars[1].mean.x * 0.55
-                    //   )
-                    //   .attr(
-                    //     "y2",
-                    //     d.vars[0].mean.y * 0.45 + d.vars[1].mean.y * 0.55
-                    //   )
-                    //   .transition(t_graph_motion)
-                    //   .attr("x1", d.vars[0].mean.x)
-                    //   .attr("y1", d.vars[0].mean.y)
-                    //   .attr("x2", d.vars[1].mean.x)
-                    //   .attr("y2", d.vars[1].mean.y);
                   } else {
                     // unifactor
                     g.append("line")
@@ -538,10 +507,12 @@ client.on("message", function (topic, message) {
                       (d) => d.dot_factor_position.y
                       // (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
                     )
-                    .style("opacity", 0)
-                    .attr("r", 0.3 * 3)
-                    .transition(t_factor_entry)
-                    .style("opacity")
+                    // .style("opacity", 0)
+                    .attr("r", 0.3 * 2)
+                    // .transition(t_factor_entry)  // TODO: investiguer l'interruption de transition
+                  // opacity transition not necessary here
+                    .transition('fc').duration(2200)
+                    // .style("opacity")
                     .attr("r", 0.3);
                 });
             }),
@@ -563,16 +534,9 @@ client.on("message", function (topic, message) {
                       .attr("y1", d.dot_factor_position.y)
                       .attr("x2", d.vars[i].mean.x)
                       .attr("y2", d.vars[i].mean.y);
-                    // )
-                    // .transition(t_graph_motion)
-                    // .attr("x1", d.vars[0].mean.x)
-                    // .attr("y1", d.vars[0].mean.y)
-                    // .attr("x2", d.vars[1].mean.x)
-                    // .attr("y2", d.vars[1].mean.y);
                   } else {
                     // update unary factor
                     // WARN TODO: a factor_id should not change its vars_id
-                    // line
                     d3.select(this)
                       .transition(t_graph_motion)
                       .attr("x1", d.vars[0].mean.x)
@@ -757,10 +721,10 @@ function applyMove_gg(d3_single_selected, pose) {
 // sending estimation_graph request_position_ini
 client.publish("request_ground_truth", " ");
 setTimeout((_) => client.publish("request_estimation_graph", " "), 1500);
-setTimeout((_) => client.publish("request_estimation_graph", "1"), 3500);
-setTimeout((_) => client.publish("request_estimation_graph", "2"), 5500);
-setTimeout((_) => client.publish("request_estimation_graph", "3"), 7500);
-setTimeout((_) => client.publish("request_estimation_graph", "4"), 9500);
+setTimeout((_) => client.publish("request_estimation_graph", "1"), 2500);
+setTimeout((_) => client.publish("request_estimation_graph", "2"), 3500);
+setTimeout((_) => client.publish("request_estimation_graph", "3"), 4500);
+setTimeout((_) => client.publish("request_estimation_graph", "4"), 5500);
 
 /******************************************************************************
  *                           KeyPresses Helper
