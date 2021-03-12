@@ -149,6 +149,7 @@ full_estimation3['factors'].extend(
 # One last 
 full_estimation4 = copy.deepcopy(full_estimation3)
 full_estimation4['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation3['marginals']]
+full_estimation4['factors'].pop()
 
 # most fields are optional, and depend on the problem (EKF,SAM,etc...)
 # map (maximum a posteriori) and mean have the same data but structured
