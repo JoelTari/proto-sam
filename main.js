@@ -270,11 +270,274 @@ client.on("message", function (topic, message) {
         d3.select(this).classed("selected", true);
       });
   } else if (topic == "estimation_graph") {
-    console.log(`Estimation Graph received : `);
-    console.log(JSON.parse(message.toString()));
+    // console.log(`Estimation Graph received : `);
+    // console.log(JSON.parse(message.toString()));
 
+    // convert the string in json
     estimation_data = JSON.parse(message.toString());
+    // massage data
+    estimation_data_massage(estimation_data);
+    // console.log("Estimation graph data massage :");
+    // console.log(estimation_data);
 
+
+    // the factors
+    d_factors_group = d_factors_group
+      .data(estimation_data.factors, (d) => d.factor_id)
+      .join(join_enter_factor,join_update_factor,join_exit_factor)
+
+    // the vertices
+    d_vertices_group = d_vertices_group
+      .data(estimation_data.marginals, (d) => d.var_id)
+      .join(join_enter_vertex,join_update_vertex); // TODO: exit vertex
+  }
+});
+
+/******************************************************************************
+ *                          UPDATE PATTERN ROUTINES
+ *                  enter,update,exit of the various d3 selections
+ *****************************************************************************/
+
+function join_enter_factor(enter){
+
+// TODO:
+// Imho best way to avoid to define those transitions everywhere is to 
+// transform those functions in classes of which the transitions are members 
+const t_factor_entry = d3.transition().duration(2200);
+const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+
+  enter
+    .append("g")
+    .classed("factor", true)
+    .attr("id", (d) => d.factor_id)
+    .each(function (d) {
+      d3.select(this)
+        .append("g")
+        .attr("transform", "translate(0,0)")
+        .append("g")
+        .attr("transform", "rotate(0)")
+        .style("opacity", 0)
+        .transition(t_factor_entry) // ugly (im interest in the child opacity not this node) but necessary to run concurrent transitions on the line (which doesnt work if I place it below)
+        .style("opacity")
+        .selection()
+        .call(function (g) {
+          if (d.vars.length > 1) {
+            // bi-factor, tri-factor etc...
+            d.vars.forEach(
+              (v) =>
+              g
+              .append("line")
+              .attr("x1", d.dot_factor_position.x)
+              .attr("y1", d.dot_factor_position.y)
+              .attr(
+                "x2",
+                0.2 * v.mean.x + 0.8 * d.dot_factor_position.x
+              )
+              .attr(
+                "y2",
+                0.2 * v.mean.y + 0.8 * d.dot_factor_position.y
+              )
+              .classed(v.var_id, true)
+              .transition(t_graph_motion)
+              .attr("x1", d.dot_factor_position.x)
+              .attr("y1", d.dot_factor_position.y)
+              .attr("x2", v.mean.x)
+              .attr("y2", v.mean.y)
+            );
+          } else {
+            // unifactor
+            g.append("line")
+              .attr("x1", d.dot_factor_position.x)
+              .attr("y1", d.dot_factor_position.y)
+              .attr("x2", d.dot_factor_position.x)
+              .attr("y2", d.dot_factor_position.y)
+              .transition(t_graph_motion)
+              .attr("x1", d.vars[0].mean.x)
+              .attr("y1", d.vars[0].mean.y)
+              .attr("x2", d.dot_factor_position.x)
+              .attr("y2", d.dot_factor_position.y);
+          }
+
+          g.append("circle")
+            .attr(
+              "cx",
+              (d) => d.dot_factor_position.x
+              // (d) => (d.vars[0].mean.x + d.vars[1].mean.x) / 2
+            )
+            .attr(
+              "cy",
+              (d) => d.dot_factor_position.y
+              // (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
+            )
+          // .style("opacity", 0)
+            .attr("r", 0.3 * 2)
+          // .transition(t_factor_entry)  // TODO: investiguer l'interruption de transition
+          // opacity transition not necessary here
+            .transition('fc').duration(2200)
+          // .style("opacity")
+            .attr("r", 0.3);
+        });
+    })
+}
+
+function join_update_factor(update){
+// TODO:
+// Imho best way to avoid to define those transitions everywhere is to 
+// transform those functions in classes of which the transitions are members 
+const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+
+  update.each(function (d) {
+    d3.select(this)
+      .selectChild("g")
+      .selectChild("g")
+      .selectChildren("line")
+    // .selectChild("line") // TODO: all children
+      .call(function (lines) {
+        lines.each(function (dd, i) {
+          if (d.vars.length > 1) {
+            // line
+            d3.select(this)
+              .transition(t_graph_motion)
+              .attr("x1", d.dot_factor_position.x)
+              .attr("y1", d.dot_factor_position.y)
+              .attr("x2", d.vars[i].mean.x)
+              .attr("y2", d.vars[i].mean.y);
+          } else {
+            // update unary factor
+            // WARN TODO: a factor_id should not change its vars_id
+            d3.select(this)
+              .transition(t_graph_motion)
+              .attr("x1", d.vars[0].mean.x)
+              .attr("y1", d.vars[0].mean.y)
+              .attr("x2", d.dot_factor_position.x)
+              .attr("y2", d.dot_factor_position.y);
+          }
+        });
+      });
+    // the factor circle (to visually differentiate from with MRF)
+    d3.select(this)
+      .selectChild("g")
+      .select("circle")
+      .transition(t_graph_motion)
+      .attr("cx", d.dot_factor_position.x)
+      .attr("cy", d.dot_factor_position.y);
+  })
+}
+
+function join_exit_factor(exit){
+  exit
+    .call(ex=>ex
+      .selectChild("g")
+      .selectChild("g")
+      .selectChildren("line")
+      .style("stroke", "brown")
+    )
+    .call(ex=>ex
+      .selectChild("g")
+      .select("circle")
+      .style('fill','brown')
+    )
+    .transition('exit_factor') // TODO: Define outside
+    .duration(1000)
+    .style('opacity',0)
+    .remove()
+}
+
+function join_enter_vertex(enter){
+
+// TODO:
+// Imho best way to avoid to define those transitions everywhere is to 
+// transform those functions in classes of which the transitions are members 
+  const t_vertex_entry = d3.transition().duration(400);
+
+  enter
+    .append("g")
+    .classed("vertex", true)
+    .attr("id", (d) => d.var_id)
+    .each(function (d) {
+      d3.select(this)
+        .append("g")
+        .attr(
+          "transform",
+          "translate(" + d.mean.x + "," + d.mean.y + ")"
+        )
+        .append("g")
+        .attr("transform", "rotate(0)")
+        .call(function (g) {
+          g.append("circle")
+            .attr("r", 1 * 3)
+            .style("opacity", 0)
+            .transition(t_vertex_entry)
+            .attr("r", 1)
+            .style("opacity");
+          // text: variable name inside the circle
+          g.append("text")
+            .text((d) => d.var_id)
+          // .attr("stroke-width", "0.1px")
+            .attr("text-anchor", "middle")
+            .attr("alignment-baseline", "central")
+            .style("opacity", 0)
+            .transition(t_vertex_entry)
+            .attr("font-size", 1)
+            .style("opacity");
+          // covariance (-> a rotated group that holds an ellipse)
+          g.append("g")
+            .attr(
+              "transform",
+              `rotate(${(d.covariance.rot * 180) / Math.PI})`
+            )
+            .append("ellipse")
+            .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
+            .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
+            .style("opacity", 0) // wow! (see next wow) Nota: doesnt  work with attr()
+            .transition(t_vertex_entry)
+            .style("opacity"); // wow! this will look for the CSS (has to a style)
+        });
+    })
+}
+
+function join_update_vertex(update){
+
+  // TODO:
+  // Imho best way to avoid to define those transitions everywhere is to 
+  // transform those functions in classes of which the transitions are members 
+  const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+
+  update.each(function (d) {
+    d3.select(this)
+      .selectChild("g")
+      .transition(t_graph_motion)
+      .attr("transform", "translate(" + d.mean.x + "," + d.mean.y + ")")
+      .selection();
+
+    d3.select(this)
+      .selectChild("g") //translate
+      .selectChild("g") //rotate
+      .selectChild("g") // group (incl. rotate)
+      .transition(t_graph_motion)
+      .attr(
+        "transform",
+        `rotate(${(d.covariance.rot * 180) / Math.PI})`
+      )
+      .selection()
+      .selectChild("ellipse")
+      .transition(t_graph_motion)
+      .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
+      .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
+      .selection();
+  })
+}
+
+function join_exit_vertex(exit){
+  // TODO:
+}
+
+/******************************************************************************
+ *                            Data Massage estimation
+ *****************************************************************************/
+
+// in-place changes to the data structure for convenience when joining
+function estimation_data_massage(estimation_data){
     // Data massage before integration: some data on the vertices array are needed
     // for the factors (1), and the other way around is also true (2)
     // (1) the factors need the position of the vertices (which is found in the data array)
@@ -371,244 +634,7 @@ client.on("message", function (topic, message) {
           uf.dot_factor_position = new_uf_position;
         }
       });
-
-    console.log("Estimation graph data massage :");
-    console.log(estimation_data);
-
-    // same transition object must applies to factors and vertices for consitent
-    // graph motion
-    const t_graph_motion = d3
-      .transition()
-      .duration(1000)
-      .ease(d3.easeCubicInOut);
-    // some others transitions for eye-catching enter
-    const t_vertex_entry = d3.transition().duration(400);
-    const t_factor_entry = d3.transition().duration(2200);
-
-    // the factors
-    d_factors_group = d_factors_group
-      .data(estimation_data.factors, (d) => d.factor_id)
-      .join(
-        (enter) =>
-          enter
-            .append("g")
-            .classed("factor", true)
-            .attr("id", (d) => d.factor_id)
-            .each(function (d) {
-              d3.select(this)
-                .append("g")
-                .attr("transform", "translate(0,0)")
-                .append("g")
-                .attr("transform", "rotate(0)")
-                .style("opacity", 0)
-                .transition(t_factor_entry) // ugly (im interest in the child opacity not this node) but necessary to run concurrent transitions on the line (which doesnt work if I place it below)
-                .style("opacity")
-                .selection()
-                .call(function (g) {
-                  if (d.vars.length > 1) {
-                    // bi-factor, tri-factor etc...
-                    d.vars.forEach(
-                      (v) =>
-                        g
-                          .append("line")
-                          .attr("x1", d.dot_factor_position.x)
-                          .attr("y1", d.dot_factor_position.y)
-                          .attr(
-                            "x2",
-                            0.2 * v.mean.x + 0.8 * d.dot_factor_position.x
-                          )
-                          .attr(
-                            "y2",
-                            0.2 * v.mean.y + 0.8 * d.dot_factor_position.y
-                          )
-                          .classed(v.var_id, true)
-                          .transition(t_graph_motion)
-                          .attr("x1", d.dot_factor_position.x)
-                          .attr("y1", d.dot_factor_position.y)
-                          .attr("x2", v.mean.x)
-                          .attr("y2", v.mean.y)
-                    );
-                  } else {
-                    // unifactor
-                    g.append("line")
-                      .attr("x1", d.dot_factor_position.x)
-                      .attr("y1", d.dot_factor_position.y)
-                      .attr("x2", d.dot_factor_position.x)
-                      .attr("y2", d.dot_factor_position.y)
-                      .transition(t_graph_motion)
-                      .attr("x1", d.vars[0].mean.x)
-                      .attr("y1", d.vars[0].mean.y)
-                      .attr("x2", d.dot_factor_position.x)
-                      .attr("y2", d.dot_factor_position.y);
-                  }
-
-                  g.append("circle")
-                    .attr(
-                      "cx",
-                      (d) => d.dot_factor_position.x
-                      // (d) => (d.vars[0].mean.x + d.vars[1].mean.x) / 2
-                    )
-                    .attr(
-                      "cy",
-                      (d) => d.dot_factor_position.y
-                      // (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
-                    )
-                    // .style("opacity", 0)
-                    .attr("r", 0.3 * 2)
-                    // .transition(t_factor_entry)  // TODO: investiguer l'interruption de transition
-                  // opacity transition not necessary here
-                    .transition('fc').duration(2200)
-                    // .style("opacity")
-                    .attr("r", 0.3);
-                });
-            }),
-        // factor update
-        (update) =>
-          update.each(function (d) {
-            d3.select(this)
-              .selectChild("g")
-              .selectChild("g")
-              .selectChildren("line")
-              // .selectChild("line") // TODO: all children
-              .call(function (lines) {
-                lines.each(function (dd, i) {
-                  if (d.vars.length > 1) {
-                    // line
-                    d3.select(this)
-                      .transition(t_graph_motion)
-                      .attr("x1", d.dot_factor_position.x)
-                      .attr("y1", d.dot_factor_position.y)
-                      .attr("x2", d.vars[i].mean.x)
-                      .attr("y2", d.vars[i].mean.y);
-                  } else {
-                    // update unary factor
-                    // WARN TODO: a factor_id should not change its vars_id
-                    d3.select(this)
-                      .transition(t_graph_motion)
-                      .attr("x1", d.vars[0].mean.x)
-                      .attr("y1", d.vars[0].mean.y)
-                      .attr("x2", d.dot_factor_position.x)
-                      .attr("y2", d.dot_factor_position.y);
-                  }
-                });
-              });
-            // the factor circle (to visually differentiate from with MRF)
-            d3.select(this)
-              .selectChild("g")
-              .select("circle")
-              .transition(t_graph_motion)
-              .attr("cx", d.dot_factor_position.x)
-              .attr("cy", d.dot_factor_position.y);
-          }),
-        (exit) =>
-          exit
-            .call(ex=>ex
-              .selectChild("g")
-              .selectChild("g")
-              .selectChildren("line")
-              .style("stroke", "brown")
-            )
-            .call(ex=>ex
-              .selectChild("g")
-              .select("circle")
-              .style('fill','brown')
-            )
-            .transition('exit_factor')
-            .duration(1000)
-            .style('opacity',0)
-            .remove()
-      );
-
-    // the vertices
-    d_vertices_group = d_vertices_group
-      .data(estimation_data.marginals, (d) => d.var_id)
-      .join(
-        // vertex enter
-        (enter) =>
-          enter
-            .append("g")
-            .classed("vertex", true)
-            .attr("id", (d) => d.var_id)
-            .each(function (d) {
-              d3.select(this)
-                .append("g")
-                .attr(
-                  "transform",
-                  "translate(" + d.mean.x + "," + d.mean.y + ")"
-                )
-                .append("g")
-                .attr("transform", "rotate(0)")
-                .call(function (g) {
-                  g.append("circle")
-                    .attr("r", 1 * 3)
-                    .style("opacity", 0)
-                    .transition(t_vertex_entry)
-                    .attr("r", 1)
-                    .style("opacity");
-                  // text: variable name inside the circle
-                  g.append("text")
-                    .text((d) => d.var_id)
-                    // .attr("stroke-width", "0.1px")
-                    .attr("text-anchor", "middle")
-                    .attr("alignment-baseline", "central")
-                    .style("opacity", 0)
-                    .transition(t_vertex_entry)
-                    .attr("font-size", 1)
-                    .style("opacity");
-                  // covariance (-> a rotated group that holds an ellipse)
-                  g.append("g")
-                    .attr(
-                      "transform",
-                      `rotate(${(d.covariance.rot * 180) / Math.PI})`
-                    )
-                    .append("ellipse")
-                    .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
-                    .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
-                    .style("opacity", 0) // wow! (see next wow) Nota: doesnt  work with attr()
-                    .transition(t_vertex_entry)
-                    .style("opacity"); // wow! this will look for the CSS (has to a style)
-                });
-            }),
-        // vertex update
-        (update) =>
-          update.each(function (d) {
-            d3.select(this)
-              .selectChild("g")
-              .transition(t_graph_motion)
-              .attr("transform", "translate(" + d.mean.x + "," + d.mean.y + ")")
-              .selection();
-
-            d3.select(this)
-              .selectChild("g") //translate
-              .selectChild("g") //rotate
-              .selectChild("g") // group (incl. rotate)
-              .transition(t_graph_motion)
-              .attr(
-                "transform",
-                `rotate(${(d.covariance.rot * 180) / Math.PI})`
-              )
-              .selection()
-              .selectChild("ellipse")
-              .transition(t_graph_motion)
-              .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
-              .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
-              .selection();
-          })
-        // TODO: exit selection
-      ); // end of vertex join
-  }
-});
-
-/******************************************************************************
- *                          UPDATE PATTERN ROUTINES
- *                  enter,update,exit of the various d3 selections
- *****************************************************************************/
-
-
-/******************************************************************************
- *                            Data Massage estimation
- *****************************************************************************/
-
+}
 
 /******************************************************************************
  *                            UI Events
