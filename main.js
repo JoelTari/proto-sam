@@ -306,7 +306,7 @@ function join_enter_factor(enter){
 const t_factor_entry = d3.transition().duration(2200);
 const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
 
-  enter
+  return enter
     .append("g")
     .classed("factor", true)
     .attr("id", (d) => d.factor_id)
@@ -386,7 +386,7 @@ function join_update_factor(update){
 // transform those functions in classes of which the transitions are members 
 const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
 
-  update.each(function (d) {
+  return update.each(function (d) {
     d3.select(this)
       .selectChild("g")
       .selectChild("g")
@@ -425,7 +425,7 @@ const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
 }
 
 function join_exit_factor(exit){
-  exit
+  return exit
     .call(ex=>ex
       .selectChild("g")
       .selectChild("g")
@@ -450,7 +450,7 @@ function join_enter_vertex(enter){
 // transform those functions in classes of which the transitions are members 
   const t_vertex_entry = d3.transition().duration(400);
 
-  enter
+  return enter
     .append("g")
     .classed("vertex", true)
     .attr("id", (d) => d.var_id)
@@ -503,7 +503,7 @@ function join_update_vertex(update){
   // transform those functions in classes of which the transitions are members 
   const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
 
-  update.each(function (d) {
+  return update.each(function (d) {
     d3.select(this)
       .selectChild("g")
       .transition(t_graph_motion)
@@ -530,6 +530,7 @@ function join_update_vertex(update){
 
 function join_exit_vertex(exit){
   // TODO:
+  return exit
 }
 
 /******************************************************************************
