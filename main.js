@@ -801,11 +801,41 @@ function randomArraySplice(my_array) {
 // some derpery to prove concept
 const poc_data = [2, 14, 26, 35, 44, 52, 68, 81];
 
-let derp = d3.select(".main_group").selectAll("rect");
+let hlderp = d3.select('.main_group').selectAll('.derp_agent')
+// a .derp_agent is a group (arbitrary)
+let derp = hlderp.selectAll("rect");
 
-// call as :       derp = derpery(derp)
+const hl_data = [{name: 'agent1', poc_data: poc_data, pos: 2},
+                 {name: 'agent2', poc_data: poc_data, pos: 31}];
+
+// TODO: tests with deepened intermediate layers
+// call with  [hlderp,derp] = hlderpery(hlderp,derp,hl_data)
+function hlderpery(hlselloc,derpselloc, bigdata){
+  hlselloc = hlselloc
+  .data(bigdata, d => d.name )
+  .join(
+    enter=>enter.append('g')
+          .classed('derp_agent',true)
+          .attr('transform',d=>`translate(0,${d.pos})`)
+    ,
+    update=>update
+  )
+  // one layer deeper
+  derpselloc = hlselloc.selectAll('rect') 
+  .data(
+    function(d) { 
+    return randomArraySplice(d.poc_data)  // d is hl_data[0], hl_data[1] ...
+    }
+    ,
+  (d) => d)
+  .join(derp_enter,derp_update,derp_exit)
+
+  return [hlselloc,derpselloc]
+}
+
 // Note: enter uses transition.selection() while update uses call() wrapper on the
 //  transition. Afaik there is no difference.
+//  Original, flat selection
 function derpery(my_sel) {
   return my_sel
     .data(randomArraySplice(poc_data), (d) => d)
@@ -823,29 +853,29 @@ function derpery(my_sel) {
           .attr("opacity", 1)
           .attr("fill", "salmon")
           .attr("height", (_) => getRandomInt(25))
-          .transition()
+          .transition('other')
           .duration(750)
           .attr("fill", "lightblue")
           .selection(),
       (update) =>
         update.call((u) =>
           u
-            .transition()
+            .transition('uot')
             .duration(750)
             .ease(d3.easeCubic)
             .attr("fill", "khaki")
             .attr("height", (_) => getRandomInt(25))
-            .transition()
+            .transition('other')
             .duration(750)
             .attr("fill", "lightblue")
         ),
       (exit) =>
         exit.call((ex_sel) =>
           ex_sel
-            .transition()
+            .transition('oiuqwerpo')
             .duration(500)
             .attr("fill", "indigo")
-            .transition()
+            .transition('sdf')
             .duration(700)
             .ease(d3.easeCubicIn)
             .attr("opacity", 0)
@@ -853,4 +883,46 @@ function derpery(my_sel) {
             .remove()
         )
     );
+}
+function derp_enter(enter){
+  enter
+    .append("rect")
+    .attr("stroke", "black")
+    .attr("stroke-width", 0.1)
+    .attr("width", 8)
+    .attr("x", (d) => d)
+    .attr("y",2)
+    .transition()
+    .duration(750)
+    .attr("opacity", 1)
+    .attr("fill", "#5E7146")
+    .attr("height", (_) => getRandomInt(25))
+    .transition('other')
+    .duration(750)
+    .attr("fill", "lightblue")
+    .selection()
+}
+
+function derp_update(u){
+  u
+    .transition('uot')
+    .duration(750)
+    .ease(d3.easeCubic)
+    .attr("fill", "khaki")
+    .attr("height", (_) => getRandomInt(25))
+    .transition()
+    .duration(750)
+    .attr("fill", "lightblue")
+}
+function derp_exit(ex_sel){
+  ex_sel
+    .transition('oiuqwerpo')
+    .duration(500)
+    .attr("fill", "indigo")
+    .transition()
+    .duration(700)
+    .ease(d3.easeCubicIn)
+    .attr("opacity", 0)
+    .attr("height", 0)
+    .remove()
 }

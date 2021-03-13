@@ -34,8 +34,8 @@ svg {
 
 .landmark_true_group {
   stroke-width: 0.1;
-  stroke: gold;
-  fill: #6e6060;
+  stroke: none;
+  fill: #694c39;
 }
 
 /* .agent:hover { */
