@@ -650,6 +650,13 @@ let keyPressedBuffer = {
 };
 
 body.on("keydown", (e) => {
+  // discard unmanaged keys
+  if ( e.key != 'ArrowUp'
+       && e.key != 'ArrowDown'
+       && e.key != 'ArrowRight'
+       && e.key != 'ArrowLeft')
+    return;
+
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
 
   inputCmdModel = "AA"; // TODO: centralize in globalUI
