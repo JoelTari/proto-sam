@@ -143,8 +143,8 @@ div.tooltip {
   text-align: center;
   /* width: 60px; */
   /* height: 28px; */
-  font-family: arial;
-  font: 0.8rem sans-serif;
+  font-family: Monospace;
+  font: 0.8rem;
   padding: 0.2em 0.5em;
   background: white;
   border: 2px solid silver;

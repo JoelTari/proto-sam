@@ -3,9 +3,11 @@ const body = d3.select("body");
 const canvas = d3.select(".canvas");
 const canvas_mg = d3.select(".main_group");
 // Define the div for the tooltip
-const div_tooltip = d3.select("body").append("div")	
-    .attr("class", "tooltip")				
-    .style("opacity", 0);
+const div_tooltip = d3
+  .select("body")
+  .append("div")
+  .attr("class", "tooltip")
+  .style("opacity", 0);
 
 const aratio = 0.6;
 
@@ -162,11 +164,24 @@ client.on("message", function (topic, message) {
             // size is the area, for a cross: area= desired_tot_length**2 *5
             .attr("d", `${d3.symbol(d3.symbolCross, 1 * 1)()}`)
             .classed("landmark_true_group", true)
-            .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`),
-
-        (update) => update // the default if not specified
+            .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
+            .on("mouseover", function (e, d) {
+              // note: use d3.pointer(e) to get pointer coord wrt the target element
+              div_tooltip
+                .style("left", `${e.pageX}px`)
+                .style("top", `${e.pageY - 6}px`)
+                .transition()
+                .duration(200)
+                .style("opacity", 0.9);
+              div_tooltip.html(`${d.landmark_id}`);
+              d3.select(this).style("cursor", "pointer");
+            })
+            .on("mouseout", function (e, d) {
+              d3.select(this).style("cursor", "default");
+              div_tooltip.transition().duration(300).style("opacity", 0);
+            })
+        // ,(update) => update // the default if not specified
       );
-
 
     // ugly, since updates remove my active/selected that is added outside of d3
     // I got the impression that the general update pattern deletes any excess property added
@@ -236,7 +251,25 @@ client.on("message", function (topic, message) {
                   // 2. the robot
                   g.append("polygon")
                     // .classed('agent_representation',true)
-                    .attr("points", "0,-1 0,1 3,0"); // TODO: append a <g> first
+                    .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
+                    .on("mouseover", function (e, d) {
+                      // note: use d3.pointer(e) to get pointer coord wrt the target element
+                      div_tooltip
+                        .style("left", `${e.pageX}px`)
+                        .style("top", `${e.pageY - 6}px`)
+                        .transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                      div_tooltip.html(`${d.robot_id}`);
+                      d3.select(this).style("cursor", "pointer");
+                    })
+                    .on("mouseout", function (e, d) {
+                      d3.select(this).style("cursor", "default");
+                      div_tooltip
+                        .transition()
+                        .duration(300)
+                        .style("opacity", 0);
+                    });
                   // .attr("fill", "linen")
                   // .attr("stroke", "black")
                   // .attr("stroke-width", 0.1);
@@ -284,16 +317,15 @@ client.on("message", function (topic, message) {
     // console.log("Estimation graph data massage :");
     // console.log(estimation_data);
 
-
     // the factors
     d_factors_group = d_factors_group
       .data(estimation_data.factors, (d) => d.factor_id)
-      .join(join_enter_factor,join_update_factor,join_exit_factor)
+      .join(join_enter_factor, join_update_factor, join_exit_factor);
 
     // the vertices
     d_vertices_group = d_vertices_group
       .data(estimation_data.marginals, (d) => d.var_id)
-      .join(join_enter_vertex,join_update_vertex); // TODO: exit vertex
+      .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
   }
 });
 
@@ -302,13 +334,12 @@ client.on("message", function (topic, message) {
  *                  enter,update,exit of the various d3 selections
  *****************************************************************************/
 
-function join_enter_factor(enter){
-
-// TODO:
-// Imho best way to avoid to define those transitions everywhere is to 
-// transform those functions in classes of which the transitions are members 
-const t_factor_entry = d3.transition().duration(2200);
-const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+function join_enter_factor(enter) {
+  // TODO:
+  // Imho best way to avoid to define those transitions everywhere is to
+  // transform those functions in classes of which the transitions are members
+  const t_factor_entry = d3.transition().duration(2200);
+  const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
 
   return enter
     .append("g")
@@ -327,26 +358,19 @@ const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
         .call(function (g) {
           if (d.vars.length > 1) {
             // bi-factor, tri-factor etc...
-            d.vars.forEach(
-              (v) =>
+            d.vars.forEach((v) =>
               g
-              .append("line")
-              .attr("x1", d.dot_factor_position.x)
-              .attr("y1", d.dot_factor_position.y)
-              .attr(
-                "x2",
-                0.2 * v.mean.x + 0.8 * d.dot_factor_position.x
-              )
-              .attr(
-                "y2",
-                0.2 * v.mean.y + 0.8 * d.dot_factor_position.y
-              )
-              .classed(v.var_id, true)
-              .transition(t_graph_motion)
-              .attr("x1", d.dot_factor_position.x)
-              .attr("y1", d.dot_factor_position.y)
-              .attr("x2", v.mean.x)
-              .attr("y2", v.mean.y)
+                .append("line")
+                .attr("x1", d.dot_factor_position.x)
+                .attr("y1", d.dot_factor_position.y)
+                .attr("x2", 0.2 * v.mean.x + 0.8 * d.dot_factor_position.x)
+                .attr("y2", 0.2 * v.mean.y + 0.8 * d.dot_factor_position.y)
+                .classed(v.var_id, true)
+                .transition(t_graph_motion)
+                .attr("x1", d.dot_factor_position.x)
+                .attr("y1", d.dot_factor_position.y)
+                .attr("x2", v.mean.x)
+                .attr("y2", v.mean.y)
             );
           } else {
             // unifactor
@@ -373,43 +397,44 @@ const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
               (d) => d.dot_factor_position.y
               // (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
             )
-          // .style("opacity", 0)
+            // .style("opacity", 0)
             .attr("r", 0.3 * 2)
-            .on("mouseover", function(e,d) {		
+            .on("mouseover", function (e, d) {
               // note: use d3.pointer(e) to get pointer coord wrt the target element
-              div_tooltip.style('left', `${e.pageX}px`)
-                          .style('top', `${e.pageY-6}px`)
-                          .transition().duration(200)		
-                          .style("opacity", .9)
-              div_tooltip.html(`${d.factor_id}`  )	
-               d3.select(this).style("cursor", "pointer"); 
-              })					
-            .on("mouseout", function(e,d) {		
-               d3.select(this).style("cursor", "default"); 
-                div_tooltip.transition()		
-                    .duration(300)		
-                    .style("opacity", 0);
-              })
-          // opacity transition not necessary here
-            .transition('fc').duration(2200)
-          // .style("opacity")
-            .attr("r", 0.3)
+              div_tooltip
+                .style("left", `${e.pageX}px`)
+                .style("top", `${e.pageY - 6}px`)
+                .transition()
+                .duration(200)
+                .style("opacity", 0.9);
+              div_tooltip.html(`${d.factor_id}`);
+              d3.select(this).style("cursor", "pointer");
+            })
+            .on("mouseout", function (e, d) {
+              d3.select(this).style("cursor", "default");
+              div_tooltip.transition().duration(300).style("opacity", 0);
+            })
+            // opacity transition not necessary here
+            .transition("fc")
+            .duration(2200)
+            // .style("opacity")
+            .attr("r", 0.3);
         });
-    })
+    });
 }
 
-function join_update_factor(update){
-// TODO:
-// Imho best way to avoid to define those transitions everywhere is to 
-// transform those functions in classes of which the transitions are members 
-const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+function join_update_factor(update) {
+  // TODO:
+  // Imho best way to avoid to define those transitions everywhere is to
+  // transform those functions in classes of which the transitions are members
+  const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
 
   return update.each(function (d) {
     d3.select(this)
       .selectChild("g")
       .selectChild("g")
       .selectChildren("line")
-    // .selectChild("line") // TODO: all children
+      // .selectChild("line") // TODO: all children
       .call(function (lines) {
         lines.each(function (dd, i) {
           if (d.vars.length > 1) {
@@ -439,33 +464,29 @@ const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
       .transition(t_graph_motion)
       .attr("cx", d.dot_factor_position.x)
       .attr("cy", d.dot_factor_position.y);
-  })
+  });
 }
 
-function join_exit_factor(exit){
+function join_exit_factor(exit) {
   return exit
-    .call(ex=>ex
-      .selectChild("g")
-      .selectChild("g")
-      .selectChildren("line")
-      .style("stroke", "brown")
+    .call((ex) =>
+      ex
+        .selectChild("g")
+        .selectChild("g")
+        .selectChildren("line")
+        .style("stroke", "brown")
     )
-    .call(ex=>ex
-      .selectChild("g")
-      .select("circle")
-      .style('fill','brown')
-    )
-    .transition('exit_factor') // TODO: Define outside
+    .call((ex) => ex.selectChild("g").select("circle").style("fill", "brown"))
+    .transition("exit_factor") // TODO: Define outside
     .duration(1000)
-    .style('opacity',0)
-    .remove()
+    .style("opacity", 0)
+    .remove();
 }
 
-function join_enter_vertex(enter){
-
-// TODO:
-// Imho best way to avoid to define those transitions everywhere is to 
-// transform those functions in classes of which the transitions are members 
+function join_enter_vertex(enter) {
+  // TODO:
+  // Imho best way to avoid to define those transitions everywhere is to
+  // transform those functions in classes of which the transitions are members
   const t_vertex_entry = d3.transition().duration(400);
 
   return enter
@@ -475,10 +496,7 @@ function join_enter_vertex(enter){
     .each(function (d) {
       d3.select(this)
         .append("g")
-        .attr(
-          "transform",
-          "translate(" + d.mean.x + "," + d.mean.y + ")"
-        )
+        .attr("transform", "translate(" + d.mean.x + "," + d.mean.y + ")")
         .append("g")
         .attr("transform", "rotate(0)")
         .call(function (g) {
@@ -491,7 +509,7 @@ function join_enter_vertex(enter){
           // text: variable name inside the circle
           g.append("text")
             .text((d) => d.var_id)
-          // .attr("stroke-width", "0.1px")
+            // .attr("stroke-width", "0.1px")
             .attr("text-anchor", "middle")
             .attr("alignment-baseline", "central")
             .style("opacity", 0)
@@ -500,10 +518,7 @@ function join_enter_vertex(enter){
             .style("opacity");
           // covariance (-> a rotated group that holds an ellipse)
           g.append("g")
-            .attr(
-              "transform",
-              `rotate(${(d.covariance.rot * 180) / Math.PI})`
-            )
+            .attr("transform", `rotate(${(d.covariance.rot * 180) / Math.PI})`)
             .append("ellipse")
             .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
             .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
@@ -511,14 +526,13 @@ function join_enter_vertex(enter){
             .transition(t_vertex_entry)
             .style("opacity"); // wow! this will look for the CSS (has to a style)
         });
-    })
+    });
 }
 
-function join_update_vertex(update){
-
+function join_update_vertex(update) {
   // TODO:
-  // Imho best way to avoid to define those transitions everywhere is to 
-  // transform those functions in classes of which the transitions are members 
+  // Imho best way to avoid to define those transitions everywhere is to
+  // transform those functions in classes of which the transitions are members
   const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
 
   return update.each(function (d) {
@@ -533,22 +547,19 @@ function join_update_vertex(update){
       .selectChild("g") //rotate
       .selectChild("g") // group (incl. rotate)
       .transition(t_graph_motion)
-      .attr(
-        "transform",
-        `rotate(${(d.covariance.rot * 180) / Math.PI})`
-      )
+      .attr("transform", `rotate(${(d.covariance.rot * 180) / Math.PI})`)
       .selection()
       .selectChild("ellipse")
       .transition(t_graph_motion)
       .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
       .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
       .selection();
-  })
+  });
 }
 
-function join_exit_vertex(exit){
+function join_exit_vertex(exit) {
   // TODO:
-  return exit
+  return exit;
 }
 
 /******************************************************************************
@@ -556,103 +567,103 @@ function join_exit_vertex(exit){
  *****************************************************************************/
 
 // in-place changes to the data structure for convenience when joining
-function estimation_data_massage(estimation_data){
-    // Data massage before integration: some data on the vertices array are needed
-    // for the factors (1), and the other way around is also true (2)
-    // (1) the factors need the position of the vertices (which is found in the data array)
-    //     in order to draw the factor/edge at the right position (a line between fact-vertex)
-    //     and the position of the full 'dot' representing the factor.
-    estimation_data.factors.forEach((f) => {
-      f.vars = estimation_data.marginals.filter((marginal) =>
-        f.vars_id.includes(marginal.var_id)
-      );
-      // automagically compute the factor position
-      // Obviously (or not), for an unary factor, the factor dot position will reduce
-      // to its unique associated node, which is suboptimal...
-      if (f.vars.length > 1) {
-        f.dot_factor_position = {
-          x:
-            f.vars.map((a_var) => a_var.mean.x).reduce((a, b) => a + b, 0) /
-            f.vars.length,
-          y:
-            f.vars.map((a_var) => a_var.mean.y).reduce((a, b) => a + b, 0) /
-            f.vars.length,
+function estimation_data_massage(estimation_data) {
+  // Data massage before integration: some data on the vertices array are needed
+  // for the factors (1), and the other way around is also true (2)
+  // (1) the factors need the position of the vertices (which is found in the data array)
+  //     in order to draw the factor/edge at the right position (a line between fact-vertex)
+  //     and the position of the full 'dot' representing the factor.
+  estimation_data.factors.forEach((f) => {
+    f.vars = estimation_data.marginals.filter((marginal) =>
+      f.vars_id.includes(marginal.var_id)
+    );
+    // automagically compute the factor position
+    // Obviously (or not), for an unary factor, the factor dot position will reduce
+    // to its unique associated node, which is suboptimal...
+    if (f.vars.length > 1) {
+      f.dot_factor_position = {
+        x:
+          f.vars.map((a_var) => a_var.mean.x).reduce((a, b) => a + b, 0) /
+          f.vars.length,
+        y:
+          f.vars.map((a_var) => a_var.mean.y).reduce((a, b) => a + b, 0) /
+          f.vars.length,
+      };
+    } else {
+      f.dot_factor_position = {
+        x: f.vars[0].mean.x,
+        y: f.vars[0].mean.y + 5,
+      };
+    }
+  });
+
+  // (2) the unary factors need the neighbors of their associated node to position
+  //      intuitively this factor
+  //      So the proposed solution is to add a neighbors array to each vertex containing
+  //      the vertices id of its neighbors.
+  //      This rely on first step
+  //      Seems that there is 2 cases, the node has neighbor(s) or has not (typicaly
+  //      happens initially with the initial pose)
+  estimation_data.factors
+    .filter((f) => f.vars_id.length == 1) // unary factor selection
+    .forEach((uf) => {
+      const unique_node = uf.vars_id[0];
+      //vectors of thetas
+      const neighbors = estimation_data.factors.filter(
+        (f) => f.factor_id !== uf.factor_id && f.vars_id.includes(unique_node)
+      ); // neighbors factors of the node associated with that unary factor
+      // TODO: care if no neighbor
+      if (neighbors.length > 0) {
+        // if there are neighbors factors, the unary factor position must be placed
+        // at the biggest angle gap
+        const thetas = neighbors
+          .map((neighbors_f) =>
+            Math.atan2(
+              neighbors_f.dot_factor_position.y - uf.vars[0].mean.y,
+              neighbors_f.dot_factor_position.x - uf.vars[0].mean.x
+            )
+          )
+          .sort((a, b) => a - b); // mandatory sorting
+
+        const thetas_2pi = thetas.map((t) => t - thetas[0]);
+        const dthetas2 = thetas_2pi.map((n, i) => {
+          if (i !== thetas_2pi.length - 1) {
+            return thetas_2pi[i + 1] - n;
+          } else return 2 * Math.PI - n;
+        });
+        const idx_max = indexOfMax(dthetas2);
+        const theta_unary = ecpi(thetas[idx_max] + dthetas2[idx_max] / 2);
+
+        // distance of the factor wrt the vertex.
+        const squares_distances = neighbors.map(
+          (nf) =>
+            (nf.dot_factor_position.y - uf.vars[0].mean.y) ** 2 +
+            (nf.dot_factor_position.x - uf.vars[0].mean.x) ** 2
+        );
+        const u_distance = Math.sqrt(
+          Math.min(25, Math.max(...squares_distances))
+        );
+        // TODO: place the hard-coded 25 in globalUI
+
+        // position of factor dot infered from polar coordinates
+        const new_uf_position = {
+          x: uf.vars[0].mean.x + u_distance * Math.cos(theta_unary),
+          y: uf.vars[0].mean.y + u_distance * Math.sin(theta_unary),
         };
+        // giving new position
+        uf.dot_factor_position = new_uf_position;
       } else {
-        f.dot_factor_position = {
-          x: f.vars[0].mean.x,
-          y: f.vars[0].mean.y + 5,
+        // no neighbors
+        const theta_unary = Math.PI / 2;
+        const u_distance = 5;
+        const new_uf_position = {
+          x: uf.vars[0].mean.x + u_distance * Math.cos(theta_unary),
+          y: uf.vars[0].mean.y + u_distance * Math.sin(theta_unary),
         };
+        // giving new position
+        uf.dot_factor_position = new_uf_position;
       }
     });
-
-    // (2) the unary factors need the neighbors of their associated node to position
-    //      intuitively this factor
-    //      So the proposed solution is to add a neighbors array to each vertex containing
-    //      the vertices id of its neighbors.
-    //      This rely on first step
-    //      Seems that there is 2 cases, the node has neighbor(s) or has not (typicaly
-    //      happens initially with the initial pose)
-    estimation_data.factors
-      .filter((f) => f.vars_id.length == 1) // unary factor selection
-      .forEach((uf) => {
-        const unique_node = uf.vars_id[0];
-        //vectors of thetas
-        const neighbors = estimation_data.factors.filter(
-          (f) => f.factor_id !== uf.factor_id && f.vars_id.includes(unique_node)
-        ); // neighbors factors of the node associated with that unary factor
-        // TODO: care if no neighbor
-        if (neighbors.length > 0) {
-          // if there are neighbors factors, the unary factor position must be placed
-          // at the biggest angle gap
-          const thetas = neighbors
-            .map((neighbors_f) =>
-              Math.atan2(
-                neighbors_f.dot_factor_position.y - uf.vars[0].mean.y,
-                neighbors_f.dot_factor_position.x - uf.vars[0].mean.x
-              )
-            )
-            .sort((a, b) => a - b); // mandatory sorting
-
-          const thetas_2pi = thetas.map((t) => t - thetas[0]);
-          const dthetas2 = thetas_2pi.map((n, i) => {
-            if (i !== thetas_2pi.length - 1) {
-              return thetas_2pi[i + 1] - n;
-            } else return 2 * Math.PI - n;
-          });
-          const idx_max = indexOfMax(dthetas2);
-          const theta_unary = ecpi(thetas[idx_max] + dthetas2[idx_max] / 2);
-
-          // distance of the factor wrt the vertex.
-          const squares_distances = neighbors.map(
-            (nf) =>
-              (nf.dot_factor_position.y - uf.vars[0].mean.y) ** 2 +
-              (nf.dot_factor_position.x - uf.vars[0].mean.x) ** 2
-          );
-          const u_distance = Math.sqrt(
-            Math.min(25, Math.max(...squares_distances))
-          );
-          // TODO: place the hard-coded 25 in globalUI
-
-          // position of factor dot infered from polar coordinates
-          const new_uf_position = {
-            x: uf.vars[0].mean.x + u_distance * Math.cos(theta_unary),
-            y: uf.vars[0].mean.y + u_distance * Math.sin(theta_unary),
-          };
-          // giving new position
-          uf.dot_factor_position = new_uf_position;
-        } else {
-          // no neighbors
-          const theta_unary = Math.PI / 2;
-          const u_distance = 5;
-          const new_uf_position = {
-            x: uf.vars[0].mean.x + u_distance * Math.cos(theta_unary),
-            y: uf.vars[0].mean.y + u_distance * Math.sin(theta_unary),
-          };
-          // giving new position
-          uf.dot_factor_position = new_uf_position;
-        }
-      });
 }
 
 /******************************************************************************
@@ -669,10 +680,12 @@ let keyPressedBuffer = {
 
 body.on("keydown", (e) => {
   // discard unmanaged keys
-  if ( e.key != 'ArrowUp'
-       && e.key != 'ArrowDown'
-       && e.key != 'ArrowRight'
-       && e.key != 'ArrowLeft')
+  if (
+    e.key != "ArrowUp" &&
+    e.key != "ArrowDown" &&
+    e.key != "ArrowRight" &&
+    e.key != "ArrowLeft"
+  )
     return;
 
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
@@ -856,7 +869,6 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-
 /******************************************************************************
  *                            Prototypes
  *****************************************************************************/
@@ -868,67 +880,73 @@ function randomArraySplice(my_array) {
 // some derpery to prove concept
 const poc_data = [2, 14, 26, 35, 44, 52, 68, 81];
 
-let hlderp = d3.select('.main_group').selectAll('.derp_agent').selectAll('rect')
+let hlderp = d3
+  .select(".main_group")
+  .selectAll(".derp_agent")
+  .selectAll("rect");
 // a .derp_agent is a group (arbitrary)
 
-const hl_data = [{name: 'agent1', poc_data: poc_data, pos: 2},
-                 {name: 'agent2', poc_data: poc_data, pos: 31}];
+const hl_data = [
+  { name: "agent1", poc_data: poc_data, pos: 2 },
+  { name: "agent2", poc_data: poc_data, pos: 31 },
+];
 
 // call with  hlderpery(hl_data)
-function hlderpery(bigdata){
-   // has to be a global
-  d3.select('.main_group').selectAll('.derp_agent')
-    .data(bigdata, d => d.name )
-  .join(
-    enter=>enter.append('g')
-          .classed('derp_agent',true)
-          .attr('transform',d=>`translate(0,${d.pos})`)
-    ,
-    update=>update
-  )  // could be simply join('g').classed(...).attr(transform...)
-  .selectAll('rect') 
-  .data(
-    function(d) { 
-    return randomArraySplice(d.poc_data)  // d is hl_data[0], hl_data[1] ...
-    }
-    ,
-  (d) => d)
-  .join(derp_enter,derp_update,derp_exit)
+function hlderpery(bigdata) {
+  // has to be a global
+  d3.select(".main_group")
+    .selectAll(".derp_agent")
+    .data(bigdata, (d) => d.name)
+    .join(
+      (enter) =>
+        enter
+          .append("g")
+          .classed("derp_agent", true)
+          .attr("transform", (d) => `translate(0,${d.pos})`),
+      (update) => update
+    ) // could be simply join('g').classed(...).attr(transform...)
+    .selectAll("rect")
+    .data(
+      function (d) {
+        return randomArraySplice(d.poc_data); // d is hl_data[0], hl_data[1] ...
+      },
+      (d) => d
+    )
+    .join(derp_enter, derp_update, derp_exit);
 }
 
-function derp_enter(enter){
+function derp_enter(enter) {
   enter
     .append("rect")
     .attr("stroke", "black")
     .attr("stroke-width", 0.1)
     .attr("width", 8)
     .attr("x", (d) => d)
-    .attr("y",2)
+    .attr("y", 2)
     .transition()
     .duration(750)
     .attr("opacity", 1)
     .attr("fill", "#5E7146")
     .attr("height", (_) => getRandomInt(25))
-    .transition('other')
+    .transition("other")
     .duration(750)
     .attr("fill", "lightblue")
-    .selection()
+    .selection();
 }
 
-function derp_update(u){
-  u
-    .transition('uot')
+function derp_update(u) {
+  u.transition("uot")
     .duration(750)
     .ease(d3.easeCubic)
     .attr("fill", "khaki")
     .attr("height", (_) => getRandomInt(25))
     .transition()
     .duration(750)
-    .attr("fill", "lightblue")
+    .attr("fill", "lightblue");
 }
-function derp_exit(ex_sel){
+function derp_exit(ex_sel) {
   ex_sel
-    .transition('oiuqwerpo')
+    .transition("oiuqwerpo")
     .duration(500)
     .attr("fill", "indigo")
     .transition()
@@ -936,9 +954,8 @@ function derp_exit(ex_sel){
     .ease(d3.easeCubicIn)
     .attr("opacity", 0)
     .attr("height", 0)
-    .remove()
+    .remove();
 }
-
 
 // Note: enter uses transition.selection() while update uses call() wrapper on the
 //  transition. Afaik there is no difference.
@@ -947,5 +964,5 @@ let derp = hlderp.selectAll("rect");
 function derpery(my_sel) {
   return my_sel
     .data(randomArraySplice(poc_data), (d) => d)
-    .join(derp_enter,derp_update,derp_exit);
+    .join(derp_enter, derp_update, derp_exit);
 }
