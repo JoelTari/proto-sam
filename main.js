@@ -2,6 +2,10 @@
 const body = d3.select("body");
 const canvas = d3.select(".canvas");
 const canvas_mg = d3.select(".main_group");
+// Define the div for the tooltip
+const div_tooltip = d3.select("body").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0);
 
 const aratio = 0.6;
 
@@ -371,11 +375,25 @@ const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
             )
           // .style("opacity", 0)
             .attr("r", 0.3 * 2)
-          // .transition(t_factor_entry)  // TODO: investiguer l'interruption de transition
+            .on("mouseover", function(e,d) {		
+              // note: use d3.pointer(e) to get pointer coord wrt the target element
+              div_tooltip.style('left', `${e.pageX}px`)
+                          .style('top', `${e.pageY-6}px`)
+                          .transition().duration(200)		
+                          .style("opacity", .9)
+              div_tooltip.html(`${d.factor_id}`  )	
+               d3.select(this).style("cursor", "pointer"); 
+              })					
+            .on("mouseout", function(e,d) {		
+               d3.select(this).style("cursor", "default"); 
+                div_tooltip.transition()		
+                    .duration(300)		
+                    .style("opacity", 0);
+              })
           // opacity transition not necessary here
             .transition('fc').duration(2200)
           // .style("opacity")
-            .attr("r", 0.3);
+            .attr("r", 0.3)
         });
     })
 }

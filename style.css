@@ -33,9 +33,12 @@ svg {
 }
 
 .landmark_true_group {
-  stroke-width: 0.1;
   stroke: none;
   fill: #694c39;
+}
+.landmark_true_group:hover {
+  stroke-width: 0.2;
+  stroke: darkseagreen;
 }
 
 /* .agent:hover { */
@@ -104,7 +107,13 @@ svg {
 }
 .vertex text {
   font-family: Monospace;
+  cursor: default;
   opacity: 1;
+}
+.vertex circle:hover {
+  fill: orange;
+  stroke: black;
+  stroke-width: 0.1;
 }
 .vertex ellipse {
   /* covariance */
@@ -124,4 +133,22 @@ svg {
   opacity: 1;
 }
 
+.factor circle:hover {
+  stroke-width: 0.5;
+  stroke: orange;
+}
+
+div.tooltip {
+  position: absolute;
+  text-align: center;
+  /* width: 60px; */
+  /* height: 28px; */
+  font-family: arial;
+  font: 0.8rem sans-serif;
+  padding: 0.2em 0.5em;
+  background: white;
+  border: 2px solid silver;
+  border-radius: 25%;
+  transform: translateX(-50%) translateY(-110%);
+}
 /* CSS overrides attr, but won't override style. That's what tripped me up. */
