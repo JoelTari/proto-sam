@@ -56,6 +56,10 @@ let d_vertices_group = graph_test_group
   .classed("vertices_graph_test_group", true)
   .selectAll(".vertex");
 
+// new graph
+const factor_graphs_group = canvas_mg .append('g')
+                                      .classed('factor_graphs_group',true)
+
 // // draw
 // const vgGrobot1 = canvas_mg.append("g").classed("agent", true);
 // d3.selectAll(".agent")
@@ -173,8 +177,8 @@ client.on("message", function (topic, message) {
                 .style("left", `${e.pageX}px`)
                 .style("top", `${e.pageY - 6}px`)
                 .style("visibility", "visible")
-                .transition()
-                .duration(200)
+                // .transition()
+                // .duration(200)
                 .style("opacity", 0.9);
               div_tooltip.html(`${d.landmark_id}`);
               d3.select(this).style("cursor", "pointer");
@@ -295,21 +299,64 @@ client.on("message", function (topic, message) {
     // console.log(JSON.parse(message.toString()));
 
     // convert the string in json
-    estimation_data = JSON.parse(message.toString());
+    estimation_graphs = JSON.parse(message.toString());
     // massage data
-    estimation_data_massage(estimation_data);
+    estimation_graphs.forEach(an_agent_estimation => 
+              estimation_data_massage(an_agent_estimation.graph))
     // console.log("Estimation graph data massage :");
     // console.log(estimation_data);
 
-    // the factors
-    d_factors_group = d_factors_group
-      .data(estimation_data.factors, (d) => d.factor_id)
-      .join(join_enter_factor, join_update_factor, join_exit_factor);
+// const graph_test_group = canvas_mg
+//   .append("g")
+//   .classed("graph_test_group", true);
+// let d_factors_group = graph_test_group
+//   .append("g")
+//   .classed("factors_graph_test_group", true)
+//   .selectAll(".factor");
+   
+    factor_graphs_group
+      .selectAll('.factor_graph')
+      .data(estimation_graphs, (d)=>d.header.robot_id)
+      .join(
+        enter=>
+        enter
+        .append('g')
+        .classed('factor_graph',true)
+        .attr('id',d => d.header.robot_id)
+        ,
+        update => update
+        ,
+        exit => exit // NO REMOVE AT THIS LEVEL !!
+      )
+      .each( function (_,_,_) { // d,i,n are the arguments.
+        // no need to pass d, as the data binds at the upper level data bounds
+        // are available through the data function
+        d3.select(this)
+          .selectAll('.factor')
+          .data(function(upper_level_data){
+             return upper_level_data.graph.factors
+          } , (d) => d.factor_id)
+          .join(join_enter_factor, join_update_factor, join_exit_factor);
 
-    // the vertices
-    d_vertices_group = d_vertices_group
-      .data(estimation_data.marginals, (d) => d.var_id)
-      .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
+        d3.select(this)
+          .selectAll('.vertex')
+          .data(function(upper_level_data){
+             return upper_level_data.graph.marginals
+          } , (d) => d.var_id)
+          .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
+      }
+      )
+            
+
+    // the factors
+    // d_factors_group = d_factors_group
+    //   .data(estimation_data.factors, (d) => d.factor_id)
+    //   .join(join_enter_factor, join_update_factor, join_exit_factor);
+
+    // // the vertices
+    // d_vertices_group = d_vertices_group
+    //   .data(estimation_data.marginals, (d) => d.var_id)
+    //   .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
   }
 });
 
@@ -648,8 +695,8 @@ function mouseover_mg(text_str) {
       .style("left", `${e.pageX}px`)
       .style("top", `${e.pageY - 6}px`)
       .style("visibility", "visible")
-      .transition()
-      .duration(200)
+      // .transition()
+      // .duration(200)
       .style("opacity", 0.9);
     div_tooltip.html(text_str);
     d3.select(this).style("cursor", "pointer");
@@ -659,8 +706,8 @@ function mouseout_mg() {
   return function (e, d) {
     d3.select(this).style("cursor", "default");
     div_tooltip
-      .transition()
-      .duration(300)
+      // .transition()
+      // .duration(300)
       .style("opacity", 0)
       .style("visibility", "hidden");
   };

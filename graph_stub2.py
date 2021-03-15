@@ -55,7 +55,6 @@ world = {
 }
 
 
-
 # some mqtt related globals
 broker = 'localhost'
 request_ground_truth_topic = 'request_ground_truth'
@@ -64,90 +63,114 @@ request_estimation_graph_topic = 'request_estimation_graph'
 estimation_graph_topic = 'estimation_graph'
 
 # some randomness
-def rSig():
-    return rd.uniform(1,5)
-def rRot():
-    return rd.uniform(0,math.pi/2)
-# randomness at iteration
-def rDSig():
-    return rd.uniform(0.3,0.8)
-def rDRot():
-    return rd.uniform(-math.pi/3,math.pi/3)
-def rXY(sig = 2.5):
-    return rd.normalvariate(0,sig)
 
-def fd_landmark_by_id(ArrayOfLandmarks,lid):
-   return next(item for item in ArrayOfLandmarks if item["landmark_id"] == lid) 
-   # return next(filter(lambda x: x['landmark_id'] == lid, ArrayOfLandmarks))       
+
+def rSig():
+    return rd.uniform(1, 5)
+
+
+def rRot():
+    return rd.uniform(0, math.pi/2)
+# randomness at iteration
+
+
+def rDSig():
+    return rd.uniform(0.3, 0.8)
+
+
+def rDRot():
+    return rd.uniform(-math.pi/3, math.pi/3)
+
+
+def rXY(sig=2.5):
+    return rd.normalvariate(0, sig)
+
+
+def fd_landmark_by_id(ArrayOfLandmarks, lid):
+    return next(item for item in ArrayOfLandmarks if item["landmark_id"] == lid)
+    # return next(filter(lambda x: x['landmark_id'] == lid, ArrayOfLandmarks))
 
 
 # ----------------------------------------------------------------------------
 #                           Globals: Fake MultiMap
 # ----------------------------------------------------------------------------
 
-full_estimation1 = {
-    'marginals': [
-        {'var_id': 'x0', 'mean': {'x': 6.5, 'y': 12},'covariance': {'sigma': [1,1], 'rot':0}},
-        {'var_id': 'x1', 'mean': {'x': 14, 'y': 10.6},'covariance': {'sigma': [1,1], 'rot':0}},
-        {'var_id': 'x2', 'mean': {'x': 21.5, 'y': 5.6},'covariance': {'sigma': [1,1], 'rot':0}},
-        {'var_id': 'x3', 'mean': {'x': 29.5, 'y': 5.6},'covariance': {'sigma': [1,1], 'rot':0}},
-        {'var_id': 'x4', 'mean': {'x': 38, 'y': 7},'covariance': {'sigma': [1,1], 'rot':0}},
-        {'var_id': 'l2', 'mean': {
-                                 'x':
-                                fd_landmark_by_id(world['landmarks'],'l2')['state']['x']+rXY()
-                                ,'y':
-                                fd_landmark_by_id(world['landmarks'],'l2')['state']['y']+rXY()
-                                },'covariance': {'sigma': [1,1], 'rot':0}},
-        {'var_id': 'l7', 'mean': {
-                                 'x':
-                                fd_landmark_by_id(world['landmarks'],'l7')['state']['x']+rXY()
-                                ,'y':
-                                fd_landmark_by_id(world['landmarks'],'l7')['state']['y']+rXY()
-                                },'covariance': {'sigma': [1,1], 'rot':0}},
-    ],
+full_estimations1 = [
+    {
+        'header': {
+            'robot_id': 'r1',
+            'seq': 0,
+        },
+        'graph': {
+            'marginals': [
+                {'var_id': 'x0', 'mean': {'x': 6.5, 'y': 12},
+                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                {'var_id': 'x1', 'mean': {'x': 14, 'y': 10.6},
+                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                {'var_id': 'x2', 'mean': {'x': 21.5, 'y': 5.6},
+                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                {'var_id': 'x3', 'mean': {'x': 29.5, 'y': 5.6},
+                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                {'var_id': 'x4', 'mean': {'x': 38, 'y': 7},
+                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                {'var_id': 'l2', 'mean': {
+                    'x':
+                        fd_landmark_by_id(world['landmarks'], 'l2')['state']['x']+rXY(), 'y':
+                        fd_landmark_by_id(world['landmarks'], 'l2')[
+                            'state']['y']+rXY()
+                }, 'covariance': {'sigma': [1, 1], 'rot':0}},
+                {'var_id': 'l7', 'mean': {
+                    'x':
+                        fd_landmark_by_id(world['landmarks'], 'l7')['state']['x']+rXY(), 'y':
+                        fd_landmark_by_id(world['landmarks'], 'l7')[
+                            'state']['y']+rXY()
+                }, 'covariance': {'sigma': [1, 1], 'rot':0}},
+            ],
 
-    'factors': [
-        {'factor_id': 'f0',
-            'type': 'ini_position',
-            'vars_id':['x0'],
-            },
-        {'factor_id': 'f1',
-            'type': 'rb',
-            'vars_id':['l2','x0'],
-            },
-        {'factor_id': 'f2',
-            'type': 'odometry',
-            'vars_id':['x1','x0'],
-            },
-        {'factor_id': 'f3',
-            'type': 'odometry',
-            'vars_id':['l2','x1'],
-         },
-        {'factor_id': 'f4',
-            'type': 'odometry',
-            'vars_id':['x2','l2'],
-            },
-        {'factor_id': 'f5',
-            'type': 'odometry',
-            'vars_id':['x1','x2'],
-            },
-        {'factor_id': 'f6',
-            'type': 'odometry',
-            'vars_id':['x2','x3'],
-            },
-        {'factor_id': 'f7',
-            'type': 'odometry',
-            'vars_id':['x4','x3'],
-            },
-        {'factor_id': 'f8',
-            'type': 'odometry',
-            'vars_id':['x4','l7'],
-            },
-    ],
-        };
+            'factors': [
+                {'factor_id': 'f0',
+                 'type': 'ini_position',
+                 'vars_id': ['x0'],
+                 },
+                {'factor_id': 'f1',
+                 'type': 'rb',
+                 'vars_id': ['l2', 'x0'],
+                 },
+                {'factor_id': 'f2',
+                 'type': 'odometry',
+                 'vars_id': ['x1', 'x0'],
+                 },
+                {'factor_id': 'f3',
+                 'type': 'odometry',
+                 'vars_id': ['l2', 'x1'],
+                 },
+                {'factor_id': 'f4',
+                 'type': 'odometry',
+                 'vars_id': ['x2', 'l2'],
+                 },
+                {'factor_id': 'f5',
+                 'type': 'odometry',
+                 'vars_id': ['x1', 'x2'],
+                 },
+                {'factor_id': 'f6',
+                 'type': 'odometry',
+                 'vars_id': ['x2', 'x3'],
+                 },
+                {'factor_id': 'f7',
+                 'type': 'odometry',
+                 'vars_id': ['x4', 'x3'],
+                 },
+                {'factor_id': 'f8',
+                 'type': 'odometry',
+                 'vars_id': ['x4', 'l7'],
+                 },
+            ],
+        }
+    }
+]
 
 
-full_estimation2 = {};
+full_estimations2 = {}
 
 # ----------------------------------------------------------------------------
 #         mqtt layer callbacks overrides (not yet users callbacks)
@@ -184,10 +207,10 @@ def on_message(client, userdata, message):
     if message.topic == request_estimation_graph_topic:
         if msg == '1':
             client.publish(estimation_graph_topic,
-                           json.dumps(full_estimation1))
+                           json.dumps(full_estimations1))
         elif msg == '2':
             client.publish(estimation_graph_topic,
-                           json.dumps(full_estimation2))
+                           json.dumps(full_estimations2))
     elif message.topic == request_ground_truth_topic:
         client.publish(ground_truth_topic, json.dumps(world))
 
