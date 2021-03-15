@@ -172,13 +172,14 @@ client.on("message", function (topic, message) {
               div_tooltip
                 .style("left", `${e.pageX}px`)
                 .style("top", `${e.pageY - 6}px`)
+                .style('visibility','visible')
                 .transition()
                 .duration(200)
                 .style("opacity", 0.9);
               div_tooltip.html(`${d.landmark_id}`);
               d3.select(this).style("cursor", "pointer");
             })
-            .on("mouseout", mouseout_mg)
+            .on("mouseout", mouseout_mg())
         // ,(update) => update // the default if not specified
       );
 
@@ -646,6 +647,7 @@ function mouseover_mg(text_str){
               div_tooltip
                 .style("left", `${e.pageX}px`)
                 .style("top", `${e.pageY - 6}px`)
+                .style('visibility','visible')
                 .transition()
                 .duration(200)
                 .style("opacity", 0.9);
@@ -656,7 +658,8 @@ function mouseover_mg(text_str){
 function mouseout_mg(){
   return function (e, d) {
               d3.select(this).style("cursor", "default");
-              div_tooltip.transition().duration(300).style("opacity", 0);
+              div_tooltip.transition().duration(300).style("opacity", 0)
+                          .style('visibility', 'hidden');
             }
 }
 
