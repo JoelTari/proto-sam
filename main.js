@@ -165,14 +165,14 @@ client.on("message", function (topic, message) {
             .attr("d", `${d3.symbol(d3.symbolCross, 1 * 1)()}`)
             .classed("landmark_true_group", true)
             .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
-            .on("mouseover", function (e, d) { 
+            .on("mouseover", function (e, d) {
               // TODO: use the UI event function
-              //       like others mouseover func do                                  
+              //       like others mouseover func do
               // note: use d3.pointer(e) to get pointer coord wrt the target element
               div_tooltip
                 .style("left", `${e.pageX}px`)
                 .style("top", `${e.pageY - 6}px`)
-                .style('visibility','visible')
+                .style("visibility", "visible")
                 .transition()
                 .duration(200)
                 .style("opacity", 0.9);
@@ -642,27 +642,29 @@ function estimation_data_massage(estimation_data) {
  *****************************************************************************/
 
 // mouse over-out
-function mouseover_mg(text_str){
-  return function (e,d){
-              div_tooltip
-                .style("left", `${e.pageX}px`)
-                .style("top", `${e.pageY - 6}px`)
-                .style('visibility','visible')
-                .transition()
-                .duration(200)
-                .style("opacity", 0.9);
-              div_tooltip.html(text_str);
-              d3.select(this).style("cursor", "pointer");
+function mouseover_mg(text_str) {
+  return function (e, d) {
+    div_tooltip
+      .style("left", `${e.pageX}px`)
+      .style("top", `${e.pageY - 6}px`)
+      .style("visibility", "visible")
+      .transition()
+      .duration(200)
+      .style("opacity", 0.9);
+    div_tooltip.html(text_str);
+    d3.select(this).style("cursor", "pointer");
   };
 }
-function mouseout_mg(){
+function mouseout_mg() {
   return function (e, d) {
-              d3.select(this).style("cursor", "default");
-              div_tooltip.transition().duration(300).style("opacity", 0)
-                          .style('visibility', 'hidden');
-            }
+    d3.select(this).style("cursor", "default");
+    div_tooltip
+      .transition()
+      .duration(300)
+      .style("opacity", 0)
+      .style("visibility", "hidden");
+  };
 }
-
 
 // TODO: put this var in globalUI
 let keyPressedBuffer = {
@@ -679,8 +681,9 @@ body.on("keydown", (e) => {
     e.key != "ArrowDown" &&
     e.key != "ArrowRight" &&
     e.key != "ArrowLeft"
-  )
-    return;
+  ){
+    return
+  }
 
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
 
@@ -696,6 +699,8 @@ body.on("keydown", (e) => {
     })
   );
 });
+
+canvas.on('click',e=> console.log(d3.pointer(e,canvas_mg.node())))
 
 body.on("keyup", (e) => (keyPressedBuffer[e.key] = false));
 
