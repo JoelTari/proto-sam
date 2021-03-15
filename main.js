@@ -165,7 +165,9 @@ client.on("message", function (topic, message) {
             .attr("d", `${d3.symbol(d3.symbolCross, 1 * 1)()}`)
             .classed("landmark_true_group", true)
             .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
-            .on("mouseover", function (e, d) {
+            .on("mouseover", function (e, d) { 
+              // TODO: use the UI event function
+              //       like others mouseover func do                                  
               // note: use d3.pointer(e) to get pointer coord wrt the target element
               div_tooltip
                 .style("left", `${e.pageX}px`)
@@ -176,10 +178,7 @@ client.on("message", function (topic, message) {
               div_tooltip.html(`${d.landmark_id}`);
               d3.select(this).style("cursor", "pointer");
             })
-            .on("mouseout", function (e, d) {
-              d3.select(this).style("cursor", "default");
-              div_tooltip.transition().duration(300).style("opacity", 0);
-            })
+            .on("mouseout", mouseout_mg)
         // ,(update) => update // the default if not specified
       );
 
@@ -252,24 +251,8 @@ client.on("message", function (topic, message) {
                   g.append("polygon")
                     // .classed('agent_representation',true)
                     .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-                    .on("mouseover", function (e, d) {
-                      // note: use d3.pointer(e) to get pointer coord wrt the target element
-                      div_tooltip
-                        .style("left", `${e.pageX}px`)
-                        .style("top", `${e.pageY - 6}px`)
-                        .transition()
-                        .duration(200)
-                        .style("opacity", 0.9);
-                      div_tooltip.html(`${d.robot_id}`);
-                      d3.select(this).style("cursor", "pointer");
-                    })
-                    .on("mouseout", function (e, d) {
-                      d3.select(this).style("cursor", "default");
-                      div_tooltip
-                        .transition()
-                        .duration(300)
-                        .style("opacity", 0);
-                    });
+                    .on("mouseover", mouseover_mg(`${d.robot_id}`))
+                    .on("mouseout", mouseout_mg());
                   // .attr("fill", "linen")
                   // .attr("stroke", "black")
                   // .attr("stroke-width", 0.1);
@@ -399,21 +382,8 @@ function join_enter_factor(enter) {
             )
             // .style("opacity", 0)
             .attr("r", 0.3 * 2)
-            .on("mouseover", function (e, d) {
-              // note: use d3.pointer(e) to get pointer coord wrt the target element
-              div_tooltip
-                .style("left", `${e.pageX}px`)
-                .style("top", `${e.pageY - 6}px`)
-                .transition()
-                .duration(200)
-                .style("opacity", 0.9);
-              div_tooltip.html(`${d.factor_id}`);
-              d3.select(this).style("cursor", "pointer");
-            })
-            .on("mouseout", function (e, d) {
-              d3.select(this).style("cursor", "default");
-              div_tooltip.transition().duration(300).style("opacity", 0);
-            })
+            .on("mouseover", mouseover_mg(`${d.factor_id}`))
+            .on("mouseout", mouseout_mg())
             // opacity transition not necessary here
             .transition("fc")
             .duration(2200)
@@ -669,6 +639,27 @@ function estimation_data_massage(estimation_data) {
 /******************************************************************************
  *                            UI Events
  *****************************************************************************/
+
+// mouse over-out
+function mouseover_mg(text_str){
+  return function (e,d){
+              div_tooltip
+                .style("left", `${e.pageX}px`)
+                .style("top", `${e.pageY - 6}px`)
+                .transition()
+                .duration(200)
+                .style("opacity", 0.9);
+              div_tooltip.html(text_str);
+              d3.select(this).style("cursor", "pointer");
+  };
+}
+function mouseout_mg(){
+  return function (e, d) {
+              d3.select(this).style("cursor", "default");
+              div_tooltip.transition().duration(300).style("opacity", 0);
+            }
+}
+
 
 // TODO: put this var in globalUI
 let keyPressedBuffer = {

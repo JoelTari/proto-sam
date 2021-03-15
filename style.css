@@ -132,7 +132,6 @@ svg {
   fill: black;
   opacity: 1;
 }
-
 .factor circle:hover {
   stroke-width: 0.5;
   stroke: orange;
