@@ -64,33 +64,30 @@ let d_vertices_group = graph_test_group
 //                                         .classed('robots_estimates_group',true)
 
 const robots_estimates_group = main_group
-      .append('g')
-      .classed('robots_estimates_group',true)   // robots & estimates plural
-      .selectAll('g.robot_estimates')// estimates plural (sev. hypothesis), robot sing
-      // branch off
-      .each(function(_,_,_){
-        // factor graph
+  .append("g")
+  .classed("robots_estimates_group", true) // robots & estimates plural
+  .selectAll("g.robot_estimates") // estimates plural (sev. hypothesis), robot sing
+  // branch off
+  .each(function (_, _, _) {
+    // factor graph
+    d3.select(this)
+      .append("g")
+      .classed("factor_graph", true)
+      .each(function (_, _, _) {
+        // factors
         d3.select(this)
-          .append('g')
-          .classed('factor_graph',true)
-          .each(function (_,_,_){
-            // factors
-            d3.select(this)
-              .append('g')
-              .classed('factors_group',true)
-              .selectAll('g.factor')
-            // vertices
-            d3.select(this)
-              .append('g')
-              .classed('vertices_group',true)
-              .selectAll('g.vertex')
-          })
-        // rt estimation
+          .append("g")
+          .classed("factors_group", true)
+          .selectAll("g.factor");
+        // vertices
         d3.select(this)
-          .append('g')
-          .classed('rt_estimate')
-      }
-      )
+          .append("g")
+          .classed("vertices_group", true)
+          .selectAll("g.vertex");
+      });
+    // rt estimation
+    d3.select(this).append("g").classed("rt_estimate");
+  });
 
 // // draw
 // const vgGrobot1 = canvas_mg.append("g").classed("agent", true);
@@ -333,91 +330,94 @@ client.on("message", function (topic, message) {
     // convert the string in json
     estimation = JSON.parse(message.toString());
     // massage data
-    estimation.forEach(an_agent_estimation => 
-              estimation_data_massage(an_agent_estimation.graph))
+    estimation.forEach((an_agent_estimation) =>
+      estimation_data_massage(an_agent_estimation.graph)
+    );
     // console.log("Estimation graph data massage :");
     // console.log(estimation_data);
 
-// const graph_test_group = canvas_mg
-//   .append("g")
-//   .classed("graph_test_group", true);
-// let d_factors_group = graph_test_group
-//   .append("g")
-//   .classed("factors_graph_test_group", true)
-//   .selectAll(".factor");
+    // const graph_test_group = canvas_mg
+    //   .append("g")
+    //   .classed("graph_test_group", true);
+    // let d_factors_group = graph_test_group
+    //   .append("g")
+    //   .classed("factors_graph_test_group", true)
+    //   .selectAll(".factor");
 
-// const robots_estimates_group = main_group
-//       .selectAll('g')
-//       .classed('robots_estimates_group') // estimates plural (sev. hypothesis)
-//       // branch off
-//       .each(function(_,_,_){
-//         // factor graph
-//         d3.select(this)
-//           .append('g')
-//           .classed('factor_graph',true)
-//           .each(function (_,_,_){
-//             // factors
-//             d3.select(this)
-//               .append('g')
-//               .classed('factors_group',true)
-//               .selectAll('g.factor')
-//             // vertices
-//             d3.select(this)
-//               .append('g')
-//               .classed('vertices_group',true)
-//               .selectAll('g.vertex')
-//           })
-//         // rt estimation
-//         d3.select(this)
-//           .append('g')
-//           .classed('rt_estimate')
-//       }
-//       )
+    // const robots_estimates_group = main_group
+    //       .selectAll('g')
+    //       .classed('robots_estimates_group') // estimates plural (sev. hypothesis)
+    //       // branch off
+    //       .each(function(_,_,_){
+    //         // factor graph
+    //         d3.select(this)
+    //           .append('g')
+    //           .classed('factor_graph',true)
+    //           .each(function (_,_,_){
+    //             // factors
+    //             d3.select(this)
+    //               .append('g')
+    //               .classed('factors_group',true)
+    //               .selectAll('g.factor')
+    //             // vertices
+    //             d3.select(this)
+    //               .append('g')
+    //               .classed('vertices_group',true)
+    //               .selectAll('g.vertex')
+    //           })
+    //         // rt estimation
+    //         d3.select(this)
+    //           .append('g')
+    //           .classed('rt_estimate')
+    //       }
+    //       )
 
     robots_estimates_group
-      .data(estimation, (d)=>d.header.robot_id)
+      .data(estimation, (d) => d.header.robot_id)
       .join(
-        join_enter_robot_estimates
-        ,
-        update => update // not so obvious TODO
-        ,
-        exit => exit // NO REMOVE AT THIS LEVEL !!
+        join_enter_robot_estimates,
+        (update) => update, // not so obvious TODO
+        (exit) => exit // NO REMOVE AT THIS LEVEL !!
       )
-    // branch off: factor_graph and RT_estimate
-    .each( function (_,_,_){
-      // the factor graph first. TODO : hypothesis will be considered first
-      d3.select(this)
-        .select('g.factor_graph')
-        .attr('id',d => d.header.robot_id)
-        // the factor graph branches off as edges and factors
-        .each( function (_,_,_) { // d,i,n are the arguments.
-          // no need to pass d, as the data binds at the upper level data bounds
-          // are available through the data function
-          d3.select(this)
-            .select('g.factors_group')
-            .selectAll('.factor')
-            .data(function(upper_level_data){
-               return upper_level_data.graph.factors
-            } , (d) => d.factor_id)
-            .join(join_enter_factor, join_update_factor, join_exit_factor);
+      // branch off: factor_graph and RT_estimate
+      .each(function (_, _, _) {
+        // the factor graph first. TODO : hypothesis will be considered first
+        d3.select(this)
+          .select("g.factor_graph")
+          .attr("id", (d) => d.header.robot_id)
+          // the factor graph branches off as edges and factors
+          .each(function (_, _, _) {
+            // d,i,n are the arguments.
+            // no need to pass d, as the data binds at the upper level data bounds
+            // are available through the data function
+            d3.select(this)
+              .select("g.factors_group")
+              .selectAll(".factor")
+              .data(
+                function (upper_level_data) {
+                  return upper_level_data.graph.factors;
+                },
+                (d) => d.factor_id
+              )
+              .join(join_enter_factor, join_update_factor, join_exit_factor);
 
-          d3.select(this)
-            .select('g.vertices_group')
-            .selectAll('.vertex')
-            .data(function(upper_level_data){
-               return upper_level_data.graph.marginals
-            } , (d) => d.var_id)
-            .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
-        }
-        )
+            d3.select(this)
+              .select("g.vertices_group")
+              .selectAll(".vertex")
+              .data(
+                function (upper_level_data) {
+                  return upper_level_data.graph.marginals;
+                },
+                (d) => d.var_id
+              )
+              .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
+          });
 
-      // now the RT_estimate, that comprises the rt_ghost & the line to link
-      // to last pose of the graph
-      d3.select(this)
-        .select('g.rt_estimate')
-    }
-    )
-   
+        // now the RT_estimate, that comprises the rt_ghost & the line to link
+        // to last pose of the graph
+        d3.select(this).select("g.rt_estimate");
+      });
+
     // factor_graphs_group
     //   .selectAll('.factor_graph')
     //   .data(estimation_graphs, (d)=>d.header.robot_id)
@@ -450,7 +450,6 @@ client.on("message", function (topic, message) {
     //       .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
     //   }
     //   )
-            
 
     // the factors
     // d_factors_group = d_factors_group
@@ -469,70 +468,76 @@ client.on("message", function (topic, message) {
  *                  enter,update,exit of the various d3 selections
  *****************************************************************************/
 
-function join_enter_robot_estimates(enter){
-        return enter
-        .append('g')
-        .classed('robot_estimates',true) 
-        .attr('id',d => d.header.robot_id)
-        // prepare underlayers the fg group and the rt_estimate group
-        .each(function(d,_,_){  // for each robot
-          // prepare fg group
-          d3.select(this)
-            .append('g')
-            .classed('factor_graph',true)
-            // prepare underlayers: factors_group and vertices_group
-            .each(function(_,_,_){ // for each graph
-              d3.select(this)
-                .append('g')
-                .classed('factors_group',true);
-              d3.select(this)
-                .append('g')
-                .classed('vertices_group',true);
-            })
-          // prepare rt_estimate_group
-          d3.select(this)
-            .append('g')
-            .classed('rt_estimate',true)
-            .attr('id',`${d.header.robot_id}`)
-            .call(function(g_rt_estimate){
-                // the ghost
-                g_rt_estimate
-                  .append('g')
-                  .classed('rt_ghost',true)
-                  .on("mouseover", mouseover_mg(`${d.header.robot_id}`))
-                  .on("mouseout", mouseout_mg())
-                  // .attr('id',`${d.header.robot_id}`)
-                  .append("g")
-                  .attr(
-                    "transform",
-                    (local_d) => "translate(" + local_d.header.state.x + "," + local_d.header.state.y + ")"
-                  )
-                  .append("g")
-                  .attr("transform", (local_d) =>"rotate(" + local_d.header.state.th + ")")
-                  .call(function(g_rt_ghost){
-                    // 1. the robot
-                    g_rt_ghost
-                      .append("polygon")
-                      .attr("points", "0,-1 0,1 3,0") 
-                    g_rt_ghost
-                      .append("line")
-                      .attr("x1", 0)
-                      .attr("y1", 0)
-                      .attr("x2", 1)
-                      .attr("y2", 0);
-                  })
-                // the line to the last pose
-                // TODO: line to (0,0) first will-ya
-                g_rt_estimate
-                  .append('line')
-                  .classed('rt_line_to_last_pose',true)
-                  // .attr('id',`${d.header.robot_id}`)
-                  .attr('x1',d.header.state.x)
-                  .attr('y1',d.header.state.y)
-                  .attr('x2',0)
-                  .attr('y2',0)
-            })
-        })
+function join_enter_robot_estimates(enter) {
+  return (
+    enter
+      .append("g")
+      .classed("robot_estimates", true)
+      .attr("id", (d) => d.header.robot_id)
+      // prepare underlayers the fg group and the rt_estimate group
+      .each(function (d, _, _) {
+        // for each robot
+        // prepare fg group
+        d3.select(this)
+          .append("g")
+          .classed("factor_graph", true)
+          // prepare underlayers: factors_group and vertices_group
+          .each(function (_, _, _) {
+            // for each graph
+            d3.select(this).append("g").classed("factors_group", true);
+            d3.select(this).append("g").classed("vertices_group", true);
+          });
+        // prepare rt_estimate_group
+        d3.select(this)
+          .append("g")
+          .classed("rt_estimate", true)
+          .attr("id", `${d.header.robot_id}`)
+          .call(function (g_rt_estimate) {
+            // the ghost
+            g_rt_estimate
+              .append("g")
+              .classed("rt_ghost", true)
+              .on("mouseover", mouseover_mg(`${d.header.robot_id}`))
+              .on("mouseout", mouseout_mg())
+              // .attr('id',`${d.header.robot_id}`)
+              .append("g")
+              .attr(
+                "transform",
+                (local_d) =>
+                  "translate(" +
+                  local_d.header.state.x +
+                  "," +
+                  local_d.header.state.y +
+                  ")"
+              )
+              .append("g")
+              .attr(
+                "transform",
+                (local_d) => "rotate(" + local_d.header.state.th + ")"
+              )
+              .call(function (g_rt_ghost) {
+                // 1. the robot
+                g_rt_ghost.append("polygon").attr("points", "0,-1 0,1 3,0");
+                g_rt_ghost
+                  .append("line")
+                  .attr("x1", 0)
+                  .attr("y1", 0)
+                  .attr("x2", 1)
+                  .attr("y2", 0);
+              });
+            // the line to the last pose
+            // TODO: line to (0,0) first will-ya
+            g_rt_estimate
+              .append("line")
+              .classed("rt_line_to_last_pose", true)
+              // .attr('id',`${d.header.robot_id}`)
+              .attr("x1", d.header.state.x)
+              .attr("y1", d.header.state.y)
+              .attr("x2", 0)
+              .attr("y2", 0);
+          });
+      })
+  );
 }
 
 function join_enter_factor(enter) {
@@ -898,8 +903,8 @@ body.on("keydown", (e) => {
     e.key != "ArrowDown" &&
     e.key != "ArrowRight" &&
     e.key != "ArrowLeft"
-  ){
-    return
+  ) {
+    return;
   }
 
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
@@ -917,7 +922,7 @@ body.on("keydown", (e) => {
   );
 });
 
-canvas.on('click',e=> console.log(d3.pointer(e,canvas_mg.node())))
+canvas.on("click", (e) => console.log(d3.pointer(e, canvas_mg.node())));
 
 body.on("keyup", (e) => (keyPressedBuffer[e.key] = false));
 
