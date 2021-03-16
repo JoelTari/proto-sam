@@ -5,7 +5,7 @@ const canvas = d3.select("svg.canvas");
 const div_tooltip = d3
   .select("body")
   .append("div")
-  .classed("tooltip",true)
+  .classed("tooltip", true)
   .style("opacity", 0);
 
 const aratio = 0.6;
@@ -19,9 +19,15 @@ GlobalUI = {
  *                           SVG Group binding to d3
  *****************************************************************************/
 const main_group = d3.select(".main_group");
-const agents_true_group = main_group.append('g').classed("agents_true_group",true);
-const landmarks_true_group = main_group.append('g').classed("landmarks_true_group",true);
-const agents_graphs_group = main_group.append('g').classed("agents_graphs_group",true);
+const agents_true_group = main_group
+  .append("g")
+  .classed("agents_true_group", true);
+const landmarks_true_group = main_group
+  .append("g")
+  .classed("landmarks_true_group", true);
+const agents_graphs_group = main_group
+  .append("g")
+  .classed("agents_graphs_group", true);
 
 // The d_ means a dynamic group as opposed to the groups declared above
 //  (I just made that up). Since the names would be only 1-letter appart from
@@ -37,15 +43,11 @@ let d_landmark_true_group = landmarks_true_group.selectAll(
 let d_robots_estimates_group = main_group
   .append("g")
   .classed("robots_estimates_group", true) // robots & estimates plural
-  .selectAll("g.robot_estimates") // estimates plural (sev. hypothesis), robot sing
+  .selectAll("g.robot_estimates"); // estimates plural (sev. hypothesis), robot sing
 
 /******************************************************************************
  *                            FOR TESTING PURPOSE
  *****************************************************************************/
-
-
-
-
 
 /******************************************************************************
  *                            MQTT events
@@ -211,17 +213,14 @@ client.on("message", function (topic, message) {
     estimation = JSON.parse(message.toString());
     // massage data
     estimation.forEach((an_agent_estimation) => {
-        estimation_data_massage(an_agent_estimation.graph)
-        estimation_query_last_pose(an_agent_estimation)
-      }
-    );
-    console.log(estimation)
+      estimation_data_massage(an_agent_estimation.graph);
+      estimation_query_last_pose(an_agent_estimation);
+    });
+    // console.log(estimation)
 
     d_robots_estimates_group = d_robots_estimates_group
       .data(estimation, (d) => d.header.robot_id)
-      .join(
-        join_enter_robot_estimates,
-        (update) => update, // not so obvious TODO
+      .join( join_enter_robot_estimates,join_update_robot_estimates,
         (exit) => exit // NO REMOVE AT THIS LEVEL !!
       )
       // branch off: factor_graph and RT_estimate
@@ -262,7 +261,6 @@ client.on("message", function (topic, message) {
         // to last pose of the graph
         // d3.select(this).select("g.rt_estimate");
       });
-
   }
 });
 
@@ -290,7 +288,7 @@ function join_enter_robot_estimates(enter) {
             d3.select(this).append("g").classed("factors_group", true);
             d3.select(this).append("g").classed("vertices_group", true);
           });
-        // prepare rt_estimate_group
+        // prepare and fill in rt_estimate_group
         d3.select(this)
           .append("g")
           .classed("rt_estimate", true)
@@ -343,8 +341,47 @@ function join_enter_robot_estimates(enter) {
   );
 }
 
-// quick helper
-
+function join_update_robot_estimates(update) {
+ return update.each(function (d, _, _) {
+    d3.select(this)
+      .select("g.rt_estimate")
+      .call(function (g_rt_estimate) {
+        // update the rt ghost dasharray-ed drawing
+        g_rt_estimate
+          .select("g.rt_ghost")
+          .select("g")
+          .transition("tr")
+          .duration(500) // graph motion TODO
+          .attr(
+            "transform",
+            (local_d) =>
+              "translate(" +
+              local_d.header.state.x +
+              "," +
+              local_d.header.state.y +
+              ")"
+          )
+          .selection()
+          .select("g")
+          .transition("rot")
+          .duration(500) // graph motion dur TODO
+          .attr(
+            "transform",
+            (local_d) => "rotate(" + local_d.header.state.th + ")"
+          )
+          .selection();
+        // update the line to the last pose
+        g_rt_estimate
+          .select("line.rt_line_to_last_pose")
+          .transition("tra")
+          .duration(500) // graph motion TODO
+          .attr("x1", d.header.state.x)
+          .attr("y1", d.header.state.y)
+          .attr("x2", d.last_pose.state.x)
+          .attr("y2", d.last_pose.state.y);
+      });
+  });
+}
 
 function join_enter_factor(enter) {
   // TODO:
@@ -665,14 +702,10 @@ function estimation_data_massage(estimation_data) {
     });
 }
 
-function estimation_query_last_pose(an_agent_estimation){
-  an_agent_estimation.last_pose.state = 
-    an_agent_estimation
-    .graph
-    .marginals
-    .filter(marginal => marginal.var_id == an_agent_estimation.last_pose.last_pose_id)
-    [0]
-    .mean
+function estimation_query_last_pose(an_agent_estimation) {
+  an_agent_estimation.last_pose.state = an_agent_estimation.graph.marginals.filter(
+    (marginal) => marginal.var_id == an_agent_estimation.last_pose.last_pose_id
+  )[0].mean;
 }
 /******************************************************************************
  *                            UI Events
