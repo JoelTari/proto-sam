@@ -10,8 +10,8 @@ import random as rd
 import numpy.random as nprd
 
 
-request_estimation_graph_topic = 'request_estimation_graph'
-estimation_graph_topic = 'estimation_graph'
+request_estimation_graph_topic = 'request_estimation'
+estimation_graph_topic = 'estimation'
 
 # the stub is a 5 vars sparsely connected graph
 # if the problem is EKF, there would only be
@@ -39,7 +39,7 @@ def increment_things_in_marginal(m) -> dict:
 
 
 # TODO: had RMSE, hypothesis_id, robot_it (perhaps separately in a header)
-full_estimation = {
+graph = {
     'marginals': [
         {'var_id': 'l1', 'mean': {'x': 20, 'y': 37}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
         {'var_id': 'l2', 'mean': {'x': 25, 'y': 47}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
@@ -84,16 +84,25 @@ full_estimation = {
     ],
     'variable_ordering': ['l2', 'l1', 'l4', 'l3', 'l5']
 }
+full_estimation={
+        'header': {
+            'robot_id': 'r4',
+            "state": {"x": 87.3, "y": 9, "th": 0},
+            'seq': 0,
+        },
+        'last_pose':{'last_pose_id':'x0'},
+        'graph': graph
+        }
 
 
 # Change l4.y
 # some random increments to everything else
-full_estimation1 = copy.deepcopy(full_estimation)
+graph1 = copy.deepcopy(graph)
 
-full_estimation1['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation['marginals']]
-full_estimation1['marginals'][3]['mean']['y']=14
-full_estimation1['factors'].pop(4)
-full_estimation1['factors'].extend(
+graph1['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in graph['marginals']]
+graph1['marginals'][3]['mean']['y']=14
+graph1['factors'].pop(4)
+graph1['factors'].extend(
         [
             {'factor_id': 'f00',
                 'type': 'odometry',
@@ -105,17 +114,26 @@ full_estimation1['factors'].extend(
                 },
             ]
         )
+full_estimation1={
+        'header': {
+            'robot_id': 'r4',
+            "state": {"x": 82.3, "y": 12, "th": 10},
+            'seq': 0,
+        },
+        'last_pose':{'last_pose_id':'x0'},
+        'graph': graph1
+        }
 
 
 
 # add new var l6 and some random change to everything else
-full_estimation2 = copy.deepcopy(full_estimation1)
-full_estimation2['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation1['marginals']]
-full_estimation2['marginals'].append(
+graph2 = copy.deepcopy(graph1)
+graph2['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in graph1['marginals']]
+graph2['marginals'].append(
         {'var_id': 'l6', 'mean': {'x': 26, 'y': 9}, 'covariance': {'sigma': [rSig(), rSig()], 'rot':rRot()}},
         )
-full_estimation2['marginals'][3]['mean']['y']=31
-full_estimation2['factors'].extend(
+graph2['marginals'][3]['mean']['y']=31
+graph2['factors'].extend(
         [
             {'factor_id': 'f6',
                 'type': 'odometry',
@@ -131,13 +149,22 @@ full_estimation2['factors'].extend(
                 },
             ]
         )
-full_estimation2['variable_ordering'].append('l6') # extend and append are different
+graph2['variable_ordering'].append('l6') # extend and append are different
+full_estimation2={
+        'header': {
+            'robot_id': 'r4',
+            "state": {"x": 85.3, "y": 10, "th": -10},
+            'seq': 0,
+        },
+        'last_pose':{'last_pose_id':'x0'},
+        'graph': graph2
+        }
 
 
 # trifactor for the fun
-full_estimation3 = copy.deepcopy(full_estimation2)
-full_estimation3['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation2['marginals']]
-full_estimation3['factors'].extend(
+graph3 = copy.deepcopy(graph2)
+graph3['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in graph2['marginals']]
+graph3['factors'].extend(
         [
             {'factor_id': 'f9',
                 'type': 'smart',
@@ -145,11 +172,29 @@ full_estimation3['factors'].extend(
                 },
             ]
         )
+full_estimation3={
+        'header': {
+            'robot_id': 'r4',
+            "state": {"x": 88.3, "y": 4, "th": -30},
+            'seq': 0,
+        },
+        'last_pose':{'last_pose_id':'x0'},
+        'graph': graph3
+        }
 
 # One last 
-full_estimation4 = copy.deepcopy(full_estimation3)
-full_estimation4['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in full_estimation3['marginals']]
-full_estimation4['factors'].pop()
+graph4 = copy.deepcopy(graph3)
+graph4['marginals'] = [increment_things_in_marginal(copy.deepcopy(m)) for m in graph3['marginals']]
+graph4['factors'].pop()
+full_estimation4={
+        'header': {
+            'robot_id': 'r4',
+            "state": {"x": 84.3, "y": 17, "th": 70},
+            'seq': 0,
+        },
+        'last_pose':{'last_pose_id':'x0'},
+        'graph': graph4
+        }
 
 # most fields are optional, and depend on the problem (EKF,SAM,etc...)
 # map (maximum a posteriori) and mean have the same data but structured

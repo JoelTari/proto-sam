@@ -68,7 +68,8 @@ svg {
   stroke: black;
   stroke-width: 0.1;
   stroke-opacity: 0.5;
-  fill: none;
+  fill: grey;
+  fill-opacity: 0.1;
   stroke-dasharray: 0.5;
 }
 

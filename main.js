@@ -211,6 +211,11 @@ client.on("message", function (topic, message) {
 
     // convert the string in json
     estimation = JSON.parse(message.toString());
+
+    // if I received an object instead of an array of a single object
+    // transform into an array, but give a warning
+    estimation=arraytised(estimation)
+
     // massage data
     estimation.forEach((an_agent_estimation) => {
       estimation_data_massage(an_agent_estimation.graph);
@@ -342,6 +347,9 @@ function join_enter_robot_estimates(enter) {
 }
 
 function join_update_robot_estimates(update) {
+  const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+  const t_graph_motion2 = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+
  return update.each(function (d, _, _) {
     d3.select(this)
       .select("g.rt_estimate")
@@ -350,8 +358,7 @@ function join_update_robot_estimates(update) {
         g_rt_estimate
           .select("g.rt_ghost")
           .select("g")
-          .transition("tr")
-          .duration(500) // graph motion TODO
+          .transition(t_graph_motion)
           .attr(
             "transform",
             (local_d) =>
@@ -363,8 +370,7 @@ function join_update_robot_estimates(update) {
           )
           .selection()
           .select("g")
-          .transition("rot")
-          .duration(500) // graph motion dur TODO
+          .transition(t_graph_motion2)
           .attr(
             "transform",
             (local_d) => "rotate(" + local_d.header.state.th + ")"
@@ -373,8 +379,7 @@ function join_update_robot_estimates(update) {
         // update the line to the last pose
         g_rt_estimate
           .select("line.rt_line_to_last_pose")
-          .transition("tra")
-          .duration(500) // graph motion TODO
+          .transition(t_graph_motion)
           .attr("x1", d.header.state.x)
           .attr("y1", d.header.state.y)
           .attr("x2", d.last_pose.state.x)
@@ -911,6 +916,12 @@ function inputToMove(model) {
 /******************************************************************************
  *                            HELPER
  *****************************************************************************/
+function arraytised(obj_or_array){ 
+  if (obj_or_array[Symbol.iterator]== null){
+    console.warn('received data is not an array: attempting to arraytised')
+    return [obj_or_array];
+  }
+}
 
 function ecpi(a) {
   return Math.atan2(Math.sin(a), Math.cos(a));
