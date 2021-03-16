@@ -63,28 +63,6 @@ request_estimation_graph_topic = 'request_estimation'
 estimation_graph_topic = 'estimation'
 
 # ----------------------------------------------------------------------------
-#                           Globals: Fake poses (ghost)
-# ----------------------------------------------------------------------------
-# no, remove
-robots_estimates_poses = [
-    {
-        "robot_id": "r1",
-        'last_pose_id': 'x4',
-        "state": {"x": 40.3, "y": 17.4, "th": 47},
-    },
-    {
-        "robot_id": "r2",
-        'last_pose_id': 'x2',
-        "state": {"x": 26.5, "y": 50.46, "th": -4},
-    },
-    {
-        "robot_id": "r3",
-        'last_pose_id': 'x3',
-        "state": {"x": 71.3, "y": 30.5, "th": 175},
-    },
-]
-
-# ----------------------------------------------------------------------------
 #                           Some utility functions
 # ----------------------------------------------------------------------------
 
@@ -114,7 +92,6 @@ def fd_landmark_by_id(ArrayOfLandmarks, lid):
     return next(item for item in ArrayOfLandmarks if item["landmark_id"] == lid)
     # return next(filter(lambda x: x['landmark_id'] == lid, ArrayOfLandmarks))
 
-
 # ----------------------------------------------------------------------------
 #                           Globals: Fake MultiMap
 # ----------------------------------------------------------------------------
@@ -123,11 +100,15 @@ full_estimations1 = [
     {
         'header': {
             'robot_id': 'r1',
-            'last_pose_id': 'x4',
             "state": {"x": 40.3, "y": 17.4, "th": 47},
             'seq': 0,
         },
-        'graph': {
+        'last_pose':{'last_pose_id':'x4'},
+        # TODO : plural graph with graph id for each graph and a header designating
+        #        the main hypothesis
+        # 'main_hypothesis_graph_id':'g1'
+        'graph': { # TODO: plural-> array, one header per element and the following encapsulated in 'data', 
+                   #                                                
             'marginals': [
                 {'var_id': 'x0', 'mean': {'x': 6.5, 'y': 12},
                  'covariance': {'sigma': [1, 1], 'rot':0}},
@@ -198,10 +179,10 @@ full_estimations1 = [
     {
         'header': {
             'robot_id': 'r2',
-            'last_pose_id': 'x2',
             "state": {"x": 26.5, "y": 50.46, "th": -4},
             'seq': 0,
         },
+        'last_pose':{'last_pose_id':'x2'},
         'graph': {
             'marginals': [
                 {'var_id': 'x0', 'mean': {'x': 7.3, 'y': 51.6},
@@ -257,10 +238,10 @@ full_estimations1 = [
     {
         'header': {
             'robot_id': 'r3',
-            'last_pose_id': 'x3',
             "state": {"x": 71.3, "y": 30.5, "th": 175},
             'seq': 0,
         },
+        'last_pose':{'last_pose_id':'x3'},
         'graph': {
             'marginals': [
                 {'var_id': 'x0', 'mean': {'x': 90.8, 'y': 42.2},

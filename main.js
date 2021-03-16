@@ -1,12 +1,11 @@
 // DOM related
 const body = d3.select("body");
-const canvas = d3.select(".canvas");
-const canvas_mg = d3.select(".main_group");
+const canvas = d3.select("svg.canvas");
 // Define the div for the tooltip
 const div_tooltip = d3
   .select("body")
   .append("div")
-  .attr("class", "tooltip")
+  .classed("tooltip",true)
   .style("opacity", 0);
 
 const aratio = 0.6;
@@ -20,140 +19,33 @@ GlobalUI = {
  *                           SVG Group binding to d3
  *****************************************************************************/
 const main_group = d3.select(".main_group");
-const agents_true_group = d3.select(".agents_true_group");
-const landmarks_true_group = d3.select(".landmarks_true_group");
-const agents_graphs_group = d3.select(".agents_graphs_group");
-const agents_estimated_group = d3.select(".agents_estimated_group");
+const agents_true_group = main_group.append('g').classed("agents_true_group",true);
+const landmarks_true_group = main_group.append('g').classed("landmarks_true_group",true);
+const agents_graphs_group = main_group.append('g').classed("agents_graphs_group",true);
+
 // The d_ means a dynamic group as opposed to the groups declared above
 //  (I just made that up). Since the names would be only 1-letter appart from
 //  their const counter part otherwise, better be safe than sorry with a hard
 //  to debug vicious bug.
 //  As per the d3 pattern, these selections are empty at this stage and will
 //  received elements during the d3 update pattern (in the mqtt callback)
-//  those SelectAll can only be filled with join(), append() doesnt seem to work
+//  those SelectAll can only be filled with join() once data() is bound
 let d_agent_true_group = agents_true_group.selectAll(".agent_true_group");
 let d_landmark_true_group = landmarks_true_group.selectAll(
   ".landmark_true_group"
 );
-let d_agent_estimated_group = agents_estimated_group.selectAll(
-  ".agent_estimated_group"
-);
-let d_agent_graph_group = agents_graphs_group.selectAll(".agent_graph_group");
-// For now assume only one hypothesis. TODO: revisit
+let d_robots_estimates_group = main_group
+  .append("g")
+  .classed("robots_estimates_group", true) // robots & estimates plural
+  .selectAll("g.robot_estimates") // estimates plural (sev. hypothesis), robot sing
 
 /******************************************************************************
  *                            FOR TESTING PURPOSE
  *****************************************************************************/
-const graph_test_group = canvas_mg
-  .append("g")
-  .classed("graph_test_group", true);
-let d_factors_group = graph_test_group
-  .append("g")
-  .classed("factors_graph_test_group", true)
-  .selectAll(".factor");
-let d_vertices_group = graph_test_group
-  .append("g")
-  .classed("vertices_graph_test_group", true)
-  .selectAll(".vertex");
 
-// new graph
-// const factor_graphs_group = canvas_mg .append('g')
-//                                       .classed('factor_graphs_group',true)
 
-// const robots_estimates_group = canvas_mg.append('g')
-//                                         .classed('robots_estimates_group',true)
 
-const robots_estimates_group = main_group
-  .append("g")
-  .classed("robots_estimates_group", true) // robots & estimates plural
-  .selectAll("g.robot_estimates") // estimates plural (sev. hypothesis), robot sing
-  // branch off
-  .each(function (_, _, _) {
-    // factor graph
-    d3.select(this)
-      .append("g")
-      .classed("factor_graph", true)
-      .each(function (_, _, _) {
-        // factors
-        d3.select(this)
-          .append("g")
-          .classed("factors_group", true)
-          .selectAll("g.factor");
-        // vertices
-        d3.select(this)
-          .append("g")
-          .classed("vertices_group", true)
-          .selectAll("g.vertex");
-      });
-    // rt estimation
-    d3.select(this).append("g").classed("rt_estimate");
-  });
 
-// // draw
-// const vgGrobot1 = canvas_mg.append("g").classed("agent", true);
-// d3.selectAll(".agent")
-//   .data([{ x: 66, y: 10 }])
-//   .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")");
-// vgGrobot1.append("circle").attr("r", 4);
-// // .attr("cx", 96)
-// // .attr("cy", 5)
-
-// // ellipse is kept in commentary as a template
-// // const vgcov = canvas_mg
-// //   .append("ellipse")
-// //   .attr('transform', ' translate(50,40) rotate(0)')
-// //   .attr("rx", 20)
-// //   .attr("ry", 12);
-// // .attr("cx", 50)
-// // .attr("cy", 40)
-
-// console.log(`svg height: ${canvas.attr("height")}`);
-// TODO: construct a fake json object here, with 1 and 2 robots
-//        ( alike the ground_truth structure that comes through mqtt)
-
-// d_agent_true_group = d_agent_true_group
-//   .data([12, 24, 33, 54])
-//   .join("g")
-//   .transition().duration(1000)
-//   .attr('opacity', 1)
-//   .selection()
-//   .attr("transform", d =>  "translate("+ d +",30) rotate(30)")
-//   .classed("agent_true_group", true)
-//   .call((g) =>
-//     g
-//       .append("polygon")
-//       .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-//       .attr("fill", "linen")
-//       .attr("stroke", "black")
-//       .attr("stroke-width", 0.1)
-//   );
-
-// // bound new data, but doesnt 'recompute' the properties that depends on data
-// setTimeout((_) => d3.selectAll(".agent").data([{ x: 26, y: 10 }]), 1000);
-// // call a property, as the data refered is already stored (from the 1s timeout)
-// setTimeout(
-//   (_) =>
-//     d3
-//       .selectAll(".agent")
-//       .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")"),
-//   1500
-// );
-// // if we want to change as soon as we update the data, we just call both in a chain
-// setTimeout(
-//   (_) =>
-//     d3
-//       .selectAll(".agent")
-//       .data([{ x: 86, y: 50 }])
-//       .attr("transform", (d) => "translate(" + d["x"] + "," + d["y"] + ")"),
-//   2000
-// );
-// // d3.select("body").transition()
-// //     .duration(1000)
-// //     .style("background-color", "red");
-
-// // d3.selectAll('.agent')
-// //   .transition()
-// //   .duration()
 
 /******************************************************************************
  *                            MQTT events
@@ -223,7 +115,6 @@ client.on("message", function (topic, message) {
     msg.robots.forEach(
       (r) => (r.isSelected = r.robot_id === GlobalUI.selected_robot_id)
     );
-    // msg.robots.forEach(r=> console.log(r))
 
     d_agent_true_group = d_agent_true_group
       .data(msg.robots, (d) => d.robot_id)
@@ -283,25 +174,14 @@ client.on("message", function (topic, message) {
                       });
                   // 2. the robot
                   g.append("polygon")
-                    // .classed('agent_representation',true)
                     .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
                     .on("mouseover", mouseover_mg(`${d.robot_id}`))
                     .on("mouseout", mouseout_mg());
-                  // .attr("fill", "linen")
-                  // .attr("stroke", "black")
-                  // .attr("stroke-width", 0.1);
                   g.append("line")
-                    // .classed('agent_representation',true)
                     .attr("x1", 0)
                     .attr("y1", 0)
                     .attr("x2", 1)
                     .attr("y2", 0);
-                  // .attr("stroke-width", 0.3)
-                  // .attr("stroke", (d) => {
-                  //   if (d.robot_id === "r1") return "red";
-                  //   else if (d.robot_id === "r2") return "blue";
-                  //   else if (d.robot_id === "r3") return "green";
-                  // });
                 });
             })
             .transition()
@@ -330,49 +210,14 @@ client.on("message", function (topic, message) {
     // convert the string in json
     estimation = JSON.parse(message.toString());
     // massage data
-    estimation.forEach((an_agent_estimation) =>
-      estimation_data_massage(an_agent_estimation.graph)
+    estimation.forEach((an_agent_estimation) => {
+        estimation_data_massage(an_agent_estimation.graph)
+        estimation_query_last_pose(an_agent_estimation)
+      }
     );
-    // console.log("Estimation graph data massage :");
-    // console.log(estimation_data);
+    console.log(estimation)
 
-    // const graph_test_group = canvas_mg
-    //   .append("g")
-    //   .classed("graph_test_group", true);
-    // let d_factors_group = graph_test_group
-    //   .append("g")
-    //   .classed("factors_graph_test_group", true)
-    //   .selectAll(".factor");
-
-    // const robots_estimates_group = main_group
-    //       .selectAll('g')
-    //       .classed('robots_estimates_group') // estimates plural (sev. hypothesis)
-    //       // branch off
-    //       .each(function(_,_,_){
-    //         // factor graph
-    //         d3.select(this)
-    //           .append('g')
-    //           .classed('factor_graph',true)
-    //           .each(function (_,_,_){
-    //             // factors
-    //             d3.select(this)
-    //               .append('g')
-    //               .classed('factors_group',true)
-    //               .selectAll('g.factor')
-    //             // vertices
-    //             d3.select(this)
-    //               .append('g')
-    //               .classed('vertices_group',true)
-    //               .selectAll('g.vertex')
-    //           })
-    //         // rt estimation
-    //         d3.select(this)
-    //           .append('g')
-    //           .classed('rt_estimate')
-    //       }
-    //       )
-
-    robots_estimates_group
+    d_robots_estimates_group = d_robots_estimates_group
       .data(estimation, (d) => d.header.robot_id)
       .join(
         join_enter_robot_estimates,
@@ -415,51 +260,9 @@ client.on("message", function (topic, message) {
 
         // now the RT_estimate, that comprises the rt_ghost & the line to link
         // to last pose of the graph
-        d3.select(this).select("g.rt_estimate");
+        // d3.select(this).select("g.rt_estimate");
       });
 
-    // factor_graphs_group
-    //   .selectAll('.factor_graph')
-    //   .data(estimation_graphs, (d)=>d.header.robot_id)
-    //   .join(
-    //     enter=>
-    //     enter
-    //     .append('g')
-    //     .classed('factor_graph',true)
-    //     .attr('id',d => d.header.robot_id)
-    //     ,
-    //     update => update
-    //     ,
-    //     exit => exit // NO REMOVE AT THIS LEVEL !!
-    //   )
-    //   .each( function (_,_,_) { // d,i,n are the arguments.
-    //     // no need to pass d, as the data binds at the upper level data bounds
-    //     // are available through the data function
-    //     d3.select(this)
-    //       .selectAll('.factor')
-    //       .data(function(upper_level_data){
-    //          return upper_level_data.graph.factors
-    //       } , (d) => d.factor_id)
-    //       .join(join_enter_factor, join_update_factor, join_exit_factor);
-
-    //     d3.select(this)
-    //       .selectAll('.vertex')
-    //       .data(function(upper_level_data){
-    //          return upper_level_data.graph.marginals
-    //       } , (d) => d.var_id)
-    //       .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
-    //   }
-    //   )
-
-    // the factors
-    // d_factors_group = d_factors_group
-    //   .data(estimation_data.factors, (d) => d.factor_id)
-    //   .join(join_enter_factor, join_update_factor, join_exit_factor);
-
-    // // the vertices
-    // d_vertices_group = d_vertices_group
-    //   .data(estimation_data.marginals, (d) => d.var_id)
-    //   .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
   }
 });
 
@@ -533,12 +336,15 @@ function join_enter_robot_estimates(enter) {
               // .attr('id',`${d.header.robot_id}`)
               .attr("x1", d.header.state.x)
               .attr("y1", d.header.state.y)
-              .attr("x2", 0)
-              .attr("y2", 0);
+              .attr("x2", d.last_pose.state.x)
+              .attr("y2", d.last_pose.state.y);
           });
       })
   );
 }
+
+// quick helper
+
 
 function join_enter_factor(enter) {
   // TODO:
@@ -859,6 +665,15 @@ function estimation_data_massage(estimation_data) {
     });
 }
 
+function estimation_query_last_pose(an_agent_estimation){
+  an_agent_estimation.last_pose.state = 
+    an_agent_estimation
+    .graph
+    .marginals
+    .filter(marginal => marginal.var_id == an_agent_estimation.last_pose.last_pose_id)
+    [0]
+    .mean
+}
 /******************************************************************************
  *                            UI Events
  *****************************************************************************/
@@ -922,7 +737,7 @@ body.on("keydown", (e) => {
   );
 });
 
-canvas.on("click", (e) => console.log(d3.pointer(e, canvas_mg.node())));
+canvas.on("click", (e) => console.log(d3.pointer(e, main_group.node())));
 
 body.on("keyup", (e) => (keyPressedBuffer[e.key] = false));
 
