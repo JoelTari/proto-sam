@@ -57,8 +57,40 @@ let d_vertices_group = graph_test_group
   .selectAll(".vertex");
 
 // new graph
-const factor_graphs_group = canvas_mg .append('g')
-                                      .classed('factor_graphs_group',true)
+// const factor_graphs_group = canvas_mg .append('g')
+//                                       .classed('factor_graphs_group',true)
+
+// const robots_estimates_group = canvas_mg.append('g')
+//                                         .classed('robots_estimates_group',true)
+
+const robots_estimates_group = main_group
+      .append('g')
+      .classed('robots_estimates_group',true)   // robots & estimates plural
+      .selectAll('g.robot_estimates')// estimates plural (sev. hypothesis), robot sing
+      // branch off
+      .each(function(_,_,_){
+        // factor graph
+        d3.select(this)
+          .append('g')
+          .classed('factor_graph',true)
+          .each(function (_,_,_){
+            // factors
+            d3.select(this)
+              .append('g')
+              .classed('factors_group',true)
+              .selectAll('g.factor')
+            // vertices
+            d3.select(this)
+              .append('g')
+              .classed('vertices_group',true)
+              .selectAll('g.vertex')
+          })
+        // rt estimation
+        d3.select(this)
+          .append('g')
+          .classed('rt_estimate')
+      }
+      )
 
 // // draw
 // const vgGrobot1 = canvas_mg.append("g").classed("agent", true);
@@ -143,7 +175,7 @@ client.on("connect", function () {
     }
   });
 
-  client.subscribe("estimation_graph", function (err) {
+  client.subscribe("estimation", function (err) {
     if (!err) {
       console.log("[mqtt] subscribed to the topic >> estimation_graph");
     }
@@ -166,7 +198,7 @@ client.on("message", function (topic, message) {
           enter
             .append("path")
             // size is the area, for a cross: area= desired_tot_length**2 *5
-            .attr("d", `${d3.symbol(d3.symbolCross, 1 * 1)()}`)
+            .attr("d", `${d3.symbol(d3.symbolCross, 1.2 * 1.2)()}`)
             .classed("landmark_true_group", true)
             .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
             .on("mouseover", function (e, d) {
@@ -294,14 +326,14 @@ client.on("message", function (topic, message) {
         d_agent_true_group.classed("selected", false);
         d3.select(this).classed("selected", true);
       });
-  } else if (topic == "estimation_graph") {
-    // console.log(`Estimation Graph received : `);
+  } else if (topic == "estimation") {
+    console.log(`Estimation received`);
     // console.log(JSON.parse(message.toString()));
 
     // convert the string in json
-    estimation_graphs = JSON.parse(message.toString());
+    estimation = JSON.parse(message.toString());
     // massage data
-    estimation_graphs.forEach(an_agent_estimation => 
+    estimation.forEach(an_agent_estimation => 
               estimation_data_massage(an_agent_estimation.graph))
     // console.log("Estimation graph data massage :");
     // console.log(estimation_data);
@@ -313,39 +345,111 @@ client.on("message", function (topic, message) {
 //   .append("g")
 //   .classed("factors_graph_test_group", true)
 //   .selectAll(".factor");
-   
-    factor_graphs_group
-      .selectAll('.factor_graph')
-      .data(estimation_graphs, (d)=>d.header.robot_id)
+
+// const robots_estimates_group = main_group
+//       .selectAll('g')
+//       .classed('robots_estimates_group') // estimates plural (sev. hypothesis)
+//       // branch off
+//       .each(function(_,_,_){
+//         // factor graph
+//         d3.select(this)
+//           .append('g')
+//           .classed('factor_graph',true)
+//           .each(function (_,_,_){
+//             // factors
+//             d3.select(this)
+//               .append('g')
+//               .classed('factors_group',true)
+//               .selectAll('g.factor')
+//             // vertices
+//             d3.select(this)
+//               .append('g')
+//               .classed('vertices_group',true)
+//               .selectAll('g.vertex')
+//           })
+//         // rt estimation
+//         d3.select(this)
+//           .append('g')
+//           .classed('rt_estimate')
+//       }
+//       )
+
+    robots_estimates_group
+      .data(estimation, (d)=>d.header.robot_id)
       .join(
-        enter=>
-        enter
-        .append('g')
-        .classed('factor_graph',true)
-        .attr('id',d => d.header.robot_id)
+        join_enter_robot_estimates
         ,
-        update => update
+        update => update // not so obvious TODO
         ,
         exit => exit // NO REMOVE AT THIS LEVEL !!
       )
-      .each( function (_,_,_) { // d,i,n are the arguments.
-        // no need to pass d, as the data binds at the upper level data bounds
-        // are available through the data function
-        d3.select(this)
-          .selectAll('.factor')
-          .data(function(upper_level_data){
-             return upper_level_data.graph.factors
-          } , (d) => d.factor_id)
-          .join(join_enter_factor, join_update_factor, join_exit_factor);
+    // branch off: factor_graph and RT_estimate
+    .each( function (_,_,_){
+      // the factor graph first. TODO : hypothesis will be considered first
+      d3.select(this)
+        .select('g.factor_graph')
+        .attr('id',d => d.header.robot_id)
+        // the factor graph branches off as edges and factors
+        .each( function (_,_,_) { // d,i,n are the arguments.
+          // no need to pass d, as the data binds at the upper level data bounds
+          // are available through the data function
+          d3.select(this)
+            .select('g.factors_group')
+            .selectAll('.factor')
+            .data(function(upper_level_data){
+               return upper_level_data.graph.factors
+            } , (d) => d.factor_id)
+            .join(join_enter_factor, join_update_factor, join_exit_factor);
 
-        d3.select(this)
-          .selectAll('.vertex')
-          .data(function(upper_level_data){
-             return upper_level_data.graph.marginals
-          } , (d) => d.var_id)
-          .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
-      }
-      )
+          d3.select(this)
+            .select('g.vertices_group')
+            .selectAll('.vertex')
+            .data(function(upper_level_data){
+               return upper_level_data.graph.marginals
+            } , (d) => d.var_id)
+            .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
+        }
+        )
+
+      // now the RT_estimate, that comprises the rt_ghost & the line to link
+      // to last pose of the graph
+      d3.select(this)
+        .select('g.rt_estimate')
+    }
+    )
+   
+    // factor_graphs_group
+    //   .selectAll('.factor_graph')
+    //   .data(estimation_graphs, (d)=>d.header.robot_id)
+    //   .join(
+    //     enter=>
+    //     enter
+    //     .append('g')
+    //     .classed('factor_graph',true)
+    //     .attr('id',d => d.header.robot_id)
+    //     ,
+    //     update => update
+    //     ,
+    //     exit => exit // NO REMOVE AT THIS LEVEL !!
+    //   )
+    //   .each( function (_,_,_) { // d,i,n are the arguments.
+    //     // no need to pass d, as the data binds at the upper level data bounds
+    //     // are available through the data function
+    //     d3.select(this)
+    //       .selectAll('.factor')
+    //       .data(function(upper_level_data){
+    //          return upper_level_data.graph.factors
+    //       } , (d) => d.factor_id)
+    //       .join(join_enter_factor, join_update_factor, join_exit_factor);
+
+    //     d3.select(this)
+    //       .selectAll('.vertex')
+    //       .data(function(upper_level_data){
+    //          return upper_level_data.graph.marginals
+    //       } , (d) => d.var_id)
+    //       .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
+    //   }
+    //   )
             
 
     // the factors
@@ -364,6 +468,63 @@ client.on("message", function (topic, message) {
  *                          UPDATE PATTERN ROUTINES
  *                  enter,update,exit of the various d3 selections
  *****************************************************************************/
+
+function join_enter_robot_estimates(enter){
+        return enter
+        .append('g')
+        .classed('robot_estimates',true) 
+        .attr('id',d => d.header.robot_id)
+        // prepare underlayers the fg group and the rt_estimate group
+        .each(function(d,_,_){ 
+          // prepare fg group
+          d3.select(this)
+            .append('g')
+            .classed('factor_graph',true)
+            // prepare underlayers: factors_group and vertices_group
+            .each(function(_,_,_){ 
+              d3.select(this)
+                .append('g')
+                .classed('factors_group',true);
+              d3.select(this)
+                .append('g')
+                .classed('vertices_group',true);
+            })
+          // prepare rt_estimate_group
+          d3.select(this)
+            .append('g')
+            .classed('rt_estimate',true)
+            .call(function(g_rt_estimate){
+                // the ghost
+                g_rt_estimate
+                  .append('g')
+                  .classed('rt_ghost',true)
+                  .attr('id',`${d.header.robot_id}`)
+                  .append("g")
+                  .attr(
+                    "transform",
+                    (local_d) => "translate(" + local_d.header.state.x + "," + local_d.header.state.y + ")"
+                  )
+                  .append("g")
+                  .attr("transform", (local_d) =>"rotate(" + local_d.header.state.th + ")")
+                  .call(function(g_rt_ghost){
+                    // 1. the robot
+                    g_rt_ghost
+                      .append("polygon")
+                      .attr("points", "0,-1 0,1 3,0") 
+                      .on("mouseover", mouseover_mg(`${d.header.robot_id}`))
+                      .on("mouseout", mouseout_mg());
+                    g_rt_ghost
+                      .append("line")
+                      .attr("x1", 0)
+                      .attr("y1", 0)
+                      .attr("x2", 1)
+                      .attr("y2", 0);
+                  })
+                // the line to the last pose
+                // TODO: line to (0,0) first will-ya
+            })
+        })
+}
 
 function join_enter_factor(enter) {
   // TODO:
@@ -788,11 +949,11 @@ function applyMove_gg(d3_single_selected, pose) {
  *****************************************************************************/
 // sending estimation_graph request_position_ini
 client.publish("request_ground_truth", " ");
-setTimeout((_) => client.publish("request_estimation_graph", " "), 1500);
-setTimeout((_) => client.publish("request_estimation_graph", "1"), 2500);
-setTimeout((_) => client.publish("request_estimation_graph", "2"), 3500);
-setTimeout((_) => client.publish("request_estimation_graph", "3"), 4500);
-setTimeout((_) => client.publish("request_estimation_graph", "4"), 5500);
+setTimeout((_) => client.publish("request_estimation", " "), 1500);
+setTimeout((_) => client.publish("request_estimation", "1"), 2500);
+setTimeout((_) => client.publish("request_estimation", "2"), 3500);
+setTimeout((_) => client.publish("request_estimation", "3"), 4500);
+setTimeout((_) => client.publish("request_estimation", "4"), 5500);
 
 /******************************************************************************
  *                           KeyPresses Helper

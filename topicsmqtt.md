@@ -104,9 +104,9 @@ Answer position topic name: `position_ini`
 
 ## Estimation resut:  JS <- Estimation (on request)
 
-Request estimation result topic name: `request_estimation_graph`
+Request estimation result topic name: `request_estimation`
 
-Answer estimation result topic name:  `estimation_graph`
+Answer estimation result topic name:  `estimation`
 
 ```python
 full_estimation2 = {

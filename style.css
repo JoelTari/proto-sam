@@ -34,11 +34,11 @@ svg {
 
 .landmark_true_group {
   stroke: none;
-  fill: #694c39;
+  fill: #436422;
 }
 .landmark_true_group:hover {
   stroke-width: 0.2;
-  stroke: darkseagreen;
+  stroke: #694c39;
 }
 
 /* .agent:hover { */
@@ -64,16 +64,36 @@ svg {
   fill: silver;
 }
 
+.rt_ghost polygon {
+  stroke: black;
+  stroke-width: 0.1;
+  stroke-opacity: 0.5;
+  fill: none;
+  stroke-dasharray: 0.5;
+}
+
+.rt_ghost line {
+  stroke-width: 0.3;
+  stroke-opacity: 0.5;
+  stroke: black;
+}
+
 .agent_true_group#r1 polygon,
-.agent_true_group#r1 line {
+.agent_true_group#r1 line,
+.rt_ghost#r1 polygon,
+.rt_ghost#r1 line {
   stroke: red;
 }
 .agent_true_group#r2 polygon,
-.agent_true_group#r2 line {
+.agent_true_group#r2 line,
+.rt_ghost#r2 polygon,
+.rt_ghost#r2 line {
   stroke: green;
 }
 .agent_true_group#r3 polygon,
-.agent_true_group#r3 line {
+.agent_true_group#r3 line,
+.rt_ghost#r3 polygon,
+.rt_ghost#r3 line {
   stroke: blue;
 }
 
@@ -147,18 +167,18 @@ svg {
   stroke: red;
 }
 .factor_graph#r2 .factor circle {
-  fill: blue;
+  fill: green;
 }
 .factor_graph#r2 .factor line,
 .factor_graph#r2 .vertex circle {
-  stroke: blue;
+  stroke: green;
 }
 .factor_graph#r3 .factor circle {
-  fill: green;
+  fill: blue;
 }
 .factor_graph#r3 .factor line,
 .factor_graph#r3 .vertex circle {
-  stroke: green;
+  stroke: blue;
 }
 
 /******************************************/
