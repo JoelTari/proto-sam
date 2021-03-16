@@ -475,13 +475,13 @@ function join_enter_robot_estimates(enter){
         .classed('robot_estimates',true) 
         .attr('id',d => d.header.robot_id)
         // prepare underlayers the fg group and the rt_estimate group
-        .each(function(d,_,_){ 
+        .each(function(d,_,_){  // for each robot
           // prepare fg group
           d3.select(this)
             .append('g')
             .classed('factor_graph',true)
             // prepare underlayers: factors_group and vertices_group
-            .each(function(_,_,_){ 
+            .each(function(_,_,_){ // for each graph
               d3.select(this)
                 .append('g')
                 .classed('factors_group',true);
@@ -493,12 +493,15 @@ function join_enter_robot_estimates(enter){
           d3.select(this)
             .append('g')
             .classed('rt_estimate',true)
+            .attr('id',`${d.header.robot_id}`)
             .call(function(g_rt_estimate){
                 // the ghost
                 g_rt_estimate
                   .append('g')
                   .classed('rt_ghost',true)
-                  .attr('id',`${d.header.robot_id}`)
+                  .on("mouseover", mouseover_mg(`${d.header.robot_id}`))
+                  .on("mouseout", mouseout_mg())
+                  // .attr('id',`${d.header.robot_id}`)
                   .append("g")
                   .attr(
                     "transform",
@@ -511,8 +514,6 @@ function join_enter_robot_estimates(enter){
                     g_rt_ghost
                       .append("polygon")
                       .attr("points", "0,-1 0,1 3,0") 
-                      .on("mouseover", mouseover_mg(`${d.header.robot_id}`))
-                      .on("mouseout", mouseout_mg());
                     g_rt_ghost
                       .append("line")
                       .attr("x1", 0)
@@ -522,6 +523,14 @@ function join_enter_robot_estimates(enter){
                   })
                 // the line to the last pose
                 // TODO: line to (0,0) first will-ya
+                g_rt_estimate
+                  .append('line')
+                  .classed('rt_line_to_last_pose',true)
+                  // .attr('id',`${d.header.robot_id}`)
+                  .attr('x1',d.header.state.x)
+                  .attr('y1',d.header.state.y)
+                  .attr('x2',0)
+                  .attr('y2',0)
             })
         })
 }

@@ -64,7 +64,7 @@ svg {
   fill: silver;
 }
 
-.rt_ghost polygon {
+.rt_estimate polygon {
   stroke: black;
   stroke-width: 0.1;
   stroke-opacity: 0.5;
@@ -72,28 +72,32 @@ svg {
   stroke-dasharray: 0.5;
 }
 
-.rt_ghost line {
+.rt_estimate line {
   stroke-width: 0.3;
   stroke-opacity: 0.5;
   stroke: black;
 }
+line.rt_line_to_last_pose {
+  stroke-width: 0.1;
+  stroke-dasharray: 0.5;
+}
 
 .agent_true_group#r1 polygon,
 .agent_true_group#r1 line,
-.rt_ghost#r1 polygon,
-.rt_ghost#r1 line {
+.rt_estimate#r1 polygon,
+.rt_estimate#r1 line {
   stroke: red;
 }
 .agent_true_group#r2 polygon,
 .agent_true_group#r2 line,
-.rt_ghost#r2 polygon,
-.rt_ghost#r2 line {
+.rt_estimate#r2 polygon,
+.rt_estimate#r2 line {
   stroke: green;
 }
 .agent_true_group#r3 polygon,
 .agent_true_group#r3 line,
-.rt_ghost#r3 polygon,
-.rt_ghost#r3 line {
+.rt_estimate#r3 polygon,
+.rt_estimate#r3 line {
   stroke: blue;
 }
 
