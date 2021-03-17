@@ -25,9 +25,6 @@ const agents_true_group = main_group
 const landmarks_true_group = main_group
   .append("g")
   .classed("landmarks_true_group", true);
-const agents_graphs_group = main_group
-  .append("g")
-  .classed("agents_graphs_group", true);
 
 // The d_ means a dynamic group as opposed to the groups declared above
 //  (I just made that up). Since the names would be only 1-letter appart from

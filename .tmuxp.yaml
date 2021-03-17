@@ -6,7 +6,7 @@ session_name: proto-sam
 start-directory: ./
 windows:
   - window_name: EXEC
-    layout: main-vertical
+    layout: tiled
     focus: true
     # shell_command_before:
     #   - ls
