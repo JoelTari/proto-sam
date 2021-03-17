@@ -117,84 +117,7 @@ client.on("message", function (topic, message) {
 
     d_agent_true_group = d_agent_true_group
       .data(msg.robots, (d) => d.robot_id)
-      .join(
-        (enter) =>
-          enter
-            .append("g")
-            .classed("agent_true_group", true)
-            .classed("selected", (d) => d.isSelected)
-            .attr("id", (d) => d.robot_id)
-            .each(function (d) {
-              d3.select(this)
-                .append("g")
-                .attr(
-                  "transform",
-                  (d) => "translate(" + d.state.x + "," + d.state.y + ")"
-                )
-                .append("g")
-                .attr("transform", "rotate(" + d.state.th + ")")
-                .call(function (g) {
-                  // adding all display components
-                  // 1. the sensor
-                  if (d.sensor != null)
-                    g.append("path")
-                      .classed("sensor", true)
-                      .attr("d", function (d) {
-                        rx = d.sensor.range;
-                        ry = rx;
-                        if (
-                          d.sensor.angle_coverage > 1 ||
-                          d.sensor.angle_coverage < 0
-                        )
-                          console.error("Sensor angle_coverage out of bound");
-                        // def px py as the starting point along the sensor range arc
-                        px =
-                          Math.cos(Math.PI * d.sensor.angle_coverage) *
-                          d.sensor.range;
-                        py =
-                          Math.sin(Math.PI * d.sensor.angle_coverage) *
-                          d.sensor.range;
-                        return (
-                          "M0,0 l" +
-                          px +
-                          "," +
-                          py +
-                          " A " +
-                          rx +
-                          " " +
-                          ry +
-                          " 0 " +
-                          true * (d.sensor.angle_coverage > 0.5) +
-                          " 0 " +
-                          px +
-                          " " +
-                          -py
-                        );
-                      });
-                  // 2. the robot
-                  g.append("polygon")
-                    .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-                    .on("mouseover", mouseover_mg(`${d.robot_id}`))
-                    .on("mouseout", mouseout_mg());
-                  g.append("line")
-                    .attr("x1", 0)
-                    .attr("y1", 0)
-                    .attr("x2", 1)
-                    .attr("y2", 0);
-                });
-            })
-            .transition()
-            .duration(500)
-            .attr("opacity", 1)
-            .selection(),
-        (update) =>
-          update
-            .classed("selected", (d) => d.isSelected)
-            .each(function (d) {
-              applyMove_gg(d3.select(this), [d.state.x, d.state.y, d.state.th]);
-              // applyMove_gg(d3.select(this), [10, 30, 30]);
-            })
-      ) // end of join agent_true_group
+      .join(join_agent_truth_enter, join_agent_truth_update)
       .on("click", function (e, d) {
         // for next joining of data
         GlobalUI.selected_robot_id = d3.select(this).attr("id");
@@ -361,9 +284,12 @@ function join_enter_robot_estimates(enter) {
 }
 
 function join_update_robot_estimates(update) {
-  const t_graph_motion = d3.transition('m1').duration(1000).ease(d3.easeCubicInOut);
+  const t_graph_motion = d3
+    .transition("m1")
+    .duration(1000)
+    .ease(d3.easeCubicInOut);
   const t_graph_motion2 = d3
-    .transition('m2')
+    .transition("m2")
     .duration(1000)
     .ease(d3.easeCubicInOut);
 
@@ -625,6 +551,77 @@ function join_update_vertex(update) {
 function join_exit_vertex(exit) {
   // TODO:
   return exit;
+}
+
+// function that given the data angle cover and range, draws the string data for the
+// svg-path element
+sensor_visual = function (d) {
+  rx = d.sensor.range;
+  ry = rx;
+  if (d.sensor.angle_coverage > 1 || d.sensor.angle_coverage < 0)
+    console.error("Sensor angle_coverage out of bound");
+  // def px py as the starting point along the sensor range arc
+  px = Math.cos(Math.PI * d.sensor.angle_coverage) * d.sensor.range;
+  py = Math.sin(Math.PI * d.sensor.angle_coverage) * d.sensor.range;
+  sweep = true * (d.sensor.angle_coverage > 0.5);
+  return `M0,0 l${px},${py} A ${rx} ${ry} 0 ${sweep} 0 ${px} ${-py}`;
+};
+
+function join_agent_truth_enter(enter) {
+  return enter
+    .append("g")
+    .classed("agent_true_group", true)
+    .classed("selected", (d) => d.isSelected)
+    .attr("id", (d) => d.robot_id)
+    .each(function (d) {
+      d3.select(this)
+        .append("g")
+        .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
+        .append("g")
+        .attr("transform", `rotate(${d.state.th})`)
+        .call(function (g) {
+          // adding all display components
+          // 1. the sensor
+          if (d.sensor != null)
+            g.append("path").classed("sensor", true).attr("d", sensor_visual);
+          // 2. the robot
+          g.append("polygon")
+            .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
+            .on("mouseover", mouseover_mg(`${d.robot_id}`))
+            .on("mouseout", mouseout_mg());
+          g.append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 1)
+            .attr("y2", 0);
+        });
+      // the state history
+      if (d.state_history != null) {
+        d3.select(this)
+          .append("polyline")
+          .classed("state_history", true)
+          // the points of the polyline are the history + the rt state
+          .attr("points", d.state_history.map((e) => e.join(",")).join(" ") + ` ${d.state.x},${d.state.y}`)
+          // tmp TODO css
+          // .attr("fill", "none")
+          // .attr("stroke", "black")
+          // .attr("stroke-width", 0.1);
+      }
+    })
+    .transition()
+    .duration(500)
+    .attr("opacity", 1)
+    .selection();
+}
+
+function join_agent_truth_update(update) {
+  return update
+    .classed("selected", (d) => d.isSelected)
+    .each(function (d) {
+      // TODO: call on applyMove_gg
+      applyMove_gg(d3.select(this), [d.state.x, d.state.y, d.state.th]);
+      // applyMove_gg(d3.select(this), [10, 30, 30]);
+    });
 }
 
 /******************************************************************************

@@ -75,21 +75,33 @@ svg {
   opacity: 0.1;
 }
 
+/* state history */
+.agent_true_group .state_history {
+  fill: none;
+  stroke: silver;
+  stroke-width: 0.2;
+  stroke-dasharray: 0.15;
+  stroke-opacity: 0.7;
+}
+
 /******************************************/
 /*   COLOR SPECIALIZATION : AGENT GT */
 /******************************************/
+.agent_true_group#r1 .state_history,
 .agent_true_group#r1 polygon,
 .agent_true_group#r1 line,
 .rt_estimate#r1 polygon,
 .rt_estimate#r1 line {
   stroke: red;
 }
+.agent_true_group#r2 .state_history,
 .agent_true_group#r2 polygon,
 .agent_true_group#r2 line,
 .rt_estimate#r2 polygon,
 .rt_estimate#r2 line {
   stroke: green;
 }
+.agent_true_group#r3 .state_history,
 .agent_true_group#r3 polygon,
 .agent_true_group#r3 line,
 .rt_estimate#r3 polygon,
