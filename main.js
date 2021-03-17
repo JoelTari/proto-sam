@@ -375,15 +375,15 @@ function join_update_robot_estimates(update) {
             "transform",
             (local_d) => "rotate(" + local_d.header.state.th + ")"
           )
-          .selection();
+          // .selection();
         // update the line to the last pose
         g_rt_estimate
           .select("line.rt_line_to_last_pose")
           .transition(t_graph_motion)
-          .attr("x1", d.header.state.x)
-          .attr("y1", d.header.state.y)
-          .attr("x2", d.last_pose.state.x)
-          .attr("y2", d.last_pose.state.y);
+          .attr("x1",d => d.header.state.x)
+          .attr("y1",d => d.header.state.y)
+          .attr("x2",d => d.last_pose.state.x)
+          .attr("y2",d => d.last_pose.state.y);
       });
   });
 }
@@ -472,12 +472,14 @@ function join_update_factor(update) {
 
   return update.each(function (d) {
     d3.select(this)
-      .selectChild("g")
-      .selectChild("g")
-      .selectChildren("line")
+      .select("g")
+      .select("g")
+      .selectAll('line')
+      // .selectChildren("line")
       // .selectChild("line") // TODO: all children
-      .call(function (lines) {
-        lines.each(function (dd, i) {
+      // .call(function (lines) {
+        // lines.each(function (dd, i) {
+      .each(function (dd, i) {
           if (d.vars.length > 1) {
             // line
             d3.select(this)
@@ -496,9 +498,9 @@ function join_update_factor(update) {
               .attr("x2", d.dot_factor_position.x)
               .attr("y2", d.dot_factor_position.y);
           }
-        });
+        // });
       });
-    // the factor circle (to visually differentiate from with MRF)
+    // the little factor circle (to visually differentiate from with MRF)
     d3.select(this)
       .selectChild("g")
       .select("circle")
@@ -510,14 +512,21 @@ function join_update_factor(update) {
 
 function join_exit_factor(exit) {
   return exit
-    .call((ex) =>
-      ex
-        .selectChild("g")
-        .selectChild("g")
-        .selectChildren("line")
-        .style("stroke", "brown")
-    )
-    .call((ex) => ex.selectChild("g").select("circle").style("fill", "brown"))
+    // .call((ex) =>
+    //   ex
+        .select("g")
+        .call(function (ex){
+          ex
+            .select("g")
+            .selectAll("line")
+            .style("stroke", "brown");
+          ex
+            .select("circle").style("fill", "brown")
+        })
+        // .selectAll("line")
+        // .style("stroke", "brown")
+    // )
+    // .call((ex) => ex.selectChild("g").select("circle").style("fill", "brown"))
     .transition("exit_factor") // TODO: Define outside
     .duration(1000)
     .style("opacity", 0)
