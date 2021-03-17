@@ -20,18 +20,21 @@ svg {
   transform: scaleY(-1);
 }
 
-.area {
-  fill: #88a8af;
-  /* background-color: #88a8af; */
-}
+/* .area { */
+/*   fill: #88a8af; */
+/*   /1* background-color: #88a8af; *1/ */
+/* } */
 
-.agent {
-  fill: gold;
-  stroke-width: 0.1;
-  stroke: black;
-  transition: fill 1s ease;
-}
+/* .agent { */
+/*   fill: gold; */
+/*   stroke-width: 0.1; */
+/*   stroke: black; */
+/*   transition: fill 1s ease; */
+/* } */
 
+/******************************************/
+/*   LANDMARKS GROUND TRUTH  */
+/******************************************/
 .landmark_true_group {
   stroke: none;
   fill: #436422;
@@ -41,12 +44,9 @@ svg {
   stroke: #694c39;
 }
 
-/* .agent:hover { */
-/*   fill: indigo; */
-/*   cursor: pointer; */
-/* } */
-
-/* test */
+/******************************************/
+/*   AGENTS GROUND TRUTH  */
+/******************************************/
 .agent_true_group polygon:hover {
   fill: lightblue;
   cursor: pointer;
@@ -57,32 +57,27 @@ svg {
   stroke: yellow;
 }
 
-/* any descendant polygon of those */
 .agent_true_group polygon {
   stroke: black;
   stroke-width: 0.1;
   fill: silver;
 }
-
-.rt_estimate polygon {
-  stroke: black;
-  stroke-width: 0.1;
-  stroke-opacity: 0.5;
-  fill: grey;
-  fill-opacity: 0.1;
-  stroke-dasharray: 0.5;
+/* specialization for the selected agent */
+.agent_true_group.selected polygon {
+  fill: goldenrod;
+}
+.agent_true_group.selected .sensor {
+  opacity: 0.2;
 }
 
-.rt_estimate line {
-  stroke-width: 0.3;
-  stroke-opacity: 0.5;
-  stroke: black;
-}
-line.rt_line_to_last_pose {
-  stroke-width: 0.1;
-  stroke-dasharray: 0.5;
+.agent_true_group .sensor {
+  fill: #b8e5ef;
+  opacity: 0.1;
 }
 
+/******************************************/
+/*   COLOR SPECIALIZATION : AGENT GT */
+/******************************************/
 .agent_true_group#r1 polygon,
 .agent_true_group#r1 line,
 .rt_estimate#r1 polygon,
@@ -102,18 +97,6 @@ line.rt_line_to_last_pose {
   stroke: blue;
 }
 
-/* specialization for the selected agent */
-.agent_true_group.selected polygon {
-  fill: goldenrod;
-}
-.agent_true_group.selected .sensor {
-  opacity: 0.2;
-}
-
-.agent_true_group .sensor {
-  fill: #b8e5ef;
-  opacity: 0.1;
-}
 .agent_true_group#r1 .sensor {
   fill: red;
 }
@@ -123,8 +106,50 @@ line.rt_line_to_last_pose {
 .agent_true_group#r3 .sensor {
   fill: blue;
 }
+/******************************************/
+/*   AGENTS GHOST (estimation)  */
+/******************************************/
+.rt_ghost polygon {
+  stroke: black;
+  stroke-width: 0.1;
+  stroke-opacity: 0.5;
+  fill: grey;
+  fill-opacity: 0.1;
+  stroke-dasharray: 0.5;
+}
+.rt_ghost line {
+  stroke-width: 0.3;
+  stroke-opacity: 0.5;
+  stroke: black;
+}
 
-/* graph test: TODO: remove */
+line.rt_line_to_last_pose {
+  stroke-width: 0.1;
+  stroke-opacity: 0.5;
+  stroke-dasharray: 0.5;
+  stroke: black;
+}
+/******************************************/
+/*  COLOR SPECIALIZATION by GHOST   */
+/******************************************/
+#r1 .rt_ghost line,
+#r1 .rt_ghost polygon,
+#r1 line.rt_line_to_last_pose {
+  stroke: red;
+}
+#r2 .rt_ghost line,
+#r2 .rt_ghost polygon,
+#r2 line.rt_line_to_last_pose {
+  stroke: green;
+}
+#r3 .rt_ghost line,
+#r3 .rt_ghost polygon,
+#r3 line.rt_line_to_last_pose {
+  stroke: blue;
+}
+/******************************************/
+/*   VERTICES AND FACTORS  */
+/******************************************/
 .vertex circle {
   fill: #e3e3e3;
   stroke: black;
@@ -147,7 +172,6 @@ line.rt_line_to_last_pose {
   transition: opacity 1s ease;
   display: none;
 }
-
 .factor line {
   stroke: black;
   stroke-width: 0.15;

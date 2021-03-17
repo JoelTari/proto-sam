@@ -214,7 +214,7 @@ client.on("message", function (topic, message) {
 
     // if I received an object instead of an array of a single object
     // transform into an array, but give a warning
-    estimation=arraytised(estimation)
+    estimation = arraytised(estimation);
 
     // massage data
     estimation.forEach((an_agent_estimation) => {
@@ -225,7 +225,9 @@ client.on("message", function (topic, message) {
 
     d_robots_estimates_group = d_robots_estimates_group
       .data(estimation, (d) => d.header.robot_id)
-      .join( join_enter_robot_estimates,join_update_robot_estimates,
+      .join(
+        join_enter_robot_estimates,
+        join_update_robot_estimates,
         (exit) => exit // NO REMOVE AT THIS LEVEL !!
       )
       // branch off: factor_graph and RT_estimate
@@ -299,6 +301,10 @@ function join_enter_robot_estimates(enter) {
           .classed("rt_estimate", true)
           .attr("id", `${d.header.robot_id}`)
           .call(function (g_rt_estimate) {
+            const t_ghost_entry = d3.transition("ghost_entry").duration(400);
+            const t_ghost_entry2 = d3
+              .transition("ghost_entry_last_pose_line")
+              .duration(400);
             // the ghost
             g_rt_estimate
               .append("g")
@@ -323,16 +329,24 @@ function join_enter_robot_estimates(enter) {
               )
               .call(function (g_rt_ghost) {
                 // 1. the robot
-                g_rt_ghost.append("polygon").attr("points", "0,-1 0,1 3,0");
+                g_rt_ghost
+                  .append("polygon")
+                  .attr("points", "0,-1 0,1 3,0")
+                  .style("stroke-opacity", 0)
+                  .transition(t_ghost_entry)
+                  .style("stroke-opacity");
+
                 g_rt_ghost
                   .append("line")
                   .attr("x1", 0)
                   .attr("y1", 0)
                   .attr("x2", 1)
-                  .attr("y2", 0);
+                  .attr("y2", 0)
+                  .style("stroke-opacity", 0)
+                  .transition(t_ghost_entry)
+                  .style("stroke-opacity");
               });
             // the line to the last pose
-            // TODO: line to (0,0) first will-ya
             g_rt_estimate
               .append("line")
               .classed("rt_line_to_last_pose", true)
@@ -340,17 +354,23 @@ function join_enter_robot_estimates(enter) {
               .attr("x1", d.header.state.x)
               .attr("y1", d.header.state.y)
               .attr("x2", d.last_pose.state.x)
-              .attr("y2", d.last_pose.state.y);
+              .attr("y2", d.last_pose.state.y)
+              .style("stroke-opacity", 0)
+              .transition(t_ghost_entry2)
+              .style("stroke-opacity");
           });
       })
   );
 }
 
 function join_update_robot_estimates(update) {
-  const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
-  const t_graph_motion2 = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+  const t_graph_motion = d3.transition('m1').duration(1000).ease(d3.easeCubicInOut);
+  const t_graph_motion2 = d3
+    .transition('m2')
+    .duration(1000)
+    .ease(d3.easeCubicInOut);
 
- return update.each(function (d, _, _) {
+  return update.each(function (_, _, _) {
     d3.select(this)
       .select("g.rt_estimate")
       .call(function (g_rt_estimate) {
@@ -374,16 +394,16 @@ function join_update_robot_estimates(update) {
           .attr(
             "transform",
             (local_d) => "rotate(" + local_d.header.state.th + ")"
-          )
-          // .selection();
+          );
+        // .selection();
         // update the line to the last pose
         g_rt_estimate
           .select("line.rt_line_to_last_pose")
           .transition(t_graph_motion)
-          .attr("x1",d => d.header.state.x)
-          .attr("y1",d => d.header.state.y)
-          .attr("x2",d => d.last_pose.state.x)
-          .attr("y2",d => d.last_pose.state.y);
+          .attr("x1", (d) => d.header.state.x)
+          .attr("y1", (d) => d.header.state.y)
+          .attr("x2", (d) => d.last_pose.state.x)
+          .attr("y2", (d) => d.last_pose.state.y);
       });
   });
 }
@@ -392,7 +412,7 @@ function join_enter_factor(enter) {
   // TODO:
   // Imho best way to avoid to define those transitions everywhere is to
   // transform those functions in classes of which the transitions are members
-  const t_factor_entry = d3.transition().duration(2200);
+  const t_factor_entry = d3.transition().duration(400);
   const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
 
   return enter
@@ -474,30 +494,30 @@ function join_update_factor(update) {
     d3.select(this)
       .select("g")
       .select("g")
-      .selectAll('line')
+      .selectAll("line")
       // .selectChildren("line")
       // .selectChild("line") // TODO: all children
       // .call(function (lines) {
-        // lines.each(function (dd, i) {
+      // lines.each(function (dd, i) {
       .each(function (dd, i) {
-          if (d.vars.length > 1) {
-            // line
-            d3.select(this)
-              .transition(t_graph_motion)
-              .attr("x1", d.dot_factor_position.x)
-              .attr("y1", d.dot_factor_position.y)
-              .attr("x2", d.vars[i].mean.x)
-              .attr("y2", d.vars[i].mean.y);
-          } else {
-            // update unary factor
-            // WARN TODO: a factor_id should not change its vars_id
-            d3.select(this)
-              .transition(t_graph_motion)
-              .attr("x1", d.vars[0].mean.x)
-              .attr("y1", d.vars[0].mean.y)
-              .attr("x2", d.dot_factor_position.x)
-              .attr("y2", d.dot_factor_position.y);
-          }
+        if (d.vars.length > 1) {
+          // line
+          d3.select(this)
+            .transition(t_graph_motion)
+            .attr("x1", d.dot_factor_position.x)
+            .attr("y1", d.dot_factor_position.y)
+            .attr("x2", d.vars[i].mean.x)
+            .attr("y2", d.vars[i].mean.y);
+        } else {
+          // update unary factor
+          // WARN TODO: a factor_id should not change its vars_id
+          d3.select(this)
+            .transition(t_graph_motion)
+            .attr("x1", d.vars[0].mean.x)
+            .attr("y1", d.vars[0].mean.y)
+            .attr("x2", d.dot_factor_position.x)
+            .attr("y2", d.dot_factor_position.y);
+        }
         // });
       });
     // the little factor circle (to visually differentiate from with MRF)
@@ -511,26 +531,24 @@ function join_update_factor(update) {
 }
 
 function join_exit_factor(exit) {
-  return exit
-    // .call((ex) =>
-    //   ex
-        .select("g")
-        .call(function (ex){
-          ex
-            .select("g")
-            .selectAll("line")
-            .style("stroke", "brown");
-          ex
-            .select("circle").style("fill", "brown")
-        })
-        // .selectAll("line")
-        // .style("stroke", "brown")
-    // )
-    // .call((ex) => ex.selectChild("g").select("circle").style("fill", "brown"))
-    .transition("exit_factor") // TODO: Define outside
-    .duration(1000)
-    .style("opacity", 0)
-    .remove();
+  return (
+    exit
+      // .call((ex) =>
+      //   ex
+      .select("g")
+      .call(function (ex) {
+        ex.select("g").selectAll("line").style("stroke", "brown");
+        ex.select("circle").style("fill", "brown");
+      })
+      // .selectAll("line")
+      // .style("stroke", "brown")
+      // )
+      // .call((ex) => ex.selectChild("g").select("circle").style("fill", "brown"))
+      .transition("exit_factor") // TODO: Define outside
+      .duration(1000)
+      .style("opacity", 0)
+      .remove()
+  );
 }
 
 function join_enter_vertex(enter) {
@@ -925,11 +943,13 @@ function inputToMove(model) {
 /******************************************************************************
  *                            HELPER
  *****************************************************************************/
-function arraytised(obj_or_array){ 
-  if (obj_or_array[Symbol.iterator]== null){
-    console.warn('received data is not an array: attempting to arraytised')
+function arraytised(obj_or_array) {
+  if (obj_or_array[Symbol.iterator] == null) {
+    console.warn("received data is not an array: attempting to arraytised");
     return [obj_or_array];
   }
+  // if already an array, all is gud
+  else return obj_or_array;
 }
 
 function ecpi(a) {
