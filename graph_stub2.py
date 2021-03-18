@@ -301,6 +301,8 @@ def rXY(sig=1.5):
 def fd_landmark_by_id(ArrayOfLandmarks, lid):
     return next(item for item in ArrayOfLandmarks if item["landmark_id"] == lid)
     # return next(filter(lambda x: x['landmark_id'] == lid, ArrayOfLandmarks))
+def getIdxM(margs,vid):
+    return next(i for i, m in enumerate(margs) if m["var_id"] == vid)
 
 # ----------------------------------------------------------------------------
 #                           Globals: Fake MultiMap
@@ -338,10 +340,7 @@ full_estimations1 = [
                             'state']['y']+rXY()
                 }, 'covariance': {'sigma': [1, 1], 'rot':0}},
                 {'var_id': 'l7', 'mean': {
-                    'x':
-                        fd_landmark_by_id(world['landmarks'], 'l7')['state']['x']+rXY(), 'y':
-                        fd_landmark_by_id(world['landmarks'], 'l7')[
-                            'state']['y']+rXY()
+                    'x': 45.9, 'y': 8.75
                 }, 'covariance': {'sigma': [1, 1], 'rot':0}},
             ],
 
@@ -527,8 +526,257 @@ full_estimations1 = [
     }
 ]
 
+# [39.77970504760742, 17.07476806640625],
+# [36.47776412963867, 20.21947479248047],
+# [34.984031677246094, 24.62206268310547],
+# [45.3615608215332, 22.263532638549805],
+# [48.74211883544922, 21.398738861083984],
 
-full_estimations2 = {}
+full_estimations2 = copy.deepcopy(full_estimations1)
+full_estimations2[0]['graph']['marginals'].extend(
+    [
+        {'var_id': 'x5', 'mean': {'x': 39.78, 'y': 17.07},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'x6', 'mean': {'x': 36.47, 'y': 20.21},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'x7', 'mean': {'x': 34.98, 'y': 24.62},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'x8', 'mean': {'x': 42, 'y': 23.2},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'x9', 'mean': {'x': 48.74, 'y': 21.4},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'l5', 'mean': {
+            'x': 35.2, 'y': 29.34},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'l6', 'mean': {
+            'x': 57.6, 'y': 26.7},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'l10', 'mean': {
+            'x': 59.2, 'y': 19.35},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+
+    ]
+)
+full_estimations2[0]['graph']['factors'].extend(
+    [
+        {'factor_id': 'f10a', 'type': 'odometry',
+         'vars_id': ['x5', 'x4'], },
+        {'factor_id': 'f10', 'type': 'odometry',
+         'vars_id': ['x5', 'x6'], },
+        {'factor_id': 'f11', 'type': 'odometry',
+         'vars_id': ['x7', 'x6'], },
+        {'factor_id': 'f12', 'type': 'odometry',
+         'vars_id': ['x7', 'x8'], },
+        {'factor_id': 'f13', 'type': 'odometry',
+         'vars_id': ['x8', 'x9'], },
+        {'factor_id': 'f14', 'type': 'range-bearing',
+         'vars_id': ['x5', 'l7'], },
+        {'factor_id': 'f15', 'type': 'range-bearing',
+         'vars_id': ['x7', 'l5'], },
+        {'factor_id': 'f16', 'type': 'range-bearing',
+         'vars_id': ['x9', 'l10'], },
+        {'factor_id': 'f17', 'type': 'range-bearing',
+         'vars_id': ['x9', 'l6'], },
+    ]
+)
+full_estimations2[0]['header']['seq'] += 1
+full_estimations2[0]['header']['state']['x'] = 51.17
+full_estimations2[0]['header']['state']['y'] = 20.84
+full_estimations2[0]['header']['state']['th'] = -20
+full_estimations2[0]['last_pose']['last_pose_id'] = 'x9'
+
+# green
+full_estimations2[1]['graph']['marginals'].extend(
+    [
+        {'var_id': 'x3', 'mean': {'x': 31.7, 'y': 50.4},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'x4', 'mean': {'x': 42.7, 'y': 53.6},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'x5', 'mean': {'x': 48.9, 'y': 56.54},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'x6', 'mean': {'x': 49.68, 'y': 48.5},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'l8', 'mean': {
+            'x': 39.07, 'y': 55.44},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'l6', 'mean': {
+            'x': 50.8, 'y': 40.8},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+
+    ]
+)
+full_estimations2[1]['graph']['factors'].extend(
+    [
+        {'factor_id': 'f6', 'type': 'odometry', 'vars_id': ['x3', 'x4'], },
+        {'factor_id': 'f7', 'type': 'odometry', 'vars_id': ['x4', 'x5'], },
+        {'factor_id': 'f8', 'type': 'range-bearing',
+         'vars_id': ['x5', 'x6'], },
+        {'factor_id': 'f9', 'type': 'range-bearing',
+         'vars_id': ['x5', 'l6'], },
+        {'factor_id': 'f10', 'type': 'range-bearing',
+         'vars_id': ['x3', 'l8'], },
+        {'factor_id': 'f11', 'type': 'odometry',
+         'vars_id': ['x3', 'x2'], },
+    ]
+)
+full_estimations2[1]['header']['seq'] += 1
+full_estimations2[1]['header']['state']['x'] = 50.86
+full_estimations2[1]['header']['state']['y'] = 44.8
+full_estimations2[1]['header']['state']['th'] = -95
+full_estimations2[1]['last_pose']['last_pose_id'] = 'x6'
+
+# blue
+full_estimations2[2]['graph']['marginals'].extend(
+    [
+        {'var_id': 'x4', 'mean': {'x': 67.92, 'y': 31},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'x5', 'mean': {'x': 60.1, 'y': 30.75},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'l10', 'mean': {
+            'x': 52.42, 'y': 33.2},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+        {'var_id': 'l6', 'mean': {
+            'x': 55.2, 'y': 41.68},
+         'covariance': {'sigma': [1, 1], 'rot':0}},
+
+    ]
+)
+full_estimations2[2]['graph']['factors'].extend(
+    [
+        {'factor_id': 'f10', 'type': 'odometry',
+         'vars_id': ['x3', 'x4'], },
+        {'factor_id': 'f11', 'type': 'odometry',
+         'vars_id': ['x4', 'x5'], },
+        {'factor_id': 'f14', 'type': 'range-bearing',
+         'vars_id': ['x3', 'l11'], },
+        {'factor_id': 'f15', 'type': 'range-bearing',
+         'vars_id': ['x5', 'l6'], },
+        {'factor_id': 'f16', 'type': 'range-bearing',
+         'vars_id': ['x5', 'l10'], },
+    ]
+)
+full_estimations2[2]['header']['seq'] += 1
+full_estimations2[2]['header']['state']['x'] = 58.17
+full_estimations2[2]['header']['state']['y'] = 32.84
+full_estimations2[2]['header']['state']['th'] = 135
+full_estimations2[2]['last_pose']['last_pose_id'] = 'x5'
+
+
+full_estimations3 = copy.deepcopy(full_estimations2)
+
+# common mean for shared vals
+#  {"landmark_id": "l6", "state": {"x": 52.2, "y": 36.5}}
+#  {"landmark_id": "l10", "state": {"x": 51.2, "y": 31}}
+
+common_l6 ={'var_id': 'l6', 'mean': {'x': 52.6, 'y': 37}, 'covariance': {'sigma': [1, 1], 'rot':0}}
+common_l10 = {'var_id': 'l10', 'mean': {
+            'x': 50, 'y': 31},
+         'covariance': {'sigma': [1, 1], 'rot':0}}
+
+# red
+# fix odom of red
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"x1")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=14.2
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=12.12
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"x2")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=20.99
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=12.35
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"x3")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=28.61
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=13.53
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"x4")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=34.04
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=15.81
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"x5")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=39.15
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=19.9
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"x6")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=32.23
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=22.68
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"x7")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=27.59
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=27.37
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"x8")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=33.8
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=28.94
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"x9")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=38.91
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=29.10
+# fix landmarks of red
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"l2")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=fd_landmark_by_id(world['landmarks'], 'l2')['state']['x']+rXY(0.5)
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=fd_landmark_by_id(world['landmarks'], 'l2')['state']['y']+rXY(0.5)
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"l7")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=fd_landmark_by_id(world['landmarks'], 'l7')['state']['x']+rXY(0.5)
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=fd_landmark_by_id(world['landmarks'], 'l7')['state']['y']+rXY(0.5)
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"l5")
+full_estimations3[0]['graph']['marginals'][i]['mean']['x']=fd_landmark_by_id(world['landmarks'], 'l5')['state']['x']+rXY(0.5)
+full_estimations3[0]['graph']['marginals'][i]['mean']['y']=fd_landmark_by_id(world['landmarks'], 'l5')['state']['y']+rXY(0.5)
+# fix common landmarks of red
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"l6")
+full_estimations3[0]['graph']['marginals'][i] = common_l6
+i = getIdxM(full_estimations3[0]['graph']['marginals'],"l10")
+full_estimations3[0]['graph']['marginals'][i] = common_l10
+# fix last pose of red
+full_estimations3[0]['header']['state']['x']=42.45
+full_estimations3[0]['header']['state']['y']=30.675
+full_estimations3[0]['header']['state']['th']=25
+
+# green
+# fix green odom
+i = getIdxM(full_estimations3[1]['graph']['marginals'],"x1")
+full_estimations3[1]['graph']['marginals'][i]['mean']['x']=15
+full_estimations3[1]['graph']['marginals'][i]['mean']['y']=49.12
+i = getIdxM(full_estimations3[1]['graph']['marginals'],"x2")
+full_estimations3[1]['graph']['marginals'][i]['mean']['x']=21.99
+full_estimations3[1]['graph']['marginals'][i]['mean']['y']=49.35
+i = getIdxM(full_estimations3[1]['graph']['marginals'],"x3")
+full_estimations3[1]['graph']['marginals'][i]['mean']['x']=31.61
+full_estimations3[1]['graph']['marginals'][i]['mean']['y']=47.53
+i = getIdxM(full_estimations3[1]['graph']['marginals'],"x4")
+full_estimations3[1]['graph']['marginals'][i]['mean']['x']=48.04
+full_estimations3[1]['graph']['marginals'][i]['mean']['y']=49.81
+i = getIdxM(full_estimations3[1]['graph']['marginals'],"x5")
+full_estimations3[1]['graph']['marginals'][i]['mean']['x']=53.15
+full_estimations3[1]['graph']['marginals'][i]['mean']['y']=50.9
+i = getIdxM(full_estimations3[1]['graph']['marginals'],"x6")
+full_estimations3[1]['graph']['marginals'][i]['mean']['x']=53.23
+full_estimations3[1]['graph']['marginals'][i]['mean']['y']=44.68
+# fix landmarks of green
+i = getIdxM(full_estimations3[1]['graph']['marginals'],"l8")
+full_estimations3[1]['graph']['marginals'][i]['mean']['x']=fd_landmark_by_id(world['landmarks'], 'l8')['state']['x']+rXY(0.5)
+full_estimations3[1]['graph']['marginals'][i]['mean']['y']=fd_landmark_by_id(world['landmarks'], 'l8')['state']['y']+rXY(0.5)
+# fix common landmarks of green
+i = getIdxM(full_estimations3[1]['graph']['marginals'],"l6")
+full_estimations3[1]['graph']['marginals'][i] = common_l6
+# fix last pose of green
+full_estimations3[1]['header']['state']['x']=52
+full_estimations3[1]['header']['state']['y']=41
+full_estimations3[1]['header']['state']['th']=-95
+
+# blue
+# fix blue odom
+# (2) [67.92481994628906, 29.496355056762695]
+# main.js:817 (2) [60.298912048339844, 28.710180282592773]
+# main.js:817 (2) [56.682498931884766, 30.597002029418945]
+i = getIdxM(full_estimations3[2]['graph']['marginals'],"x4")
+full_estimations3[2]['graph']['marginals'][i]['mean']['x']=68
+full_estimations3[2]['graph']['marginals'][i]['mean']['y']=29.5
+i = getIdxM(full_estimations3[2]['graph']['marginals'],"x5")
+full_estimations3[2]['graph']['marginals'][i]['mean']['x']=60.3
+full_estimations3[2]['graph']['marginals'][i]['mean']['y']=28.7
+# fix landmarks of blue
+i = getIdxM(full_estimations3[2]['graph']['marginals'],"l14")
+full_estimations3[2]['graph']['marginals'][i]['mean']['x']=fd_landmark_by_id(world['landmarks'], 'l14')['state']['x']+rXY(0.5)
+full_estimations3[2]['graph']['marginals'][i]['mean']['y']=fd_landmark_by_id(world['landmarks'], 'l14')['state']['y']+rXY(0.5)
+# fix common landmarks of blue
+i = getIdxM(full_estimations3[2]['graph']['marginals'],"l6")
+full_estimations3[2]['graph']['marginals'][i] = common_l6
+i = getIdxM(full_estimations3[2]['graph']['marginals'],"l10")
+full_estimations3[2]['graph']['marginals'][i] = common_l10
+# fix last pose of blue
+full_estimations3[2]['header']['state']['x']=56.7
+full_estimations3[2]['header']['state']['y']=30.6
 
 # ----------------------------------------------------------------------------
 #         mqtt layer callbacks overrides (not yet users callbacks)
@@ -569,6 +817,9 @@ def on_message(client, userdata, message):
         elif msg == '2':
             client.publish(estimation_graph_topic,
                            json.dumps(full_estimations2))
+        elif msg == '3':
+            client.publish(estimation_graph_topic,
+                           json.dumps(full_estimations3))
     elif message.topic == request_ground_truth_topic:
         if msg == '2':
             client.publish(ground_truth_topic, json.dumps(world2))

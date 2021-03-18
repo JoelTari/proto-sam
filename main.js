@@ -87,7 +87,7 @@ client.on("message", function (topic, message) {
             enter
               .append("path")
               // size is the area, for a cross: area= desired_tot_length**2 *5
-              .attr("d", `${d3.symbol(d3.symbolCross, 1.2 * 1.2)()}`)
+              .attr("d", `${d3.symbol(d3.symbolCross, 1.6 * 1.6)()}`)
               .classed("landmark_true_group", true)
               .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
               .on("mouseover", function (e, d) {
@@ -855,10 +855,11 @@ function applyMove_gg(d3_single_selected, pose) {
  *****************************************************************************/
 // sending estimation_graph request_position_ini
 client.publish("request_ground_truth", " ");
+setTimeout((_) => client.publish("request_ground_truth", "2"), 2500);
 setTimeout((_) => client.publish("request_estimation", " "), 1500);
 setTimeout((_) => client.publish("request_estimation", "1"), 2500);
-// setTimeout((_) => client.publish("request_estimation", "2"), 3500);
-// setTimeout((_) => client.publish("request_estimation", "3"), 4500);
+setTimeout((_) => client.publish("request_estimation", "2"), 3500);
+setTimeout((_) => client.publish("request_estimation", "3"), 4500);
 // setTimeout((_) => client.publish("request_estimation", "4"), 5500);
 
 /******************************************************************************

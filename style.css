@@ -72,7 +72,7 @@ svg {
 
 .agent_true_group .sensor {
   fill: #b8e5ef;
-  opacity: 0.1;
+  opacity: 0.05;
 }
 
 /* state history */
@@ -183,6 +183,11 @@ line.rt_line_to_last_pose {
   opacity: 0.4;
   transition: opacity 1s ease;
   display: none;
+}
+/* TODO remove: the shared vars */
+.vertex#l10 circle,
+.vertex#l6 circle {
+  fill: #c17ed7;
 }
 .factor line {
   stroke: black;
