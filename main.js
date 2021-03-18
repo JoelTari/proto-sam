@@ -79,33 +79,35 @@ client.on("message", function (topic, message) {
     const msg = JSON.parse(message.toString());
     // draw landmarks first, I dont do a group for each individual
     // landmark  (no updates as they are supposed fixed)
-    d_landmark_true_group = d_landmark_true_group
-      .data(msg.landmarks, (d) => d.landmark_id)
-      .join(
-        (enter) =>
-          enter
-            .append("path")
-            // size is the area, for a cross: area= desired_tot_length**2 *5
-            .attr("d", `${d3.symbol(d3.symbolCross, 1.2 * 1.2)()}`)
-            .classed("landmark_true_group", true)
-            .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
-            .on("mouseover", function (e, d) {
-              // TODO: use the UI event function
-              //       like others mouseover func do
-              // note: use d3.pointer(e) to get pointer coord wrt the target element
-              div_tooltip
-                .style("left", `${e.pageX}px`)
-                .style("top", `${e.pageY - 6}px`)
-                .style("visibility", "visible")
-                // .transition()
-                // .duration(200)
-                .style("opacity", 0.9);
-              div_tooltip.html(`${d.landmark_id}`);
-              d3.select(this).style("cursor", "pointer");
-            })
-            .on("mouseout", mouseout_mg())
-        // ,(update) => update // the default if not specified
-      );
+    if (msg.landmarks != null) {
+      d_landmark_true_group = d_landmark_true_group
+        .data(msg.landmarks, (d) => d.landmark_id)
+        .join(
+          (enter) =>
+            enter
+              .append("path")
+              // size is the area, for a cross: area= desired_tot_length**2 *5
+              .attr("d", `${d3.symbol(d3.symbolCross, 1.2 * 1.2)()}`)
+              .classed("landmark_true_group", true)
+              .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
+              .on("mouseover", function (e, d) {
+                // TODO: use the UI event function
+                //       like others mouseover func do
+                // note: use d3.pointer(e) to get pointer coord wrt the target element
+                div_tooltip
+                  .style("left", `${e.pageX}px`)
+                  .style("top", `${e.pageY - 6}px`)
+                  .style("visibility", "visible")
+                  // .transition()
+                  // .duration(200)
+                  .style("opacity", 0.9);
+                div_tooltip.html(`${d.landmark_id}`);
+                d3.select(this).style("cursor", "pointer");
+              })
+              .on("mouseout", mouseout_mg())
+          // ,(update) => update // the default if not specified
+        );
+    }
 
     // ugly, since updates remove my active/selected that is added outside of d3
     // I got the impression that the general update pattern deletes any excess property added
@@ -600,12 +602,13 @@ function join_agent_truth_enter(enter) {
         d3.select(this)
           .append("polyline")
           .classed("state_history", true)
+          .attr("id", (d) => d.seq)
           // the points of the polyline are the history + the rt state
-          .attr("points", d.state_history.map((e) => e.join(",")).join(" ") + ` ${d.state.x},${d.state.y}`)
-          // tmp TODO css
-          // .attr("fill", "none")
-          // .attr("stroke", "black")
-          // .attr("stroke-width", 0.1);
+          .attr(
+            "points",
+            d.state_history.map((e) => e.join(",")).join(" ") +
+              ` ${d.state.x},${d.state.y}`
+          );
       }
     })
     .transition()
@@ -618,9 +621,24 @@ function join_agent_truth_update(update) {
   return update
     .classed("selected", (d) => d.isSelected)
     .each(function (d) {
-      // TODO: call on applyMove_gg
-      applyMove_gg(d3.select(this), [d.state.x, d.state.y, d.state.th]);
-      // applyMove_gg(d3.select(this), [10, 30, 30]);
+      d3.select(this).call(applyMove_gg, [d.state.x, d.state.y, d.state.th]);
+      // update the state history (if seq has change in the stamp)
+      if (d.state_history != null) {
+        d3.select(this)
+          .select("polyline.state_history")
+          .call(function (polyline) {
+            if (d.seq !== polyline.attr("id")) {
+              polyline
+                .attr("id", (d) => d.seq)
+                // the points of the polyline are the history + the rt state
+                .attr(
+                  "points",
+                  d.state_history.map((e) => e.join(",")).join(" ") +
+                    ` ${d.state.x},${d.state.y}`
+                );
+            }
+          });
+      }
     });
 }
 
@@ -839,9 +857,9 @@ function applyMove_gg(d3_single_selected, pose) {
 client.publish("request_ground_truth", " ");
 setTimeout((_) => client.publish("request_estimation", " "), 1500);
 setTimeout((_) => client.publish("request_estimation", "1"), 2500);
-setTimeout((_) => client.publish("request_estimation", "2"), 3500);
-setTimeout((_) => client.publish("request_estimation", "3"), 4500);
-setTimeout((_) => client.publish("request_estimation", "4"), 5500);
+// setTimeout((_) => client.publish("request_estimation", "2"), 3500);
+// setTimeout((_) => client.publish("request_estimation", "3"), 4500);
+// setTimeout((_) => client.publish("request_estimation", "4"), 5500);
 
 /******************************************************************************
  *                           KeyPresses Helper
