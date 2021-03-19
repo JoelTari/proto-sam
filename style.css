@@ -208,23 +208,26 @@ line.rt_line_to_last_pose {
 .factor_graph#r1 .factor circle {
   fill: red;
 }
-.factor_graph#r1 .factor line,
 .factor_graph#r1 .vertex circle {
   stroke: red;
 }
 .factor_graph#r2 .factor circle {
   fill: green;
 }
-.factor_graph#r2 .factor line,
 .factor_graph#r2 .vertex circle {
   stroke: green;
 }
 .factor_graph#r3 .factor circle {
   fill: blue;
 }
-.factor_graph#r3 .factor line,
 .factor_graph#r3 .vertex circle {
   stroke: blue;
+}
+
+.factor_graph#r1 .factor line,
+.factor_graph#r3 .factor line,
+.factor_graph#r2 .factor line {
+  stroke: #333;
 }
 
 /******************************************/
