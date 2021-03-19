@@ -277,17 +277,19 @@ estimation_graph_topic = 'estimation'
 # ----------------------------------------------------------------------------
 
 
-def rSig():
-    return rd.uniform(1, 5)
+def rSig(m=0.6, M=1.2):
+    return rd.uniform(m, M)
 
+def rSigMul(mul=1):
+    return rd.uniform(0.6,0.8)*mul
 
 def rRot():
     return rd.uniform(0, math.pi/2)
 # randomness at iteration
 
 
-def rDSig():
-    return rd.uniform(0.3, 0.8)
+def rDSig(m=0.3, M=0.5 ):
+    return rd.uniform(m, M)
 
 
 def rDRot():
@@ -303,6 +305,13 @@ def fd_landmark_by_id(ArrayOfLandmarks, lid):
     # return next(filter(lambda x: x['landmark_id'] == lid, ArrayOfLandmarks))
 def getIdxM(margs,vid):
     return next(i for i, m in enumerate(margs) if m["var_id"] == vid)
+
+def modify_covs(m):
+    m['covariance']['sigma'][0]*=rDSig()
+    m['covariance']['sigma'][1]*=rDSig()
+    m['covariance']['rot']+=rDRot()
+    return m
+
 
 # ----------------------------------------------------------------------------
 #                           Globals: Fake MultiMap
@@ -324,24 +333,24 @@ full_estimations1 = [
             #
             'marginals': [
                 {'var_id': 'x0', 'mean': {'x': 6.5, 'y': 12},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSig(0.2,0.5), rSig(0.1,0.3)], 'rot':rRot()}},
                 {'var_id': 'x1', 'mean': {'x': 14, 'y': 10.6},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(), rSigMul()], 'rot':rRot()}},
                 {'var_id': 'x2', 'mean': {'x': 21.1, 'y': 10.5},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(3/2), rSigMul(1)], 'rot':rRot()}},
                 {'var_id': 'x3', 'mean': {'x': 27.7, 'y': 10.9},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(2), rSigMul(3/2)], 'rot':rRot()}},
                 {'var_id': 'x4', 'mean': {'x': 34.88, 'y': 13.8},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(2.8), rSigMul(2.5)], 'rot':rRot()}},
                 {'var_id': 'l2', 'mean': {
                     'x':
                         fd_landmark_by_id(world['landmarks'], 'l2')['state']['x']+rXY(), 'y':
                         fd_landmark_by_id(world['landmarks'], 'l2')[
                             'state']['y']+rXY()
-                }, 'covariance': {'sigma': [1, 1], 'rot':0}},
+                }, 'covariance': {'sigma': [rSigMul(), rSigMul()], 'rot':rRot()}},
                 {'var_id': 'l7', 'mean': {
                     'x': 45.9, 'y': 8.75
-                }, 'covariance': {'sigma': [1, 1], 'rot':0}},
+                }, 'covariance': {'sigma': [rSigMul(2), rSigMul(1.5)], 'rot':rRot()}},
             ],
 
             'factors': [
@@ -395,23 +404,25 @@ full_estimations1 = [
         'graph': {
             'marginals': [
                 {'var_id': 'x0', 'mean': {'x': 7.3, 'y': 51.6},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(), rSigMul()], 'rot':rRot()}},
                 {'var_id': 'x1', 'mean': {'x': 15, 'y': 50.5},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(), rSigMul()], 'rot':rRot()}},
                 {'var_id': 'x2', 'mean': {'x': 21.12, 'y': 50.1},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(1.1), rSigMul(1.2)], 'rot':rRot()}},
                 {'var_id': 'l1', 'mean': {
                     'x':
                         fd_landmark_by_id(world['landmarks'], 'l1')['state']['x']+rXY(), 'y':
                         fd_landmark_by_id(world['landmarks'], 'l1')[
                             'state']['y']+rXY()
-                }, 'covariance': {'sigma': [1, 1], 'rot':0}},
+                },
+                 'covariance': {'sigma': [rSigMul(1.5), rSigMul(0.75)], 'rot':rRot()}},
                 {'var_id': 'l3', 'mean': {
                     'x':
                         fd_landmark_by_id(world['landmarks'], 'l3')['state']['x']+rXY(), 'y':
                         fd_landmark_by_id(world['landmarks'], 'l3')[
                             'state']['y']+rXY()
-                }, 'covariance': {'sigma': [1, 1], 'rot':0}},
+                },
+                 'covariance': {'sigma': [rSigMul(0.8), rSigMul(1)], 'rot':rRot()}},
             ],
 
             'factors': [
@@ -453,13 +464,13 @@ full_estimations1 = [
         'graph': {
             'marginals': [
                 {'var_id': 'x0', 'mean': {'x': 90.8, 'y': 42.2},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(1/2), rSigMul(1/2)], 'rot':rRot()}},
                 {'var_id': 'x1', 'mean': {'x': 90.3, 'y': 33.8},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(), rSigMul()], 'rot':rRot()}},
                 {'var_id': 'x2', 'mean': {'x': 85.5, 'y': 29.2},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(), rSigMul()], 'rot':rRot()}},
                 {'var_id': 'x3', 'mean': {'x': 76.5, 'y': 29.1},
-                 'covariance': {'sigma': [1, 1], 'rot':0}},
+                 'covariance': {'sigma': [rSigMul(), rSigMul()], 'rot':rRot()}},
                 {'var_id': 'l11', 'mean': {
                     'x':
                         fd_landmark_by_id(world['landmarks'], 'l11')['state']['x']+rXY(), 'y':
@@ -471,13 +482,13 @@ full_estimations1 = [
                         fd_landmark_by_id(world['landmarks'], 'l14')['state']['x']+rXY(), 'y':
                         fd_landmark_by_id(world['landmarks'], 'l14')[
                             'state']['y']+rXY()
-                }, 'covariance': {'sigma': [1, 1], 'rot':0}},
+                }, 'covariance': {'sigma': [1.2/2, 1.2/2], 'rot':0}},
                 {'var_id': 'l15', 'mean': {
                     'x':
                         fd_landmark_by_id(world['landmarks'], 'l15')['state']['x']+rXY(), 'y':
                         fd_landmark_by_id(world['landmarks'], 'l15')[
                             'state']['y']+rXY()
-                }, 'covariance': {'sigma': [1, 1], 'rot':0}},
+                }, 'covariance': {'sigma': [1.2/2, 1.2/2], 'rot':0}},
             ],
 
             'factors': [
@@ -536,24 +547,24 @@ full_estimations2 = copy.deepcopy(full_estimations1)
 full_estimations2[0]['graph']['marginals'].extend(
     [
         {'var_id': 'x5', 'mean': {'x': 39.78, 'y': 17.07},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [3.3, 3], 'rot':rRot()}},
         {'var_id': 'x6', 'mean': {'x': 36.47, 'y': 20.21},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [3.4, 2.8], 'rot':rRot()}},
         {'var_id': 'x7', 'mean': {'x': 34.98, 'y': 24.62},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [3.6, 3], 'rot':rRot()}},
         {'var_id': 'x8', 'mean': {'x': 42, 'y': 23.2},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [4, 3.2], 'rot':rRot()}},
         {'var_id': 'x9', 'mean': {'x': 48.74, 'y': 21.4},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [4, 3.2], 'rot':rRot()}},
         {'var_id': 'l5', 'mean': {
             'x': 35.2, 'y': 29.34},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [4, 3], 'rot':rRot()}},
         {'var_id': 'l6', 'mean': {
             'x': 57.6, 'y': 26.7},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [4, 3], 'rot':rRot()}},
         {'var_id': 'l10', 'mean': {
             'x': 59.2, 'y': 19.35},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [3, 3], 'rot':rRot()}},
 
     ]
 )
@@ -591,17 +602,17 @@ full_estimations2[1]['graph']['marginals'].extend(
         {'var_id': 'x3', 'mean': {'x': 31.7, 'y': 50.4},
          'covariance': {'sigma': [1, 1], 'rot':0}},
         {'var_id': 'x4', 'mean': {'x': 42.7, 'y': 53.6},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [1, 2], 'rot':math.pi/6}},
         {'var_id': 'x5', 'mean': {'x': 48.9, 'y': 56.54},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [1, 3], 'rot':math.pi/6}},
         {'var_id': 'x6', 'mean': {'x': 49.68, 'y': 48.5},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [2, 4], 'rot':0}},
         {'var_id': 'l8', 'mean': {
             'x': 39.07, 'y': 55.44},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [1, 3], 'rot':math.pi/3}},
         {'var_id': 'l6', 'mean': {
             'x': 50.8, 'y': 40.8},
-         'covariance': {'sigma': [1, 1], 'rot':0}},
+         'covariance': {'sigma': [3, 3], 'rot':0}},
 
     ]
 )
@@ -712,6 +723,8 @@ full_estimations3[0]['graph']['marginals'][i]['mean']['y']=fd_landmark_by_id(wor
 i = getIdxM(full_estimations3[0]['graph']['marginals'],"l5")
 full_estimations3[0]['graph']['marginals'][i]['mean']['x']=fd_landmark_by_id(world['landmarks'], 'l5')['state']['x']+rXY(0.5)
 full_estimations3[0]['graph']['marginals'][i]['mean']['y']=fd_landmark_by_id(world['landmarks'], 'l5')['state']['y']+rXY(0.5)
+# diminish all cov of red
+full_estimations3[0]['graph']['marginals'] = [modify_covs(m) for m in full_estimations3[0]['graph']['marginals']]
 # fix common landmarks of red
 i = getIdxM(full_estimations3[0]['graph']['marginals'],"l6")
 full_estimations3[0]['graph']['marginals'][i] = common_l6
@@ -746,6 +759,8 @@ full_estimations3[1]['graph']['marginals'][i]['mean']['y']=44.68
 i = getIdxM(full_estimations3[1]['graph']['marginals'],"l8")
 full_estimations3[1]['graph']['marginals'][i]['mean']['x']=fd_landmark_by_id(world['landmarks'], 'l8')['state']['x']+rXY(0.5)
 full_estimations3[1]['graph']['marginals'][i]['mean']['y']=fd_landmark_by_id(world['landmarks'], 'l8')['state']['y']+rXY(0.5)
+# diminish all cov of green
+full_estimations3[1]['graph']['marginals'] = [modify_covs(m) for m in full_estimations3[1]['graph']['marginals']]
 # fix common landmarks of green
 i = getIdxM(full_estimations3[1]['graph']['marginals'],"l6")
 full_estimations3[1]['graph']['marginals'][i] = common_l6
@@ -769,6 +784,8 @@ full_estimations3[2]['graph']['marginals'][i]['mean']['y']=28.7
 i = getIdxM(full_estimations3[2]['graph']['marginals'],"l14")
 full_estimations3[2]['graph']['marginals'][i]['mean']['x']=fd_landmark_by_id(world['landmarks'], 'l14')['state']['x']+rXY(0.5)
 full_estimations3[2]['graph']['marginals'][i]['mean']['y']=fd_landmark_by_id(world['landmarks'], 'l14')['state']['y']+rXY(0.5)
+# diminish all cov of blue
+full_estimations3[2]['graph']['marginals'] = [modify_covs(m) for m in full_estimations3[2]['graph']['marginals']]
 # fix common landmarks of blue
 i = getIdxM(full_estimations3[2]['graph']['marginals'],"l6")
 full_estimations3[2]['graph']['marginals'][i] = common_l6
