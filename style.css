@@ -165,7 +165,7 @@ line.rt_line_to_last_pose {
 .vertex circle {
   fill: #e3e3e3;
   stroke: black;
-  stroke-width: 0.1;
+  stroke-width: 0.15;
 }
 .vertex text {
   font-family: Monospace;

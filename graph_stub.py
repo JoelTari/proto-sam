@@ -114,15 +114,17 @@ graph1['factors'].extend(
                 },
             ]
         )
-full_estimation1={
-        'header': {
-            'robot_id': 'r4',
-            "state": {"x": 82.3, "y": 12, "th": 10},
-            'seq': 0,
-        },
-        'last_pose':{'last_pose_id':'x0'},
-        'graph': graph1
-        }
+full_estimation1= \
+{
+    'header': 
+    {
+        'robot_id': 'r4',
+        "state": {"x": 82.3, "y": 12, "th": 10},
+        'seq': 0,
+    },
+    'last_pose':{'last_pose_id':'x0'},
+    'graph': graph1
+}
 
 
 

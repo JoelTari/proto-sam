@@ -537,12 +537,6 @@ full_estimations1 = [
     }
 ]
 
-# [39.77970504760742, 17.07476806640625],
-# [36.47776412963867, 20.21947479248047],
-# [34.984031677246094, 24.62206268310547],
-# [45.3615608215332, 22.263532638549805],
-# [48.74211883544922, 21.398738861083984],
-
 full_estimations2 = copy.deepcopy(full_estimations1)
 full_estimations2[0]['graph']['marginals'].extend(
     [
@@ -675,10 +669,6 @@ full_estimations2[2]['last_pose']['last_pose_id'] = 'x5'
 
 full_estimations3 = copy.deepcopy(full_estimations2)
 
-# common mean for shared vals
-#  {"landmark_id": "l6", "state": {"x": 52.2, "y": 36.5}}
-#  {"landmark_id": "l10", "state": {"x": 51.2, "y": 31}}
-
 common_l6 ={'var_id': 'l6', 'mean': {'x': 52.6, 'y': 37}, 'covariance': {'sigma': [1, 1], 'rot':0}}
 common_l10 = {'var_id': 'l10', 'mean': {
             'x': 50, 'y': 31},
@@ -771,9 +761,6 @@ full_estimations3[1]['header']['state']['th']=-95
 
 # blue
 # fix blue odom
-# (2) [67.92481994628906, 29.496355056762695]
-# main.js:817 (2) [60.298912048339844, 28.710180282592773]
-# main.js:817 (2) [56.682498931884766, 30.597002029418945]
 i = getIdxM(full_estimations3[2]['graph']['marginals'],"x4")
 full_estimations3[2]['graph']['marginals'][i]['mean']['x']=68
 full_estimations3[2]['graph']['marginals'][i]['mean']['y']=29.5

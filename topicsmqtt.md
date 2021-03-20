@@ -17,7 +17,7 @@ Topic name: `cmd`
 {
   "robot_id":"r1",
   "type":"AA",       // or DD, ACKER
-  "cmd_vel":{"x": dx, "y":dy } # depend on type, could be v,w
+  "cmd_vel":{"x": dx, "y":dy } # depend on type
 }
 ```
 Other types for `cmd_vel`: `"cmd_vel":{"linear": dlinear, "angular": dangular }`

@@ -256,7 +256,7 @@ function join_enter_robot_estimates(enter) {
                   .attr("points", "0,-1 0,1 3,0")
                   .style("stroke-opacity", 0)
                   .transition(t_ghost_entry)
-                  .style("stroke-opacity");
+                  .style("stroke-opacity",null);
 
                 g_rt_ghost
                   .append("line")
@@ -266,7 +266,7 @@ function join_enter_robot_estimates(enter) {
                   .attr("y2", 0)
                   .style("stroke-opacity", 0)
                   .transition(t_ghost_entry)
-                  .style("stroke-opacity");
+                  .style("stroke-opacity",null);
               });
             // the line to the last pose
             g_rt_estimate
@@ -279,7 +279,7 @@ function join_enter_robot_estimates(enter) {
               .attr("y2", d.last_pose.state.y)
               .style("stroke-opacity", 0)
               .transition(t_ghost_entry2)
-              .style("stroke-opacity");
+              .style("stroke-opacity",null);
           });
       })
   );
@@ -352,7 +352,7 @@ function join_enter_factor(enter) {
         .attr("transform", "rotate(0)")
         .style("opacity", 0)
         .transition(t_factor_entry) // ugly (im interest in the child opacity not this node) but necessary to run concurrent transitions on the line (which doesnt work if I place it below)
-        .style("opacity")
+        .style("opacity",null)
         .selection()
         .call(function (g) {
           if (d.vars.length > 1) {
@@ -498,7 +498,7 @@ function join_enter_vertex(enter) {
             .style("opacity", 0)
             .transition(t_vertex_entry)
             .attr("r", 1)
-            .style("opacity");
+            .style("opacity",null);
           // text: variable name inside the circle
           g.append("text")
             .text((d) => d.var_id)
@@ -508,7 +508,7 @@ function join_enter_vertex(enter) {
             .style("opacity", 0)
             .transition(t_vertex_entry)
             .attr("font-size", 1)
-            .style("opacity");
+            .style("opacity",null);
           // covariance (-> a rotated group that holds an ellipse)
           g.append("g")
             .attr("transform", `rotate(${(d.covariance.rot * 180) / Math.PI})`)
@@ -517,7 +517,7 @@ function join_enter_vertex(enter) {
             .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
             .style("opacity", 0) // wow! (see next wow) Nota: doesnt  work with attr()
             .transition(t_vertex_entry)
-            .style("opacity"); // wow! this will look for the CSS (has to a style)
+            .style("opacity",null); // wow! this will look for the CSS (has to a style)
         });
     });
 }
@@ -613,7 +613,7 @@ function join_agent_truth_enter(enter) {
     })
     .transition()
     .duration(500)
-    .attr("opacity", 1)
+    .style("opacity", 1)
     .selection();
 }
 
