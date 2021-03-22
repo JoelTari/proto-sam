@@ -1088,3 +1088,25 @@ function derpery(my_sel) {
     .data(randomArraySplice(poc_data), (d) => d)
     .join(derp_enter, derp_update, derp_exit);
 }
+
+
+// // Measure ray
+// let tm = main_group
+//               .append('line')
+//               .attr('x1',25)
+//               .attr('x2',75)
+//               .attr('y1',57)
+//               .attr('y2',47)
+//               .attr('stroke','darksalmon')
+//               .attr('stroke-width',0.05)
+//               .attr('opacity',0.2)
+//               .transition().duration(500)
+//               .attr('stroke-width',0.2).attr('opacity',0.9)
+//               .transition().duration(500)
+//               .attr('stroke-width',0.05)
+//               .attr('opacity',0)
+//               .remove()
+
+
+
+// # Contrast :  #473d5a : #bbc4ab
