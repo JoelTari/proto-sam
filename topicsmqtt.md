@@ -29,9 +29,12 @@ Topic name: `cmd_feedback`
 ```json
 {
   "robot_id":"r1",
-  "type":"AAcmd",
-  "cmd_vel":[dx,dy] ,# depend on type, could be v,w
-  "cmd_cov": cov   # listed array of the cov matrix
+  "feedback_vel" :
+        {
+            'type': 'AA',   # or DD
+            'cmd': [dx,dy]
+            'cmd_cov': cov
+        }
 }
 ```
 
@@ -57,21 +60,23 @@ Topic response: `ground_truth`
 }
 ```
 
-## Measure package: Simu/RobotFrontEnd to Estimation
+## Measure package: Simu to Estimation (front-end)
 
 Topic names: `measures`
 
 ```json
 {
     "robot_id":"r1",
-    "odom":{
-      "type": "AAOdom",
-      "vect": vect_odom_mes, # serialized vector
-      "cov": covariance, # serialized matrix
-      },
+    "feedback_vel" :
+    {
+        'type': 'AA',   # or DD
+        'cmd': [dx,dy]
+        'cmd_cov': cov
+    }
       "landmarks":[
       {
           "landmark_id": "l2",
+          "type": 'range-bearing'
           "vect": vect_mes, # serialized vector
           "cov": covariance, # serialized matrix
         },

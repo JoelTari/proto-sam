@@ -20,7 +20,8 @@ world = {
     [
         {
             "robot_id": "r1",
-            "state": {"x": 5, "y": 6.1, "th": 30},
+            "state": {"x": 0, "y": 0, "th": 0},
+            # "state": {"x": 5, "y": 6.1, "th": 30},
             "sensor": {"range": 12, "angle_coverage": 0.75}
         },
         {
@@ -63,9 +64,7 @@ print(robots_ini_poses)
 # last referenced pose to decide when to generate a new odometry measurement
 last_pose = copy.deepcopy(world['robots'])
 
-new_pose_distance_threshold = 7.2
-
-sensor_range = 15
+new_pose_distance_threshold = 10
 
 # seeding randomness (for the numpy stuff)
 # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
@@ -73,8 +72,13 @@ rng = nprd.default_rng()
 
 # noise cmd (diag)
 # 0 -> no noise
-cmd_std_dev_ratio_y = 0.5/100
-cmd_std_dev_ratio_x = 1.0/100
+cmd_std_dev_ratio_y = 45.0/100
+cmd_std_dev_ratio_x = 45.0/100
+
+# noise cmd (diag, DD)
+# 0 -> no noise
+cmd_std_dev_ratio_v = 5.0/100
+cmd_std_dev_ratio_w = 9.0/100
 
 # meas noise (diag)
 # 0 -> no noise
@@ -124,8 +128,7 @@ def dy(p_ref: dict, p_target: dict) -> float:
     return p_target['y']-p_ref['y']
 
 
-def nosify_cmd(cmd: dict):
-    # TODO: deal with several type of model (only AA supported at first)
+def noisify_cmd_AA(cmd: dict):
     cmd_array = [cmd['x'],cmd['y']];
     exact_cmd = np.array([cmd_array]).T
     print(f'exact_cmd is of shape {exact_cmd.shape}')
@@ -134,6 +137,22 @@ def nosify_cmd(cmd: dict):
         exact_cmd, [cmd_std_dev_ratio_x, cmd_std_dev_ratio_y])
     # generate the random measure with additive noise
     return exact_cmd + rng.multivariate_normal(np.zeros(2), cov).reshape(2, 1), cov
+
+def noisify_cmd_DD(cmd: dict):
+    v =cmd['linear']
+    w=cmd['angular']
+    exact_cmd_vec = np.array([v,w]).T;
+    th = world['robots'][0]['state']['th'];
+    alpha1 = cmd_std_dev_ratio_v**2
+    alpha2 = cmd_std_dev_ratio_w**2
+    dt=1
+    cov = np.diag([alpha1*v**2,alpha2*w**2])
+
+    # the process noise covariance must be translate in state space noise
+    return \
+            exact_cmd_vec + rng.multivariate_normal(np.zeros(2), cov).reshape(2, 1) \
+            , cov
+
 
 
 def measure_robot_landmark(robotstate: dict, landmark: dict) -> dict:
@@ -157,10 +176,16 @@ def measure_robot_landmark(robotstate: dict, landmark: dict) -> dict:
     # Important: the covariance returned corresponds to the real noise,
     #            which might be different than in reality
     # lastly, the np objects are serialized
-    return {'landmark_id': landmark['landmark_id'], 'vect': vect.reshape(2,).tolist(), 'covariance': cov.reshape(4,).tolist()}
+    return {
+             'landmark_id': landmark['landmark_id']
+            , 'type':'range-bearing'
+            , 'vect': vect.reshape(2,).tolist()
+            , 'covariance': cov.reshape(4,).tolist()
+           }
 
-# TODO : range-bearing sensor mes
-#       bearing only sensor mes
+# TODO : bearing only sensor mes
+ 
+#      
 
 
 def generate_odom_measurement(current_pose: dict, last_pose: dict):
@@ -191,8 +216,20 @@ def in_sensor_coverage(sensorPos: dict, target: dict, sensor_info: dict) -> bool
     isAngleCovered = True
     return isInRange and isAngleCovered
 
+def generate_transient_odom_covariance_AA(exact_vect: np.ndarray
+                                , std_dev_stats: list
+                                , isNoiseAxisAligned=False
+                                , maxCovarianceSkew=math.pi/8) -> np.ndarray:
+    return generate_covariance_noise(exact_vect
+                                    , std_dev_stats
+                                    , isNoiseAxisAligned
+                                    , maxCovarianceSkew)
 
-def generate_covariance_noise(exact_vect: np.ndarray, std_dev_stats: list, isNoiseAxisAligned=False, maxCovarianceSkew=math.pi/8) -> np.ndarray:
+
+def generate_covariance_noise(exact_vect: np.ndarray
+                                , std_dev_stats: list
+                                , isNoiseAxisAligned=False
+                                , maxCovarianceSkew=math.pi/8) -> np.ndarray:
     # axis aligned covariance I want for odom measurement
     cov_AA = np.square(np.diag(std_dev_stats)
                        @ np.diag(exact_vect.reshape(2,).tolist()))
@@ -208,93 +245,117 @@ def generate_covariance_noise(exact_vect: np.ndarray, std_dev_stats: list, isNoi
     return cov
 
 
-def integrate_cumulative_odometry(cmd_cov: np.ndarray) -> None:
-    global cumulative_odom_cov
-    cumulative_odom_cov += cmd_cov
-    # TODO if its not linear, use recursive bayesian filter
-    #       In linear X,Y this is easy because the cmd and the position are on the same space
-    #       But in NL, the command is v,w and the pos is 3d (x y theta)
-    #       In that case, apply the recursive linearized filter, which the update part of the traditional EKF SLAM in 2.5d
+# def integrate_cumulative_odometry(cmd_cov: np.ndarray) -> None:
+#     global cumulative_odom_cov
+#     cumulative_odom_cov += cmd_cov
+#     # TODO if its not linear, use recursive bayesian filter
+#     #       In linear X,Y this is easy because the cmd and the position are on the same space
+#     #       But in NL, the command is v,w and the pos is 3d (x y theta)
+#     #       In that case, apply the recursive linearized filter, which the update part of the traditional EKF SLAM in 2.5d
 
 # ----------------------------------------------------------------------------
 #                        User defined callback funtions
 # ----------------------------------------------------------------------------
 
+# def AA_cmd_process(received_cmd_vel -> dict):
+#     noisy_cmd, cov_cmd = nosify_cmd(received_cmd_vel)
+#     integrate_cumulative_odometry(cov_cmd)
+#     return 1
+
+# currently the exact cmd
+def apply_cmd_to_ground_truth_AA(cmd:dict, cur_state:dict) -> dict:
+    return {'x': cur_state['x']+cmd['x'],'y': cur_state['y']+cmd['y'],'th': cur_state['th']}
+
+def apply_cmd_to_ground_truth_DD(cmd:dict, cur_state:dict) -> dict:
+    v = cmd['linear']
+    w = cmd['angular']
+    dt=1
+    th=cur_state['th']
+    return { 'x': cur_state['x'] + v*math.cos(th)*dt
+            ,'y': cur_state['y'] + v*math.sin(th)*dt
+            , 'th': th + w*dt}
+
+def get_robot_index_in_world(world: dict,robot_id: str):
+    # generator
+    g =(i for i, d in 
+            enumerate( world['robots'])
+        if d['robot_id'] == robot_id)
+    #
+    return next(g)
 
 def cmd_vel_callback(client, msg):
     print('cmd')
+    # 0a/ prepare variables from the message
     received_cmd = json.loads(msg)
-    # 0 check if I support (TODO) 
-    if (received_cmd['type'] != 'AA'):
-        print('I dont support that YEEET')
-        raise NotImplementedError
-    # 1 noisify the order and update cumulative odom cov
-    noisy_cmd, cov_cmd = nosify_cmd(received_cmd['cmd_vel'])
-    print('cov')
-    print(cov_cmd)
-    integrate_cumulative_odometry(cov_cmd)
-    # TODO publish cmd feedback not at every cmd, device some shenaningans (but lets keep it 1 thread)
-    client.publish(cmd_feedback_topic, json.dumps(
-        {'robot_id': received_cmd['robot_id'], 'type': 'AAcmd', 'cmd': noisy_cmd.reshape(2,).tolist(), 'cmd_cov': cov_cmd.reshape(4,).tolist()}))
-    # 2 update robot position
-    # retrieve a pointer to the robot in the structure
-    robot_gidx = (i for i, d in enumerate(
-        world['robots']) if d['robot_id'] == received_cmd['robot_id'])
-    # stopit error if this robot_id doesnt exist
-    robot_idx = next(robot_gidx)
-    robot = world['robots'][robot_idx]
-    # retrieve a pointer to the robot position & make a copy
-    robotPos = robot['state']
-    cur_state = copy.copy(robotPos)
-    # use np arrays for operations
-    # TODO: dont forget theta
-    npar_cur_state = np.array([[robotPos['x'], robotPos['y']]]).T
-    npar_new_state = npar_cur_state + noisy_cmd
-    print(noisy_cmd)
-    # back to dictionaries to save in the world structure
-    robotPos['x'] = npar_new_state[0, 0]
-    robotPos['y'] = npar_new_state[1, 0]
-    print(f"new state   {npar_new_state}")
-    # # some trace
-    # print('Current state of robot ' + order['id'])
-    # print(cur_state)
-    # print('New state :')
-    # print(world['robots'][idx]['state'])
-
-    # 3 publish ground truth
-    client.publish(ground_truth_topic, json.dumps(world))
-    # 4 check if new odom measurement should be generated
-    # 4.1 if no, return
+    robot_id = received_cmd['robot_id']
+    cmd_type = received_cmd['type']
+    cmd_vel= received_cmd['cmd_vel']
+    # 0b/ get the ground truth associated with this robot
+    robot_idx = get_robot_index_in_world(world,robot_id)
+    current_robot_pos = copy.deepcopy(world['robots'][robot_idx]['state'])
     global last_pose
-    robot_last_pose_node = last_pose[robot_idx]['state']
-    if sqrt_dist(robotPos, robot_last_pose_node) < new_pose_distance_threshold:
-        return
-
-        # 4.2 if yes, generate sensor suite
+    #
+    # 0 check if I support (TODO) 
+    if (cmd_type == 'AA'):
+        # 1/ noisify the order and update cumulative odom cov
+        noisy_cmd, cov_cmd = noisify_cmd_AA(cmd_vel)
+        # 2/ update robot pos in the world (ground truth)
+        world['robots'][robot_idx]['state'] = \
+                apply_cmd_to_ground_truth_AA(cmd_vel,current_robot_pos)
+    elif (received_cmd['type']=='DD'):
+        # 1/ noisify the order and update cumulative odom cov
+        noisy_cmd, cov_cmd = noisify_cmd_DD(received_cmd['cmd_vel'])
+        # 2/ update robot pos in the world (ground truth)
+        world['robots'][robot_idx]['state'] = \
+                apply_cmd_to_ground_truth_DD(cmd_vel,current_robot_pos)
     else:
-        # 4.2.1 generate odom measure
-        odom_mes = generate_odom_measurement(
-            robotPos, robot_last_pose_node)
-        # 4.2.2 generate robot to landmarks measure
+        print('I don''t support that type of cmd yet')
+        raise NotImplementedError
+
+    # update some variables in preparation for step 5
+    current_robot_pos = world['robots'][robot_idx]['state']
+    feedback_vel = \
+            {
+                'type': received_cmd['type'],
+                'cmd': noisy_cmd.reshape(2,).tolist(),
+                'cmd_cov': cov_cmd.reshape(4,).tolist()
+            }
+    # 4/ publish ground truth
+    client.publish(ground_truth_topic, json.dumps(world))
+    # 5/ check if measures should be generated
+    # 5.1/ if no, publish just the cmd_feedback and return
+    if sqrt_dist(current_robot_pos, last_pose[robot_idx]['state']) \
+            < new_pose_distance_threshold:
+        message_payload = \
+            {
+                'robot_id': received_cmd['robot_id'],
+                'feedback_vel': feedback_vel
+            }
+        client.publish(cmd_feedback_topic
+                        , json.dumps(message_payload))
+        return
+        # 5.2 if yes, generate sensor measurements and publish them with cmd_feedback
+    else:
+        # 5.2.1 generate robot to landmarks measure
         #       np arrays are not json serializable, so I to convert them to list first
         #       with the np::tolist() method
-        sensor_info = robot['sensor']
+        sensor_info = world['robots'][robot_idx]['sensor']
         # comprehension list
-        gen_landmarks_measurements = (
-            measure_robot_landmark(robotPos, l)
+        landmarks_measurements = \
+        [ 
+            measure_robot_landmark(current_robot_pos, l)
             for l in world['landmarks']
-            if in_sensor_coverage(robotPos, l['state'], sensor_info)
-        )
-        # cast the measures generator as a list
-        landmarks_mes = list(gen_landmarks_measurements)
-        # 4.2.3 save the new robot position as the last pose node
-        robot_last_pose_node = robotPos  # TODO check that its a proper value affectation
-        last_pose[robot_idx]['state'] = copy.deepcopy(robotPos)
-        # 4.2.4 publish the measurements in the same package
-        mes_payload = {"robot_id": robot_idx,
-                       "odom": odom_mes,
-                       "landmarks": landmarks_mes
-                       }
+            if in_sensor_coverage(current_robot_pos, l['state'], sensor_info)
+        ]
+        # 5.2.2 save the new robot position as the last pose node
+        last_pose[robot_idx]['state'] = copy.deepcopy(current_robot_pos)
+        # 5.2.3 publish the measurements in the same package
+        mes_payload = \
+            {
+                'robot_id': received_cmd['robot_id'],
+                'feedback_vel': feedback_vel,
+                'measures':landmarks_measurements
+            }
         client.publish(measures_topic, json.dumps(mes_payload))
 
 
