@@ -146,7 +146,7 @@ def noisify_cmd_DD(cmd: dict):
     alpha1 = cmd_std_dev_ratio_v**2
     alpha2 = cmd_std_dev_ratio_w**2
     dt=1
-    cov = np.diag([alpha1*v**2,alpha2*w**2])
+    cov = np.diag([alpha1*v**2,alpha2*w**2]) + np.square(np.diag([1e-3,1e-5]))
 
     # the process noise covariance must be translate in state space noise
     return \
@@ -229,10 +229,13 @@ def generate_transient_odom_covariance_AA(exact_vect: np.ndarray
 def generate_covariance_noise(exact_vect: np.ndarray
                                 , std_dev_stats: list
                                 , isNoiseAxisAligned=False
-                                , maxCovarianceSkew=math.pi/8) -> np.ndarray:
+                                , maxCovarianceSkew=math.pi/8
+                                , zero_move_std_noise=1e-3) -> np.ndarray:
     # axis aligned covariance I want for odom measurement
-    cov_AA = np.square(np.diag(std_dev_stats)
-                       @ np.diag(exact_vect.reshape(2,).tolist()))
+    # It's a noise that depend on distance plus a smaller noise (that apply even at zero)
+    cov_AA = np.square( np.diag(std_dev_stats)
+                        @ np.diag(exact_vect.reshape(2,).tolist())
+                        + np.diag([zero_move_std_noise,zero_move_std_noise]))
 
     if not isNoiseAxisAligned:
         # a rotational angle is defined randomly to skew the axis aligned covariance
@@ -256,11 +259,6 @@ def generate_covariance_noise(exact_vect: np.ndarray
 # ----------------------------------------------------------------------------
 #                        User defined callback funtions
 # ----------------------------------------------------------------------------
-
-# def AA_cmd_process(received_cmd_vel -> dict):
-#     noisy_cmd, cov_cmd = nosify_cmd(received_cmd_vel)
-#     integrate_cumulative_odometry(cov_cmd)
-#     return 1
 
 # currently the exact cmd
 def apply_cmd_to_ground_truth_AA(cmd:dict, cur_state:dict) -> dict:

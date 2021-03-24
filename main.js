@@ -87,7 +87,7 @@ client.on("message", function (topic, message) {
             enter
               .append("path")
               // size is the area, for a cross: area= desired_tot_length**2 *5
-              .attr("d", `${d3.symbol(d3.symbolCross, 1.6 * 1.6)()}`)
+              .attr("d", `${d3.symbol(d3.symbolCross, 1.1 * 1.1)()}`)
               .classed("landmark_true_group", true)
               .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
               .on("mouseover", function (e, d) {

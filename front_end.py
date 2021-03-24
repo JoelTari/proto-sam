@@ -30,12 +30,12 @@ def reset_aggr():
 
 
 def compute_helper_odom_DD(cmd_dd: np.ndarray
-                                        , cmd_dd_cov: np.ndarray
-                                        , current_th
-                                        , dt = 1) -> np.ndarray:
+                        , cmd_dd_cov: np.ndarray
+                        , current_th
+                        , dt = 1) -> np.ndarray:
     th=current_th
-    v = cmd_dd[0]
-    w = cmd_dd[1]
+    v = cmd_dd[0,0]
+    w = cmd_dd[1,0]
     sth = math.sin(th)
     sth_n = math.sin(th+w*dt)          # sin(theta_new)
     cth = math.cos(th)
@@ -68,7 +68,7 @@ def compute_helper_odom_DD(cmd_dd: np.ndarray
     # TODO: this belong to the simu
     # M = np.array([[alpha1*v**2,0],[0,alpha2*w**2]]) 
     M = cmd_dd_cov
-    return G , V*M*V.T, dstate_vec
+    return G , V@M@V.T, dstate_vec
 
 
 # def generate_transient_odom_covariance_AA(exact_vect: np.ndarray
@@ -100,12 +100,12 @@ def process_cmd_feedback_DD(cmd_DD_vec: np.ndarray,cmd_DD_cov : np.ndarray):
 
     global g_aggr_state
     # compute the helper that will help us compute the new covariance state
-    current_th = g_aggr_state[2]
+    current_th = g_aggr_state[2,0]
     G,R, dstate_vec = compute_helper_odom_DD(cmd_DD_vec,cmd_DD_cov,current_th)
 
     # Update step of the odom covariance
     global g_aggr_cov
-    g_aggr_cov = G*g_aggr_cov*G.T + R
+    g_aggr_cov = G@g_aggr_cov@G.T + R
     g_aggr_state += dstate_vec
 
     # Pb, TODO : comment le back end va s'en servir de ce facteur (re-lineariser)
@@ -151,6 +151,8 @@ def on_message(client, userdata, message):
             process_cmd_feedback_AA(cmd_feedback,cmd_feedback_cov)
         elif (data['type'] == 'DD'):
             process_cmd_feedback_DD(cmd_feedback,cmd_feedback_cov)
+        else:
+            raise NotImplementedError
 
         # fill in the output msg
         odom = { 'robot_id':msg['robot_id']

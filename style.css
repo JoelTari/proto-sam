@@ -63,11 +63,11 @@ svg {
 .agent_true_group polygon {
   stroke: black;
   stroke-width: 0.1;
-  fill: silver;
+  fill: #d5c4a1;
 }
 /* specialization for the selected agent */
 .agent_true_group.selected polygon {
-  fill: goldenrod;
+  fill: #a89984;
 }
 .agent_true_group.selected .sensor {
   opacity: 0.2;
