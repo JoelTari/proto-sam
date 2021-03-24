@@ -56,13 +56,13 @@ svg {
 }
 
 .agent_true_group line {
-  stroke-width: 0.3;
+  stroke-width: 0.35;
   stroke: yellow;
 }
 
 .agent_true_group polygon {
   stroke: black;
-  stroke-width: 0.1;
+  stroke-width: 0.15;
   fill: #d5c4a1;
 }
 /* specialization for the selected agent */

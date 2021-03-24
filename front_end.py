@@ -27,7 +27,8 @@ g_seq = 0
 def reset_aggr():
     return np.zeros([3,1]),np.zeros([3,3])
 
-
+def ecpi(a):
+    return math.atan2(math.sin(a),math.cos(a))
 
 def compute_helper_odom_DD(cmd_dd: np.ndarray
                         , cmd_dd_cov: np.ndarray
@@ -70,25 +71,6 @@ def compute_helper_odom_DD(cmd_dd: np.ndarray
     M = cmd_dd_cov
     return G , V@M@V.T, dstate_vec
 
-
-# def generate_transient_odom_covariance_AA(exact_vect: np.ndarray
-#                                 , std_dev_stats: list
-#                                 , isNoiseAxisAligned=False
-#                                 , maxCovarianceSkew=math.pi/8) -> np.ndarray:
-#     # axis aligned covariance I want for odom measurement
-#     cov_AA = np.square(np.diag(std_dev_stats)
-#                        @ np.diag(exact_vect.reshape(2,).tolist()))
-
-#     if not isNoiseAxisAligned:
-#         # a rotational angle is defined randomly to skew the axis aligned covariance
-#         rot_angle = rd.uniform(-maxCovarianceSkew, maxCovarianceSkew)
-#         rot_mat = np.array([[math.cos(rot_angle), - math.sin(rot_angle)],
-#                             [math.sin(rot_angle), math.cos(rot_angle)]])
-#         cov = rot_mat @ cov_AA @ rot_mat.T
-#     else:
-#         cov = cov_AA
-#     return cov
-
 def process_cmd_feedback_AA(cmd_AA_vec: np.ndarray,cmd_AA_cov : np.ndarray):
     # Update step of the odom covariance
     global g_aggr_cov
@@ -107,6 +89,7 @@ def process_cmd_feedback_DD(cmd_DD_vec: np.ndarray,cmd_DD_cov : np.ndarray):
     global g_aggr_cov
     g_aggr_cov = G@g_aggr_cov@G.T + R
     g_aggr_state += dstate_vec
+    g_aggr_state[3,0] = ecpi(g_aggr_state[3,0])
 
     # Pb, TODO : comment le back end va s'en servir de ce facteur (re-lineariser)
     #           (ignorer pb pour l'instant)

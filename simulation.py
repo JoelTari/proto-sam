@@ -127,6 +127,9 @@ def dx(p_ref: dict, p_target: dict) -> float:
 def dy(p_ref: dict, p_target: dict) -> float:
     return p_target['y']-p_ref['y']
 
+def ecpi(a):
+    return math.atan2(math.sin(a),math.cos(a))
+
 
 def noisify_cmd_AA(cmd: dict):
     cmd_array = [cmd['x'],cmd['y']];
@@ -271,7 +274,7 @@ def apply_cmd_to_ground_truth_DD(cmd:dict, cur_state:dict) -> dict:
     th=cur_state['th']
     return { 'x': cur_state['x'] + v*math.cos(th)*dt
             ,'y': cur_state['y'] + v*math.sin(th)*dt
-            , 'th': th + w*dt}
+            , 'th': ecpi(th + w*dt)}
 
 def get_robot_index_in_world(world: dict,robot_id: str):
     # generator
