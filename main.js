@@ -247,7 +247,7 @@ function join_enter_robot_estimates(enter) {
               .append("g")
               .attr(
                 "transform",
-                (local_d) => "rotate(" + local_d.header.state.th + ")"
+                (local_d) => "rotate(" + local_d.header.state.th*180/Math.PI + ")"
               )
               .call(function (g_rt_ghost) {
                 // 1. the robot
@@ -318,7 +318,7 @@ function join_update_robot_estimates(update) {
           .transition(t_graph_motion2)
           .attr(
             "transform",
-            (local_d) => "rotate(" + local_d.header.state.th + ")"
+            (local_d) => "rotate(" + local_d.header.state.th*180/Math.PI + ")"
           );
         // .selection();
         // update the line to the last pose
@@ -580,7 +580,7 @@ function join_agent_truth_enter(enter) {
         .append("g")
         .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
         .append("g")
-        .attr("transform", `rotate(${d.state.th})`)
+        .attr("transform", `rotate(${d.state.th*180/Math.PI})`)
         .call(function (g) {
           // adding all display components
           // 1. the sensor
@@ -801,7 +801,7 @@ body.on("keydown", (e) => {
 
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
 
-  inputCmdModel = "AA"; // TODO: centralize in globalUI
+  inputCmdModel = "DD"; // TODO: centralize in globalUI
   const cmdObj = inputToMove(inputCmdModel);
 
   client.publish(
@@ -846,8 +846,8 @@ function applyMove_gg(d3_single_selected, pose) {
     .attr("transform", "translate(" + x + "," + y + ")")
     .selection()
     .selectChild("g")
-    // .transition('rot').duration(60)
-    .attr("transform", "rotate(" + th + ")");
+    .transition('rot').duration(60)
+    .attr("transform", `rotate(${th*180/Math.PI})`);
 }
 
 /******************************************************************************
@@ -898,8 +898,8 @@ function inputToMove(model) {
       // nothing to do
     } else {
       // TODO: decouple speeds
-      dangular -= (speed / 5.0) * right; // rads
-      dangular += (speed / 5.0) * left;
+      dangular -= (speed / 10.0) * right; // rads
+      dangular += (speed / 10.0) * left;
       dlinear += speed * up;
       dlinear -= speed * down;
     }

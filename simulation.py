@@ -20,18 +20,18 @@ world = {
     [
         {
             "robot_id": "r1",
-            "state": {"x": 0, "y": 0, "th": 0},
-            # "state": {"x": 5, "y": 6.1, "th": 30},
+            "state": {"x": 0, "y": 0, "th": 0*math.pi/180},
+            # "state": {"x": 5, "y": 6.1, "th": 30*math.pi/180},
             "sensor": {"range": 12, "angle_coverage": 0.75}
         },
         {
             "robot_id": "r2",
-            "state": {"x": 53, "y": 16.1, "th": -150},
+            "state": {"x": 53, "y": 16.1, "th": -150*math.pi/180},
             "sensor": {"range": 12, "angle_coverage": 0.167}
         },
         {
             "robot_id": "r3",
-            "state": {"x": 25, "y": 56.1, "th": 100},
+            "state": {"x": 25, "y": 56.1, "th": 100*math.pi/180},
             "sensor": {"range": 12, "angle_coverage": 0.5}
         },
     ],
@@ -141,7 +141,7 @@ def noisify_cmd_AA(cmd: dict):
 def noisify_cmd_DD(cmd: dict):
     v =cmd['linear']
     w=cmd['angular']
-    exact_cmd_vec = np.array([v,w]).T;
+    exact_cmd_vec = np.array([[v,w]]).T;
     th = world['robots'][0]['state']['th'];
     alpha1 = cmd_std_dev_ratio_v**2
     alpha2 = cmd_std_dev_ratio_w**2
