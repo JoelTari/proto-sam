@@ -89,7 +89,7 @@ def process_cmd_feedback_DD(cmd_DD_vec: np.ndarray,cmd_DD_cov : np.ndarray):
     global g_aggr_cov
     g_aggr_cov = G@g_aggr_cov@G.T + R
     g_aggr_state += dstate_vec
-    g_aggr_state[3,0] = ecpi(g_aggr_state[3,0])
+    g_aggr_state[2,0] = ecpi(g_aggr_state[2,0])
 
     # Pb, TODO : comment le back end va s'en servir de ce facteur (re-lineariser)
     #           (ignorer pb pour l'instant)
@@ -144,9 +144,20 @@ def on_message(client, userdata, message):
                             ,'th':g_aggr_state[2,0]}
                 ,'covariance': g_aggr_cov.reshape(9,).tolist()
                 }
+        # I add another field, with sigmas and angle to make things easier in JS
+        odom['visual_covariance'] = getVisualFromCovMatrix(g_aggr_cov[0:2,0:2])
         client.publish(odom_topic, json.dumps(odom) )
         # reset the aggregate (TODO)
         # reset_aggr()
+
+def getVisualFromCovMatrix(cov : np.ndarray) -> dict:
+    eVa,eVec = np.linalg.eig(cov)
+    R = eVec
+    angle = math.atan2(R[1,0],R[0,0])
+    sigmax=eVa[0]
+    sigmay=eVa[1]
+    return { 'sigma': [sigmax, sigmay], 'rot': angle }
+
 
     # if firstTime:
     #      # publish

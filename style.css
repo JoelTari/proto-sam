@@ -137,6 +137,13 @@ svg {
   stroke-opacity: 0.5;
   stroke: black;
 }
+.rt_ghost ellipse {
+  stroke-width: 0.15;
+  stroke-opacity: 0.25;
+  stroke: grey;
+  fill: none;
+  stroke-dasharray: 0.5;
+}
 
 line.rt_line_to_last_pose {
   stroke-width: 0.1;
@@ -144,21 +151,25 @@ line.rt_line_to_last_pose {
   stroke-dasharray: 0.5;
   stroke: black;
 }
+
 /******************************************/
 /*  COLOR SPECIALIZATION by GHOST   */
 /******************************************/
 #r1 .rt_ghost line,
 #r1 .rt_ghost polygon,
+#r1 .rt_ghost ellipse,
 #r1 line.rt_line_to_last_pose {
   stroke: #fe8019;
 }
 #r2 .rt_ghost line,
 #r2 .rt_ghost polygon,
+#r2 .rt_ghost ellipse,
 #r2 line.rt_line_to_last_pose {
   stroke: #cc241d;
 }
 #r3 .rt_ghost line,
 #r3 .rt_ghost polygon,
+#r3 .rt_ghost ellipse,
 #r3 line.rt_line_to_last_pose {
   stroke: #076678;
 }

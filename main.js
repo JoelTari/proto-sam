@@ -237,17 +237,36 @@ function join_enter_robot_estimates(enter) {
               .append("g")
               .attr(
                 "transform",
-                (local_d) =>
-                  "translate(" +
-                  local_d.header.state.x +
-                  "," +
-                  local_d.header.state.y +
-                  ")"
+                `translate(${d.rt_estimate.state.x}, ${d.rt_estimate.state.y} )`
               )
+              // the rt ellipse
+              .call(function (g_rt_tra) {
+                g_rt_tra
+                  .append("ellipse")
+                  .classed("rt_covariance_odom", true)
+                  .attr(
+                    "rx",
+                    d.rt_estimate.covariance.sigma[0] * Math.sqrt(9.21)
+                  )
+                  .attr(
+                    "ry",
+                    d.rt_estimate.covariance.sigma[1] * Math.sqrt(9.21)
+                  )
+                  .attr(
+                    "transform",
+                    `rotate(${(d.rt_estimate.covariance.rot * 180) / Math.PI})`
+                  )
+                  .style("opacity", 0) // wow! (see next wow) Nota: doesnt  work with attr()
+                  .transition(t_ghost_entry)
+                  .style("opacity", null); // wow! this will look for the CSS (has to a style)
+              })
               .append("g")
               .attr(
                 "transform",
-                (local_d) => "rotate(" + local_d.header.state.th*180/Math.PI + ")"
+                (local_d) =>
+                  "rotate(" +
+                  (local_d.rt_estimate.state.th * 180) / Math.PI +
+                  ")"
               )
               .call(function (g_rt_ghost) {
                 // 1. the robot
@@ -256,7 +275,7 @@ function join_enter_robot_estimates(enter) {
                   .attr("points", "0,-1 0,1 3,0")
                   .style("stroke-opacity", 0)
                   .transition(t_ghost_entry)
-                  .style("stroke-opacity",null);
+                  .style("stroke-opacity", null);
 
                 g_rt_ghost
                   .append("line")
@@ -266,20 +285,20 @@ function join_enter_robot_estimates(enter) {
                   .attr("y2", 0)
                   .style("stroke-opacity", 0)
                   .transition(t_ghost_entry)
-                  .style("stroke-opacity",null);
+                  .style("stroke-opacity", null);
               });
             // the line to the last pose
             g_rt_estimate
               .append("line")
               .classed("rt_line_to_last_pose", true)
               // .attr('id',`${d.header.robot_id}`)
-              .attr("x1", d.header.state.x)
-              .attr("y1", d.header.state.y)
+              .attr("x1", d.rt_estimate.state.x)
+              .attr("y1", d.rt_estimate.state.y)
               .attr("x2", d.last_pose.state.x)
               .attr("y2", d.last_pose.state.y)
               .style("stroke-opacity", 0)
               .transition(t_ghost_entry2)
-              .style("stroke-opacity",null);
+              .style("stroke-opacity", null);
           });
       })
   );
@@ -295,7 +314,7 @@ function join_update_robot_estimates(update) {
     .duration(1000)
     .ease(d3.easeCubicInOut);
 
-  return update.each(function (_, _, _) {
+  return update.each(function (d, _, _) {
     d3.select(this)
       .select("g.rt_estimate")
       .call(function (g_rt_estimate) {
@@ -306,27 +325,37 @@ function join_update_robot_estimates(update) {
           .transition(t_graph_motion)
           .attr(
             "transform",
-            (local_d) =>
-              "translate(" +
-              local_d.header.state.x +
-              "," +
-              local_d.header.state.y +
-              ")"
+            `translate(${d.rt_estimate.state.x}, ${d.rt_estimate.state.y} )`
           )
           .selection()
-          .select("g")
-          .transition(t_graph_motion2)
-          .attr(
-            "transform",
-            (local_d) => "rotate(" + local_d.header.state.th*180/Math.PI + ")"
-          );
+          .call(function (gtranslate) {
+            gtranslate
+              .select("ellipse")
+              .transition(t_graph_motion2)
+              .attr("rx", d.rt_estimate.covariance.sigma[0] * Math.sqrt(9.21))
+              .attr("ry", d.rt_estimate.covariance.sigma[1] * Math.sqrt(9.21))
+              .attr(
+                "transform",
+                `rotate(${(d.rt_estimate.covariance.rot * 180) / Math.PI})`
+              );
+            gtranslate
+              .select("g")
+              .transition(t_graph_motion2)
+              .attr(
+                "transform",
+                (local_d) =>
+                  "rotate(" +
+                  (local_d.rt_estimate.state.th * 180) / Math.PI +
+                  ")"
+              );
+          });
         // .selection();
         // update the line to the last pose
         g_rt_estimate
           .select("line.rt_line_to_last_pose")
           .transition(t_graph_motion)
-          .attr("x1", (d) => d.header.state.x)
-          .attr("y1", (d) => d.header.state.y)
+          .attr("x1", (d) => d.rt_estimate.state.x)
+          .attr("y1", (d) => d.rt_estimate.state.y)
           .attr("x2", (d) => d.last_pose.state.x)
           .attr("y2", (d) => d.last_pose.state.y);
       });
@@ -352,7 +381,7 @@ function join_enter_factor(enter) {
         .attr("transform", "rotate(0)")
         .style("opacity", 0)
         .transition(t_factor_entry) // ugly (im interest in the child opacity not this node) but necessary to run concurrent transitions on the line (which doesnt work if I place it below)
-        .style("opacity",null)
+        .style("opacity", null)
         .selection()
         .call(function (g) {
           if (d.vars.length > 1) {
@@ -498,7 +527,7 @@ function join_enter_vertex(enter) {
             .style("opacity", 0)
             .transition(t_vertex_entry)
             .attr("r", 1)
-            .style("opacity",null);
+            .style("opacity", null);
           // text: variable name inside the circle
           g.append("text")
             .text((d) => d.var_id)
@@ -508,7 +537,7 @@ function join_enter_vertex(enter) {
             .style("opacity", 0)
             .transition(t_vertex_entry)
             .attr("font-size", 1)
-            .style("opacity",null);
+            .style("opacity", null);
           // covariance (-> a rotated group that holds an ellipse)
           g.append("g")
             .attr("transform", `rotate(${(d.covariance.rot * 180) / Math.PI})`)
@@ -517,7 +546,7 @@ function join_enter_vertex(enter) {
             .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
             .style("opacity", 0) // wow! (see next wow) Nota: doesnt  work with attr()
             .transition(t_vertex_entry)
-            .style("opacity",null); // wow! this will look for the CSS (has to a style)
+            .style("opacity", null); // wow! this will look for the CSS (has to a style)
         });
     });
 }
@@ -580,7 +609,7 @@ function join_agent_truth_enter(enter) {
         .append("g")
         .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
         .append("g")
-        .attr("transform", `rotate(${d.state.th*180/Math.PI})`)
+        .attr("transform", `rotate(${(d.state.th * 180) / Math.PI})`)
         .call(function (g) {
           // adding all display components
           // 1. the sensor
@@ -846,8 +875,9 @@ function applyMove_gg(d3_single_selected, pose) {
     .attr("transform", "translate(" + x + "," + y + ")")
     .selection()
     .selectChild("g")
-    .transition('rot').duration(60)
-    .attr("transform", `rotate(${th*180/Math.PI})`);
+    .transition("rot")
+    .duration(60)
+    .attr("transform", `rotate(${(th * 180) / Math.PI})`);
 }
 
 /******************************************************************************
@@ -1089,7 +1119,6 @@ function derpery(my_sel) {
     .join(derp_enter, derp_update, derp_exit);
 }
 
-
 // // Measure ray
 // let tm = main_group
 //               .append('line')
@@ -1106,7 +1135,5 @@ function derpery(my_sel) {
 //               .attr('stroke-width',0.05)
 //               .attr('opacity',0)
 //               .remove()
-
-
 
 // # Contrast :  #473d5a : #bbc4ab
