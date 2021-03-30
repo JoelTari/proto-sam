@@ -13,7 +13,7 @@ windows:
     panes:
       - ./simulation.py
       - ./graph_stub.py
-      - live-server --browser=google-chrome
+      - cd viz2 && live-server --browser=google-chrome
   - window_name: MQTT_1
     layout: tiled
     panes:
@@ -29,7 +29,7 @@ windows:
       -
       -
   - window_name: PG
-    layout: main-vertical
+    layout: tiled
     panes:
       -
       - shell_command:

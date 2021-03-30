@@ -296,7 +296,6 @@ def cmd_vel_callback(client, msg):
     current_robot_pos = copy.deepcopy(world['robots'][robot_idx]['state'])
     global last_pose
     #
-    # 0 check if I support (TODO) 
     if (cmd_type == 'AA'):
         # 1/ noisify the order and update cumulative odom cov
         noisy_cmd, cov_cmd = noisify_cmd_AA(cmd_vel)
@@ -322,7 +321,7 @@ def cmd_vel_callback(client, msg):
                 'cmd_cov': cov_cmd.reshape(4,).tolist()
             }
     # 4/ publish ground truth
-    client.publish(ground_truth_topic, json.dumps(world))
+    client.publish(robot_id+'/'+ground_truth_topic, json.dumps(world))
     # 5/ check if measures should be generated
     # 5.1/ if no, publish just the cmd_feedback and return
     if sqrt_dist(current_robot_pos, last_pose[robot_idx]['state']) \
@@ -332,7 +331,7 @@ def cmd_vel_callback(client, msg):
                 'robot_id': received_cmd['robot_id'],
                 'feedback_vel': feedback_vel
             }
-        client.publish(cmd_feedback_topic
+        client.publish(robot_id+'/'+cmd_feedback_topic
                         , json.dumps(message_payload))
         return
         # 5.2 if yes, generate sensor measurements and publish them with cmd_feedback
@@ -357,7 +356,7 @@ def cmd_vel_callback(client, msg):
                 'feedback_vel': feedback_vel,
                 'measures':landmarks_measurements
             }
-        client.publish(measures_topic, json.dumps(mes_payload))
+        client.publish(robot_id+'/'+measures_topic, json.dumps(mes_payload))
 
 
 # ----------------------------------------------------------------------------
@@ -375,7 +374,8 @@ def on_connect(client, userdata, flags, rc):
     else:
         print('connection error. code :', rc)
     # do the subscriptions here
-    client.subscribe(cmd_topic)
+    for robot in world['robots']:
+        client.subscribe(robot['robot_id']+'/'+cmd_topic)
     client.subscribe(request_position_ini_topic)
     client.subscribe(request_ground_truth_topic)
 
@@ -391,12 +391,29 @@ def on_message(client, userdata, message):
     # decode payload as string
     msg = message.payload.decode('utf-8')
     # depending on the topic, disptach to the user defined functions
-    if message.topic == cmd_topic:
-        cmd_vel_callback(client, msg)
-    elif message.topic == request_ground_truth_topic:
-        client.publish(ground_truth_topic, json.dumps(world))
-    elif message.topic == request_position_ini_topic:
-        client.publish(position_ini_topic, json.dumps(robots_ini_poses))
+    # break down the topic name
+    if (len(message.topic.split('/')) == 1):
+        if message.topic == request_ground_truth_topic:
+            client.publish(ground_truth_topic, json.dumps(world))
+        elif message.topic == request_position_ini_topic:
+            client.publish(position_ini_topic, json.dumps(robots_ini_poses))
+        else:
+            print('No callback for topic : '+ message.topic)
+            raise NotImplementedError
+    elif (len(message.topic.split('/')) == 2):
+        robot_id, topic_suffix = message.topic.split('/')
+        if topic_suffix == cmd_topic:
+            cmd_vel_callback(client, msg)
+        elif topic_suffix == request_ground_truth_topic:
+            client.publish('/'.join([robot_id,ground_truth_topic]), json.dumps(world['robot_id']))
+        # elif topic_suffix == request_position_ini_topic:
+        #     client.publish(position_ini_topic, json.dumps(robots_ini_poses))
+        else:
+            print('No callback for topic : '+ message.topic)
+            raise NotImplementedError
+    else:
+        print('Unexpected topic name breakdown')
+        raise NotImplementedError
 
     # if firstTime:
     #      # publish

@@ -36,12 +36,12 @@ svg {
 /******************************************/
 /*   LANDMARKS GROUND TRUTH  */
 /******************************************/
-.landmark_true_group {
+.landmark {
   stroke-width: 0.2;
   stroke: #a89984;
   fill: #08c07c;
 }
-.landmark_true_group:hover {
+.landmark:hover {
   /* stroke-width: 0.2; */
   /* stroke: #694c39; */
   fill: #427b58;
