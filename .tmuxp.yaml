@@ -12,7 +12,9 @@ windows:
     #   - ls
     panes:
       - ./simulation.py
-      - ./graph_stub.py
+      - ./front_end.py r1
+      - ./front_end.py r2
+      - ./front_end.py r3
       - cd viz2 && live-server --browser=google-chrome
   - window_name: MQTT_1
     layout: tiled

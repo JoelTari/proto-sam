@@ -77,8 +77,8 @@ cmd_std_dev_ratio_x = 45.0/100
 
 # noise cmd (diag, DD)
 # 0 -> no noise
-cmd_std_dev_ratio_v = 5.0/100
-cmd_std_dev_ratio_w = 9.0/100
+cmd_std_dev_ratio_v = 10.0/100
+cmd_std_dev_ratio_w = 19.0/100
 
 # meas noise (diag)
 # 0 -> no noise

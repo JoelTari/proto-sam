@@ -207,8 +207,12 @@ class AgentViz {
           .attr('transform',`rotate(${state.th*180/Math.PI})`)
       })
 
-    // this.d3Odom
-    //   .select('polyline.odom_history')
+    if (odom_history.length >= 2)
+    {
+      this.d3Odom
+        .select('polyline.odom_history')
+        .attr('points',odom_history.map((e) => `${e.x},${e.y}`).join(" "));
+    }
   }
 
   // add ground_truth data
@@ -218,31 +222,8 @@ class AgentViz {
       state,
       3,
       this.history_true,
-      this.max_history_size
+      this.max_history_elements
     );
-    // //  Initial cases, always push
-    // if (this.history_true.length < 2) {
-    //   this.history_true.push(state);
-    // } else {
-    //   // const last_truth_pose = this.history_true[this.history_true.length - 1];
-    //   const ante_truth_pose = this.history_true[this.history_true.length - 2];
-    //   // do we replace last truth pose or do we push a new elem ?
-    //   if (
-    //     (state.x - ante_truth_pose.x) ** 2 +
-    //       (state.y - ante_truth_pose.y) ** 2 >
-    //     3 ** 2
-    //     // TODO: 3 -> GlobalUI
-    //   ) {
-    //     // this.history_true.push(state);
-    //     this.history_true.push(state);
-    //     // protecting against array overflow (wrt the defined max size)
-    //     if ( this.history_true.length > this.max_history_elements){
-    //       this.history_true.shift();
-    //     }
-    //   } else {
-    //     this.history_true[this.history_true.length - 1] = state;
-    //   }
-    // }
   };
 
   registerOdomData = function (data) {
@@ -256,6 +237,7 @@ class AgentViz {
     );
   };
 
+  
   // function that given the data angle cover and range, draws the string data for the
   // svg-path element
   sensorVisual = function (sensor) {
@@ -295,7 +277,7 @@ class AgentViz {
     console.log("Receive some odom response " + this.id + "with data: ");
     console.log(data);
     this.registerOdomData(data);
-    this.updateVisualOdom(this.odom_history,data.state,data.visual_covariance);
+    this.updateVisualOdom(this.history_odom,data.state,data.visual_covariance);
   };
   graphsCallback = function (data) {
     console.log("Receive some graph return :" + this.id);
