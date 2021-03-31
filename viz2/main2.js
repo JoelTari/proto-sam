@@ -107,9 +107,10 @@ const AgentTeam = {
 };
 
 class AgentViz {
-  constructor(robot_data, mqttc, container) {
+  constructor(robot_data, mqttc, parent_container) {
     this.id = robot_data.robot_id;
-    this.d3container = container; // d3 selection inside which this agent will append stuff
+    this.d3parent_container = parent_container; // d3 selection this visual is a child of. parent_container.children are the other agents !
+    this.d3container = parent_container.append('g').classed('agent',true).attr('id',this.id); // d3 selection inside which this agent will append stuff
     this.mqttc = mqttc;
     this.sensor_svg_path = this.sensorVisual(robot_data.sensor);
     this.history_odom = []; // successive poses of the odometry (from the last graph pose): emptied when a new pose is created on the graph
@@ -120,81 +121,18 @@ class AgentViz {
     //      ex: history_true: there could be a min eucl. distance btw elements to reduce size
     //          history_odom: remove every other element each time the threshold is reached
     this.registerGroundTruthData(robot_data.state);
-    this.constructD3(
+    // d3 : create the truth structure
+    this.d3Truth = constructD3Truth(
       this.d3container,
+      this.d3parent_container,
       robot_data,
       this.sensor_svg_path,
       this.state_history
     );
+    // d3 : create the odom structure
+    this.d3Odom = constructD3Odom(this.d3container,this.id);
     this.constructMqtt();
   }
-  constructD3 = function (
-    d3container,
-    robot_data,
-    sensor_svg_path,
-    state_history
-  ) {
-    // d3 truth
-    this.d3truth = this.d3container
-      .append("g")
-      .classed("agent_true_group", true)
-      .classed("selected", robot_data.isSelected)
-      .attr("id", robot_data.robot_id)
-      .each(function () {
-        // call rather ??
-        d3.select(this)
-          .append("g")
-          .attr(
-            "transform",
-            () => `translate(${robot_data.state.x},${robot_data.state.y})`
-          )
-          .classed("gtranslate", true)
-          .append("g")
-          .classed("grotate", true)
-          .attr("transform", `rotate(${(robot_data.state.th * 180) / Math.PI})`)
-          .call(function (g) {
-            // adding all display components
-            // 1. the sensor
-            if (robot_data.sensor != null)
-              g.append("path")
-                .classed("sensor", true)
-                .attr("d", sensor_svg_path);
-            // 2. the robot
-            g.append("polygon")
-              .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-              .on("mouseover", mouseover_mg(`${robot_data.robot_id}`))
-              .on("mouseout", mouseout_mg());
-            g.append("line")
-              .attr("x1", 0)
-              .attr("y1", 0)
-              .attr("x2", 1)
-              .attr("y2", 0);
-          });
-        // the state history   TODO: necessary ??? Since I create it in update
-        if (state_history >= 2) {
-          d3.select(this)
-            .append("polyline")
-            .classed("state_history", true)
-            // .attr("id", (d) => d.seq)
-            // the points of the polyline are the history + the rt state
-            .attr(
-              "points",
-              state_history.map((e) => `${e.x},${e.y}`).join(" ") //+ ` ${state.x},${state.y}`
-            );
-        }
-      })
-      .transition()
-      .duration(500)
-      .style("opacity", 1)
-      .selection()
-      .on("click", function () {
-        // for next joining of data
-        GlobalUI.selected_robot_id = d3.select(this).attr("id");
-        // for current data session: put others to false, and the selected to true
-        d3container.selectAll(".agent_true_group").classed("selected", false);
-        d3.select(this).classed("selected", true);
-      });
-  };
   constructMqtt = function () {
     // do the subscriptions
     this.mqttc.subscribe(`${this.id}/odom`, (err) => {
@@ -224,59 +162,98 @@ class AgentViz {
   // update Visual truth
   updateVisualTruth = function (state_history, state) {
     // translate
-    this.d3truth
+    this.d3Truth
       .select(".gtranslate")
       .attr("transform", () => `translate(${state.x},${state.y})`);
     // rotate (TODO: transition? CSS probably)
-    this.d3truth
+    this.d3Truth
       .select(".grotate")
       .attr("transform", `rotate(${(state.th * 180) / Math.PI})`);
     // history
     if (
-      this.d3truth.select("polyline.state_history").empty() &&
+      this.d3Truth.select("polyline.state_history").empty() &&
       state_history.length >= 2
     ) {
       // the element polyline doesnt exist -> create it
       // AND there is at least 2 elements
-      this.d3truth
+      this.d3Truth
         .append("polyline")
         .classed("state_history", true)
         .attr("points", state_history.map((e) => `${e.x},${e.y}`).join(" "));
     } else if (state_history.length >= 2) {
       //update
-      this.d3truth.select("polyline.state_history").attr(
+      this.d3Truth.select("polyline.state_history").attr(
         "points",
         state_history.map((e) => `${e.x},${e.y}`).join(" ") //+ ` ${state.x},${state.y}`
       );
     }
   };
+  // update visual odom
+  updateVisualOdom = function(odom_history,state,visual_covariance){
+    // odom becomes visible
+    this.d3Odom.style('visibility',null)
+
+    this.d3Odom
+      .select('.gtranslate')
+      .attr('transform',`translate(${state.x},${state.y})`)
+      .call(function(g_tra){
+        g_tra
+          .select('ellipse.odom_covariance')
+          .attr('rx',visual_covariance.sigma[0]*Math.sqrt(9.21))
+          .attr('ry',visual_covariance.sigma[1]*Math.sqrt(9.21))
+          .attr('transform',`rotate(${visual_covariance.rot*180/Math.PI})`)
+        g_tra
+          .select('.grotate')
+          .attr('transform',`rotate(${state.th*180/Math.PI})`)
+      })
+
+    // this.d3Odom
+    //   .select('polyline.odom_history')
+  }
 
   // add ground_truth data
   registerGroundTruthData = function (state) {
     this.current_true_state = state;
-    //  Initial cases, always push
-    if (this.history_true.length < 2) {
-      this.history_true.push(state);
-    } else {
-      // const last_truth_pose = this.history_true[this.history_true.length - 1];
-      const ante_truth_pose = this.history_true[this.history_true.length - 2];
-      // do we replace last truth pose or do we push a new elem ?
-      if (
-        (state.x - ante_truth_pose.x) ** 2 +
-          (state.y - ante_truth_pose.y) ** 2 >
-        3 ** 2
-        // TODO: 3 -> GlobalUI
-      ) {
-        // this.history_true.push(state);
-        this.history_true.push(state);
-        // protecting against array overflow (wrt the defined max size)
-        if ( this.history_true.length > this.max_history_elements){
-          this.history_true.shift();
-        }
-      } else {
-        this.history_true[this.history_true.length - 1] = state;
-      }
-    }
+    this.history_true = history2d_push(
+      state,
+      3,
+      this.history_true,
+      this.max_history_size
+    );
+    // //  Initial cases, always push
+    // if (this.history_true.length < 2) {
+    //   this.history_true.push(state);
+    // } else {
+    //   // const last_truth_pose = this.history_true[this.history_true.length - 1];
+    //   const ante_truth_pose = this.history_true[this.history_true.length - 2];
+    //   // do we replace last truth pose or do we push a new elem ?
+    //   if (
+    //     (state.x - ante_truth_pose.x) ** 2 +
+    //       (state.y - ante_truth_pose.y) ** 2 >
+    //     3 ** 2
+    //     // TODO: 3 -> GlobalUI
+    //   ) {
+    //     // this.history_true.push(state);
+    //     this.history_true.push(state);
+    //     // protecting against array overflow (wrt the defined max size)
+    //     if ( this.history_true.length > this.max_history_elements){
+    //       this.history_true.shift();
+    //     }
+    //   } else {
+    //     this.history_true[this.history_true.length - 1] = state;
+    //   }
+    // }
+  };
+
+  registerOdomData = function (data) {
+    this.current_odom_state = data.state;
+    this.current_odom_cov = data.visual_covariance;
+    this.history_odom = history2d_push(
+      data.state,
+      2,
+      this.history_odom,
+      this.max_history_elements
+    );
   };
 
   // function that given the data angle cover and range, draws the string data for the
@@ -315,7 +292,10 @@ class AgentViz {
   };
   // define the callbacks
   odomCallback = function (data) {
-    console.log("Receive some odom response :" + this.id);
+    console.log("Receive some odom response " + this.id + "with data: ");
+    console.log(data);
+    this.registerOdomData(data);
+    this.updateVisualOdom(this.odom_history,data.state,data.visual_covariance);
   };
   graphsCallback = function (data) {
     console.log("Receive some graph return :" + this.id);
@@ -436,6 +416,35 @@ function applyMove_gg(d3_single_selected, pose) {
  *                           KeyPresses Helper
  *****************************************************************************/
 
+function history2d_push(
+  state,
+  distance_treshold,
+  current_history,
+  max_history_size
+) {
+  if (current_history.length < 2) {
+    current_history.push(state);
+  } else {
+    // const last_truth_pose = current_history[current_history.length - 1];
+    const ante_truth_pose = current_history[current_history.length - 2];
+    // do we replace last truth pose or do we push a new elem ?
+    if (
+      (state.x - ante_truth_pose.x) ** 2 + (state.y - ante_truth_pose.y) ** 2 >
+      distance_treshold ** 2
+    ) {
+      // current_history.push(state);
+      current_history.push(state);
+      // protecting against array overflow (wrt the defined max size)
+      if (current_history.length > max_history_size) {
+        current_history.shift();
+      }
+    } else {
+      current_history[current_history.length - 1] = state;
+    }
+  }
+  return current_history;
+}
+
 function inputToMove(model) {
   // get key or combination from global buffer
   up = keyPressedBuffer["ArrowUp"];
@@ -517,6 +526,119 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
+/******************************************************************************
+ *                            HELPER Visual
+ *****************************************************************************/
+  constructD3Truth = function (
+    d3container,
+    d3parent_container,
+    robot_data,
+    sensor_svg_path,
+    state_history
+  ) {
+    // d3 truth
+    return  d3container
+      .append("g")
+      .classed("selected", robot_data.isSelected)
+      .classed('agent__truth',true)
+      .attr("id", robot_data.robot_id)
+      .call(function (g_truth) {
+        // call rather ??
+        g_truth
+          .append("g")
+          .attr(
+            "transform",
+            () => `translate(${robot_data.state.x},${robot_data.state.y})`
+          )
+          .classed("gtranslate", true)
+          .append("g")
+          .classed("grotate", true)
+          .attr("transform", `rotate(${(robot_data.state.th * 180) / Math.PI})`)
+          .call(function (g) {
+            // adding all display components
+            // 1. the sensor
+            if (robot_data.sensor != null)
+              g.append("path")
+                .classed("sensor", true)
+                .attr("d", sensor_svg_path);
+            // 2. the robot
+            g.append("polygon")
+              .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
+              .on("mouseover", mouseover_mg(`${robot_data.robot_id}`))
+              .on("mouseout", mouseout_mg());
+            g.append("line")
+              .attr("x1", 0)
+              .attr("y1", 0)
+              .attr("x2", 1)
+              .attr("y2", 0);
+          });
+        // the state history   TODO: necessary ??? Since I create it in update
+        if (state_history >= 2) {
+          g_truth
+            .append("polyline")
+            .classed("state_history", true)
+            // .attr("id", (d) => d.seq)
+            // the points of the polyline are the history + the rt state
+            .attr(
+              "points",
+              state_history.map((e) => `${e.x},${e.y}`).join(" ") //+ ` ${state.x},${state.y}`
+            );
+        }
+      })
+      .transition()
+      .duration(500)
+      .style("opacity", 1)
+      .selection()
+      .on("click", function () {
+        // for next joining of data
+        GlobalUI.selected_robot_id = d3.select(this).attr("id");
+        // for current data session: put others to false, and the selected to true
+        d3parent_container.selectAll(".agent__truth").classed("selected", false);
+        d3.select(this).classed("selected", true);
+      });
+  };
+
+constructD3Odom = function(d3container, robot_id){
+  return d3container
+    .append('g')
+    .classed('agent__odom',true)
+    .style('visibility','hidden')
+    .attr('id',robot_id)
+    .call(function(g_odom){
+      g_odom
+        .append('g')
+        .classed('gtranslate',true)
+        .call(function(g_tra){
+          g_tra
+            .append('g')
+            .classed('grotate',true)
+            .classed('ghost',true)
+            .call(function(g_rot){
+              g_rot
+                .append('polygon')
+                .attr("points", "0,-1 0,1 3,0")
+                .style("stroke-opacity", 0)
+                .transition().duration(400)
+                .style("stroke-opacity", null);
+              g_rot
+                .append('line')
+                .attr("x1", 0)
+                .attr("y1", 0)
+                .attr("x2", 1)
+                .attr("y2", 0)
+                .style("stroke-opacity", 0)
+                .transition().duration(400)
+                .style("stroke-opacity", null);
+            })
+          g_tra
+            .append('ellipse')
+            .classed('odom_covariance',true)
+        })
+      g_odom
+        .append('polyline')
+        .classed('odom_history',true)
+    })
+}
 /******************************************************************************
  *                            FOR TESTING PURPOSE 2
  *****************************************************************************/

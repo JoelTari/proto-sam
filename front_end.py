@@ -9,14 +9,15 @@ import math
 import random as rd
 import numpy.random as nprd
 
-robot_id = "r1"
-
+# TODO: passing arguments
+robot_id = "r2"
 broker = 'localhost'
+
 #inputs (subs)
-cmd_feedback_topic = 'cmd_feedback'
+cmd_feedback_topic = '/'.join([robot_id,'cmd_feedback']) 
 #outputs (pubs)
-measures_topic = 'measures'
-odom_topic = 'odom'
+measures_topic = '/'.join([robot_id,'measures']) 
+odom_topic ='/'.join([robot_id,'odom']) 
 
 # aggr_state
 g_aggr_state = np.zeros([3,1])
