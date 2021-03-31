@@ -267,8 +267,12 @@ class AgentViz {
         3 ** 2
         // TODO: 3 -> GlobalUI
       ) {
+        // this.history_true.push(state);
         this.history_true.push(state);
-        this.history_true.push(state); // yes, twice
+        // protecting against array overflow (wrt the defined max size)
+        if ( this.history_true.length > this.max_history_elements){
+          this.history_true.shift();
+        }
       } else {
         this.history_true[this.history_true.length - 1] = state;
       }
@@ -320,7 +324,7 @@ class AgentViz {
     console.log("Receive some measure :" + this.id);
   };
   groundTruthCallback = function (data) {
-    console.log("Receive some GT info :" + this.id);
+    // console.log("Receive some GT info :" + this.id);
     this.registerGroundTruthData(data.state);
     this.updateVisualTruth(this.history_true, data.state);
   };
@@ -439,7 +443,7 @@ function inputToMove(model) {
   left = keyPressedBuffer["ArrowLeft"];
   right = keyPressedBuffer["ArrowRight"];
 
-  console.log("Moving using model : " + model); // TODO globalUI
+  // console.log("Moving using model : " + model); // TODO globalUI
   const speed = 0.5; // TODO: globalUI
 
   if (model === "AA") {
