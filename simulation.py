@@ -17,24 +17,24 @@ import numpy.random as nprd
 # ----------------------------------------------------------------------------
 world = {
     "robots":
-    [
-        {
-            "robot_id": "r1",
-            "state": {"x": 0, "y": 0, "th": 0*math.pi/180},
-            # "state": {"x": 5, "y": 6.1, "th": 30*math.pi/180},
-            "sensor": {"range": 12, "angle_coverage": 0.75}
+    {
+        'r1':{
+        "robot_id": "r1",
+        "state": {"x": 0, "y": 0, "th": 0*math.pi/180},
+        # "state": {"x": 5, "y": 6.1, "th": 30*math.pi/180},
+        "sensor": {"range": 12, "angle_coverage": 0.75}
         },
-        {
+        'r2':{
             "robot_id": "r2",
             "state": {"x": 53, "y": 16.1, "th": -150*math.pi/180},
             "sensor": {"range": 12, "angle_coverage": 0.167}
-        },
-        {
+            },
+        'r3':{
             "robot_id": "r3",
             "state": {"x": 25, "y": 56.1, "th": 100*math.pi/180},
             "sensor": {"range": 12, "angle_coverage": 0.5}
+            },
         },
-    ],
     "landmarks":
     [
         {"landmark_id": "l1", "state": {"x": 9, "y": 46}},
@@ -56,8 +56,8 @@ world = {
     ]
 }
 # store positions ini of each agent
-robots_ini_poses = [{"robot_id": r["robot_id"],
-                     "position_ini":r["state"]} for r in world['robots']]
+robots_ini_poses = [{"robot_id": ritem["robot_id"],
+                     "position_ini":ritem["state"]} for rkey,ritem in world['robots'].items()]
 print(robots_ini_poses)
 
 
@@ -145,7 +145,6 @@ def noisify_cmd_DD(cmd: dict):
     v =cmd['linear']
     w=cmd['angular']
     exact_cmd_vec = np.array([[v,w]]).T;
-    th = world['robots'][0]['state']['th'];
     alpha1 = cmd_std_dev_ratio_v**2
     alpha2 = cmd_std_dev_ratio_w**2
     dt=1
@@ -292,28 +291,28 @@ def cmd_vel_callback(client, msg):
     cmd_type = received_cmd['type']
     cmd_vel= received_cmd['cmd_vel']
     # 0b/ get the ground truth associated with this robot
-    robot_idx = get_robot_index_in_world(world,robot_id)
-    current_robot_pos = copy.deepcopy(world['robots'][robot_idx]['state'])
+    # DEPRECATED IDX robot_idx = get_robot_index_in_world(world,robot_id)
+    current_robot_pos = copy.deepcopy(world['robots'][robot_id]['state'])
     global last_pose
     #
     if (cmd_type == 'AA'):
         # 1/ noisify the order and update cumulative odom cov
         noisy_cmd, cov_cmd = noisify_cmd_AA(cmd_vel)
         # 2/ update robot pos in the world (ground truth)
-        world['robots'][robot_idx]['state'] = \
+        world['robots'][robot_id]['state'] = \
                 apply_cmd_to_ground_truth_AA(cmd_vel,current_robot_pos)
     elif (received_cmd['type']=='DD'):
         # 1/ noisify the order and update cumulative odom cov
         noisy_cmd, cov_cmd = noisify_cmd_DD(received_cmd['cmd_vel'])
         # 2/ update robot pos in the world (ground truth)
-        world['robots'][robot_idx]['state'] = \
+        world['robots'][robot_id]['state'] = \
                 apply_cmd_to_ground_truth_DD(cmd_vel,current_robot_pos)
     else:
         print('I don''t support that type of cmd yet')
         raise NotImplementedError
 
     # update some variables in preparation for step 5
-    current_robot_pos = world['robots'][robot_idx]['state']
+    current_robot_pos = world['robots'][robot_id]['state']
     feedback_vel = \
             {
                 'type': received_cmd['type'],
@@ -321,10 +320,10 @@ def cmd_vel_callback(client, msg):
                 'cmd_cov': cov_cmd.reshape(4,).tolist()
             }
     # 4/ publish ground truth
-    client.publish(robot_id+'/'+ground_truth_topic, json.dumps(world))
+    client.publish(robot_id+'/'+ground_truth_topic, json.dumps(world['robots'][robot_id]))
     # 5/ check if measures should be generated
     # 5.1/ if no, publish just the cmd_feedback and return
-    if sqrt_dist(current_robot_pos, last_pose[robot_idx]['state']) \
+    if sqrt_dist(current_robot_pos, last_pose[robot_id]['state']) \
             < new_pose_distance_threshold:
         message_payload = \
             {
@@ -339,7 +338,7 @@ def cmd_vel_callback(client, msg):
         # 5.2.1 generate robot to landmarks measure
         #       np arrays are not json serializable, so I to convert them to list first
         #       with the np::tolist() method
-        sensor_info = world['robots'][robot_idx]['sensor']
+        sensor_info = world['robots'][robot_id]['sensor']
         # comprehension list
         landmarks_measurements = \
         [ 
@@ -348,7 +347,7 @@ def cmd_vel_callback(client, msg):
             if in_sensor_coverage(current_robot_pos, l['state'], sensor_info)
         ]
         # 5.2.2 save the new robot position as the last pose node
-        last_pose[robot_idx]['state'] = copy.deepcopy(current_robot_pos)
+        last_pose[robot_id]['state'] = copy.deepcopy(current_robot_pos)
         # 5.2.3 publish the measurements in the same package
         mes_payload = \
             {
@@ -374,8 +373,8 @@ def on_connect(client, userdata, flags, rc):
     else:
         print('connection error. code :', rc)
     # do the subscriptions here
-    for robot in world['robots']:
-        client.subscribe(robot['robot_id']+'/'+cmd_topic)
+    for robot_id,_ in world['robots'].items():
+        client.subscribe('/'.join([robot_id,cmd_topic]))
     client.subscribe(request_position_ini_topic)
     client.subscribe(request_ground_truth_topic)
 

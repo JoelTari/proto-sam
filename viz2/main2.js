@@ -18,12 +18,8 @@ GlobalUI = {
  *                           SVG Group binding to d3
  *****************************************************************************/
 const elMainGroup = d3.select(".main_group");
-const elAgents = elMainGroup
-  .append("g")
-  .classed("agents", true);
-const elLandmarks = elMainGroup
-  .append("g")
-  .classed("landmarks", true);
+const elAgents = elMainGroup.append("g").classed("agents", true);
+const elLandmarks = elMainGroup.append("g").classed("landmarks", true);
 // dynamic
 let elsLandmark = elLandmarks.selectAll(".landmark");
 
@@ -50,8 +46,7 @@ client.on("connect", function () {
 });
 
 client.on("message", function (topic, message) {
-
-  if (topic == "ground_truth") { 
+  if (topic == "ground_truth") {
     // This topic should be called in fact metaInfo or something when no ground truth is available
     // create the AgentTeam instanciate the robot objects
     // create a GeUpPa for the landmarks
@@ -88,28 +83,16 @@ client.on("message", function (topic, message) {
         );
     }
 
-
-    // Merge UI and ground_truth
-    msg.robots.forEach(
-      (r) => (r.isSelected = r.robot_id === GlobalUI.selected_robot_id)
-    );
-
-    // TODO continue here: create the AgentTeam and its AgentViz
-    msg.robots.forEach(
-      r => 
-      {
-        AgentTeam[r.robot_id] = new AgentViz(r, client, elAgents)
-      }
-    )
-
-
-  } else if (topic.split('/').length == 2) {
-     const msg = JSON.parse(message.toString());
-     const [agent_id, topic_suffix] = topic.split('/')
-     AgentTeam.checkSubscriptions(agent_id,topic_suffix,msg)
+    for (const [robot_id, robot_ground_truth] of Object.entries(msg.robots)) {
+      // Merge UI and ground_truth
+      robot_ground_truth.isSelected = robot_id === GlobalUI.selected_robot_id;
+      AgentTeam[robot_id] = new AgentViz(robot_ground_truth, client, elAgents);
+    }
+  } else if (topic.split("/").length == 2) {
+    const msg = JSON.parse(message.toString());
+    const [agent_id, topic_suffix] = topic.split("/");
+    AgentTeam.checkSubscriptions(agent_id, topic_suffix, msg);
   }
-  
-
 });
 
 /******************************************************************************
@@ -118,108 +101,179 @@ client.on("message", function (topic, message) {
 // AgentTeam: define an object to hold the instances of AgentViz
 // AgentTeam['r1']= new AgentViz()...
 const AgentTeam = {
-  checkSubscriptions : function(agent_id, topic_suffix,msg){
-    this[agent_id].mqttProcessTopicSuffix(topic_suffix,msg)
-  }
+  checkSubscriptions: function (agent_id, topic_suffix, msg) {
+    this[agent_id].mqttProcessTopicSuffix(topic_suffix, msg);
+  },
 };
 
-class AgentViz{
-
-  constructor(robot_data, mqttc, container){
+class AgentViz {
+  constructor(robot_data, mqttc, container) {
     this.id = robot_data.robot_id;
     this.d3container = container; // d3 selection inside which this agent will append stuff
     this.mqttc = mqttc;
-    this.sensor_svg_path = this.sensorVisual(robot_data.sensor)
-    this.history_odom = []   // successive poses of the odometry (from the last graph pose): emptied when a new pose is created on the graph
-    this.history_graph = []  // succesives poses of the graph (x0 to x{last_pose})
-    this.history_true = []   // successives true poses
-    this.max_history_elements = 500 // TODO: apply (maybe not the same size-reducing rules for the 3)...
-                                    //      ex: history_true: there could be a min eucl. distance btw elements to reduce size
-                                    //          history_odom: remove every other element each time the threshold is reached
-    const self = this;
-    this.constructD3(self,robot_data);
+    this.sensor_svg_path = this.sensorVisual(robot_data.sensor);
+    this.history_odom = []; // successive poses of the odometry (from the last graph pose): emptied when a new pose is created on the graph
+    this.history_graph = []; // succesives poses of the graph (x0 to x{last_pose})
+    this.history_true = []; // successives true poses
+    // this.svg_history_truth = ""; // str version of the history truth
+    this.max_history_elements = 100; // TODO: apply (maybe not the same size-reducing rules for the 3)...
+    //      ex: history_true: there could be a min eucl. distance btw elements to reduce size
+    //          history_odom: remove every other element each time the threshold is reached
+    this.registerGroundTruthData(robot_data.state);
+    this.constructD3(
+      this.d3container,
+      robot_data,
+      this.sensor_svg_path,
+      this.state_history
+    );
     this.constructMqtt();
-    this.addGroundTruthData(robot_data.state) 
   }
-  constructD3 = function(self,robot_data){
+  constructD3 = function (
+    d3container,
+    robot_data,
+    sensor_svg_path,
+    state_history
+  ) {
     // d3 truth
-    this.d3truth = 
-      this.d3container
-        .append("g")
-        .classed("agent_true_group", true)
-        .classed("selected", robot_data.isSelected)
-        .attr("id", robot_data.robot_id)
-        .each(function () {
+    this.d3truth = this.d3container
+      .append("g")
+      .classed("agent_true_group", true)
+      .classed("selected", robot_data.isSelected)
+      .attr("id", robot_data.robot_id)
+      .each(function () {
+        // call rather ??
+        d3.select(this)
+          .append("g")
+          .attr(
+            "transform",
+            () => `translate(${robot_data.state.x},${robot_data.state.y})`
+          )
+          .classed("gtranslate", true)
+          .append("g")
+          .classed("grotate", true)
+          .attr("transform", `rotate(${(robot_data.state.th * 180) / Math.PI})`)
+          .call(function (g) {
+            // adding all display components
+            // 1. the sensor
+            if (robot_data.sensor != null)
+              g.append("path")
+                .classed("sensor", true)
+                .attr("d", sensor_svg_path);
+            // 2. the robot
+            g.append("polygon")
+              .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
+              .on("mouseover", mouseover_mg(`${robot_data.robot_id}`))
+              .on("mouseout", mouseout_mg());
+            g.append("line")
+              .attr("x1", 0)
+              .attr("y1", 0)
+              .attr("x2", 1)
+              .attr("y2", 0);
+          });
+        // the state history   TODO: necessary ??? Since I create it in update
+        if (state_history >= 2) {
           d3.select(this)
-            .append("g")
-            .attr("transform", () => `translate(${robot_data.state.x},${robot_data.state.y})`)
-            .append("g")
-            .attr("transform", `rotate(${(robot_data.state.th * 180) / Math.PI})`)
-            .call(function (g) {
-              // adding all display components
-              // 1. the sensor
-              if (robot_data.sensor != null)
-                g.append("path").classed("sensor", true).attr("d", self.sensor_svg_path);
-              // 2. the robot
-              g.append("polygon")
-                .attr("points", "0,-1 0,1 3,0") // TODO: append a <g> first
-                .on("mouseover", mouseover_mg(`${robot_data.robot_id}`))
-                .on("mouseout", mouseout_mg());
-              g.append("line")
-                .attr("x1", 0)
-                .attr("y1", 0)
-                .attr("x2", 1)
-                .attr("y2", 0);
-            });
-          // the state history
-          if (self.state_history > 1) {
-            d3.select(this)
-              .append("polyline")
-              .classed("state_history", true)
-              // .attr("id", (d) => d.seq)
-              // the points of the polyline are the history + the rt state
-              .attr(
-                "points",
-                d.state_history.map((e) => e.join(",")).join(" ") +
-                  ` ${robot_data.state.x},${robot_data.state.y}`
-              );
-          }
-        })
-        .transition()
-        .duration(500)
-        .style("opacity", 1)
-        .selection()
-        .on("click", function () {
-          // for next joining of data
-          GlobalUI.selected_robot_id = d3.select(this).attr("id");
-          // for current data session: put others to false, and the selected to true
-          self.d3container.selectAll('.agent_true_group').classed("selected", false);
-          d3.select(this).classed("selected", true);
-        });
-  }
-  constructMqtt = function(){
+            .append("polyline")
+            .classed("state_history", true)
+            // .attr("id", (d) => d.seq)
+            // the points of the polyline are the history + the rt state
+            .attr(
+              "points",
+              state_history.map((e) => `${e.x},${e.y}`).join(" ") //+ ` ${state.x},${state.y}`
+            );
+        }
+      })
+      .transition()
+      .duration(500)
+      .style("opacity", 1)
+      .selection()
+      .on("click", function () {
+        // for next joining of data
+        GlobalUI.selected_robot_id = d3.select(this).attr("id");
+        // for current data session: put others to false, and the selected to true
+        d3container.selectAll(".agent_true_group").classed("selected", false);
+        d3.select(this).classed("selected", true);
+      });
+  };
+  constructMqtt = function () {
     // do the subscriptions
-    this.mqttc.subscribe(`${self.id}/odom`
-      , err => {if(!err) console.log(`[mqtt] subscribed to the topic >> ${this.id}/odom`)})
-    this.mqttc.subscribe(`${this.id}/graphs`
-      , err => {if(!err) console.log(`[mqtt] subscribed to the topic >> ${this.id}/graphs`)})
-    this.mqttc.subscribe(`${this.id}/measures`
-      , err => {if(!err) console.log(`[mqtt] subscribed to the topic >> ${this.id}/measures`)})
-    this.mqttc.subscribe(`${this.id}/ground_truth`
-      , err => {if(!err) console.log(`[mqtt] subscribed to the topic >> ${this.id}/ground_truth`)})
+    this.mqttc.subscribe(`${this.id}/odom`, (err) => {
+      if (!err)
+        console.log(`[mqtt] subscribed to the topic >> ${this.id}/odom`);
+    });
+    this.mqttc.subscribe(`${this.id}/graphs`, (err) => {
+      if (!err)
+        console.log(`[mqtt] subscribed to the topic >> ${this.id}/graphs`);
+    });
+    this.mqttc.subscribe(`${this.id}/measures`, (err) => {
+      if (!err)
+        console.log(`[mqtt] subscribed to the topic >> ${this.id}/measures`);
+    });
+    this.mqttc.subscribe(`${this.id}/ground_truth`, (err) => {
+      if (!err)
+        console.log(
+          `[mqtt] subscribed to the topic >> ${this.id}/ground_truth`
+        );
+    });
     // publishers topic name
     // id/request_ground_truth (expected id/ground_truth back)
     // id/cmd (expected id/odom back)
-    this.request_ground_truth_topic = `${this.id}/request_ground_truth`
-    this.cmd_topic = `${this.id}/cmd`
-  }
+    this.request_ground_truth_topic = `${this.id}/request_ground_truth`;
+    this.cmd_topic = `${this.id}/cmd`;
+  };
+  // update Visual truth
+  updateVisualTruth = function (state_history, state) {
+    // translate
+    this.d3truth
+      .select(".gtranslate")
+      .attr("transform", () => `translate(${state.x},${state.y})`);
+    // rotate (TODO: transition? CSS probably)
+    this.d3truth
+      .select(".grotate")
+      .attr("transform", `rotate(${(state.th * 180) / Math.PI})`);
+    // history
+    if (
+      this.d3truth.select("polyline.state_history").empty() &&
+      state_history.length >= 2
+    ) {
+      // the element polyline doesnt exist -> create it
+      // AND there is at least 2 elements
+      this.d3truth
+        .append("polyline")
+        .classed("state_history", true)
+        .attr("points", state_history.map((e) => `${e.x},${e.y}`).join(" "));
+    } else if (state_history.length >= 2) {
+      //update
+      this.d3truth.select("polyline.state_history").attr(
+        "points",
+        state_history.map((e) => `${e.x},${e.y}`).join(" ") //+ ` ${state.x},${state.y}`
+      );
+    }
+  };
 
   // add ground_truth data
-  addGroundTruthData = function(state){
+  registerGroundTruthData = function (state) {
     this.current_true_state = state;
-    this.history_true.push(state)
-
-  }
+    //  Initial cases, always push
+    if (this.history_true.length < 2) {
+      this.history_true.push(state);
+    } else {
+      // const last_truth_pose = this.history_true[this.history_true.length - 1];
+      const ante_truth_pose = this.history_true[this.history_true.length - 2];
+      // do we replace last truth pose or do we push a new elem ?
+      if (
+        (state.x - ante_truth_pose.x) ** 2 +
+          (state.y - ante_truth_pose.y) ** 2 >
+        3 ** 2
+        // TODO: 3 -> GlobalUI
+      ) {
+        this.history_true.push(state);
+        this.history_true.push(state); // yes, twice
+      } else {
+        this.history_true[this.history_true.length - 1] = state;
+      }
+    }
+  };
 
   // function that given the data angle cover and range, draws the string data for the
   // svg-path element
@@ -233,24 +287,11 @@ class AgentViz{
     const py = Math.sin(Math.PI * sensor.angle_coverage) * sensor.range;
     const sweep = true * (sensor.angle_coverage > 0.5);
     return `M0,0 l${px},${py} A ${rx} ${ry} 0 ${sweep} 0 ${px} ${-py}`;
-  }
+  };
 
-  // define the callbacks
-  odomCallback = function (data){
-    console.log('Receive some odom response :' + this.id )
-  }
-  graphsCallback = function (data){
-    console.log('Receive some graph return :' + this.id )
-  }
-  measuresCallback = function (data){
-    console.log('Receive some measure :' + this.id )
-  }
-  groundTruthCallback = function (data){
-    console.log('Receive some GT info :' + this.id )
-  }
   // define an entry point for the topic suffix (that will dispatch to appropriate callback)
-  mqttProcessTopicSuffix = function(suffix_topic_name, data){
-    switch(suffix_topic_name){
+  mqttProcessTopicSuffix = function (suffix_topic_name, data) {
+    switch (suffix_topic_name) {
       case `odom`:
         this.odomCallback(data);
         break;
@@ -264,14 +305,28 @@ class AgentViz{
         this.groundTruthCallback(data);
         break;
       default:
-        console.error('unknown suffix topic name : ' + suffix_topic_name)
+        console.error("unknown suffix topic name : " + suffix_topic_name);
         break;
     }
-  }
+  };
+  // define the callbacks
+  odomCallback = function (data) {
+    console.log("Receive some odom response :" + this.id);
+  };
+  graphsCallback = function (data) {
+    console.log("Receive some graph return :" + this.id);
+  };
+  measuresCallback = function (data) {
+    console.log("Receive some measure :" + this.id);
+  };
+  groundTruthCallback = function (data) {
+    console.log("Receive some GT info :" + this.id);
+    this.registerGroundTruthData(data.state);
+    this.updateVisualTruth(this.history_true, data.state);
+  };
+
   // general update patterns (are used in the callbacks)
-
-};
-
+}
 
 /******************************************************************************
  *                            UI Events
