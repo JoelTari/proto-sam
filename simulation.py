@@ -56,8 +56,9 @@ world = {
     ]
 }
 # store positions ini of each agent
-robots_ini_poses = [{"robot_id": ritem["robot_id"],
-                     "position_ini":ritem["state"]} for rkey,ritem in world['robots'].items()]
+# robots_ini_poses = [{"robot_id": ritem["robot_id"],
+#                      "position_ini":ritem["state"]} for rkey,ritem in world['robots'].items()]
+robots_ini_poses = {key:{'robot_id':val['robot_id'],'state':val['state']} for (key,val) in world['robots'].items()}
 print(robots_ini_poses)
 
 
@@ -375,7 +376,7 @@ def on_connect(client, userdata, flags, rc):
     # do the subscriptions here
     for robot_id,_ in world['robots'].items():
         client.subscribe('/'.join([robot_id,cmd_topic]))
-    client.subscribe(request_position_ini_topic)
+        client.subscribe('/'.join([robot_id,request_position_ini_topic]))
     client.subscribe(request_ground_truth_topic)
 
 
@@ -394,8 +395,8 @@ def on_message(client, userdata, message):
     if (len(message.topic.split('/')) == 1):
         if message.topic == request_ground_truth_topic:
             client.publish(ground_truth_topic, json.dumps(world))
-        elif message.topic == request_position_ini_topic:
-            client.publish(position_ini_topic, json.dumps(robots_ini_poses))
+        # elif message.topic == request_position_ini_topic:
+        #     client.publish(position_ini_topic, json.dumps(robots_ini_poses))
         else:
             print('No callback for topic : '+ message.topic)
             raise NotImplementedError
@@ -405,8 +406,8 @@ def on_message(client, userdata, message):
             cmd_vel_callback(client, msg)
         elif topic_suffix == request_ground_truth_topic:
             client.publish('/'.join([robot_id,ground_truth_topic]), json.dumps(world['robot_id']))
-        # elif topic_suffix == request_position_ini_topic:
-        #     client.publish(position_ini_topic, json.dumps(robots_ini_poses))
+        elif topic_suffix == request_position_ini_topic:
+            client.publish('/'.join([robot_id,position_ini_topic]), json.dumps(robots_ini_poses[robot_id]))
         else:
             print('No callback for topic : '+ message.topic)
             raise NotImplementedError

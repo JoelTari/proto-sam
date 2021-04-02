@@ -13,9 +13,11 @@ windows:
     panes:
       - ./simulation.py
       - ./front_end.py r1
+      - ./slam_dataviz_manager.py r1
       - ./front_end.py r2
+      - ./slam_dataviz_manager.py r2
       - ./front_end.py r3
-      - cd viz2 && live-server --browser=google-chrome
+      - ./slam_dataviz_manager.py r3
   - window_name: MQTT_1
     layout: tiled
     panes:
@@ -33,7 +35,7 @@ windows:
   - window_name: PG
     layout: tiled
     panes:
-      -
+      - cd viz2 && live-server --browser=google-chrome
       - shell_command:
         - echo 'hello'
         focus: true

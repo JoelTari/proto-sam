@@ -20,7 +20,7 @@ if __name__ == '__main__':
     cmd_feedback_topic = '/'.join([robot_id,'cmd_feedback']) 
 #outputs (pubs)
     measures_topic = '/'.join([robot_id,'measures']) 
-    odom_topic ='/'.join([robot_id,'odom']) 
+    odom_topic ='/'.join([robot_id,'relative_odom']) 
 
 # aggr_state
     g_aggr_state = np.zeros([3,1])
