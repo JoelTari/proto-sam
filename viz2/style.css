@@ -138,17 +138,17 @@ svg {
   stroke: black;
 }
 ellipse.odom_covariance {
-  stroke-width: 0.15;
-  stroke-opacity: 0.25;
-  stroke: grey;
+  stroke-width: 0.08;
+  /* stroke-opacity: 0.85; */
+  stroke: black;
   fill: none;
   stroke-dasharray: 0.5;
 }
 
 polyline.odom_history {
   fill: none;
-  stroke: silver;
-  stroke-width: 0.2;
+  stroke: black;
+  stroke-width: 0.04;
   stroke-dasharray: 0.45;
   stroke-opacity: 0.7;
 }

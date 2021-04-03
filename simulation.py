@@ -26,7 +26,7 @@ world = {
         },
         'r2':{
             "robot_id": "r2",
-            "state": {"x": 53, "y": 16.1, "th": -150*math.pi/180},
+            "state": {"x": 96, "y": 56.1, "th": -150*math.pi/180},
             "sensor": {"range": 12, "angle_coverage": 0.167}
             },
         'r3':{
@@ -78,7 +78,7 @@ cmd_std_dev_ratio_x = 45.0/100
 
 # noise cmd (diag, DD)
 # 0 -> no noise
-cmd_std_dev_ratio_v = 10.0/100
+cmd_std_dev_ratio_v = 25.0/100
 cmd_std_dev_ratio_w = 19.0/100
 
 # meas noise (diag)
@@ -146,10 +146,12 @@ def noisify_cmd_DD(cmd: dict):
     v =cmd['linear']
     w=cmd['angular']
     exact_cmd_vec = np.array([[v,w]]).T;
-    alpha1 = cmd_std_dev_ratio_v**2
-    alpha2 = cmd_std_dev_ratio_w**2
+    alpha1 = 0.041
+    alpha2 = 0.0002
+    alpha3 = 0.00002
+    alpha4 = 0.065
     dt=1
-    cov = np.diag([alpha1*v**2,alpha2*w**2]) + np.square(np.diag([1e-3,1e-5]))
+    cov = np.diag([alpha1*v**2+alpha2*w**2,alpha3*v**2+alpha4*w**2])# + np.square(np.diag([1e-3,1e-5]))
 
     # the process noise covariance must be translate in state space noise
     return \
@@ -260,12 +262,17 @@ def generate_covariance_noise(exact_vect: np.ndarray
 #     #       In that case, apply the recursive linearized filter, which the update part of the traditional EKF SLAM in 2.5d
 
 # ----------------------------------------------------------------------------
-#                        User defined callback funtions
+#                        User defined callback functions
 # ----------------------------------------------------------------------------
 
 # currently the exact cmd
 def apply_cmd_to_ground_truth_AA(cmd:dict, cur_state:dict) -> dict:
-    return {'x': cur_state['x']+cmd['x'],'y': cur_state['y']+cmd['y'],'th': cur_state['th']}
+    # return {'x': cur_state['x']+cmd['x'],'y': cur_state['y']+cmd['y'],'th': cur_state['th']}
+    th=cur_state['th']
+    dt=1
+    return { 'x': cur_state['x'] + cmd['x']*dt*math.cos(th) - cmd['y']*dt*math.sin(th)
+            ,'y': cur_state['y'] + cmd['x']*dt*math.sin(th) + cmd['y']*dt*math.cos(th)
+            , 'th': cur_state['th']}
 
 def apply_cmd_to_ground_truth_DD(cmd:dict, cur_state:dict) -> dict:
     v = cmd['linear']

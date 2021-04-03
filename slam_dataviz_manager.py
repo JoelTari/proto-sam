@@ -9,6 +9,7 @@ import math
 import random as rd
 import numpy.random as nprd
 import sys
+import time
 
 reference_pose = {'x':0,'y':0,'th':0}
 
@@ -123,6 +124,7 @@ if __name__ == '__main__':
         client.subscribe(position_ini_topic)
         client.subscribe(odom_topic_in)
         # TODO graph topic
+        time.sleep(1)
         client.publish(request_position_ini_topic)
 
 
@@ -142,17 +144,29 @@ if __name__ == '__main__':
             print('relative odom received')
             odom = copy.deepcopy(msg)
             # relative
+            # print('__________________')
+            # print(f"(Before) angle from visual: {odom['visual_covariance']['rot']}")
+            # print(f"(Before) angle from mat: {getVisualFromCovMatrix(np.array(odom['covariance']).reshape(3,3))['rot']}")
+            # print('__________________')
             x = msg['state']['x']
             y = msg['state']['y']
             th = msg['state']['th']
             xref = reference_pose['x']
             yref = reference_pose['y']
             thref = reference_pose['th']
+            # co, si = math.cos(thref), math.sin(thref)
+            # R = np.array([[co, -(si),xref],[co,si,yref],[0,0,1]])
             odom['state']['x'] = x*math.cos(thref) - y*math.sin(thref)+ xref
             odom['state']['y'] = x*math.sin(thref) + y*math.cos(thref)+ yref
             odom['state']['th'] = ecpi(odom['state']['th']+thref)
             # visual cov
+            odom['visual_covariance']=getVisualFromCovMatrix(np.array(odom['covariance']).reshape(3,3)[0:2,0:2])
             odom['visual_covariance']['rot'] = ecpi(odom['visual_covariance']['rot']+thref)
+            # print('__________________')
+            # print('(After) 2 method to add')
+            # print(f"Odom visual (add angles): {odom['visual_covariance']['rot']}")
+            # print(f"Odom visual (mat R*Cov*R.T): {getVisualFromCovMatrix(R@np.array(odom['covariance']).reshape(3,3)@R.T)['rot']}")
+            # print('__________________')
             client.publish(odom_topic_out, json.dumps(odom) )
             # reset the aggregate (TODO)
             # reset_aggr()

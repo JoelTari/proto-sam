@@ -45,7 +45,7 @@ if __name__ == '__main__':
         sth_n = math.sin(th+w*dt)          # sin(theta_new)
         cth = math.cos(th)
         cth_n = math.cos(th+w*dt)
-        if (math.fabs(w) > 1e-4 and math.fabs(v/w) < 1e+4):
+        if (math.fabs(w) > 1e-6 and math.fabs(v/w) < 1e+6):
             # V
             V = np.array([[(sth_n-sth)/w, v*(sth-sth_n)/w**2+ v*cth_n*dt/w]
                         , [(cth-cth_n)/w,-v*(cth-cth_n)/w**2+ v*sth_n*dt/w]
@@ -91,7 +91,9 @@ if __name__ == '__main__':
 
         # Update step of the odom covariance
         global g_aggr_cov
-        g_aggr_cov = G@g_aggr_cov@G.T + R
+        tmp = copy.deepcopy(g_aggr_cov)
+        g_aggr_cov = G@tmp@G.T + R
+        # g_aggr_cov = G@g_aggr_cov@G.T + R
         g_aggr_state += dstate_vec
         g_aggr_state[2,0] = ecpi(g_aggr_state[2,0])
 
@@ -149,7 +151,7 @@ if __name__ == '__main__':
                     ,'covariance': g_aggr_cov.reshape(9,).tolist()
                     }
             # I add another field, with sigmas and angle to make things easier in JS
-            odom['visual_covariance'] = getVisualFromCovMatrix(g_aggr_cov[0:2,0:2])
+            # odom['visual_covariance'] = getVisualFromCovMatrix(g_aggr_cov[0:2,0:2])
             client.publish(odom_topic, json.dumps(odom) )
             # reset the aggregate (TODO)
             # reset_aggr()

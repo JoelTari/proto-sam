@@ -344,7 +344,7 @@ elBody.on("keydown", (e) => {
 
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
 
-  inputCmdModel = "DD"; // TODO: centralize in globalUI
+  inputCmdModel = "AA"; // TODO: centralize in globalUI
   const cmdObj = inputToMove(inputCmdModel);
 
   client.publish(
@@ -445,10 +445,10 @@ function inputToMove(model) {
       // if contradictory order(s)
       // nothing to do
     } else {
-      dx += speed * right;
-      dx -= speed * left;
-      dy += speed * up;
-      dy -= speed * down;
+      dy -= speed * right;
+      dy += speed * left;
+      dx += speed * up;
+      dx -= speed * down;
     }
     return { x: dx, y: dy };
   } else if (model === "DD") {
