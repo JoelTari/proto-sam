@@ -344,7 +344,7 @@ elBody.on("keydown", (e) => {
 
   if (!keyPressedBuffer[e.key]) keyPressedBuffer[e.key] = true;
 
-  inputCmdModel = "AA"; // TODO: centralize in globalUI
+  inputCmdModel = "DD"; // TODO: centralize in globalUI
   const cmdObj = inputToMove(inputCmdModel);
 
   client.publish(

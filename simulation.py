@@ -146,7 +146,7 @@ def noisify_cmd_DD(cmd: dict):
     v =cmd['linear']
     w=cmd['angular']
     exact_cmd_vec = np.array([[v,w]]).T;
-    alpha1 = 0.041
+    alpha1 = 0.051
     alpha2 = 0.0002
     alpha3 = 0.00002
     alpha4 = 0.065
@@ -156,7 +156,7 @@ def noisify_cmd_DD(cmd: dict):
     # the process noise covariance must be translate in state space noise
     return \
             exact_cmd_vec + rng.multivariate_normal(np.zeros(2), cov).reshape(2, 1) \
-            , cov
+            , cov*1.2 # TODO coef
 
 
 
@@ -266,17 +266,21 @@ def generate_covariance_noise(exact_vect: np.ndarray
 # ----------------------------------------------------------------------------
 
 # currently the exact cmd
-def apply_cmd_to_ground_truth_AA(cmd:dict, cur_state:dict) -> dict:
+def apply_cmd_to_ground_truth_AA(cmd:np.ndarray, cur_state:dict) -> dict:
     # return {'x': cur_state['x']+cmd['x'],'y': cur_state['y']+cmd['y'],'th': cur_state['th']}
+    x=cmd[0,0]
+    y=cmd[1,0]
     th=cur_state['th']
     dt=1
-    return { 'x': cur_state['x'] + cmd['x']*dt*math.cos(th) - cmd['y']*dt*math.sin(th)
-            ,'y': cur_state['y'] + cmd['x']*dt*math.sin(th) + cmd['y']*dt*math.cos(th)
-            , 'th': cur_state['th']}
+    return { 'x': cur_state['x'] + x*dt*math.cos(th) - y*dt*math.sin(th)
+            ,'y': cur_state['y'] + x*dt*math.sin(th) + y*dt*math.cos(th)
+            , 'th': th}
 
-def apply_cmd_to_ground_truth_DD(cmd:dict, cur_state:dict) -> dict:
-    v = cmd['linear']
-    w = cmd['angular']
+def apply_cmd_to_ground_truth_DD(cmd:np.ndarray, cur_state:dict) -> dict:
+    # v = cmd['linear']
+    # w = cmd['angular']
+    v = cmd[0,0]
+    w = cmd[1,0]
     dt=1
     th=cur_state['th']
     return { 'x': cur_state['x'] + v*math.cos(th)*dt
@@ -304,17 +308,19 @@ def cmd_vel_callback(client, msg):
     global last_pose
     #
     if (cmd_type == 'AA'):
+        cmd_vel_vec = np.array([[cmd_vel['x'],cmd_vel['y']]]).T
         # 1/ noisify the order and update cumulative odom cov
         noisy_cmd, cov_cmd = noisify_cmd_AA(cmd_vel)
         # 2/ update robot pos in the world (ground truth)
         world['robots'][robot_id]['state'] = \
-                apply_cmd_to_ground_truth_AA(cmd_vel,current_robot_pos)
+                apply_cmd_to_ground_truth_AA(noisy_cmd,current_robot_pos)
     elif (received_cmd['type']=='DD'):
+        cmd_vel_vec = np.array([[cmd_vel['linear'],cmd_vel['angular']]]).T
         # 1/ noisify the order and update cumulative odom cov
         noisy_cmd, cov_cmd = noisify_cmd_DD(received_cmd['cmd_vel'])
         # 2/ update robot pos in the world (ground truth)
         world['robots'][robot_id]['state'] = \
-                apply_cmd_to_ground_truth_DD(cmd_vel,current_robot_pos)
+                apply_cmd_to_ground_truth_DD(noisy_cmd,current_robot_pos)
     else:
         print('I don''t support that type of cmd yet')
         raise NotImplementedError
@@ -324,7 +330,7 @@ def cmd_vel_callback(client, msg):
     feedback_vel = \
             {
                 'type': received_cmd['type'],
-                'cmd': noisy_cmd.reshape(2,).tolist(),
+                'cmd': cmd_vel_vec.reshape(2,).tolist(),
                 'cmd_cov': cov_cmd.reshape(4,).tolist()
             }
     # 4/ publish ground truth
