@@ -126,8 +126,8 @@ if __name__ == '__main__':
 
 
     def on_message(client, userdata, message):
-        print("Received message '" + str(message.payload) + "' on topic '"
-              + message.topic + "' with QoS " + str(message.qos) + "'\n")
+        # print("Received message '" + str(message.payload) + "' on topic '"
+        #       + message.topic + "' with QoS " + str(message.qos) + "'\n")
 
         # decode payload as string, and transform as JSON
         msg = json.loads(message.payload.decode('utf-8'))
@@ -136,6 +136,7 @@ if __name__ == '__main__':
             data = msg['feedback_vel']
             cmd_feedback = np.array([data['cmd']]).T
             cmd_feedback_cov = np.array([data['cmd_cov']]).reshape(2,2)
+            print(f'\n[FrontEnd::{robot_id}] R {cmd_feedback_topic} :\n {data}')
             if (data['type'] == 'AA'):
                 process_cmd_feedback_AA(cmd_feedback,cmd_feedback_cov)
             elif (data['type'] == 'DD'):

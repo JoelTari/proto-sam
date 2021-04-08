@@ -296,7 +296,7 @@ def get_robot_index_in_world(world: dict,robot_id: str):
     return next(g)
 
 def cmd_vel_callback(client, msg):
-    print('cmd')
+    # print('cmd')
     # 0a/ prepare variables from the message
     received_cmd = json.loads(msg)
     robot_id = received_cmd['robot_id']
@@ -398,8 +398,8 @@ def on_disconnect(client, userdata, flags, rc=0):
 
 
 def on_message(client, userdata, message):
-    print("Received message '" + str(message.payload) + "' on topic '"
-          + message.topic + "' with QoS " + str(message.qos) + "'\n")
+    # print("Received message '" + str(message.payload) + "' on topic '"
+    #       + message.topic + "' with QoS " + str(message.qos) + "'\n")
 
     # decode payload as string
     msg = message.payload.decode('utf-8')
@@ -408,6 +408,7 @@ def on_message(client, userdata, message):
     if (len(message.topic.split('/')) == 1):
         if message.topic == request_ground_truth_topic:
             client.publish(ground_truth_topic, json.dumps(world))
+            print(f'[SimuPy] R {ground_truth_topic}')
         # elif message.topic == request_position_ini_topic:
         #     client.publish(position_ini_topic, json.dumps(robots_ini_poses))
         else:
@@ -417,10 +418,13 @@ def on_message(client, userdata, message):
         robot_id, topic_suffix = message.topic.split('/')
         if topic_suffix == cmd_topic:
             cmd_vel_callback(client, msg)
+            print(f'\n[SimuPy::{robot_id}] R {cmd_feedback_topic}:\n {msg}')
         elif topic_suffix == request_ground_truth_topic:
             client.publish('/'.join([robot_id,ground_truth_topic]), json.dumps(world['robot_id']))
+            print(f'\n[SimuPy::{robot_id}] R {ground_truth_topic}:\n {msg}')
         elif topic_suffix == request_position_ini_topic:
             client.publish('/'.join([robot_id,position_ini_topic]), json.dumps(robots_ini_poses[robot_id]))
+            print(f'\n[SimuPy::{robot_id}] R {request_position_ini_topic}:\n {msg}')
         else:
             print('No callback for topic : '+ message.topic)
             raise NotImplementedError

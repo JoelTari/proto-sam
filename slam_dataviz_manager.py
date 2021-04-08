@@ -133,16 +133,16 @@ if __name__ == '__main__':
 
 
     def on_message(client, userdata, message):
-        print("Received message '" + str(message.payload) + "' on topic '"
-              + message.topic + "' with QoS " + str(message.qos) + "'\n")
+        # print("Received message '" + str(message.payload) + "' on topic '"
+        #       + message.topic + "' with QoS " + str(message.qos) + "'\n")
 
         global reference_pose
         # decode payload as string, and transform as JSON
         msg = json.loads(message.payload.decode('utf-8'))
         # depending on the topic, disptach to the user defined functions
         if (message.topic == odom_topic_in):
-            print('relative odom received')
             odom = copy.deepcopy(msg)
+            print(f'\n[SlamDataVizManager::{robot_id}] R {odom_topic_in} :\n {odom}')
             # relative
             # print('__________________')
             # print(f"(Before) angle from visual: {odom['visual_covariance']['rot']}")
@@ -171,7 +171,7 @@ if __name__ == '__main__':
             # reset the aggregate (TODO)
             # reset_aggr()
         elif (message.topic == position_ini_topic):
-            print('Received position ini')
+            print(f'\n[SlamDataVizManager::{robot_id}] R {position_ini_topic} :\n {msg}')
             reference_pose = msg['state']
             # TODO : remove once back end is integrated
 
