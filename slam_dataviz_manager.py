@@ -143,11 +143,6 @@ if __name__ == '__main__':
         if (message.topic == odom_topic_in):
             odom = copy.deepcopy(msg)
             print(f'\n[SlamDataVizManager::{robot_id}] R {odom_topic_in} :\n {odom}')
-            # relative
-            # print('__________________')
-            # print(f"(Before) angle from visual: {odom['visual_covariance']['rot']}")
-            # print(f"(Before) angle from mat: {getVisualFromCovMatrix(np.array(odom['covariance']).reshape(3,3))['rot']}")
-            # print('__________________')
             x = msg['state']['x']
             y = msg['state']['y']
             th = msg['state']['th']
@@ -162,11 +157,6 @@ if __name__ == '__main__':
             # visual cov
             odom['visual_covariance']=getVisualFromCovMatrix(np.array(odom['covariance']).reshape(3,3)[0:2,0:2])
             odom['visual_covariance']['rot'] = ecpi(odom['visual_covariance']['rot']+thref)
-            # print('__________________')
-            # print('(After) 2 method to add')
-            # print(f"Odom visual (add angles): {odom['visual_covariance']['rot']}")
-            # print(f"Odom visual (mat R*Cov*R.T): {getVisualFromCovMatrix(R@np.array(odom['covariance']).reshape(3,3)@R.T)['rot']}")
-            # print('__________________')
             client.publish(odom_topic_out, json.dumps(odom) )
             # reset the aggregate (TODO)
             # reset_aggr()
@@ -179,8 +169,8 @@ if __name__ == '__main__':
         eVa,eVec = np.linalg.eig(cov)
         R = eVec
         angle = math.atan2(R[1,0],R[0,0])
-        sigmax=eVa[0]
-        sigmay=eVa[1]
+        sigmax=math.sqrt(eVa[0])
+        sigmay=math.sqrt(eVa[1])
         return { 'sigma': [sigmax, sigmay], 'rot': angle }
 
     print("This is the SLAM data visualization manager for : ", robot_id)

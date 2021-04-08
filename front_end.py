@@ -46,6 +46,7 @@ if __name__ == '__main__':
         cth = math.cos(th)
         cth_n = math.cos(th+w*dt)
         if (math.fabs(w) > 1e-6 and math.fabs(v/w) < 1e+6):
+            print(f'\n[FrontEnd::{robot_id}] DD: Precise model')
             # V
             V = np.array([[(sth_n-sth)/w, v*(sth-sth_n)/w**2+ v*cth_n*dt/w]
                         , [(cth-cth_n)/w,-v*(cth-cth_n)/w**2+ v*sth_n*dt/w]
@@ -59,6 +60,7 @@ if __name__ == '__main__':
                                    ,v/w*(cth - cth_n)
                                    ,    w*dt]]).T
         else : # euler
+            print(f'\n[FrontEnd::{robot_id}] DD: Euler simpler model')
             # V
             V = np.array([[cth*dt, 0]
                          ,[sth*dt, 0]
@@ -93,7 +95,7 @@ if __name__ == '__main__':
         global g_aggr_cov
         tmp = copy.deepcopy(g_aggr_cov)
         g_aggr_cov = G@tmp@G.T + R
-        # g_aggr_cov = G@g_aggr_cov@G.T + R
+        # g_aggr_cov = G@g_aggr_cov@G.T + R  # TODO: check if impacting
         g_aggr_state += dstate_vec
         g_aggr_state[2,0] = ecpi(g_aggr_state[2,0])
 
@@ -161,8 +163,8 @@ if __name__ == '__main__':
         eVa,eVec = np.linalg.eig(cov)
         R = eVec
         angle = math.atan2(R[1,0],R[0,0])
-        sigmax=eVa[0]
-        sigmay=eVa[1]
+        sigmax=math.sqrt(eVa[0])
+        sigmay=math.sqrt(eVa[1])
         return { 'sigma': [sigmax, sigmay], 'rot': angle }
 
     print("This is the estimation front end for robot : ", robot_id)

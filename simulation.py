@@ -73,13 +73,13 @@ rng = nprd.default_rng()
 
 # noise cmd (diag)
 # 0 -> no noise
-cmd_std_dev_ratio_y = 45.0/100
-cmd_std_dev_ratio_x = 45.0/100
+cmd_std_dev_ratio_y = 5.0/100
+cmd_std_dev_ratio_x = 5.0/100
 
 # noise cmd (diag, DD)
 # 0 -> no noise
-cmd_std_dev_ratio_v = 25.0/100
-cmd_std_dev_ratio_w = 19.0/100
+# cmd_std_dev_ratio_v = 5.0/100
+# cmd_std_dev_ratio_w = 9.0/100
 
 # meas noise (diag)
 # 0 -> no noise
@@ -92,7 +92,7 @@ measure_std_dev_ratio_y = 2.0/100
 # Once the distance threshold is reached, this object is consummed and reset
 # in order to construct the odometry measurement.
 # It evolved like the variance of a random walk.
-cumulative_odom_cov = np.zeros([2, 2])
+# cumulative_odom_cov = np.zeros([2, 2])
 
 # some mqtt related globals
 broker = 'localhost'
@@ -132,31 +132,34 @@ def ecpi(a):
     return math.atan2(math.sin(a),math.cos(a))
 
 
-def noisify_cmd_AA(cmd: dict):
-    cmd_array = [cmd['x'],cmd['y']];
-    exact_cmd = np.array([cmd_array]).T
-    print(f'exact_cmd is of shape {exact_cmd.shape}')
+def noisify_cmd_AA(exact_cmd: np.ndarray):
+    # cmd_array = [cmd['x'],cmd['y']];
+    # exact_cmd = np.array([cmd_array]).T
+    # print(f'exact_cmd is of shape {exact_cmd.shape}')
     # compute the covariance that will generate the noise
     cov = generate_covariance_noise(
         exact_cmd, [cmd_std_dev_ratio_x, cmd_std_dev_ratio_y])
     # generate the random measure with additive noise
-    return exact_cmd + rng.multivariate_normal(np.zeros(2), cov).reshape(2, 1), cov
+    return rng.multivariate_normal(exact_cmd.reshape(2,), cov).reshape(2, 1), cov
 
-def noisify_cmd_DD(cmd: dict):
-    v =cmd['linear']
-    w=cmd['angular']
-    exact_cmd_vec = np.array([[v,w]]).T;
-    alpha1 = 0.051
-    alpha2 = 0.0002
-    alpha3 = 0.00002
-    alpha4 = 0.065
+def noisify_cmd_DD(exact_cmd_vec: np.ndarray):
+    v=exact_cmd_vec[0,0]
+    w=exact_cmd_vec[1,0]
+    # exact_cmd_vec = np.array([[v,w]]).T;
+    alpha1 = 0.0029 #-> 5% sigma on v
+    # alpha2 = 0.0002 #-> 1.4% sigma of w on v
+    # alpha3 = 0.00002#-> 0.44% sigma of v on w
+    alpha4 = 0.00003 #-> 5% sigma on v
+    alpha2=0.00002
+    alpha3=0.00002
     dt=1
-    cov = np.diag([alpha1*v**2+alpha2*w**2,alpha3*v**2+alpha4*w**2])# + np.square(np.diag([1e-3,1e-5]))
+    cov = np.diag([alpha1*v**2+alpha2*w**2
+                    ,alpha3*v**2+alpha4*w**2])# + np.square(np.diag([1e-3,1e-5]))
 
     # the process noise covariance must be translate in state space noise
     return \
-            exact_cmd_vec + rng.multivariate_normal(np.zeros(2), cov).reshape(2, 1) \
-            , cov*1.2 # TODO coef
+             rng.multivariate_normal(exact_cmd_vec.reshape(2,), cov).reshape(2, 1) \
+            , cov#*1.2 # TODO coef
 
 
 
@@ -193,26 +196,26 @@ def measure_robot_landmark(robotstate: dict, landmark: dict) -> dict:
 #      
 
 
-def generate_odom_measurement(current_pose: dict, last_pose: dict):
-    global cumulative_odom_cov
-    # exact odometry measurement
-    exact_odom_mes = np.array(
-        [[dx(last_pose, current_pose), dy(last_pose, current_pose)]])
+# def generate_odom_measurement(current_pose: dict, last_pose: dict):
+#     global cumulative_odom_cov
+#     # exact odometry measurement
+#     exact_odom_mes = np.array(
+#         [[dx(last_pose, current_pose), dy(last_pose, current_pose)]])
 
-    # TODO change when its 3x3 with theta
-    # generate the noisy odometry according to the cumulative noise
-    vect_odom_mes = exact_odom_mes + \
-        rng.multivariate_normal(np.zeros(2), cumulative_odom_cov)
+#     # TODO change when its 3x3 with theta
+#     # generate the noisy odometry according to the cumulative noise
+#     vect_odom_mes = exact_odom_mes + \
+#         rng.multivariate_normal(np.zeros(2), cumulative_odom_cov)
 
-    full_odom_mes = {'type': 'AAOdom',        # AA means axis-aligned
-                     'vect': vect_odom_mes.reshape(2,).tolist(),
-                     'covariance': cumulative_odom_cov.reshape(4,).tolist()
-                     }
+#     full_odom_mes = {'type': 'AAOdom',        # AA means axis-aligned
+#                      'vect': vect_odom_mes.reshape(2,).tolist(),
+#                      'covariance': cumulative_odom_cov.reshape(4,).tolist()
+#                      }
 
-    # reset cumulative_cov value until next time
-    cumulative_odom_cov = np.zeros([2, 2])
+#     # reset cumulative_cov value until next time
+#     cumulative_odom_cov = np.zeros([2, 2])
 
-    return full_odom_mes
+#     return full_odom_mes
 
 
 def in_sensor_coverage(sensorPos: dict, target: dict, sensor_info: dict) -> bool:
@@ -308,16 +311,27 @@ def cmd_vel_callback(client, msg):
     global last_pose
     #
     if (cmd_type == 'AA'):
-        cmd_vel_vec = np.array([[cmd_vel['x'],cmd_vel['y']]]).T
+        cmd_vel_vec = np.array([[cmd_vel['x'],cmd_vel['y']]]).T*1.0 # cast as float
         # 1/ noisify the order and update cumulative odom cov
-        noisy_cmd, cov_cmd = noisify_cmd_AA(cmd_vel)
+        # hundred fold to make it easy on the covariance calculations
+        cmd_vel_vec*=100
+        noisy_cmd, cov_cmd = noisify_cmd_AA(cmd_vel_vec)
+        cmd_vel_vec/=100
+        noisy_cmd/=100
+        cov_cmd/=100
         # 2/ update robot pos in the world (ground truth)
         world['robots'][robot_id]['state'] = \
                 apply_cmd_to_ground_truth_AA(noisy_cmd,current_robot_pos)
     elif (received_cmd['type']=='DD'):
-        cmd_vel_vec = np.array([[cmd_vel['linear'],cmd_vel['angular']]]).T
+        cmd_vel_vec = np.array([[cmd_vel['linear']
+                                ,cmd_vel['angular']]]).T*1.0 #float-cast
         # 1/ noisify the order and update cumulative odom cov
-        noisy_cmd, cov_cmd = noisify_cmd_DD(received_cmd['cmd_vel'])
+        # hundred fold to make it easy on the covariance calculations
+        cmd_vel_vec*=100
+        noisy_cmd, cov_cmd = noisify_cmd_DD(cmd_vel_vec)
+        cmd_vel_vec/=100
+        noisy_cmd/=100
+        cov_cmd/=100
         # 2/ update robot pos in the world (ground truth)
         world['robots'][robot_id]['state'] = \
                 apply_cmd_to_ground_truth_DD(noisy_cmd,current_robot_pos)
