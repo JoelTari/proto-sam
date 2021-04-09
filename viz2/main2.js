@@ -131,6 +131,8 @@ class AgentViz {
     );
     // d3 : create the odom structure
     this.d3Odom = constructD3Odom(this.d3container,this.id);
+    // d3: create the measure visualization structure
+    this.d3MeasuresViz = constructD3MeasuresViz(this.d3container, this.id);
     this.constructMqtt();
   }
   constructMqtt = function () {
@@ -214,6 +216,40 @@ class AgentViz {
         .attr('points',odom_history.map((e) => `${e.x},${e.y}`).join(" "));
     }
   }
+  transcientMeasureVisual = function(state, measure_set){
+    const measures_data = measure_set.map(e => { 
+                                        return {r:e.vect[1], a:e.vect[0], type: e.type}
+                                        })
+    console.log('measures_data')
+    console.log(measures_data)
+    this.d3MeasuresViz
+        .selectAll('line')
+        .data(measures_data)
+        .join('line')
+        .classed('measure_ray',true)
+        .each(function(d){
+          if (d.type === 'range-AA'){
+            d3.select(this)
+              .attr('x1',state.x)
+              .attr('y1',state.y)
+              .attr('x2',d => d.a+state.x)
+              .attr('y2',d => d.r+state.y)
+          }
+          else if (d.type === 'range-bearing'){
+            d3.select(this)
+              .attr('x1',state.x)
+              .attr('y1',state.y)
+              .attr('x2',d => state.x + d.r*Math.cos(d.a+state.th))
+              .attr('y2',d => state.y + d.r*Math.sin(d.a+state.th))
+          }
+          else{ // TODO: bearing 
+            console.error('Unsupported measure type')
+          }
+        })
+        .transition().duration(2000)
+        .style('opacity',0)
+        .remove();
+  }
 
   // add ground_truth data
   registerGroundTruthData = function (state) {
@@ -284,6 +320,7 @@ class AgentViz {
   };
   measuresCallback = function (data) {
     console.log("Receive some measure :" + this.id);
+    this.transcientMeasureVisual(this.current_true_state, data.measures);
   };
   groundTruthCallback = function (data) {
     // console.log("Receive some GT info :" + this.id);
@@ -620,6 +657,14 @@ constructD3Odom = function(d3container, robot_id){
         .append('polyline')
         .classed('odom_history',true)
     })
+}
+
+constructD3MeasuresViz = function(d3container, robot_id){
+  return d3container
+    .append('g')
+    .classed('agent__measuresViz',true)
+    .attr('id',robot_id)
+
 }
 /******************************************************************************
  *                            FOR TESTING PURPOSE 2

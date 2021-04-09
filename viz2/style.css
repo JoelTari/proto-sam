@@ -121,6 +121,13 @@ svg {
 .agent__truth#r3 .sensor {
   fill: #076678;
 }
+
+.measure_ray {
+  stroke: gold;
+  stroke-width: 0.2;
+  opacity: 100%;
+}
+
 /******************************************/
 /*   AGENTS GHOST (estimation)  */
 /******************************************/

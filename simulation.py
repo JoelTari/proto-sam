@@ -186,7 +186,9 @@ def measure_robot_landmark(robotstate: dict, landmark: dict) -> dict:
     # lastly, the np objects are serialized
     return {
              'landmark_id': landmark['landmark_id']
-            , 'type':'range-bearing'
+            , 'type':'range-AA'
+            # , 'type':'bearing'
+            # , 'type':'range-bearing'
             , 'vect': vect.reshape(2,).tolist()
             , 'covariance': cov.reshape(4,).tolist()
            }
