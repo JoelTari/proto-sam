@@ -155,8 +155,11 @@ if __name__ == '__main__':
             odom['state']['y'] = x*math.sin(thref) + y*math.cos(thref)+ yref
             odom['state']['th'] = ecpi(odom['state']['th']+thref)
             # visual cov
-            odom['visual_covariance']=getVisualFromCovMatrix(np.array(odom['covariance']).reshape(3,3)[0:2,0:2])
-            odom['visual_covariance']['rot'] = ecpi(odom['visual_covariance']['rot']+thref)
+            try:
+                odom['visual_covariance']=getVisualFromCovMatrix(np.array(odom['covariance']).reshape(3,3)[0:2,0:2])
+                odom['visual_covariance']['rot'] = ecpi(odom['visual_covariance']['rot']+thref)
+            except ValueError:
+                pass
             client.publish(odom_topic_out, json.dumps(odom) )
             # reset the aggregate (TODO)
             # reset_aggr()

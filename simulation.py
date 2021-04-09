@@ -149,7 +149,7 @@ def noisify_cmd_DD(exact_cmd_vec: np.ndarray):
     alpha1 = 0.0029 #-> 5% sigma on v
     # alpha2 = 0.0002 #-> 1.4% sigma of w on v
     # alpha3 = 0.00002#-> 0.44% sigma of v on w
-    alpha4 = 0.00003 #-> 5% sigma on v
+    alpha4 = 0.00008 #-> 5% sigma on v
     alpha2=0.00002
     alpha3=0.00002
     dt=1
@@ -218,12 +218,15 @@ def measure_robot_landmark(robotstate: dict, landmark: dict) -> dict:
 #     cumulative_odom_cov = np.zeros([2, 2])
 
 #     return full_odom_mes
+def relative_angle(sensorPos: dict, target: dict):
+    angle_world_frame = math.atan2(target['y'] - sensorPos['y']
+                                  ,target['x'] - sensorPos['x'])
+    return ecpi(angle_world_frame-sensorPos['th'])
 
 
 def in_sensor_coverage(sensorPos: dict, target: dict, sensor_info: dict) -> bool:
-    # TODO: add angle coverage
     isInRange = sqrt_dist(sensorPos, target) < sensor_info['range']
-    isAngleCovered = True
+    isAngleCovered = abs(relative_angle(sensorPos,target))/math.pi < sensor_info['angle_coverage']
     return isInRange and isAngleCovered
 
 def generate_transient_odom_covariance_AA(exact_vect: np.ndarray

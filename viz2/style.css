@@ -123,8 +123,8 @@ svg {
 }
 
 .measure_ray {
-  stroke: gold;
-  stroke-width: 0.2;
+  stroke: darksalmon;
+  stroke-width: 0.35;
   opacity: 100%;
 }
 

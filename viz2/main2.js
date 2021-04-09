@@ -191,7 +191,7 @@ class AgentViz {
     }
   };
   // update visual odom
-  updateVisualOdom = function(odom_history,state,visual_covariance){
+  updateVisualOdom = function(odom_history,state,visual_covariance = null){
     // odom becomes visible
     this.d3Odom.style('visibility',null)
 
@@ -199,11 +199,15 @@ class AgentViz {
       .select('.gtranslate')
       .attr('transform',`translate(${state.x},${state.y})`)
       .call(function(g_tra){
-        g_tra
-          .select('ellipse.odom_covariance')
-          .attr('rx',visual_covariance.sigma[0]*Math.sqrt(9.21))
-          .attr('ry',visual_covariance.sigma[1]*Math.sqrt(9.21))
-          .attr('transform',`rotate(${visual_covariance.rot*180/Math.PI})`)
+        if(visual_covariance !== null) 
+        // covariance could be 0 (impossible to draw, therefore not transmited in the data)
+        {
+          g_tra
+            .select('ellipse.odom_covariance')
+            .attr('rx',visual_covariance.sigma[0]*Math.sqrt(9.21))
+            .attr('ry',visual_covariance.sigma[1]*Math.sqrt(9.21))
+            .attr('transform',`rotate(${visual_covariance.rot*180/Math.PI})`)
+        }
         g_tra
           .select('.grotate')
           .attr('transform',`rotate(${state.th*180/Math.PI})`)
@@ -246,8 +250,18 @@ class AgentViz {
             console.error('Unsupported measure type')
           }
         })
-        .transition().duration(2000)
         .style('opacity',0)
+        .style('stroke-width',0.05)
+        .transition('reveal_mes').duration(400)
+        .style('opacity',null)
+        .style('stroke-width',null)
+        .transition('remove_mes').duration(400)
+        // .attr('x1',(d,i,n) => )
+        // .attr('y1',state.y)
+        // .attr('x2',d => state.x + d.r*Math.cos(d.a+state.th))
+        // .attr('y2',d => state.y + d.r*Math.sin(d.a+state.th))
+        .style('opacity',0)
+        .style('stroke-width',0.05)
         .remove();
   }
 
