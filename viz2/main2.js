@@ -145,7 +145,7 @@ class AgentViz {
       if (!err)
         console.log(`[mqtt] subscribed to the topic >> ${this.id}/graphs`);
     });
-    this.mqttc.subscribe(`${this.id}/measures`, (err) => {
+    this.mqttc.subscribe(`${this.id}/measures_feedback`, (err) => {
       if (!err)
         console.log(`[mqtt] subscribed to the topic >> ${this.id}/measures`);
     });
@@ -222,10 +222,14 @@ class AgentViz {
   }
   transcientMeasureVisual = function(state, measure_set){
     const measures_data = measure_set.map(e => { 
-                                        return {r:e.vect[1], a:e.vect[0], type: e.type}
+                                        if (e.type === 'range-AA'){
+                                          return {x:e.vect[0],y:e.vect[1],type:e.type}
+                                        }
+                                        else if (e.type === 'range-bearing'){
+                                          return {r:e.vect[0], a:e.vect[1], type: e.type}
+                                        }
+                                        else console.error('Unsupported measure type')
                                         })
-    console.log('measures_data')
-    console.log(measures_data)
     this.d3MeasuresViz
         .selectAll('line')
         .data(measures_data)
@@ -236,15 +240,19 @@ class AgentViz {
             d3.select(this)
               .attr('x1',state.x)
               .attr('y1',state.y)
-              .attr('x2',d => d.a+state.x)
-              .attr('y2',d => d.r+state.y)
+              .attr('x2',d => d.x+state.x)
+              .attr('y2',d => d.y+state.y)
           }
           else if (d.type === 'range-bearing'){
+            const x2r = d.r*Math.cos(d.a)
+            const y2r = d.r*Math.sin(d.a)
             d3.select(this)
               .attr('x1',state.x)
               .attr('y1',state.y)
-              .attr('x2',d => state.x + d.r*Math.cos(d.a+state.th))
-              .attr('y2',d => state.y + d.r*Math.sin(d.a+state.th))
+              .attr('x2',d => state.x + d.r*Math.cos(state.th+d.a))
+              .attr('y2',d => state.y + d.r*Math.sin(state.th+d.a))
+              // .attr('x2',d => state.x + x2r*Math.cos(state.th) + y2r*Math.sin(state.th))
+              // .attr('y2',d => state.y - x2r*Math.sin(state.th) + y2r*Math.cos(state.th))
           }
           else{ // TODO: bearing 
             console.error('Unsupported measure type')

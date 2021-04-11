@@ -18,8 +18,9 @@ if __name__ == '__main__':
 
 #inputs (subs)
     cmd_feedback_topic = '/'.join([robot_id,'cmd_feedback']) 
+    synchronized_measures_feedback_topic = '/'.join([robot_id,'measures_feedback']) 
 #outputs (pubs)
-    measures_topic = '/'.join([robot_id,'measures']) 
+    synchronized_measures_pose_topic = '/'.join([robot_id,'measures_pose']) 
     odom_topic ='/'.join([robot_id,'relative_odom']) 
 
 # aggr_state
@@ -121,6 +122,7 @@ if __name__ == '__main__':
             print('connection error. code :', rc)
         # do the subscriptions here
         client.subscribe(cmd_feedback_topic)
+        client.subscribe(synchronized_measures_feedback_topic)
 
 
     def on_disconnect(client, userdata, flags, rc=0):
@@ -156,8 +158,34 @@ if __name__ == '__main__':
             # I add another field, with sigmas and angle to make things easier in JS
             # odom['visual_covariance'] = getVisualFromCovMatrix(g_aggr_cov[0:2,0:2])
             client.publish(odom_topic, json.dumps(odom) )
+        elif (message.topic == synchronized_measures_feedback_topic) \
+                and (msg['robot_id'] == robot_id):
+            # The measures have been synchronized upstream with one feedback 
+            # The feedback must be treated as 
+            data = msg['feedback_vel']
+            cmd_feedback = np.array([data['cmd']]).T
+            cmd_feedback_cov = np.array([data['cmd_cov']]).reshape(2,2)
+            print(f'\n[FrontEnd::{robot_id}] R {cmd_feedback_topic} :\n {data}')
+            if (data['type'] == 'AA'):
+                process_cmd_feedback_AA(cmd_feedback,cmd_feedback_cov)
+            elif (data['type'] == 'DD'):
+                process_cmd_feedback_DD(cmd_feedback,cmd_feedback_cov)
+            else:
+                raise NotImplementedError
+            # fill in the output msg
+            odom = {
+                     'type':data['type']
+                    ,'state':{'x':g_aggr_state[0,0],'y':g_aggr_state[1,0]
+                                ,'th':g_aggr_state[2,0]}
+                    ,'covariance': g_aggr_cov.reshape(9,).tolist()
+                    }
+            msg.pop('feedback_vel')
+            msg['odom']=odom
+            client.publish(synchronized_measures_pose_topic,json.dumps(msg))
             # reset the aggregate (TODO)
             # reset_aggr()
+            
+
 
     def getVisualFromCovMatrix(cov : np.ndarray) -> dict:
         eVa,eVec = np.linalg.eig(cov)

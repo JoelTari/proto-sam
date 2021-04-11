@@ -22,17 +22,17 @@ world = {
         "robot_id": "r1",
         "state": {"x": 0, "y": 0, "th": 0*math.pi/180},
         # "state": {"x": 5, "y": 6.1, "th": 30*math.pi/180},
-        "sensor": {"range": 12, "angle_coverage": 0.75}
+        "sensor": {"range": 12, "angle_coverage": 0.75, 'type':'range-AA'}
         },
         'r2':{
             "robot_id": "r2",
             "state": {"x": 96, "y": 56.1, "th": -150*math.pi/180},
-            "sensor": {"range": 12, "angle_coverage": 0.167}
+            "sensor": {"range": 12, "angle_coverage": 0.167, 'type':'range-bearing'}
             },
         'r3':{
             "robot_id": "r3",
             "state": {"x": 25, "y": 56.1, "th": 100*math.pi/180},
-            "sensor": {"range": 12, "angle_coverage": 0.5}
+            "sensor": {"range": 12, "angle_coverage": 0.5, 'type':'range-bearing'}
             },
         },
     "landmarks":
@@ -65,7 +65,7 @@ print(robots_ini_poses)
 # last referenced pose to decide when to generate a new odometry measurement
 last_pose = copy.deepcopy(world['robots'])
 
-new_pose_distance_threshold = 10
+new_pose_distance_threshold = 1
 
 # seeding randomness (for the numpy stuff)
 # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
@@ -85,8 +85,8 @@ cmd_std_dev_ratio_x = 5.0/100
 # 0 -> no noise
 # lets say a std dev of 3cm for each measured unit on X
 # lets say a std dev of 2cm for each measured meter on Y
-measure_std_dev_ratio_x = 3.0/100
-measure_std_dev_ratio_y = 2.0/100
+measure_std_dev_ratio_x = 8.0/100
+measure_std_dev_ratio_y = 8.0/100
 
 # the cumulative odom store the effect of the accumulation of cmd topics.
 # Once the distance threshold is reached, this object is consummed and reset
@@ -99,7 +99,7 @@ broker = 'localhost'
 
 cmd_topic = 'cmd'
 cmd_feedback_topic = 'cmd_feedback'
-measures_topic = 'measures'
+measures_topic = 'measures_feedback'
 request_ground_truth_topic = 'request_ground_truth'
 ground_truth_topic = 'ground_truth'
 request_position_ini_topic = 'request_position_ini'
@@ -130,6 +130,11 @@ def dy(p_ref: dict, p_target: dict) -> float:
 
 def ecpi(a):
     return math.atan2(math.sin(a),math.cos(a))
+
+def relative_angle(sensorPos: dict, target: dict):
+    angle_world_frame = math.atan2(target['y'] - sensorPos['y']
+                                  ,target['x'] - sensorPos['x'])
+    return ecpi(angle_world_frame-sensorPos['th'])
 
 
 def noisify_cmd_AA(exact_cmd: np.ndarray):
@@ -163,32 +168,46 @@ def noisify_cmd_DD(exact_cmd_vec: np.ndarray):
 
 
 
-def measure_robot_landmark(robotstate: dict, landmark: dict) -> dict:
+def measure_robot_landmark(robotstate: dict, landmark: dict, sensor_type: str) -> dict:
     xl = landmark['state']['x']
     yl = landmark['state']['y']
     xr = robotstate['x']
     yr = robotstate['y']
     thr = robotstate['th']
 
-    # an exact measurement would be
-    exact_measure = np.array([[xl-xr, yl-yr]]).T
+    if(sensor_type == 'range-AA'):
+        # an exact measurement would be
+        exact_measure = np.array([[xl-xr, yl-yr]]).T
 
-    # compute the covariance that will generate the noise
-    cov = generate_covariance_noise(
-        exact_measure, [measure_std_dev_ratio_x, measure_std_dev_ratio_y])
+        # compute the covariance that will generate the noise
+        cov = generate_covariance_noise(
+            exact_measure, [measure_std_dev_ratio_x, measure_std_dev_ratio_y])
 
-    # generate the random measure with additive noise
-    vect = exact_measure + \
-        rng.multivariate_normal(np.zeros(2), cov).reshape(2, 1)
+        # generate the random measure with additive noise
+        vect = exact_measure + \
+            rng.multivariate_normal(np.zeros(2), cov).reshape(2, 1)
+    elif(sensor_type == 'range-bearing'):
+        # an exact measurement would be [r,alpha]
+        r,alpha = sqrt_dist(landmark['state'],robotstate) \
+                    , relative_angle(robotstate,landmark['state'])
+        exact_measure = np.array([[r,alpha]]).T
+
+        # compute the covariance that will generate the noise
+        cov = np.array([[(r*5./100)**2,0],[0,0.1**2]]);
+
+        # generate the random measure with additive noise
+        vect = exact_measure + \
+            rng.multivariate_normal(np.zeros(2), cov).reshape(2, 1)
+    else: # TODO: bearing
+        raise NotImplementedError
+
     # return the measure and its covariance confidence
     # Important: the covariance returned corresponds to the real noise,
     #            which might be different than in reality
     # lastly, the np objects are serialized
     return {
              'landmark_id': landmark['landmark_id']
-            , 'type':'range-AA'
-            # , 'type':'bearing'
-            # , 'type':'range-bearing'
+            , 'type':sensor_type
             , 'vect': vect.reshape(2,).tolist()
             , 'covariance': cov.reshape(4,).tolist()
            }
@@ -218,11 +237,6 @@ def measure_robot_landmark(robotstate: dict, landmark: dict) -> dict:
 #     cumulative_odom_cov = np.zeros([2, 2])
 
 #     return full_odom_mes
-def relative_angle(sensorPos: dict, target: dict):
-    angle_world_frame = math.atan2(target['y'] - sensorPos['y']
-                                  ,target['x'] - sensorPos['x'])
-    return ecpi(angle_world_frame-sensorPos['th'])
-
 
 def in_sensor_coverage(sensorPos: dict, target: dict, sensor_info: dict) -> bool:
     isInRange = sqrt_dist(sensorPos, target) < sensor_info['range']
@@ -259,7 +273,6 @@ def generate_covariance_noise(exact_vect: np.ndarray
     else:
         cov = cov_AA
     return cov
-
 
 # def integrate_cumulative_odometry(cmd_cov: np.ndarray) -> None:
 #     global cumulative_odom_cov
@@ -365,7 +378,7 @@ def cmd_vel_callback(client, msg):
             }
         client.publish(robot_id+'/'+cmd_feedback_topic
                         , json.dumps(message_payload))
-        return
+        # return
         # 5.2 if yes, generate sensor measurements and publish them with cmd_feedback
     else:
         # 5.2.1 generate robot to landmarks measure
@@ -375,7 +388,7 @@ def cmd_vel_callback(client, msg):
         # comprehension list
         landmarks_measurements = \
         [ 
-            measure_robot_landmark(current_robot_pos, l)
+            measure_robot_landmark(current_robot_pos, l, sensor_info['type'])
             for l in world['landmarks']
             if in_sensor_coverage(current_robot_pos, l['state'], sensor_info)
         ]
