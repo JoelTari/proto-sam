@@ -135,6 +135,9 @@ class AgentViz {
     this.d3Odom = constructD3Odom(this.d3container,this.id);
     // d3: create the measure visualization structure
     this.d3MeasuresViz = constructD3MeasuresViz(this.d3container, this.id);
+    // d3: create the factor graph structure (only 1 FG per robot for now)
+    this.d3FactorGraph = constructD3FactorGraph(this.d3container, this.id)
+    // do the mqtt subscriptions
     this.constructMqtt();
   }
   constructMqtt = function () {
@@ -346,8 +349,23 @@ class AgentViz {
     this.registerOdomData(data);
     this.updateVisualOdom(this.history_odom,data.state,data.visual_covariance);
   };
-  graphsCallback = function (data) {
+  graphsCallback = function (graph) {
     console.log("Receive some graph return :" + this.id);
+    // massage data
+    estimation_data_massage(graph);
+
+    // general update pattern
+    this.d3FactorGraph
+      .select("g.factors_group")
+      .selectAll(".factor")
+      .data( graph.factors, (d) => d.factor_id)
+      .join(join_enter_factor, join_update_factor, join_exit_factor);
+
+    this.d3FactorGraph
+      .select("g.vertices_group")
+      .selectAll(".vertex")
+      .data( graph.marginals, (d) => d.var_id)
+      .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
   };
   measuresCallback = function (data) {
     console.log("Receive some measure :" + this.id);
@@ -697,8 +715,595 @@ constructD3MeasuresViz = function(d3container, robot_id){
     .attr('id',robot_id)
 
 }
+
+constructD3FactorGraph = function(d3container, robot_id){
+  return d3container
+    .append('g')
+    .classed('factor_graph',true)
+    .attr('id',robot_id)
+    .call( function (g_factor_graph){
+      g_factor_graph
+        .append('g')
+        .classed('factors_group',true);
+      g_factor_graph
+        .append('g')
+        .classed('vertices_group',true);
+    })
+}
+
 /******************************************************************************
  *                            FOR TESTING PURPOSE 2
  *****************************************************************************/
 // sending estimation_graph request_position_ini
 client.publish("request_ground_truth", " ");
+
+
+
+/******************************************************************************
+ *                    A  PARTIR D'ICI
+ *****************************************************************************/
+
+// function BS()
+// {
+//   {
+//     estimation = JSON.parse(message.toString());
+
+//     // if I received an object instead of an array of a single object
+//     // transform into an array, but give a warning
+//     estimation = arraytised(estimation);
+
+//     // massage data
+//     estimation.forEach((an_agent_estimation) => {
+//       estimation_data_massage(an_agent_estimation.graph);
+//       estimation_query_last_pose(an_agent_estimation);
+//     });
+//     // console.log(estimation)
+
+//     d_robots_estimates_group = d_robots_estimates_group
+//       .data(estimation, (d) => d.header.robot_id)
+//       .join(
+//         join_enter_robot_estimates,
+//         join_update_robot_estimates,
+//         (exit) => exit // NO REMOVE AT THIS LEVEL !!
+//       )
+//       // branch off: factor_graph and RT_estimate
+//       .each(function (_, _, _) {
+//         // the factor graph first. TODO : hypothesis will be considered first
+//         d3.select(this)
+//           .select("g.factor_graph")
+//           .attr("id", (d) => d.header.robot_id)
+//           // the factor graph branches off as edges and factors
+//           .each(function (_, _, _) {
+//             // d,i,n are the arguments.
+//             // no need to pass d, as the data binds at the upper level data bounds
+//             // are available through the data function
+//             d3.select(this)
+//               .select("g.factors_group")
+//               .selectAll(".factor")
+//               .data(
+//                 function (upper_level_data) {
+//                   return upper_level_data.graph.factors;
+//                 },
+//                 (d) => d.factor_id
+//               )
+//               .join(join_enter_factor, join_update_factor, join_exit_factor);
+
+//             d3.select(this)
+//               .select("g.vertices_group")
+//               .selectAll(".vertex")
+//               .data(
+//                 function (upper_level_data) {
+//                   return upper_level_data.graph.marginals;
+//                 },
+//                 (d) => d.var_id
+//               )
+//               .join(join_enter_vertex, join_update_vertex); // TODO: exit vertex
+//           });
+
+//         // now the RT_estimate, that comprises the rt_ghost & the line to link
+//         // to last pose of the graph
+//         // d3.select(this).select("g.rt_estimate");
+//       });
+//   }
+// }
+
+/******************************************************************************
+ *                          UPDATE PATTERN ROUTINES
+ *                  enter,update,exit of the various d3 selections
+ *****************************************************************************/
+
+function join_enter_robot_estimates(enter) {
+  return (
+    enter
+      .append("g")
+      .classed("robot_estimates", true)
+      .attr("id", (d) => d.header.robot_id)
+      // prepare underlayers the fg group and the rt_estimate group
+      .each(function (d, _, _) {
+        // for each robot
+        // prepare fg group
+        d3.select(this)
+          .append("g")
+          .classed("factor_graph", true)
+          // prepare underlayers: factors_group and vertices_group
+          .each(function (_, _, _) {
+            // for each graph
+            d3.select(this).append("g").classed("factors_group", true);
+            d3.select(this).append("g").classed("vertices_group", true);
+          });
+        // prepare and fill in rt_estimate_group
+        d3.select(this)
+          .append("g")
+          .classed("rt_estimate", true)
+          .attr("id", `${d.header.robot_id}`)
+          .call(function (g_rt_estimate) {
+            const t_ghost_entry = d3.transition("ghost_entry").duration(400);
+            const t_ghost_entry2 = d3
+              .transition("ghost_entry_last_pose_line")
+              .duration(400);
+            // the ghost
+            g_rt_estimate
+              .append("g")
+              .classed("rt_ghost", true)
+              .on("mouseover", mouseover_mg(`${d.header.robot_id}`))
+              .on("mouseout", mouseout_mg())
+              // .attr('id',`${d.header.robot_id}`)
+              .append("g")
+              .attr(
+                "transform",
+                `translate(${d.rt_estimate.state.x}, ${d.rt_estimate.state.y} )`
+              )
+              // the rt ellipse
+              .call(function (g_rt_tra) {
+                g_rt_tra
+                  .append("ellipse")
+                  .classed("rt_covariance_odom", true)
+                  .attr(
+                    "rx",
+                    d.rt_estimate.covariance.sigma[0] * Math.sqrt(9.21)
+                  )
+                  .attr(
+                    "ry",
+                    d.rt_estimate.covariance.sigma[1] * Math.sqrt(9.21)
+                  )
+                  .attr(
+                    "transform",
+                    `rotate(${(d.rt_estimate.covariance.rot * 180) / Math.PI})`
+                  )
+                  .style("opacity", 0) // wow! (see next wow) Nota: doesnt  work with attr()
+                  .transition(t_ghost_entry)
+                  .style("opacity", null); // wow! this will look for the CSS (has to a style)
+              })
+              .append("g")
+              .attr(
+                "transform",
+                (local_d) =>
+                  "rotate(" +
+                  (local_d.rt_estimate.state.th * 180) / Math.PI +
+                  ")"
+              )
+              .call(function (g_rt_ghost) {
+                // 1. the robot
+                g_rt_ghost
+                  .append("polygon")
+                  .attr("points", "0,-1 0,1 3,0")
+                  .style("stroke-opacity", 0)
+                  .transition(t_ghost_entry)
+                  .style("stroke-opacity", null);
+
+                g_rt_ghost
+                  .append("line")
+                  .attr("x1", 0)
+                  .attr("y1", 0)
+                  .attr("x2", 1)
+                  .attr("y2", 0)
+                  .style("stroke-opacity", 0)
+                  .transition(t_ghost_entry)
+                  .style("stroke-opacity", null);
+              });
+            // the line to the last pose
+            g_rt_estimate
+              .append("line")
+              .classed("rt_line_to_last_pose", true)
+              // .attr('id',`${d.header.robot_id}`)
+              .attr("x1", d.rt_estimate.state.x)
+              .attr("y1", d.rt_estimate.state.y)
+              .attr("x2", d.last_pose.state.x)
+              .attr("y2", d.last_pose.state.y)
+              .style("stroke-opacity", 0)
+              .transition(t_ghost_entry2)
+              .style("stroke-opacity", null);
+          });
+      })
+  );
+}
+
+function join_update_robot_estimates(update) {
+  const t_graph_motion = d3
+    .transition("m1")
+    .duration(1000)
+    .ease(d3.easeCubicInOut);
+  const t_graph_motion2 = d3
+    .transition("m2")
+    .duration(1000)
+    .ease(d3.easeCubicInOut);
+
+  return update.each(function (d, _, _) {
+    d3.select(this)
+      .select("g.rt_estimate")
+      .call(function (g_rt_estimate) {
+        // update the rt ghost dasharray-ed drawing
+        g_rt_estimate
+          .select("g.rt_ghost")
+          .select("g")
+          .transition(t_graph_motion)
+          .attr(
+            "transform",
+            `translate(${d.rt_estimate.state.x}, ${d.rt_estimate.state.y} )`
+          )
+          .selection()
+          .call(function (gtranslate) {
+            gtranslate
+              .select("ellipse")
+              .transition(t_graph_motion2)
+              .attr("rx", d.rt_estimate.covariance.sigma[0] * Math.sqrt(9.21))
+              .attr("ry", d.rt_estimate.covariance.sigma[1] * Math.sqrt(9.21))
+              .attr(
+                "transform",
+                `rotate(${(d.rt_estimate.covariance.rot * 180) / Math.PI})`
+              );
+            gtranslate
+              .select("g")
+              .transition(t_graph_motion2)
+              .attr(
+                "transform",
+                (local_d) =>
+                  "rotate(" +
+                  (local_d.rt_estimate.state.th * 180) / Math.PI +
+                  ")"
+              );
+          });
+        // .selection();
+        // update the line to the last pose
+        g_rt_estimate
+          .select("line.rt_line_to_last_pose")
+          .transition(t_graph_motion)
+          .attr("x1", (d) => d.rt_estimate.state.x)
+          .attr("y1", (d) => d.rt_estimate.state.y)
+          .attr("x2", (d) => d.last_pose.state.x)
+          .attr("y2", (d) => d.last_pose.state.y);
+      });
+  });
+}
+
+function join_enter_factor(enter) {
+  // TODO:
+  // Imho best way to avoid to define those transitions everywhere is to
+  // transform those functions in classes of which the transitions are members
+  const t_factor_entry = d3.transition().duration(400);
+  const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+
+  return enter
+    .append("g")
+    .classed("factor", true)
+    .attr("id", (d) => d.factor_id)
+    .each(function (d) {
+      d3.select(this)
+        .append("g")
+        .attr("transform", "translate(0,0)")
+        .append("g")
+        .attr("transform", "rotate(0)")
+        .style("opacity", 0)
+        .transition(t_factor_entry) // ugly (im interest in the child opacity not this node) but necessary to run concurrent transitions on the line (which doesnt work if I place it below)
+        .style("opacity", null)
+        .selection()
+        .call(function (g) {
+          if (d.vars.length > 1) {
+            // bi-factor, tri-factor etc...
+            d.vars.forEach((v) =>
+              g
+                .append("line")
+                .attr("x1", d.dot_factor_position.x)
+                .attr("y1", d.dot_factor_position.y)
+                .attr("x2", 0.2 * v.mean.x + 0.8 * d.dot_factor_position.x)
+                .attr("y2", 0.2 * v.mean.y + 0.8 * d.dot_factor_position.y)
+                .classed(v.var_id, true)
+                .transition(t_graph_motion)
+                .attr("x1", d.dot_factor_position.x)
+                .attr("y1", d.dot_factor_position.y)
+                .attr("x2", v.mean.x)
+                .attr("y2", v.mean.y)
+            );
+          } else {
+            // unifactor
+            g.append("line")
+              .attr("x1", d.dot_factor_position.x)
+              .attr("y1", d.dot_factor_position.y)
+              .attr("x2", d.dot_factor_position.x)
+              .attr("y2", d.dot_factor_position.y)
+              .transition(t_graph_motion)
+              .attr("x1", d.vars[0].mean.x)
+              .attr("y1", d.vars[0].mean.y)
+              .attr("x2", d.dot_factor_position.x)
+              .attr("y2", d.dot_factor_position.y);
+          }
+
+          g.append("circle")
+            .attr(
+              "cx",
+              (d) => d.dot_factor_position.x
+              // (d) => (d.vars[0].mean.x + d.vars[1].mean.x) / 2
+            )
+            .attr(
+              "cy",
+              (d) => d.dot_factor_position.y
+              // (d) => (d.vars[0].mean.y + d.vars[1].mean.y) / 2
+            )
+            // .style("opacity", 0)
+            .attr("r", 0.3 * 2)
+            .on("mouseover", mouseover_mg(`${d.factor_id}`))
+            .on("mouseout", mouseout_mg())
+            // opacity transition not necessary here
+            .transition("fc")
+            .duration(2200)
+            // .style("opacity")
+            .attr("r", 0.3);
+        });
+    });
+}
+
+function join_update_factor(update) {
+  // TODO:
+  // Imho best way to avoid to define those transitions everywhere is to
+  // transform those functions in classes of which the transitions are members
+  const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+
+  return update.each(function (d) {
+    d3.select(this)
+      .select("g")
+      .select("g")
+      .selectAll("line")
+      // .selectChildren("line")
+      // .selectChild("line") // TODO: all children
+      // .call(function (lines) {
+      // lines.each(function (dd, i) {
+      .each(function (dd, i) {
+        if (d.vars.length > 1) {
+          // line
+          d3.select(this)
+            .transition(t_graph_motion)
+            .attr("x1", d.dot_factor_position.x)
+            .attr("y1", d.dot_factor_position.y)
+            .attr("x2", d.vars[i].mean.x)
+            .attr("y2", d.vars[i].mean.y);
+        } else {
+          // update unary factor
+          // WARN TODO: a factor_id should not change its vars_id
+          d3.select(this)
+            .transition(t_graph_motion)
+            .attr("x1", d.vars[0].mean.x)
+            .attr("y1", d.vars[0].mean.y)
+            .attr("x2", d.dot_factor_position.x)
+            .attr("y2", d.dot_factor_position.y);
+        }
+        // });
+      });
+    // the little factor circle (to visually differentiate from with MRF)
+    d3.select(this)
+      .selectChild("g")
+      .select("circle")
+      .transition(t_graph_motion)
+      .attr("cx", d.dot_factor_position.x)
+      .attr("cy", d.dot_factor_position.y);
+  });
+}
+
+function join_exit_factor(exit) {
+  return (
+    exit
+      // .call((ex) =>
+      //   ex
+      .select("g")
+      .call(function (ex) {
+        ex.select("g").selectAll("line").style("stroke", "brown");
+        ex.select("circle").style("fill", "brown");
+      })
+      // .selectAll("line")
+      // .style("stroke", "brown")
+      // )
+      // .call((ex) => ex.selectChild("g").select("circle").style("fill", "brown"))
+      .transition("exit_factor") // TODO: Define outside
+      .duration(1000)
+      .style("opacity", 0)
+      .remove()
+  );
+}
+
+function join_enter_vertex(enter) {
+  // TODO:
+  // Imho best way to avoid to define those transitions everywhere is to
+  // transform those functions in classes of which the transitions are members
+  const t_vertex_entry = d3.transition().duration(400);
+
+  return enter
+    .append("g")
+    .classed("vertex", true)
+    .attr("id", (d) => d.var_id)
+    .each(function (d) {
+      d3.select(this)
+        .append("g")
+        .attr("transform", "translate(" + d.mean.x + "," + d.mean.y + ")")
+        .append("g")
+        .attr("transform", "rotate(0)")
+        .call(function (g) {
+          g.append("circle")
+            .attr("r", 1 * 3)
+            .style("opacity", 0)
+            .transition(t_vertex_entry)
+            .attr("r", 1)
+            .style("opacity", null);
+          // text: variable name inside the circle
+          g.append("text")
+            .text((d) => d.var_id)
+            // .attr("stroke-width", "0.1px")
+            .attr("text-anchor", "middle")
+            .attr("alignment-baseline", "central")
+            .style("opacity", 0)
+            .transition(t_vertex_entry)
+            .attr("font-size", 1)
+            .style("opacity", null);
+          // covariance (-> a rotated group that holds an ellipse)
+          g.append("g")
+            .attr("transform", `rotate(${(d.covariance.rot * 180) / Math.PI})`)
+            .append("ellipse")
+            .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
+            .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
+            .style("opacity", 0) // wow! (see next wow) Nota: doesnt  work with attr()
+            .transition(t_vertex_entry)
+            .style("opacity", null); // wow! this will look for the CSS (has to a style)
+        });
+    });
+}
+
+function join_update_vertex(update) {
+  // TODO:
+  // Imho best way to avoid to define those transitions everywhere is to
+  // transform those functions in classes of which the transitions are members
+  const t_graph_motion = d3.transition().duration(1000).ease(d3.easeCubicInOut);
+
+  return update.each(function (d) {
+    d3.select(this)
+      .selectChild("g")
+      .transition(t_graph_motion)
+      .attr("transform", "translate(" + d.mean.x + "," + d.mean.y + ")")
+      .selection();
+
+    d3.select(this)
+      .selectChild("g") //translate
+      .selectChild("g") //rotate
+      .selectChild("g") // group (incl. rotate)
+      .transition(t_graph_motion)
+      .attr("transform", `rotate(${(d.covariance.rot * 180) / Math.PI})`)
+      .selection()
+      .selectChild("ellipse")
+      .transition(t_graph_motion)
+      .attr("rx", d.covariance.sigma[0] * Math.sqrt(9.21))
+      .attr("ry", d.covariance.sigma[1] * Math.sqrt(9.21))
+      .selection();
+  });
+}
+
+function join_exit_vertex(exit) {
+  // TODO:
+  return exit;
+}
+
+/******************************************************************************
+ *                            Data Massage estimation
+ *****************************************************************************/
+
+// in-place changes to the data structure for convenience when joining
+function estimation_data_massage(estimation_data) {
+  // Data massage before integration: some data on the vertices array are needed
+  // for the factors (1), and the other way around is also true (2)
+  // (1) the factors need the position of the vertices (which is found in the data array)
+  //     in order to draw the factor/edge at the right position (a line between fact-vertex)
+  //     and the position of the full 'dot' representing the factor.
+  estimation_data.factors.forEach((f) => {
+    f.vars = estimation_data.marginals.filter((marginal) =>
+      f.vars_id.includes(marginal.var_id)
+    );
+    // automagically compute the factor position
+    // Obviously (or not), for an unary factor, the factor dot position will reduce
+    // to its unique associated node, which is suboptimal...
+    if (f.vars.length > 1) {
+      f.dot_factor_position = {
+        x:
+          f.vars.map((a_var) => a_var.mean.x).reduce((a, b) => a + b, 0) /
+          f.vars.length,
+        y:
+          f.vars.map((a_var) => a_var.mean.y).reduce((a, b) => a + b, 0) /
+          f.vars.length,
+      };
+    } else {
+      f.dot_factor_position = {
+        x: f.vars[0].mean.x,
+        y: f.vars[0].mean.y + 5,
+      };
+    }
+  });
+
+  // (2) the unary factors need the neighbors of their associated node to position
+  //      intuitively this factor
+  //      So the proposed solution is to add a neighbors array to each vertex containing
+  //      the vertices id of its neighbors.
+  //      This rely on first step
+  //      Seems that there is 2 cases, the node has neighbor(s) or has not (typicaly
+  //      happens initially with the initial pose)
+  estimation_data.factors
+    .filter((f) => f.vars_id.length == 1) // unary factor selection
+    .forEach((uf) => {
+      const unique_node = uf.vars_id[0];
+      //vectors of thetas
+      const neighbors = estimation_data.factors.filter(
+        (f) => f.factor_id !== uf.factor_id && f.vars_id.includes(unique_node)
+      ); // neighbors factors of the node associated with that unary factor
+      // TODO: care if no neighbor
+      if (neighbors.length > 0) {
+        // if there are neighbors factors, the unary factor position must be placed
+        // at the biggest angle gap
+        const thetas = neighbors
+          .map((neighbors_f) =>
+            Math.atan2(
+              neighbors_f.dot_factor_position.y - uf.vars[0].mean.y,
+              neighbors_f.dot_factor_position.x - uf.vars[0].mean.x
+            )
+          )
+          .sort((a, b) => a - b); // mandatory sorting
+
+        const thetas_2pi = thetas.map((t) => t - thetas[0]);
+        const dthetas2 = thetas_2pi.map((n, i) => {
+          if (i !== thetas_2pi.length - 1) {
+            return thetas_2pi[i + 1] - n;
+          } else return 2 * Math.PI - n;
+        });
+        const idx_max = indexOfMax(dthetas2);
+        const theta_unary = ecpi(thetas[idx_max] + dthetas2[idx_max] / 2);
+
+        // distance of the factor wrt the vertex.
+        const squares_distances = neighbors.map(
+          (nf) =>
+            (nf.dot_factor_position.y - uf.vars[0].mean.y) ** 2 +
+            (nf.dot_factor_position.x - uf.vars[0].mean.x) ** 2
+        );
+        const u_distance = Math.sqrt(
+          Math.min(25, Math.max(...squares_distances))
+        );
+        // TODO: place the hard-coded 25 in globalUI
+
+        // position of factor dot infered from polar coordinates
+        const new_uf_position = {
+          x: uf.vars[0].mean.x + u_distance * Math.cos(theta_unary),
+          y: uf.vars[0].mean.y + u_distance * Math.sin(theta_unary),
+        };
+        // giving new position
+        uf.dot_factor_position = new_uf_position;
+      } else {
+        // no neighbors
+        const theta_unary = Math.PI / 2;
+        const u_distance = 5;
+        const new_uf_position = {
+          x: uf.vars[0].mean.x + u_distance * Math.cos(theta_unary),
+          y: uf.vars[0].mean.y + u_distance * Math.sin(theta_unary),
+        };
+        // giving new position
+        uf.dot_factor_position = new_uf_position;
+      }
+    });
+}
+
+function estimation_query_last_pose(an_agent_estimation) {
+  an_agent_estimation.last_pose.state = an_agent_estimation.graph.marginals.filter(
+    (marginal) => marginal.var_id == an_agent_estimation.last_pose.last_pose_id
+  )[0].mean;
+}
