@@ -20,10 +20,15 @@ windows:
   - window_name: MQTT_1
     layout: tiled
     panes:
-      - mosquitto_sub -t measures | jq
-      - mosquitto_sub -t cmd | jq
-      - mosquitto_sub -t cmd_feedback | jq
-      - focus: true
+      - mosquitto_sub -t r1/measures_feedback | jq
+      - mosquitto_sub -t r2/measures_feedback | jq
+      - mosquitto_sub -t r3/measures_feedback | jq
+      - mosquitto_sub -t r1/cmd | jq
+      - mosquitto_sub -t r1/cmd_feedback | jq
+      - mosquitto_sub -t r2/cmd | jq
+      - mosquitto_sub -t r2/cmd_feedback | jq
+      - mosquitto_sub -t r3/cmd | jq
+      - mosquitto_sub -t r3/cmd_feedback | jq
   - window_name: MQTT_2
     layout: tiled
     panes:
@@ -34,11 +39,10 @@ windows:
   - window_name: PG
     layout: tiled
     panes:
-      - ./simulation.py
-      - cd viz2 && live-server --browser=google-chrome
       - shell_command:
-        - echo 'hello'
+        - ./simulation.py
         focus: true
+      - cd viz2 && live-server --browser=google-chrome
 
 # tmuxp load session_name
 # tmuxp freeze session_name

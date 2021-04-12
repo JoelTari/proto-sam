@@ -124,7 +124,7 @@ if __name__ == '__main__':
         client.subscribe(position_ini_topic)
         client.subscribe(odom_topic_in)
         # TODO graph topic
-        time.sleep(1)
+        time.sleep(2)
         client.publish(request_position_ini_topic)
 
 

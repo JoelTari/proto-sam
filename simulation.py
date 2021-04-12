@@ -154,9 +154,9 @@ def noisify_cmd_DD(exact_cmd_vec: np.ndarray):
     alpha1 = 0.0029 #-> 5% sigma on v
     # alpha2 = 0.0002 #-> 1.4% sigma of w on v
     # alpha3 = 0.00002#-> 0.44% sigma of v on w
-    alpha4 = 0.00008 #-> 5% sigma on v
+    alpha4 = 0.01 #-> 5% sigma on v
     alpha2=0.00002
-    alpha3=0.00002
+    alpha3=0.002
     dt=1
     cov = np.diag([alpha1*v**2+alpha2*w**2
                     ,alpha3*v**2+alpha4*w**2])# + np.square(np.diag([1e-3,1e-5]))

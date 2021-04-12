@@ -27,7 +27,7 @@ let elsLandmark = elLandmarks.selectAll(".landmark");
  *                            MQTT events
  *****************************************************************************/
 
-let client = mqtt.connect("ws://localhost:9001");
+let client = mqtt.connect(`ws://${location.host}:9001`);
 
 client.on("connect", function () {
   console.log("[mqtt] Connected to broker !");
@@ -101,6 +101,7 @@ client.on("message", function (topic, message) {
  *****************************************************************************/
 // AgentTeam: define an object to hold the instances of AgentViz
 // AgentTeam['r1']= new AgentViz()...
+// TODO: make that a class, easier management for resets
 const AgentTeam = {
   checkSubscriptions: function (agent_id, topic_suffix, msg) {
     this[agent_id].mqttProcessTopicSuffix(topic_suffix, msg);
