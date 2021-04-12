@@ -37,9 +37,10 @@ svg {
 /*   LANDMARKS GROUND TRUTH  */
 /******************************************/
 .landmark {
-  stroke-width: 0.2;
-  stroke: #a89984;
-  fill: #08c07c;
+  /* stroke-width: 0.2; */
+  /* stroke: #a89984; */
+  /* fill: #08c07c; */
+  fill: #303030;
 }
 .landmark:hover {
   /* stroke-width: 0.2; */
@@ -63,14 +64,16 @@ svg {
 .agent__truth polygon {
   stroke: black;
   stroke-width: 0.15;
-  fill: #d5c4a1;
+  fill: #d3d3d3;
 }
 /* specialization for the selected agent */
 .agent__truth.selected polygon {
-  fill: #a89984;
+  fill: #f2d57c;
+  stroke-width: 0.25;
+  /* fill: #a89984; */
 }
 .agent__truth.selected .sensor {
-  opacity: 0.2;
+  opacity: 0.1;
 }
 
 .agent__truth .sensor {

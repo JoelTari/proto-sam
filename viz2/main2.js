@@ -63,6 +63,7 @@ client.on("message", function (topic, message) {
               // size is the area, for a cross: area= desired_tot_length**2 *5
               .attr("d", `${d3.symbol(d3.symbolCross, 1.1 * 1.1)()}`)
               .classed("landmark", true)
+              .attr('id',d=> d.landmark_id)
               .attr("transform", (d) => `translate(${d.state.x},${d.state.y})`)
               .on("mouseover", function (e, d) {
                 // TODO: use the UI event function
@@ -230,6 +231,8 @@ class AgentViz {
                                         }
                                         else console.error('Unsupported measure type')
                                         })
+    const time_illumination = 200; // TODO: Global UI
+
     this.d3MeasuresViz
         .selectAll('line')
         .data(measures_data)
@@ -260,17 +263,22 @@ class AgentViz {
         })
         .style('opacity',0)
         .style('stroke-width',0.05)
-        .transition('reveal_mes').duration(400)
+        .transition('reveal_mes').duration(time_illumination)
         .style('opacity',null)
         .style('stroke-width',null)
-        .transition('remove_mes').duration(400)
-        // .attr('x1',(d,i,n) => )
-        // .attr('y1',state.y)
-        // .attr('x2',d => state.x + d.r*Math.cos(d.a+state.th))
-        // .attr('y2',d => state.y + d.r*Math.sin(d.a+state.th))
+        .transition('remove_mes').duration(time_illumination)
         .style('opacity',0)
         .style('stroke-width',0.05)
         .remove();
+
+    // class the landmark as illumitated
+    elsLandmark.filter(dl=> measure_set.map(e=>e.landmark_id).includes(dl.landmark_id) )
+              .transition('reveal_illum').duration(time_illumination)
+              .style('fill','darksalmon')
+              .transition('remove_illum').duration(time_illumination)
+              .style('fill',null)
+
+              
   }
 
   // add ground_truth data
@@ -319,7 +327,7 @@ class AgentViz {
       case `graphs`:
         this.graphsCallback(data);
         break;
-      case `measures`:
+      case `measures_feedback`:
         this.measuresCallback(data);
         break;
       case `ground_truth`:
