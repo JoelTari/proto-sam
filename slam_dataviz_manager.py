@@ -22,6 +22,7 @@ if __name__ == '__main__':
     #inputs (subs)
     position_ini_topic = '/'.join([robot_id, 'position_ini'])
     odom_topic_in ='/'.join([robot_id,'relative_odom']) 
+    updated_reference_pose_topic_in = '/'.join([robot_id,'update_reference_pose'])
     #outputs (pubs)
     request_position_ini_topic ='/'.join([robot_id, 'request_position_ini']) 
     odom_topic_out ='/'.join([robot_id,'odom']) 
@@ -30,80 +31,8 @@ if __name__ == '__main__':
     nd_reference_pose = np.zeros([3,1])
     nd_reference_cov =  np.zeros([3,3])
 
-# aggr_state
-    
-# # return zero_state,zero_cov
-#     def reset_aggr():
-#         return np.zeros([3,1]),np.zeros([3,3])
-
     def ecpi(a):
         return math.atan2(math.sin(a),math.cos(a))
-
-#     def compute_helper_odom_DD(cmd_dd: np.ndarray
-#                             , cmd_dd_cov: np.ndarray
-#                             , current_th
-#                             , dt = 1) -> np.ndarray:
-#         th=current_th
-#         v = cmd_dd[0,0]
-#         w = cmd_dd[1,0]
-#         sth = math.sin(th)
-#         sth_n = math.sin(th+w*dt)          # sin(theta_new)
-#         cth = math.cos(th)
-#         cth_n = math.cos(th+w*dt)
-#         if (math.fabs(w) > 1e-4 and math.fabs(v/w) < 1e+4):
-#             # V
-#             V = np.array([[(sth_n-sth)/w, v*(sth-sth_n)/w**2+ v*cth_n*dt/w]
-#                         , [(cth-cth_n)/w,-v*(cth-cth_n)/w**2+ v*sth_n*dt/w]
-#                         , [        0     ,       dt                       ]])
-#             # G
-#             G = np.array([[ 1 , 0 , v/w*(cth_n - cth)]
-#                          ,[ 0 , 1 , v/w*(sth_n - sth)]
-#                          ,[ 0 , 0 ,         1        ]])
-#             # dstate_vec (the additive state)
-#             dstate_vec = np.array([[v/w*(sth_n - sth)
-#                                    ,v/w*(cth - cth_n)
-#                                    ,    w*dt]]).T
-#         else : # euler
-#             # V
-#             V = np.array([[cth*dt, 0]
-#                          ,[sth*dt, 0]
-#                          ,[ 0    ,dt]])
-#             # G
-#             G = np.array([[ 1 , 0 , -v*sth*dt]
-#                          ,[ 0 , 1 ,  v*cth*dt]
-#                          ,[ 0 , 0 ,     1    ]])
-#             # dstate_vec (the additive state)
-#             dstate_vec = np.array([[v*cth*dt,v*sth*dt,w*dt]]).T
-
-#         # TODO: this belong to the simu
-#         # M = np.array([[alpha1*v**2,0],[0,alpha2*w**2]]) 
-#         M = cmd_dd_cov
-#         return G , V@M@V.T, dstate_vec
-
-#     def process_cmd_feedback_AA(cmd_AA_vec: np.ndarray,cmd_AA_cov : np.ndarray):
-#         # Update step of the odom covariance
-#         global g_aggr_cov
-#         global g_aggr_state
-#         g_aggr_cov[0:2,0:2] += cmd_AA_cov
-#         g_aggr_state[0:2] += cmd_AA_vec
-
-#     def process_cmd_feedback_DD(cmd_DD_vec: np.ndarray,cmd_DD_cov : np.ndarray):
-
-#         global g_aggr_state
-#         # compute the helper that will help us compute the new covariance state
-#         current_th = g_aggr_state[2,0]
-#         G,R, dstate_vec = compute_helper_odom_DD(cmd_DD_vec,cmd_DD_cov,current_th)
-
-#         # Update step of the odom covariance
-#         global g_aggr_cov
-#         g_aggr_cov = G@g_aggr_cov@G.T + R
-#         g_aggr_state += dstate_vec
-#         g_aggr_state[2,0] = ecpi(g_aggr_state[2,0])
-
-#         # Pb, TODO : comment le back end va s'en servir de ce facteur (re-lineariser)
-#         #           (ignorer pb pour l'instant)
-
-
 
 
 # ----------------------------------------------------------------------------
@@ -121,11 +50,12 @@ if __name__ == '__main__':
         else:
             print('connection error. code :', rc)
         # do the subscriptions here
-        client.subscribe(position_ini_topic)
+        # client.subscribe(position_ini_topic)
         client.subscribe(odom_topic_in)
+        client.subscribe(updated_reference_pose_topic_in)
         # TODO graph topic
-        time.sleep(2)
-        client.publish(request_position_ini_topic)
+        # time.sleep(2)
+        # client.publish(request_position_ini_topic)
 
 
     def on_disconnect(client, userdata, flags, rc=0):
@@ -146,6 +76,7 @@ if __name__ == '__main__':
             x = msg['state']['x']
             y = msg['state']['y']
             th = msg['state']['th']
+            # TODO: reference_pose should be the last graph pose
             xref = reference_pose['x']
             yref = reference_pose['y']
             thref = reference_pose['th']
@@ -163,10 +94,16 @@ if __name__ == '__main__':
             client.publish(odom_topic_out, json.dumps(odom) )
             # reset the aggregate (TODO)
             # reset_aggr()
-        elif (message.topic == position_ini_topic):
-            print(f'\n[SlamDataVizManager::{robot_id}] R {position_ini_topic} :\n {msg}')
+        # elif (message.topic == position_ini_topic):
+        #     print(f'\n[SlamDataVizManager::{robot_id}] R {position_ini_topic} :\n {msg}')
+        #     reference_pose = msg['state']
+        #     # TODO : remove once back end is integrated
+        elif (message.topic == updated_reference_pose_topic_in):
+            print(f'\n[SlamDataVizManager::{robot_id}] R {updated_reference_pose_topic_in} :\n {msg}')
             reference_pose = msg['state']
-            # TODO : remove once back end is integrated
+        else:
+            raise NotImplementedError
+
 
     def getVisualFromCovMatrix(cov : np.ndarray) -> dict:
         eVa,eVec = np.linalg.eig(cov)

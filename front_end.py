@@ -30,7 +30,10 @@ if __name__ == '__main__':
 
 # return zero_state,zero_cov
     def reset_aggr():
-        return np.zeros([3,1]),np.zeros([3,3])
+        global g_aggr_cov
+        global g_aggr_state
+        g_aggr_state = np.zeros([3,1])
+        g_aggr_cov = np.zeros([3,3])
 
     def ecpi(a):
         return math.atan2(math.sin(a),math.cos(a))
@@ -184,6 +187,9 @@ if __name__ == '__main__':
             client.publish(synchronized_measures_pose_topic,json.dumps(msg))
             # reset the aggregate (TODO)
             # reset_aggr()
+            # global g_aggr_state
+            # global g_aggr_cov
+            reset_aggr()
             
 
 

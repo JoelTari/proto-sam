@@ -13,10 +13,13 @@ windows:
     panes:
       - ./front_end.py r1
       - ./slam_dataviz_manager.py r1
+      - ./backend_minisam.py r1
       - ./front_end.py r2
       - ./slam_dataviz_manager.py r2
+      - ./backend_minisam.py r2
       - ./front_end.py r3
       - ./slam_dataviz_manager.py r3
+      - ./backend_minisam.py r3
   - window_name: MQTT_1
     layout: tiled
     panes:
@@ -32,10 +35,10 @@ windows:
   - window_name: MQTT_2
     layout: tiled
     panes:
-      - mosquitto_sub -t estimation_graph | jq
-      -
-      -
-      -
+      # - mosquitto_sub -t estimation_graph | jq
+      - mosquitto_sub -t r1/graphs | jq
+      - mosquitto_sub -t r2/graphs | jq
+      - mosquitto_sub -t r3/graphs | jq
   - window_name: PG
     layout: tiled
     panes:
