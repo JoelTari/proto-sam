@@ -14,6 +14,7 @@ import time
 last_pose_idx = 0
 last_pose_state = {'x':0,'y':0,'th':0}
 factor_idx = 0
+last_cov = np.zeros([3,3])
 
 if __name__ == '__main__':
     # Robot name
@@ -78,9 +79,10 @@ if __name__ == '__main__':
     def on_message(client, userdata, message):
         # print("Received message '" + str(message.payload) + "' on topic '"
         #       + message.topic + "' with QoS " + str(message.qos) + "'\n")
-        global last_pose_state
-        global last_pose_idx
+        global last_pose_state 
+        global last_pose_idx     # ugly
         global factor_idx
+        global last_cov
 
         # decode payload as string, and transform as JSON
         msg = json.loads(message.payload.decode('utf-8'))
@@ -105,7 +107,7 @@ if __name__ == '__main__':
             node_previous_id = stringify_pose_id(last_pose_idx-1)
             node_id = stringify_pose_id(last_pose_idx)
             factor_id = stringify_factor_id(factor_idx)
-            cov = np.array(msg['odom']['covariance']).reshape(3,3)
+            cov = np.array(msg['odom']['covariance']).reshape(3,3) + last_cov
             graphs['marginals'].append(
                 {'var_id': node_id, 'mean': last_pose_state,
                     'covariance': getVisualFromCovMatrix(cov)} #TODO: raw cov, do the visual conversion in dataviz manager
@@ -119,11 +121,13 @@ if __name__ == '__main__':
             last_pose_idx+=1
             factor_idx+=1
             client.publish(graphs_topic_out,json.dumps(graphs))
+            last_cov = cov
 
 
         elif (message.topic == position_ini_topic):
             print(f'\n[Back-end MiniSAM::{robot_id}] R {position_ini_topic} :\n {msg}')
             last_pose_state = msg['state']
+            # TODO: give an initial covariance
             # send it already to dataviz manager
             new_reference_state = {'robot_id':robot_id, 'state':last_pose_state}
             client.publish(updated_reference_pose_topic_out,json.dumps(new_reference_state))

@@ -65,7 +65,7 @@ print(robots_ini_poses)
 # last referenced pose to decide when to generate a new odometry measurement
 last_pose = copy.deepcopy(world['robots'])
 
-new_pose_distance_threshold = 1
+new_pose_distance_threshold = 5
 
 # seeding randomness (for the numpy stuff)
 # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
