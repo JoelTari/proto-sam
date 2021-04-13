@@ -55,10 +55,13 @@ if __name__ == '__main__':
         sigmay = math.sqrt(eVa[1])
         return {'sigma': [sigmax, sigmay], 'rot': angle}
 
-    def getRotationMatrix(angle):
+    def getRotationMatrix(angle, size = 2):
         c= math.cos(angle)
         s= math.sin(angle)
-        return np.array([[c,-s],[s,c]])
+        if (size==2):
+            return np.array([[c,-s],[s,c]])
+        elif (size ==3):
+            return np.array([[c,-s,0],[s,c,0],[0,0,1]])
 
 
 # ----------------------------------------------------------------------------
@@ -115,10 +118,10 @@ if __name__ == '__main__':
             node_previous_id = stringify_pose_id(last_pose_idx-1)
             node_id = stringify_pose_id(last_pose_idx)
             factor_id = stringify_factor_id(factor_idx)
-            # rot_mat_relative = getRotationMatrix(th)
-            # cov =  rot_mat_relative@np.array(msg['odom']['covariance']).reshape(3, 3)@rot_mat_relative.T + last_cov
-            cov =  np.array(msg['odom']['covariance']).reshape(3, 3) + last_cov
-            visual_cov = getVisualFromCovMatrix(cov)
+            rot_mat_relative = getRotationMatrix(thref,size=3)
+            cov =  rot_mat_relative@np.array(msg['odom']['covariance']).reshape(3, 3)@rot_mat_relative.T + last_cov
+            # cov =  np.array(msg['odom']['covariance']).reshape(3, 3) + last_cov
+            visual_cov = getVisualFromCovMatrix(cov[0:2,0:2])
             # visual_cov['rot'] = ecpi(visual_cov['rot'] + thref)
             graphs['marginals'].append(
                 {'var_id': node_id, 'mean': last_pose_state,
@@ -146,7 +149,6 @@ if __name__ == '__main__':
                 'robot_id': robot_id, 'state': last_pose_state}
             client.publish(updated_reference_pose_topic_out,
                            json.dumps(new_reference_state))
-            # TODO : graph first pose x0 and unary factor f0
             node_id = stringify_pose_id(last_pose_idx)
             factor_id = stringify_factor_id(factor_idx)
             graphs['marginals'].append(
