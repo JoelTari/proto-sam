@@ -23,6 +23,7 @@ if __name__ == '__main__':
     position_ini_topic = '/'.join([robot_id, 'position_ini'])
     odom_topic_in ='/'.join([robot_id,'relative_odom']) 
     updated_reference_pose_topic_in = '/'.join([robot_id,'update_reference_pose'])
+    # request_odom_topic_in = '/'.join([robot_id,'request_odom'])
     #outputs (pubs)
     request_position_ini_topic ='/'.join([robot_id, 'request_position_ini']) 
     odom_topic_out ='/'.join([robot_id,'odom']) 
@@ -53,6 +54,7 @@ if __name__ == '__main__':
         # client.subscribe(position_ini_topic)
         client.subscribe(odom_topic_in)
         client.subscribe(updated_reference_pose_topic_in)
+        # client.subscribe(request_odom_topic_in)
         # TODO graph topic
         # time.sleep(2)
         # client.publish(request_position_ini_topic)
@@ -92,6 +94,8 @@ if __name__ == '__main__':
             except ValueError:
                 pass
             client.publish(odom_topic_out, json.dumps(odom) )
+            # last_odom_sent = odom
+            # first_time_odom = True
             # reset the aggregate (TODO)
             # reset_aggr()
         # elif (message.topic == position_ini_topic):
@@ -101,6 +105,12 @@ if __name__ == '__main__':
         elif (message.topic == updated_reference_pose_topic_in):
             print(f'\n[SlamDataVizManager::{robot_id}] R {updated_reference_pose_topic_in} :\n {msg}')
             reference_pose = msg['state']
+        # elif (message.topic == request_odom_topic_in):
+        #     print(f'\n[SlamDataVizManager::{robot_id}] R {request_odom_topic_in}')
+        #     if (first_time_odom):
+
+
+
         else:
             raise NotImplementedError
 

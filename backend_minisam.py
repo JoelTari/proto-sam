@@ -24,6 +24,7 @@ if __name__ == '__main__':
     #inputs (subs)
     position_ini_topic = '/'.join([robot_id, 'position_ini'])
     measures_pose_topic_in = '/'.join([robot_id, 'measures_pose'])
+    request_graph_topic_in = '/'.join([robot_id, 'request_graphs'])
     #outputs (pubs)
     updated_reference_pose_topic_out = '/'.join(
         [robot_id, 'update_reference_pose'])
@@ -79,7 +80,8 @@ if __name__ == '__main__':
         # do the subscriptions here
         client.subscribe(position_ini_topic)
         client.subscribe(measures_pose_topic_in)
-        time.sleep(2)
+        client.subscribe(request_graph_topic_in)
+        time.sleep(3) # TODO: find another way
         client.publish(request_position_ini_topic)
 
     def on_disconnect(client, userdata, flags, rc=0):
@@ -136,7 +138,7 @@ if __name__ == '__main__':
             last_pose_idx += 1
             last_cov = cov
             factor_idx += 1
-            # CONTINUE HERE (graphs)
+            # CONTINUE HERE (landmarks)
             client.publish(graphs_topic_out, json.dumps(graphs))
 
         elif (message.topic == position_ini_topic):
@@ -166,6 +168,11 @@ if __name__ == '__main__':
             factor_idx += 1
             # publish the graph
             client.publish(graphs_topic_out, json.dumps(graphs))
+
+        elif (message.topic == request_graph_topic_in):
+            print(f'\n[Back-end MiniSAM::{robot_id}] R {request_graph_topic_in} \n')
+            if not graphs:
+                client.publish(graphs_topic_out, json.dumps(graphs))
 
     print("This is the SLAM back-end for : ", robot_id)
 

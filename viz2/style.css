@@ -201,9 +201,9 @@ line.rt_line_to_last_pose {
 /* .agent__odom { */
 /*   display: none; */
 /* } */
-/* .vertex ellipse { */
-/*   display: none; */
-/* } */
+.vertex ellipse {
+  display: none;
+}
 
 .vertex circle {
   fill: #f9f5d7;

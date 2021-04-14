@@ -131,6 +131,15 @@ class AgentViz {
       this.sensor_svg_path,
       this.state_history
     );
+    // topic names (INs)
+    this.topic_odom = 'odom'
+    this.topic_graphs = 'graphs'
+    this.topic_measures_feedback = 'measures_feedback'
+    this.topic_ground_truth = 'ground_truth'
+    // topic names (OUTs)
+    this.topic_request_ground_truth = `${this.id}/request_ground_truth`;
+    this.topic_cmd = `${this.id}/cmd`;
+    this.topic_request_graph = 'request_graphs'
     // d3 : create the odom structure
     this.d3Odom = constructD3Odom(this.d3container,this.id);
     // d3: create the measure visualization structure
@@ -139,32 +148,32 @@ class AgentViz {
     this.d3FactorGraph = constructD3FactorGraph(this.d3container, this.id)
     // do the mqtt subscriptions
     this.constructMqtt();
+    // publish some request
+    this.mqttc.publish(this.topic_request_graph,'')
   }
   constructMqtt = function () {
     // do the subscriptions
-    this.mqttc.subscribe(`${this.id}/odom`, (err) => {
+    this.mqttc.subscribe(`${this.id}/${this.topic_odom}`, (err) => {
       if (!err)
-        console.log(`[mqtt] subscribed to the topic >> ${this.id}/odom`);
+        console.log(`[mqtt] subscribed to the topic >> ${this.id}/${this.topic_odom}`);
     });
-    this.mqttc.subscribe(`${this.id}/graphs`, (err) => {
+    this.mqttc.subscribe(`${this.id}/${this.topic_graphs}`, (err) => {
       if (!err)
-        console.log(`[mqtt] subscribed to the topic >> ${this.id}/graphs`);
+        console.log(`[mqtt] subscribed to the topic >> ${this.id}/${this.topic_graphs}`);
     });
-    this.mqttc.subscribe(`${this.id}/measures_feedback`, (err) => {
+    this.mqttc.subscribe(`${this.id}/${this.topic_measures_feedback}`, (err) => {
       if (!err)
-        console.log(`[mqtt] subscribed to the topic >> ${this.id}/measures`);
+        console.log(`[mqtt] subscribed to the topic >> ${this.id}/${this.topic_measures_feedback}`);
     });
-    this.mqttc.subscribe(`${this.id}/ground_truth`, (err) => {
+    this.mqttc.subscribe(`${this.id}/${this.topic_ground_truth}`, (err) => {
       if (!err)
         console.log(
-          `[mqtt] subscribed to the topic >> ${this.id}/ground_truth`
+          `[mqtt] subscribed to the topic >> ${this.id}/${this.topic_ground_truth}`
         );
     });
     // publishers topic name
     // id/request_ground_truth (expected id/ground_truth back)
     // id/cmd (expected id/odom back)
-    this.request_ground_truth_topic = `${this.id}/request_ground_truth`;
-    this.cmd_topic = `${this.id}/cmd`;
   };
   // update Visual truth
   updateVisualTruth = function (state_history, state) {
@@ -323,18 +332,20 @@ class AgentViz {
   };
 
   // define an entry point for the topic suffix (that will dispatch to appropriate callback)
+  // TODO : topic names
   mqttProcessTopicSuffix = function (suffix_topic_name, data) {
     switch (suffix_topic_name) {
-      case `odom`:
+      // case `odom`:
+      case this.topic_odom:
         this.odomCallback(data);
         break;
-      case `graphs`:
+      case this.topic_graphs:
         this.graphsCallback(data);
         break;
-      case `measures_feedback`:
+      case this.topic_measures_feedback:
         this.measuresCallback(data);
         break;
-      case `ground_truth`:
+      case this.topic_ground_truth:
         this.groundTruthCallback(data);
         break;
       default:
