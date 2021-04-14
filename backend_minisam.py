@@ -139,6 +139,37 @@ if __name__ == '__main__':
             last_cov = cov
             factor_idx += 1
             # CONTINUE HERE (landmarks)
+            for measure in msg['measures']:
+                if measure['type'] == 'range-bearing':
+                    # if exists already this landmark, remove
+                    lid=measure['landmark_id']
+                    try:
+                        graphs['marginals'].remove(
+                                next(marg for marg in graphs['marginals'] if marg['var_id'] == lid)
+                                )
+                    except: 
+                        StopIteration
+                    # append new marginal
+                    r=measure['vect'][0]
+                    a=measure['vect'][1]
+                    mean={}
+                    mean['x'] = last_pose_state['x'] + r*math.cos(a+last_pose_state['th'])
+                    mean['y'] = last_pose_state['y'] + r*math.sin(a+last_pose_state['th'])
+                    graphs['marginals'].append(
+                            {'var_id':measure['landmark_id'],'mean':mean,
+                                'covariance':getVisualFromCovMatrix(np.array(measure['covariance']).reshape(2,2))}
+                            )
+                    # TODO : covariance proper
+                    graphs['factors'].append(
+                            {'factor_id': factor_id,
+                             'type': 'range-bearing',
+                             'vars_id': [node_id, measure['landmark_id']],
+                             }
+                            )
+                    factor_idx+=1
+                else:
+                    raise NotImplementedError
+
             client.publish(graphs_topic_out, json.dumps(graphs))
 
         elif (message.topic == position_ini_topic):
