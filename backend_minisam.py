@@ -162,11 +162,40 @@ if __name__ == '__main__':
                     # TODO : covariance proper
                     graphs['factors'].append(
                             {'factor_id': factor_id,
-                             'type': 'range-bearing',
-                             'vars_id': [node_id, measure['landmark_id']],
+                             'type': measure['type'],
+                             'vars_id': [node_id, lid],
                              }
                             )
                     factor_idx+=1
+
+                elif measure['type'] == 'range-AA':
+                    lid=measure['landmark_id']
+                    # if exists already this landmark, remove
+                    try:
+                        graphs['marginals'].remove(
+                                next(marg for marg in graphs['marginals'] if marg['var_id'] == lid)
+                                )
+                    except: 
+                        StopIteration
+                    # append new marginal
+                    dx=measure['vect'][0]
+                    dy=measure['vect'][1]
+                    mean={}
+                    mean['x'] = last_pose_state['x'] + dx
+                    mean['y'] = last_pose_state['y'] + dy
+                    graphs['marginals'].append(
+                            {'var_id':measure['landmark_id'],'mean':mean,
+                                'covariance':getVisualFromCovMatrix(cov[0:2,0:2] +np.array(measure['covariance']).reshape(2,2))}
+                            )
+                    # TODO : covariance proper
+                    graphs['factors'].append(
+                            {'factor_id': factor_id,
+                             'type': measure['type'],
+                             'vars_id': [node_id, lid],
+                             }
+                            )
+                    factor_idx+=1
+
                 else:
                     raise NotImplementedError
 
