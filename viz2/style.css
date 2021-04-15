@@ -36,12 +36,13 @@ svg {
 /******************************************/
 /*   LANDMARKS GROUND TRUTH  */
 /******************************************/
-.landmark_true_group {
-  stroke-width: 0.2;
-  stroke: #a89984;
-  fill: #08c07c;
+.landmark {
+  /* stroke-width: 0.2; */
+  /* stroke: #a89984; */
+  /* fill: #08c07c; */
+  fill: #303030;
 }
-.landmark_true_group:hover {
+.landmark:hover {
   /* stroke-width: 0.2; */
   /* stroke: #694c39; */
   fill: #427b58;
@@ -50,36 +51,38 @@ svg {
 /******************************************/
 /*   AGENTS GROUND TRUTH  */
 /******************************************/
-.agent_true_group polygon:hover {
+.agent__truth polygon:hover {
   fill: lightblue;
   cursor: pointer;
 }
 
-.agent_true_group line {
+.agent__truth line {
   stroke-width: 0.35;
   stroke: yellow;
 }
 
-.agent_true_group polygon {
+.agent__truth polygon {
   stroke: black;
   stroke-width: 0.15;
-  fill: #d5c4a1;
+  fill: #d3d3d3;
 }
 /* specialization for the selected agent */
-.agent_true_group.selected polygon {
-  fill: #a89984;
+.agent__truth.selected polygon {
+  fill: #f2d57c;
+  stroke-width: 0.25;
+  /* fill: #a89984; */
 }
-.agent_true_group.selected .sensor {
-  opacity: 0.2;
+.agent__truth.selected .sensor {
+  opacity: 0.1;
 }
 
-.agent_true_group .sensor {
+.agent__truth .sensor {
   fill: #b8e5ef;
   opacity: 0.05;
 }
 
 /* state history */
-.agent_true_group .state_history {
+.agent__truth .state_history {
   fill: none;
   stroke: silver;
   stroke-width: 0.2;
@@ -90,41 +93,48 @@ svg {
 /******************************************/
 /*   COLOR SPECIALIZATION : AGENT GT */
 /******************************************/
-.agent_true_group#r1 .state_history,
-.agent_true_group#r1 polygon,
-.agent_true_group#r1 line,
-.rt_estimate#r1 polygon,
-.rt_estimate#r1 line {
+.agent__truth#r1 .state_history,
+.agent__truth#r1 polygon,
+.agent__truth#r1 line,
+.agent__odom#r1 polygon,
+.agent__odom#r1 line {
   stroke: #fe8019;
 }
-.agent_true_group#r2 .state_history,
-.agent_true_group#r2 polygon,
-.agent_true_group#r2 line,
-.rt_estimate#r2 polygon,
-.rt_estimate#r2 line {
+.agent__truth#r2 .state_history,
+.agent__truth#r2 polygon,
+.agent__truth#r2 line,
+.agent__odom#r2 polygon,
+.agent__odom#r2 line {
   stroke: #cc241d;
 }
-.agent_true_group#r3 .state_history,
-.agent_true_group#r3 polygon,
-.agent_true_group#r3 line,
-.rt_estimate#r3 polygon,
-.rt_estimate#r3 line {
+.agent__truth#r3 .state_history,
+.agent__truth#r3 polygon,
+.agent__truth#r3 line,
+.agent__odom#r3 polygon,
+.agent__odom#r3 line {
   stroke: #076678;
 }
 
-.agent_true_group#r1 .sensor {
+.agent__truth#r1 .sensor {
   fill: #fe8019;
 }
-.agent_true_group#r2 .sensor {
+.agent__truth#r2 .sensor {
   fill: #cc241d;
 }
-.agent_true_group#r3 .sensor {
+.agent__truth#r3 .sensor {
   fill: #076678;
 }
+
+.measure_ray {
+  stroke: darksalmon;
+  stroke-width: 0.35;
+  opacity: 100%;
+}
+
 /******************************************/
 /*   AGENTS GHOST (estimation)  */
 /******************************************/
-.rt_ghost polygon {
+.ghost polygon {
   stroke: black;
   stroke-width: 0.1;
   stroke-opacity: 0.5;
@@ -132,17 +142,25 @@ svg {
   fill-opacity: 0.1;
   stroke-dasharray: 0.5;
 }
-.rt_ghost line {
+.ghost line {
   stroke-width: 0.3;
   stroke-opacity: 0.5;
   stroke: black;
 }
-.rt_ghost ellipse {
-  stroke-width: 0.15;
-  stroke-opacity: 0.25;
-  stroke: grey;
+ellipse.odom_covariance {
+  stroke-width: 0.08;
+  /* stroke-opacity: 0.85; */
+  stroke: black;
   fill: none;
   stroke-dasharray: 0.5;
+}
+
+polyline.odom_history {
+  fill: none;
+  stroke: black;
+  stroke-width: 0.04;
+  stroke-dasharray: 0.45;
+  stroke-opacity: 0.7;
 }
 
 line.rt_line_to_last_pose {
@@ -155,27 +173,38 @@ line.rt_line_to_last_pose {
 /******************************************/
 /*  COLOR SPECIALIZATION by GHOST   */
 /******************************************/
-#r1 .rt_ghost line,
-#r1 .rt_ghost polygon,
-#r1 .rt_ghost ellipse,
+#r1 .ghost line,
+#r1 .ghost polygon,
+#r1 .ghost ellipse,
 #r1 line.rt_line_to_last_pose {
   stroke: #fe8019;
 }
-#r2 .rt_ghost line,
-#r2 .rt_ghost polygon,
-#r2 .rt_ghost ellipse,
+#r2 .ghost line,
+#r2 .ghost polygon,
+#r2 .ghost ellipse,
 #r2 line.rt_line_to_last_pose {
   stroke: #cc241d;
 }
-#r3 .rt_ghost line,
-#r3 .rt_ghost polygon,
-#r3 .rt_ghost ellipse,
+#r3 .ghost line,
+#r3 .ghost polygon,
+#r3 .ghost ellipse,
 #r3 line.rt_line_to_last_pose {
   stroke: #076678;
 }
 /******************************************/
 /*   VERTICES AND FACTORS  */
 /******************************************/
+
+/* .factor_graph { */
+/*   display: none; */
+/* } */
+/* .agent__odom { */
+/*   display: none; */
+/* } */
+.vertex ellipse {
+  display: none;
+}
+
 .vertex circle {
   fill: #f9f5d7;
   stroke: #928374;
@@ -194,7 +223,6 @@ line.rt_line_to_last_pose {
   fill: #ece281;
   opacity: 0.4;
   transition: opacity 1s ease;
-  display: none;
 }
 /* TODO remove: the shared vars */
 .vertex#l10 circle,

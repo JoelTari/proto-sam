@@ -11,30 +11,41 @@ windows:
     # shell_command_before:
     #   - ls
     panes:
-      - ./simulation.py
-      - ./graph_stub.py
-      - live-server --browser=google-chrome
+      - ./front_end.py r1
+      - ./slam_dataviz_manager.py r1
+      - ./backend_minisam.py r1
+      - ./front_end.py r2
+      - ./slam_dataviz_manager.py r2
+      - ./backend_minisam.py r2
+      - ./front_end.py r3
+      - ./slam_dataviz_manager.py r3
+      - ./backend_minisam.py r3
   - window_name: MQTT_1
     layout: tiled
     panes:
-      - mosquitto_sub -t measures | jq
-      - mosquitto_sub -t cmd | jq
-      - mosquitto_sub -t cmd_feedback | jq
-      - focus: true
+      - mosquitto_sub -t r1/measures_feedback -F '%J' | jq
+      - mosquitto_sub -t r2/measures_feedback -F '%J' | jq
+      - mosquitto_sub -t r3/measures_feedback -F '%J' | jq
+      - mosquitto_sub -t r1/cmd   -F '%J' | jq
+      - mosquitto_sub -t r1/cmd_feedback  -F '%J' | jq
+      - mosquitto_sub -t r2/cmd  -F '%J' | jq
+      - mosquitto_sub -t r2/cmd_feedback  -F '%J' | jq
+      - mosquitto_sub -t r3/cmd  -F '%J' | jq
+      - mosquitto_sub -t r3/cmd_feedback -F '%J' | jq
   - window_name: MQTT_2
     layout: tiled
     panes:
-      - mosquitto_sub -t estimation_graph | jq
-      -
-      -
-      -
+      # - mosquitto_sub -t estimation_graph | jq
+      - mosquitto_sub -t r1/graphs -F '%J' | jq
+      - mosquitto_sub -t r2/graphs -F '%J' | jq
+      - mosquitto_sub -t r3/graphs -F '%J' | jq
   - window_name: PG
-    layout: main-vertical
+    layout: tiled
     panes:
-      -
       - shell_command:
-        - echo 'hello'
+        - ./simulation.py
         focus: true
+      - cd viz2 && live-server --browser=google-chrome
 
 # tmuxp load session_name
 # tmuxp freeze session_name
