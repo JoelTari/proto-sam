@@ -181,6 +181,7 @@ if __name__ == '__main__':
                     ,'state':{'x':g_aggr_state[0,0],'y':g_aggr_state[1,0]
                                 ,'th':g_aggr_state[2,0]}
                     ,'covariance': g_aggr_cov.reshape(9,).tolist()
+                    ,'true_pose': msg['feedback_vel']
                     }
             msg.pop('feedback_vel')
             msg['odom']=odom

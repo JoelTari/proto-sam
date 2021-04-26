@@ -20,39 +20,43 @@ world = {
     {
         'r1': {
             "robot_id": "r1",
-            "state": {"x": 25, "y": 54.1, "th": 100*math.pi/180},
+            "state": {"x": 30, "y": 8, "th": 120*math.pi/180},
             # "state": {"x": 5, "y": 6.1, "th": 30*math.pi/180},
             "sensor": {"range": 12, "angle_coverage": 0.75, 'type': 'range-AA'}
         },
         'r2': {
             "robot_id": "r2",
-            "state": {"x": 94, "y": 53.1, "th": -150*math.pi/180},
+            "state": {"x": 50, "y": 8, "th": 90*math.pi/180},
             "sensor": {"range": 12, "angle_coverage": 0.167, 'type': 'range-bearing'}
         },
         'r3': {
             "robot_id": "r3",
-            "state": {"x": 0, "y": 0, "th": 0*math.pi/180},
+            "state": {"x": 70, "y": 8, "th": 60*math.pi/180},
             "sensor": {"range": 12, "angle_coverage": 0.5, 'type': 'range-bearing'}
         },
     },
     "landmarks":
     [
-        {"landmark_id": "l1", "state": {"x": 9, "y": 46}},
-        {"landmark_id": "l2", "state": {"x": 13, "y": 4}},
-        {"landmark_id": "l3", "state": {"x": 13.5, "y": 55}},
-        {"landmark_id": "l4", "state": {"x": 14, "y": 30}},
-        {"landmark_id": "l5", "state": {"x": 27, "y": 31}},
-        {"landmark_id": "l6", "state": {"x": 21, "y": 34}},
-        {"landmark_id": "l7", "state": {"x": 45, "y": 10}},
-        {"landmark_id": "l8", "state": {"x": 45, "y": 50}},
-        {"landmark_id": "l9", "state": {"x": 61, "y": 11}},
-        {"landmark_id": "l10", "state": {"x": 63, "y": 46}},
-        {"landmark_id": "l11", "state": {"x": 67, "y": 27}},
-        {"landmark_id": "l12", "state": {"x": 71, "y": 51}},
-        {"landmark_id": "l13", "state": {"x": 77, "y": 16}},
-        {"landmark_id": "l14", "state": {"x": 80, "y": 23}},
-        {"landmark_id": "l15", "state": {"x": 84, "y": 35}},
-        {"landmark_id": "l16", "state": {"x": 96, "y": 56}},
+        {"landmark_id": "l1", "state": {"x": 8, "y": 8}},
+        {"landmark_id": "l2", "state": {"x": 16, "y": 8}},
+        {"landmark_id": "l3", "state": {"x": 8, "y": 16}},
+
+        {"landmark_id": "l4", "state": {"x": 92, "y": 8}},
+        {"landmark_id": "l5", "state": {"x": 84, "y": 8}},
+        {"landmark_id": "l6", "state": {"x": 92, "y": 16}},
+
+        {"landmark_id": "l7", "state": {"x": 92, "y": 52}},
+        {"landmark_id": "l8", "state": {"x": 84, "y": 52}},
+        {"landmark_id": "l9", "state": {"x": 92, "y": 44}},
+
+        {"landmark_id": "l10", "state": {"x": 8, "y": 52}},
+        {"landmark_id": "l11", "state": {"x": 16, "y": 52}},
+        {"landmark_id": "l12", "state": {"x": 8, "y": 44}},
+
+        {"landmark_id": "l13", "state": {"x": 45, "y": 33}},
+        {"landmark_id": "l14", "state": {"x": 55, "y": 33}},
+        {"landmark_id": "l15", "state": {"x": 50, "y": 26}},
+        # {"landmark_id": "l13", "state": {"x": 50, "y": 30}},
     ]
 }
 # store positions ini of each agent
@@ -390,12 +394,14 @@ def cmd_vel_callback(client, msg):
             ]
         # 5.2.2 save the new robot position as the last pose node
         last_pose[robot_id]['state'] = copy.deepcopy(current_robot_pos)
+        # add a truth
         # 5.2.3 publish the measurements in the same package
         mes_payload = \
             {
                 'robot_id': received_cmd['robot_id'],
                 'feedback_vel': feedback_vel,
-                'measures': landmarks_measurements
+                'measures': landmarks_measurements,
+                'true_pose': copy.deepcopy(current_robot_pos)
             }
         client.publish(robot_id+'/'+measures_topic, json.dumps(mes_payload))
 
