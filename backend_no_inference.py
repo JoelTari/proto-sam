@@ -189,9 +189,10 @@ if __name__ == '__main__':
                             )
                     # TODO : covariance proper
                     graphs['factors'].append(
-                            {'factor_id': factor_id,
-                             'type': measure['type'],
-                             'vars_id': [node_id, lid],
+                            {
+                                'factor_id': factor_id,
+                                 'type': measure['type'],
+                                 'vars_id': [node_id, lid],
                              }
                             )
                     factor_idx+=1

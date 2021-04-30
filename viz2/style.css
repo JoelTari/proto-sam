@@ -237,11 +237,6 @@ line.rt_line_to_last_pose {
   opacity: 0.4;
   transition: opacity 1s ease;
 }
-/* TODO remove: the shared vars */
-.vertex#l10 circle,
-.vertex#l6 circle {
-  fill: #d3869b;
-}
 .factor line {
   stroke: #7c6f64;
   stroke-width: 0.2;
