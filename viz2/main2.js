@@ -24,6 +24,39 @@ const elLandmarks = elMainGroup.append("g").classed("landmarks", true);
 let elsLandmark = elLandmarks.selectAll(".landmark");
 
 /******************************************************************************
+ *                            D3 ZOOM
+ *****************************************************************************/
+// scat_data = {
+//   const randomX : d3.randomNormal(100 / 2, 80);
+//   const randomY : d3.randomNormal(60 / 2, 80);
+//   return Array.from({length: 2000}, () => [randomX(), randomY()]);
+// }
+
+// const scat_data = gen_scat_data()
+
+// const gscat = elCanvas.append('gscat')
+
+// gscat.selectAll("circle")
+//     .data(data)
+//     .join("circle")
+//       .attr("cx", ([x]) => x)
+//       .attr("cy", ([, y]) => y)
+//       .attr("r", 1.5);
+
+// const zoom = d3.zoom()
+//       .scaleExtent([1, 40])
+//       .on("zoom", zoomed);
+
+elCanvas.call(d3.zoom()
+    .extent([[-300, -180], [300, 180]])
+    .scaleExtent([0.1, 40])
+    .on("zoom", zoomed));
+
+function zoomed({transform}) {
+ elMainGroup.attr("transform", transform);
+}
+
+/******************************************************************************
  *                            MQTT events
  *****************************************************************************/
 
@@ -1161,7 +1194,7 @@ function join_enter_vertex(enter) {
             .attr("alignment-baseline", "central")
             .style("opacity", 0)
             .transition(t_vertex_entry)
-            .attr("font-size", 1)
+            // .attr("font-size", 1)
             .style("opacity", null);
           // covariance (-> a rotated group that holds an ellipse)
           g.append("g")

@@ -16,10 +16,11 @@ svg {
   background: #eee;
   /* background: #fbf9e7; */
   border: 2px solid black;
+  transform: scaleY(-1);
+  /* translate(0, -100%); */
 }
 
-.canvas > g {
-  transform: scaleY(-1) translate(0, -100%);
+.canvas {
   /* scaleY(-1); */
   /* position: absolute; */
   /* top: 10vw; */
@@ -227,10 +228,20 @@ line.rt_line_to_last_pose {
   font-family: Monospace;
   cursor: default;
   opacity: 1;
+  font-size: 1px;
+  /* CSS treats svg-text font-size px unit as default unit 
+   * (no unit doesnt work)
+   * So this is different that font-size outside svg*/
 }
-.vertex circle:hover {
+
+.vertex:hover circle {
   r: 1.4;
 }
+
+.vertex:hover text {
+  font-size: 1.4px;
+}
+
 .vertex ellipse {
   /* covariance */
   fill: #ece281;
