@@ -67,10 +67,10 @@ template <int                                NB_VARS_T,
 struct FactorMetaInfo {
   /// Number of groups of variables of the factor (ex: {x1,x2} -> 2)
   static constexpr auto numberOfVars{NB_VARS_T};
-  /// Aggregate dimension of the variable(s) combined (ex: SO2 odom -> 6)
+  /// Aggregate dimension of the variable(s) combined (ex: SE2 odom -> 6)
   ///  = dimension of the factor's (aggregate) variable vector
   static constexpr auto aggrVarDim{VAR_TOTAL_DIM_T};
-  /// Array of the respective dimension of each variable (ex: SO2 odom -> [3,3])
+  /// Array of the respective dimension of each variable (ex: SE2 odom -> [3,3])
   static constexpr auto varsSizes{VAR_SIZES_T};
   /// Array of the idx start & end of each variable in the aggregate factor
   /// variable array. (ex: SO2 odom -> [[0,2],[3,5]])
@@ -78,9 +78,8 @@ struct FactorMetaInfo {
   /// Dimension of the measurement vector (ex: SO2 odom -> 3, bearing-only -> 1)
   static constexpr auto mesDim{MES_DIM_T};
 
-  // automation attempt
-  /* static constexpr std::array<int[2], NB_VARS_T> varIdxRanges2 =
-   * generate_indexes_ranges(varsSizes); */
+  // for each variable, the range in the state. Ex: SE2 : -> [[0-2],[3-5]]
+  // this will work in conjunction with the variable_position & variable_range members in the factor class
   static constexpr auto varIdxRanges = generate_indexes_ranges(varsSizes);
 
   // The meta data stored statically is expressive in nature to serve
@@ -124,6 +123,9 @@ public:
   const std::map<std::string, int> variable_position
       = link_variables_to_state_vector_idx();
 
+  const std::map<std::string, std::array<int,2> > variable_range
+      = link_variables_to_state_vector_idx_range();
+
   // constructor
   BaseFactor(
       const std::array<std::string, META_INFO_T::numberOfVars> & variable_names)
@@ -143,6 +145,12 @@ private:
     std::map<std::string, int> m;
     int                        i = 0;
     for (const auto & e : this->variables) m[e] = i++;
+    return m;
+  };
+  std::map<std::string, int> link_variables_to_state_vector_idx_range()
+  {
+    std::map< std::string, std::array<int, 2> > m;
+    for (const auto & e : this->variables) m[e] = META_INFO_T::varIdxRanges(this->variable_position[e]);
     return m;
   };
 };
