@@ -83,7 +83,7 @@ void print_some_meta_info(const FACTOR_T & factor)
   std::cout << "\n *****  Printing Meta of factor f("
             << stringify_array_of_strings(factor.variables) << ") ***** \n";
 
-  std::cout << "Automated var idx ranges: \n";
+  std::cout << "Automated var idx ranges (in the factor state vector): \n";
 
   for (auto vrange : FACTOR_T::meta_t::varIdxRanges)
     std::cout << vrange[0] << "," << vrange[1] << "\t";
@@ -114,10 +114,12 @@ int main()
 
   try {
     std::cout << "Variable ordering of x1 is : "
-              << aFactor.variable_position.at("x3") << '\n';
+              << aFactor.variable_position.at("x1") << '\n';
   } catch (std::out_of_range e) {
-    throw "variable does not exist in this factor";
+    throw e;
   }
 
   return 0;
 }
+    // for( auto pos: aFactor.variable_position) std::cout << pos.first << ":" << pos.second << " || ";
+    // std::cout << "\n";

@@ -43,7 +43,7 @@ constexpr bool is_valid_varIdxRanges(T ranges)
 }
 
 template <size_t NB_VARS_T>
-constexpr std::array<std::array<int, 2>, NB_VARS_T>
+static constexpr std::array<std::array<int, 2>, NB_VARS_T>
 generate_indexes_ranges(const std::array<int, NB_VARS_T> & varsSizes)
 {
   std::array<std::array<int, 2>, NB_VARS_T> result{};
@@ -78,9 +78,10 @@ struct FactorMetaInfo {
   /// Dimension of the measurement vector (ex: SO2 odom -> 3, bearing-only -> 1)
   static constexpr auto mesDim{MES_DIM_T};
 
-  // for each variable, the range in the state. Ex: SE2 : -> [[0-2],[3-5]]
+  // for each variable, the range in the state. Ex: SE2 : -> [[0,2],[3,5]]
   // this will work in conjunction with the variable_position & variable_range members in the factor class
-  static constexpr auto varIdxRanges = generate_indexes_ranges(varsSizes);
+  // std::array<std::array<int, 2>, NB_VARS_T>
+  static constexpr std::array<std::array<int, 2>, NB_VARS_T> varIdxRanges  { generate_indexes_ranges<numberOfVars>(varsSizes) };
 
   // The meta data stored statically is expressive in nature to serve
   // effiencitly all runtime requirements without overhead. Howerver, the above
@@ -123,9 +124,6 @@ public:
   const std::map<std::string, int> variable_position
       = link_variables_to_state_vector_idx();
 
-  const std::map<std::string, std::array<int,2> > variable_range
-      = link_variables_to_state_vector_idx_range();
-
   // constructor
   BaseFactor(
       const std::array<std::string, META_INFO_T::numberOfVars> & variable_names)
@@ -145,12 +143,6 @@ private:
     std::map<std::string, int> m;
     int                        i = 0;
     for (const auto & e : this->variables) m[e] = i++;
-    return m;
-  };
-  std::map<std::string, int> link_variables_to_state_vector_idx_range()
-  {
-    std::map< std::string, std::array<int, 2> > m;
-    for (const auto & e : this->variables) m[e] = META_INFO_T::varIdxRanges(this->variable_position[e]);
     return m;
   };
 };
