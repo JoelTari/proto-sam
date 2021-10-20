@@ -9,13 +9,6 @@
 #include <type_traits>
 #include <utility>
 
-/* template <auto X> */
-/* struct ValueIdentity{ */
-/*   static constexpr auto value = X; */
-/* }; */
-/* template<auto X> */
-/* inline constexpr auto ValueIdentity_v = ValueIdentity<X>::value; */
-
 // assert the validity of variables size list against the total aggregate
 // dimension variable
 //       also, a variable size cannot be zero
@@ -79,9 +72,10 @@ struct FactorMetaInfo {
   static constexpr auto mesDim{MES_DIM_T};
 
   // for each variable, the range in the state. Ex: SE2 : -> [[0,2],[3,5]]
-  // this will work in conjunction with the variable_position & variable_range members in the factor class
-  // std::array<std::array<int, 2>, NB_VARS_T>
-  static constexpr std::array<std::array<int, 2>, NB_VARS_T> varIdxRanges  { generate_indexes_ranges<numberOfVars>(varsSizes) };
+  // this will work in conjunction with the variable_position & variable_range
+  // members in the factor class std::array<std::array<int, 2>, NB_VARS_T>
+  static constexpr std::array<std::array<int, 2>, NB_VARS_T> varIdxRanges{
+      generate_indexes_ranges<numberOfVars>(varsSizes)};
 
   // The meta data stored statically is expressive in nature to serve
   // effiencitly all runtime requirements without overhead. Howerver, the above
@@ -129,16 +123,17 @@ public:
 
   // constructor
   BaseFactor(
-      const std::string & factor_id
-    , const std::array<std::string, META_INFO_T::numberOfVars> & variable_names)
-      : variables(variable_names),factor_id(factor_id)
+      const std::string &                                        factor_id,
+      const std::array<std::string, META_INFO_T::numberOfVars> & variable_names)
+      : variables(variable_names)
+      , factor_id(factor_id)
   {
-    std::cout << "creating factor "<< factor_id << " with variables : ";
+    std::cout << "creating factor " << factor_id << " with variables : ";
     for (const auto & varname : this->variables) std::cout << varname << " ";
     std::cout << "\n";
   }
 
-  // TODO call static polymorphic methods here
+  // TODO: call static polymorphic methods here
   //      cascades into the stationary factors and the linear factors
 
 private:
@@ -155,18 +150,17 @@ private:
 template <size_t S>
 std::string stringify_array_of_strings(
     const std::array<std::string, S> & array_of_variable_names,
-    const std::string & separator = ",")
+    const std::string &                separator = ",")
 {
   std::stringstream ss;
   // for (const auto & str : array_of_variable_names)
-  for (int i=0 ; i< S; i++)
-  {
-    if (i) ss << separator;
+  for (int i = 0; i < S; i++) {
+    if (i)
+      ss << separator;
     ss << array_of_variable_names[i];
-  } 
+  }
   return ss.str();
 }
 // can be tested with:
 // auto test_arr = std::array<std::string,4>({"x45","x448","x85","Xs8"});
 // std::cout << stringify_array_of_strings(test_arr) << "\n";
-
