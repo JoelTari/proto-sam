@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.10)
 project(proto-sam)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+set(CMAKE_CXX_STANDARD 17)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(test_factor test_factor.cpp)
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(test_factor PUBLIC cxx_std_17)

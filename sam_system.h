@@ -1,10 +1,10 @@
 #ifndef SAM_SYSTEM_H_
 #define SAM_SYSTEM_H_
 
-#include "sam_slam_back_end/definitions.h"
-#include "sam_slam_back_end/odom_vel_factor.h"
-#include "sam_slam_back_end/range_bearing_factor.h"
-#include "sam_slam_back_end/bookkeeper.h"
+#include "definitions.h"
+// #include "odom_vel_factor.h"
+// #include "range_bearing_factor.h"
+#include "bookkeeper.h"
 #include <type_traits>
 
 namespace SAM
@@ -23,11 +23,11 @@ class SamSystem
 {
 public:
 
-    SamSystem(const Pose2D &pose, Eigen::Matrix3d &covariance_ini)
-        : pose_(pose), covariance_ini_(covariance_ini)
+    SamSystem()
     {
     }
 
+    // TODO: Is std::size_t I=0 necessary ?
     template <std::size_t I = 0, typename FT>
     void register_new_factor(const FT & factor)
     {
@@ -43,7 +43,7 @@ public:
     void place_factor_in_container(const FT & factor)
     {
         // beginning of static recursion (expanded at compile time)
-        if constexpr(I == S)
+        if constexpr(I == S_)
             return;
         else
         {
@@ -100,14 +100,13 @@ public:
 
 
 private:
-    Pose2D pose_;
-    Eigen::Matrix3d covariance_ini_;
     Bookkeeper bookkeeper_;
 
     // there's at least one factor, the rest are expanded
     std::tuple<std::vector<FACTOR_T> , std::vector<FACTORS_Ts>...> all_factors_tuple_ ;
 
-    constexpr static const size_t   S = std::tuple_size<decltype(all_factors_tuple_)>::value  ;
+    // how many different types of factor there are
+    constexpr static const size_t   S_ = std::tuple_size<decltype(all_factors_tuple_)>::value;
 
     template <size_t I>
     using factor_type_in_tuple_t = typename std::tuple_element<I,decltype(all_factors_tuple_)>::type::value_type ; 

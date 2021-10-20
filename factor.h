@@ -111,6 +111,9 @@ public:
   // state vector type
   using state_vector_t = Eigen::Matrix<double, META_INFO_T::aggrVarDim, 1>;
 
+  // factor id
+  const std::string factor_id;
+
   // the actual measurement made
   const measure_covariance_matrix_t mes_covariance;
   const measure_vector_t            mes_vector;
@@ -126,8 +129,9 @@ public:
 
   // constructor
   BaseFactor(
-      const std::array<std::string, META_INFO_T::numberOfVars> & variable_names)
-      : variables(variable_names)
+      const std::string & factor_id
+    , const std::array<std::string, META_INFO_T::numberOfVars> & variable_names)
+      : variables(variable_names),factor_id(factor_id)
   {
     std::cout << "creating factor with meta ";
     for (const auto & varname : this->variables) std::cout << varname << " ";
@@ -163,6 +167,6 @@ std::string stringify_array_of_strings(
   return ss.str();
 }
 // can be tested with:
-auto test_arr = std::array<std::string,4>({"x45","x448","x85","Xs8"});
-std::cout << stringify_array_of_strings(test_arr) << "\n";
+// auto test_arr = std::array<std::string,4>({"x45","x448","x85","Xs8"});
+// std::cout << stringify_array_of_strings(test_arr) << "\n";
 
