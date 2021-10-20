@@ -133,7 +133,7 @@ public:
     , const std::array<std::string, META_INFO_T::numberOfVars> & variable_names)
       : variables(variable_names),factor_id(factor_id)
   {
-    std::cout << "creating factor with meta ";
+    std::cout << "creating factor "<< factor_id << " with variables : ";
     for (const auto & varname : this->variables) std::cout << varname << " ";
     std::cout << "\n";
   }

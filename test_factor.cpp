@@ -17,9 +17,9 @@ using metaOdom_t     = FactorMetaInfo<nbvar, xdimtot, var_sizes, mesdim>;
 class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t>
 {
 public:
-  OdomFactor(const std::array<std::string, OdomFactor::meta_t::numberOfVars> &
+  OdomFactor(const std::string & factor_id,const std::array<std::string, OdomFactor::meta_t::numberOfVars> &
                  var_names)
-      : BaseFactor<OdomFactor, metaOdom_t>("f1",var_names)
+      : BaseFactor<OdomFactor, metaOdom_t>(factor_id,var_names)
   {
   }
 };
@@ -39,9 +39,9 @@ using metaIni_t       = FactorMetaInfo<nbvar2, xdimtot2, var_sizes2, mesdim2>;
 class IniFactor : public BaseFactor<IniFactor, metaIni_t>
 {
 public:
-  IniFactor(const std::array<std::string, IniFactor::meta_t::numberOfVars> &
+  IniFactor(const std::string & factor_id,const std::array<std::string, IniFactor::meta_t::numberOfVars> &
                 var_names)
-      : BaseFactor<IniFactor, metaIni_t>("f2",var_names)
+      : BaseFactor<IniFactor, metaIni_t>(factor_id, var_names)
   {
   }
 };
@@ -60,10 +60,10 @@ using metaBearing_t   = FactorMetaInfo<nbvar3, xdimtot3, var_sizes3, mesdim3>;
 class bearingFactor : public BaseFactor<bearingFactor, metaBearing_t>
 {
 public:
-  bearingFactor(
+  bearingFactor(const std::string & factor_id,
       const std::array<std::string, bearingFactor::meta_t::numberOfVars> &
           var_names)
-      : BaseFactor<bearingFactor, metaBearing_t>("f3",var_names)
+      : BaseFactor<bearingFactor, metaBearing_t>(factor_id, var_names)
   {
   }
 };
@@ -84,10 +84,10 @@ class rangeBearingFactor
     : public BaseFactor<rangeBearingFactor, metaRangeBearing_t>
 {
 public:
-  rangeBearingFactor(
+  rangeBearingFactor(const std::string & factor_id,
       const std::array<std::string, rangeBearingFactor::meta_t::numberOfVars> &
           var_names)
-      : BaseFactor<rangeBearingFactor, metaRangeBearing_t>("f4",var_names)
+      : BaseFactor<rangeBearingFactor, metaRangeBearing_t>(factor_id, var_names)
   {
   }
 };
@@ -111,8 +111,8 @@ class rangeBearingSlideFactor
   : public BaseFactor<rangeBearingSlideFactor, metaRangeBearingSliding_t>
 {
   public:
-  rangeBearingSlideFactor(const std::array<std::string, meta_t::numberOfVars> & var_names)
-    : BaseFactor<rangeBearingSlideFactor, metaRangeBearingSliding_t>("f5" ,var_names)
+  rangeBearingSlideFactor(const std::string & factor_id, const std::array<std::string, meta_t::numberOfVars> & var_names)
+    : BaseFactor<rangeBearingSlideFactor, metaRangeBearingSliding_t>(factor_id, var_names)
 {}
 };
 
@@ -142,11 +142,11 @@ void print_some_meta_info(const FACTOR_T & factor)
 
 int main()
 {
-  OdomFactor         aFactor({"x1", "x2"});
-  IniFactor          bFactor({"x0"});
-  bearingFactor      cFactor({"x2", "l1"});
-  rangeBearingFactor dFactor({"x3", "l2"});
-  rangeBearingSlideFactor eFactor({"x8","x9"});
+  OdomFactor         aFactor("f1",{"x1", "x2"});
+  IniFactor          bFactor("f2",{"x0"});
+  bearingFactor      cFactor("f3",{"x2", "l1"});
+  rangeBearingFactor dFactor("f4",{"x3", "l2"});
+  rangeBearingSlideFactor eFactor("f5",{"x8","x9"});
 
   print_some_meta_info(aFactor);
   print_some_meta_info(bFactor);
