@@ -76,6 +76,25 @@ public:
   }
 };
 
+
+/// TESTING A SLIDING RANGE BEARING TYPE INST
+// A Sliding range Bearing is a range-bearing measure, except all states are positions (not pose)
+// The angle is assumed to be measured from the world x-axis (not the robot orientation, which doesn't exist)
+constexpr int                    nbvar5     = 2;
+constexpr int                    xdimtot5   = 4;
+constexpr std::array<int, nbvar5> var_sizes5 = {2, 2};
+constexpr int mesdim5 = 2;
+using metaRangeBearingSliding_t
+    = FactorMetaInfo<nbvar5, xdimtot5, var_sizes5, mesdim5>;
+class rangeBearingSlideFactor
+  : public BaseFactor<rangeBearingSlideFactor, metaRangeBearingSliding_t>
+{
+  public:
+  rangeBearingSlideFactor(const std::array<std::string, meta_t::numberOfVars> & var_names)
+    : BaseFactor<rangeBearingSlideFactor, metaRangeBearingSliding_t>(var_names)
+{}
+};
+
 // some quick and dirty print helper function
 template <typename FACTOR_T>
 void print_some_meta_info(const FACTOR_T & factor)
@@ -106,12 +125,15 @@ int main()
   IniFactor          bFactor({"x0"});
   bearingFactor      cFactor({"x2", "l1"});
   rangeBearingFactor dFactor({"x3", "l2"});
+  rangeBearingSlideFactor eFactor({"x8","x9"});
 
   print_some_meta_info(aFactor);
   print_some_meta_info(bFactor);
   print_some_meta_info(cFactor);
   print_some_meta_info(dFactor);
+  print_some_meta_info(eFactor);
 
+  // query test
   try {
     std::cout << "Variable ordering of x1 is : "
               << aFactor.variable_position.at("x1") << '\n';

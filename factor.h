@@ -150,9 +150,19 @@ private:
 // purely helper: returns a string given an array of strings
 template <size_t S>
 std::string stringify_array_of_strings(
-    const std::array<std::string, S> & array_of_variable_names)
+    const std::array<std::string, S> & array_of_variable_names,
+    const std::string & separator = ",")
 {
   std::stringstream ss;
-  for (const auto & str : array_of_variable_names) ss << str;
+  // for (const auto & str : array_of_variable_names)
+  for (int i=0 ; i< S; i++)
+  {
+    if (i) ss << separator;
+    ss << array_of_variable_names[i];
+  } 
   return ss.str();
 }
+// can be tested with:
+auto test_arr = std::array<std::string,4>({"x45","x448","x85","Xs8"});
+std::cout << stringify_array_of_strings(test_arr) << "\n";
+
