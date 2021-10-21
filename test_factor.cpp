@@ -177,5 +177,3 @@ int main()
 
   return 0;
 }
-// for( auto pos: aFactor.variable_position) std::cout << pos.first << ":" <<
-// pos.second << " || "; std::cout << "\n";
