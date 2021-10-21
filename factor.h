@@ -16,14 +16,14 @@
  * @brief Assert the coherence of variables size list VS total aggregate
  * dimension variable. The sum of the former must equal the later.
  *
- * @tparam EXP_DIM_TOTAL_T
+ * @tparam EXPECTED_VAR_TOTAL_DIM
  * @tparam T
  * @param slist
  *
  * @return
  */
-template <int EXP_DIM_TOTAL_T, typename T>
-constexpr bool is_valid_varsSizes(T slist)
+template <int EXPECTED_VAR_TOTAL_DIM, typename T>
+constexpr bool IsSizesOfVarsValid(T slist)
 {
   // check if sizes elements are in valid range
   int sum = 0;
@@ -33,26 +33,36 @@ constexpr bool is_valid_varsSizes(T slist)
     if (e <= 0) return false;
   }
   // check if the sum of the sizes is coherent with total dimension size
-  if (sum != EXP_DIM_TOTAL_T) return false;
+  if (sum != EXPECTED_VAR_TOTAL_DIM) return false;
   // checks are coherent
   return true;
 }
 
-template <int EXP_AGGR_DIM_VAR, typename T>
-constexpr bool is_valid_varIdxRanges(T ranges)
+template <int EXPECTED_AGGR_DIM_VAR, typename T>
+constexpr bool IsVarIdxRangesValid(T ranges)
 {
+  // TODO: complete
   return true;
 }
 
-template <size_t NB_VARS_T>
-static constexpr std::array<std::array<int, 2>, NB_VARS_T>
-    generate_indexes_ranges(const std::array<int, NB_VARS_T>& varsSizes)
+/**
+ * @brief Given the sizes of the variables, infer the start and end positions of
+ * each variable in the joint variable array
+ *
+ * @tparam NB_VARS
+ * @param sizes_of_vars
+ *
+ * @return
+ */
+template <size_t NB_VARS>
+static constexpr std::array<std::array<int, 2>, NB_VARS>
+    GenerateIndexesRanges(const std::array<int, NB_VARS>& sizes_of_vars)
 {
-  std::array<std::array<int, 2>, NB_VARS_T> result {};
+  std::array<std::array<int, 2>, NB_VARS> result {};
 
   int idx = 0;
   int i   = 0;
-  for (const auto& vsize : varsSizes)
+  for (const auto& vsize : sizes_of_vars)
   {
     result[i] = std::array<int, 2> {idx, idx + vsize - 1};
     i++;
@@ -61,32 +71,38 @@ static constexpr std::array<std::array<int, 2>, NB_VARS_T>
   return result;
 }
 
-// metafunction (in a programming sense) about the meta (in a math sense) to
-// describe the strutural dimensions of a factor
-template <int                               NB_VARS_T,
-          int                               VAR_TOTAL_DIM_T,
-          const std::array<int, NB_VARS_T>& VAR_SIZES_T,
-          int                               MES_DIM_T>
+/**
+ * @brief metafunction holding the structure of a factor type
+ *
+ * @tparam NB_VARS
+ * @tparam VAR_TOTAL_DIM
+ * @tparam VAR_SIZES
+ * @tparam NB_VARS
+ */
+template <int                             NB_VARS,
+          int                             VAR_TOTAL_DIM,
+          const std::array<int, NB_VARS>& VAR_SIZES,
+          int                             MES_DIM>
 struct FactorMetaInfo
 {
   /// Number of groups of variables of the factor (ex: {x1,x2} -> 2)
-  static constexpr auto numberOfVars {NB_VARS_T};
+  static constexpr auto kNumberOfVars {NB_VARS};
   /// Aggregate dimension of the variable(s) combined (ex: SE2 odom -> 6)
   ///  = dimension of the factor's (aggregate) variable vector
-  static constexpr auto aggrVarDim {VAR_TOTAL_DIM_T};
+  static constexpr auto kAggrVarDim {VAR_TOTAL_DIM};
   /// Array of the respective dimension of each variable (ex: SE2 odom -> [3,3])
-  static constexpr auto varsSizes {VAR_SIZES_T};
+  static constexpr auto kVarsSizes {VAR_SIZES};
   /// Array of the idx start & end of each variable in the aggregate factor
   /// variable array. (ex: SO2 odom -> [[0,2],[3,5]])
   /* static constexpr auto varIdxRanges {VAR_IDX_RANGES_T}; */
   /// Dimension of the measurement vector (ex: SO2 odom -> 3, bearing-only -> 1)
-  static constexpr auto mesDim {MES_DIM_T};
+  static constexpr auto kMesDim {MES_DIM};
 
   // for each variable, the range in the state. Ex: SE2 : -> [[0,2],[3,5]]
   // this will work in conjunction with the variable_position & variable_range
   // members in the factor class std::array<std::array<int, 2>, NB_VARS_T>
-  static constexpr std::array<std::array<int, 2>, NB_VARS_T> varIdxRanges {
-      generate_indexes_ranges<numberOfVars>(varsSizes)};
+  static constexpr std::array<std::array<int, 2>, kNumberOfVars> kVarIdxRanges {
+      GenerateIndexesRanges<kNumberOfVars>(kVarsSizes)};
 
   // The meta data stored statically is expressive in nature to serve
   // effiencitly all runtime requirements without overhead. Howerver, the above
@@ -94,27 +110,33 @@ struct FactorMetaInfo
   // type. Coherence issues might arise, if for example, the total sum of
   // variable sizes does not equal the total dimension.
   // This motivates the asserts.
-  static_assert(is_valid_varsSizes<aggrVarDim>(varsSizes),
+  static_assert(IsSizesOfVarsValid<kAggrVarDim>(kVarsSizes),
                 "FACTOR META ASSERT: the list of variable dimension is not "
                 "coherent with the total dimension");
 };
 
+/**
+ * @brief
+ *
+ * @tparam Derived  Static polymorphic trick
+ * @tparam META_INFO_T meta information (dimensions of various entities)
+ */
 template <typename Derived, typename META_INFO_T>
 class BaseFactor
 {
   public:
-  // access meta info through meta_t type
-  using meta_t = META_INFO_T;
+  // access meta info through Meta_t type
+  using Meta_t = META_INFO_T;
   // jacobian matrix type
   using jacobian_matrix_t
-      = Eigen::Matrix<double, META_INFO_T::aggrVarDim, META_INFO_T::mesDim>;
+      = Eigen::Matrix<double, Meta_t::kAggrVarDim, Meta_t::kMesDim>;
   // measure vector type
-  using measure_vector_t = Eigen::Matrix<double, META_INFO_T::mesDim, 1>;
+  using measure_vector_t = Eigen::Matrix<double, Meta_t::kMesDim, 1>;
   // measure covariance type
   using measure_covariance_matrix_t
-      = Eigen::Matrix<double, META_INFO_T::mesDim, META_INFO_T::mesDim>;
+      = Eigen::Matrix<double, Meta_t::kMesDim, Meta_t::kMesDim>;
   // state vector type
-  using state_vector_t = Eigen::Matrix<double, META_INFO_T::aggrVarDim, 1>;
+  using state_vector_t = Eigen::Matrix<double, Meta_t::kAggrVarDim, 1>;
 
   // factor id
   const std::string factor_id;
@@ -127,15 +149,20 @@ class BaseFactor
 
   state_vector_t linearization_point;
 
-  const std::array<std::string, META_INFO_T::numberOfVars> variables;
+  const std::array<std::string, Meta_t::kNumberOfVars> variables;
 
   const std::map<std::string, int> variable_position
-      = link_variables_to_state_vector_idx();
+      = LinkVariablesToStateVectorIdx();
 
-  // constructor
+      /**
+      * @brief Base Factor consturctor
+      *
+      * @param factor_id str id of the factor (eg "f0")
+      * @param variable_names array str of the variables (or keys) (eg ["x2","l5"])
+      */
   BaseFactor(
-      const std::string&                                        factor_id,
-      const std::array<std::string, META_INFO_T::numberOfVars>& variable_names)
+      const std::string&                                    factor_id,
+      const std::array<std::string, Meta_t::kNumberOfVars>& variable_names)
       : variables(variable_names)
       , factor_id(factor_id)
   {
@@ -148,7 +175,7 @@ class BaseFactor
   //      cascades into the stationary factors and the linear factors
 
   private:
-  std::map<std::string, int> link_variables_to_state_vector_idx()
+  std::map<std::string, int> LinkVariablesToStateVectorIdx()
   {
     std::map<std::string, int> m;
     int                        i = 0;
@@ -157,9 +184,18 @@ class BaseFactor
   };
 };
 
-// purely helper: returns a string given an array of strings
+/**
+ * @brief Returns a string given an array of string
+ *
+ * @tparam S
+ * @param array_of_variable_names
+ * @param separator
+ * @param ""
+ *
+ * @return
+ */
 template <size_t S>
-std::string stringify_array_of_strings(
+std::string StringifyArrayOfStrings(
     const std::array<std::string, S>& array_of_variable_names,
     const std::string&                separator = ",")
 {

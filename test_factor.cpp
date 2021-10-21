@@ -6,11 +6,11 @@
 //------------------------------------------------------------------//
 //                  Odom factor type instantiation                  //
 //------------------------------------------------------------------//
-constexpr int                    nbvar     = 2;
-constexpr int                    xdimtot   = 6;
-constexpr std::array<int, nbvar> var_sizes = {3, 3};
-constexpr int                    mesdim    = 3;
-using metaOdom_t = FactorMetaInfo<nbvar, xdimtot, var_sizes, mesdim>;
+constexpr int                     kNbVar    = 2;
+constexpr int                     kXDimtOt  = 6;
+constexpr std::array<int, kNbVar> kVarSizes = {3, 3};
+constexpr int                     kMesDim   = 3;
+using metaOdom_t = FactorMetaInfo<kNbVar, kXDimtOt, kVarSizes, kMesDim>;
 
 /**
  * @brief Factor odometry
@@ -19,7 +19,7 @@ class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t>
 {
   public:
   OdomFactor(const std::string& factor_id,
-             const std::array<std::string, OdomFactor::meta_t::numberOfVars>&
+             const std::array<std::string, OdomFactor::Meta_t::kNumberOfVars>&
                  var_names)
       : BaseFactor<OdomFactor, metaOdom_t>(factor_id, var_names)
   {
@@ -29,20 +29,20 @@ class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t>
 //------------------------------------------------------------------//
 //                Initial pose factor instantiation                 //
 //------------------------------------------------------------------//
-constexpr int                     nbvar2     = 1;
-constexpr int                     xdimtot2   = 3;
-constexpr std::array<int, nbvar2> var_sizes2 = {3};
-constexpr int                     mesdim2    = 3;
-using metaIni_t = FactorMetaInfo<nbvar2, xdimtot2, var_sizes2, mesdim2>;
+constexpr int                      kNbVar2    = 1;
+constexpr int                      kXDimTot2  = 3;
+constexpr std::array<int, kNbVar2> kVarSizes2 = {3};
+constexpr int                      kMesDim2   = 3;
+using metaIni_t = FactorMetaInfo<kNbVar2, kXDimTot2, kVarSizes2, kMesDim2>;
 /**
  * @brief Factor initial pose (2.5d)
  */
 class IniFactor : public BaseFactor<IniFactor, metaIni_t>
 {
   public:
-  IniFactor(
-      const std::string&                                              factor_id,
-      const std::array<std::string, IniFactor::meta_t::numberOfVars>& var_names)
+  IniFactor(const std::string& factor_id,
+            const std::array<std::string, IniFactor::Meta_t::kNumberOfVars>&
+                var_names)
       : BaseFactor<IniFactor, metaIni_t>(factor_id, var_names)
   {
   }
@@ -51,11 +51,11 @@ class IniFactor : public BaseFactor<IniFactor, metaIni_t>
 //------------------------------------------------------------------//
 //              Bearing-only factor type instantiation              //
 //------------------------------------------------------------------//
-constexpr int                     nbvar3     = 2;
-constexpr int                     xdimtot3   = 5;
-constexpr std::array<int, nbvar3> var_sizes3 = {3, 2};
-constexpr int                     mesdim3    = 1;
-using metaBearing_t = FactorMetaInfo<nbvar3, xdimtot3, var_sizes3, mesdim3>;
+constexpr int                      kNbVar3    = 2;
+constexpr int                      kXDimTot3  = 5;
+constexpr std::array<int, kNbVar3> kVarSizes3 = {3, 2};
+constexpr int                      kMesDim3   = 1;
+using metaBearing_t = FactorMetaInfo<kNbVar3, kXDimTot3, kVarSizes3, kMesDim3>;
 /**
  * @brief Factor for bearing only
  */
@@ -64,7 +64,7 @@ class bearingFactor : public BaseFactor<bearingFactor, metaBearing_t>
   public:
   bearingFactor(
       const std::string& factor_id,
-      const std::array<std::string, bearingFactor::meta_t::numberOfVars>&
+      const std::array<std::string, bearingFactor::Meta_t::kNumberOfVars>&
           var_names)
       : BaseFactor<bearingFactor, metaBearing_t>(factor_id, var_names)
   {
@@ -74,12 +74,12 @@ class bearingFactor : public BaseFactor<bearingFactor, metaBearing_t>
 //------------------------------------------------------------------//
 //             Range-bearing factor type instantiation              //
 //------------------------------------------------------------------//
-constexpr int                     nbvar4     = 2;
-constexpr int                     xdimtot4   = 5;
-constexpr std::array<int, nbvar4> var_sizes4 = {3, 2};
-constexpr int                     mesdim4    = 2;
+constexpr int                      kNbVar4    = 2;
+constexpr int                      kXDimTot4  = 5;
+constexpr std::array<int, kNbVar4> kVarSizes4 = {3, 2};
+constexpr int                      kMesDim4   = 2;
 using metaRangeBearing_t
-    = FactorMetaInfo<nbvar4, xdimtot4, var_sizes4, mesdim4>;
+    = FactorMetaInfo<kNbVar4, kXDimTot4, kVarSizes4, kMesDim4>;
 /**
  * @brief Factor for range-bearing (pose toward position)
  */
@@ -89,7 +89,7 @@ class rangeBearingFactor
   public:
   rangeBearingFactor(
       const std::string& factor_id,
-      const std::array<std::string, rangeBearingFactor::meta_t::numberOfVars>&
+      const std::array<std::string, rangeBearingFactor::Meta_t::kNumberOfVars>&
           var_names)
       : BaseFactor<rangeBearingFactor, metaRangeBearing_t>(factor_id, var_names)
   {
@@ -101,12 +101,12 @@ class rangeBearingFactor
 //                     Position toward position                     //
 //           Orientation is given wrt the world main axis           //
 //------------------------------------------------------------------//
-constexpr int                     nbvar5     = 2;
-constexpr int                     xdimtot5   = 4;
-constexpr std::array<int, nbvar5> var_sizes5 = {2, 2};
-constexpr int                     mesdim5    = 2;
+constexpr int                      kNbVar5    = 2;
+constexpr int                      kXDimTot5  = 4;
+constexpr std::array<int, kNbVar5> kVarSizes5 = {2, 2};
+constexpr int                      kMesDim5   = 2;
 using metaRangeBearingSliding_t
-    = FactorMetaInfo<nbvar5, xdimtot5, var_sizes5, mesdim5>;
+    = FactorMetaInfo<kNbVar5, kXDimTot5, kVarSizes5, kMesDim5>;
 /**
  * @brief Factor for fixed orientation range-bearing
  */
@@ -115,8 +115,8 @@ class rangeBearingSlideFactor
 {
   public:
   rangeBearingSlideFactor(
-      const std::string&                                   factor_id,
-      const std::array<std::string, meta_t::numberOfVars>& var_names)
+      const std::string&                                    factor_id,
+      const std::array<std::string, Meta_t::kNumberOfVars>& var_names)
       : BaseFactor<rangeBearingSlideFactor, metaRangeBearingSliding_t>(
           factor_id,
           var_names)
@@ -126,15 +126,15 @@ class rangeBearingSlideFactor
 
 // some quick and dirty print helper function
 template <typename FACTOR_T>
-void print_some_meta_info(const FACTOR_T& factor)
+void printSomeMetaInfo(const FACTOR_T& factor)
 {
   std::cout << "\n *****  Printing Meta of factor " << factor.factor_id
-            << " of scope (" << stringify_array_of_strings(factor.variables)
+            << " of scope (" << StringifyArrayOfStrings(factor.variables)
             << ") ***** \n";
 
   std::cout << "Automated var idx ranges (in the factor state vector): \n";
 
-  for (auto vrange : FACTOR_T::meta_t::varIdxRanges)
+  for (auto vrange : FACTOR_T::Meta_t::kVarIdxRanges)
     std::cout << vrange[0] << "," << vrange[1] << "\t";
   std::cout << "\n";
 
@@ -142,9 +142,9 @@ void print_some_meta_info(const FACTOR_T& factor)
   {
     std::cout
         << var << " -> ["
-        << FACTOR_T::meta_t::varIdxRanges[factor.variable_position.at(var)][0]
+        << FACTOR_T::Meta_t::kVarIdxRanges[factor.variable_position.at(var)][0]
         << ":"
-        << FACTOR_T::meta_t::varIdxRanges[factor.variable_position.at(var)][1]
+        << FACTOR_T::Meta_t::kVarIdxRanges[factor.variable_position.at(var)][1]
         << "]"
         << "\n";
   }
@@ -158,11 +158,11 @@ int main()
   rangeBearingFactor      dFactor("f4", {"x3", "l2"});
   rangeBearingSlideFactor eFactor("f5", {"x8", "x9"});
 
-  print_some_meta_info(aFactor);
-  print_some_meta_info(bFactor);
-  print_some_meta_info(cFactor);
-  print_some_meta_info(dFactor);
-  print_some_meta_info(eFactor);
+  printSomeMetaInfo(aFactor);
+  printSomeMetaInfo(bFactor);
+  printSomeMetaInfo(cFactor);
+  printSomeMetaInfo(dFactor);
+  printSomeMetaInfo(eFactor);
 
   // query test
   try
