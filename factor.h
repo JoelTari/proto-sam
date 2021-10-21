@@ -12,19 +12,28 @@
 // assert the validity of variables size list against the total aggregate
 // dimension variable
 //       also, a variable size cannot be zero
+/**
+ * @brief Assert the coherence of variables size list VS total aggregate
+ * dimension variable. The sum of the former must equal the later.
+ *
+ * @tparam EXP_DIM_TOTAL_T
+ * @tparam T
+ * @param slist
+ *
+ * @return
+ */
 template <int EXP_DIM_TOTAL_T, typename T>
 constexpr bool is_valid_varsSizes(T slist)
 {
   // check if sizes elements are in valid range
   int sum = 0;
-  for (const auto & e : slist) {
+  for (const auto& e : slist)
+  {
     sum += e;
-    if (e <= 0)
-      return false;
+    if (e <= 0) return false;
   }
   // check if the sum of the sizes is coherent with total dimension size
-  if (sum != EXP_DIM_TOTAL_T)
-    return false;
+  if (sum != EXP_DIM_TOTAL_T) return false;
   // checks are coherent
   return true;
 }
@@ -37,14 +46,15 @@ constexpr bool is_valid_varIdxRanges(T ranges)
 
 template <size_t NB_VARS_T>
 static constexpr std::array<std::array<int, 2>, NB_VARS_T>
-generate_indexes_ranges(const std::array<int, NB_VARS_T> & varsSizes)
+    generate_indexes_ranges(const std::array<int, NB_VARS_T>& varsSizes)
 {
-  std::array<std::array<int, 2>, NB_VARS_T> result{};
+  std::array<std::array<int, 2>, NB_VARS_T> result {};
 
   int idx = 0;
   int i   = 0;
-  for (const auto & vsize : varsSizes) {
-    result[i] = std::array<int, 2>{idx, idx + vsize - 1};
+  for (const auto& vsize : varsSizes)
+  {
+    result[i] = std::array<int, 2> {idx, idx + vsize - 1};
     i++;
     idx = idx + vsize;
   }
@@ -53,28 +63,29 @@ generate_indexes_ranges(const std::array<int, NB_VARS_T> & varsSizes)
 
 // metafunction (in a programming sense) about the meta (in a math sense) to
 // describe the strutural dimensions of a factor
-template <int                                NB_VARS_T,
-          int                                VAR_TOTAL_DIM_T,
-          const std::array<int, NB_VARS_T> & VAR_SIZES_T,
-          int                                MES_DIM_T>
-struct FactorMetaInfo {
+template <int                               NB_VARS_T,
+          int                               VAR_TOTAL_DIM_T,
+          const std::array<int, NB_VARS_T>& VAR_SIZES_T,
+          int                               MES_DIM_T>
+struct FactorMetaInfo
+{
   /// Number of groups of variables of the factor (ex: {x1,x2} -> 2)
-  static constexpr auto numberOfVars{NB_VARS_T};
+  static constexpr auto numberOfVars {NB_VARS_T};
   /// Aggregate dimension of the variable(s) combined (ex: SE2 odom -> 6)
   ///  = dimension of the factor's (aggregate) variable vector
-  static constexpr auto aggrVarDim{VAR_TOTAL_DIM_T};
+  static constexpr auto aggrVarDim {VAR_TOTAL_DIM_T};
   /// Array of the respective dimension of each variable (ex: SE2 odom -> [3,3])
-  static constexpr auto varsSizes{VAR_SIZES_T};
+  static constexpr auto varsSizes {VAR_SIZES_T};
   /// Array of the idx start & end of each variable in the aggregate factor
   /// variable array. (ex: SO2 odom -> [[0,2],[3,5]])
   /* static constexpr auto varIdxRanges {VAR_IDX_RANGES_T}; */
   /// Dimension of the measurement vector (ex: SO2 odom -> 3, bearing-only -> 1)
-  static constexpr auto mesDim{MES_DIM_T};
+  static constexpr auto mesDim {MES_DIM_T};
 
   // for each variable, the range in the state. Ex: SE2 : -> [[0,2],[3,5]]
   // this will work in conjunction with the variable_position & variable_range
   // members in the factor class std::array<std::array<int, 2>, NB_VARS_T>
-  static constexpr std::array<std::array<int, 2>, NB_VARS_T> varIdxRanges{
+  static constexpr std::array<std::array<int, 2>, NB_VARS_T> varIdxRanges {
       generate_indexes_ranges<numberOfVars>(varsSizes)};
 
   // The meta data stored statically is expressive in nature to serve
@@ -91,7 +102,7 @@ struct FactorMetaInfo {
 template <typename Derived, typename META_INFO_T>
 class BaseFactor
 {
-public:
+  public:
   // access meta info through meta_t type
   using meta_t = META_INFO_T;
   // jacobian matrix type
@@ -123,25 +134,25 @@ public:
 
   // constructor
   BaseFactor(
-      const std::string &                                        factor_id,
-      const std::array<std::string, META_INFO_T::numberOfVars> & variable_names)
+      const std::string&                                        factor_id,
+      const std::array<std::string, META_INFO_T::numberOfVars>& variable_names)
       : variables(variable_names)
       , factor_id(factor_id)
   {
     std::cout << "creating factor " << factor_id << " with variables : ";
-    for (const auto & varname : this->variables) std::cout << varname << " ";
+    for (const auto& varname : this->variables) std::cout << varname << " ";
     std::cout << "\n";
   }
 
   // TODO: call static polymorphic methods here
   //      cascades into the stationary factors and the linear factors
 
-private:
+  private:
   std::map<std::string, int> link_variables_to_state_vector_idx()
   {
     std::map<std::string, int> m;
     int                        i = 0;
-    for (const auto & e : this->variables) m[e] = i++;
+    for (const auto& e : this->variables) m[e] = i++;
     return m;
   };
 };
@@ -149,14 +160,14 @@ private:
 // purely helper: returns a string given an array of strings
 template <size_t S>
 std::string stringify_array_of_strings(
-    const std::array<std::string, S> & array_of_variable_names,
-    const std::string &                separator = ",")
+    const std::array<std::string, S>& array_of_variable_names,
+    const std::string&                separator = ",")
 {
   std::stringstream ss;
   // for (const auto & str : array_of_variable_names)
-  for (int i = 0; i < S; i++) {
-    if (i)
-      ss << separator;
+  for (int i = 0; i < S; i++)
+  {
+    if (i) ss << separator;
     ss << array_of_variable_names[i];
   }
   return ss.str();

@@ -1,4 +1,5 @@
 #include "factor.h"
+
 #include <array>
 #include <iostream>
 
@@ -16,9 +17,9 @@ using metaOdom_t = FactorMetaInfo<nbvar, xdimtot, var_sizes, mesdim>;
  */
 class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t>
 {
-public:
-  OdomFactor(const std::string & factor_id,
-             const std::array<std::string, OdomFactor::meta_t::numberOfVars> &
+  public:
+  OdomFactor(const std::string& factor_id,
+             const std::array<std::string, OdomFactor::meta_t::numberOfVars>&
                  var_names)
       : BaseFactor<OdomFactor, metaOdom_t>(factor_id, var_names)
   {
@@ -38,10 +39,10 @@ using metaIni_t = FactorMetaInfo<nbvar2, xdimtot2, var_sizes2, mesdim2>;
  */
 class IniFactor : public BaseFactor<IniFactor, metaIni_t>
 {
-public:
-  IniFactor(const std::string & factor_id,
-            const std::array<std::string, IniFactor::meta_t::numberOfVars> &
-                var_names)
+  public:
+  IniFactor(
+      const std::string&                                              factor_id,
+      const std::array<std::string, IniFactor::meta_t::numberOfVars>& var_names)
       : BaseFactor<IniFactor, metaIni_t>(factor_id, var_names)
   {
   }
@@ -60,10 +61,10 @@ using metaBearing_t = FactorMetaInfo<nbvar3, xdimtot3, var_sizes3, mesdim3>;
  */
 class bearingFactor : public BaseFactor<bearingFactor, metaBearing_t>
 {
-public:
+  public:
   bearingFactor(
-      const std::string & factor_id,
-      const std::array<std::string, bearingFactor::meta_t::numberOfVars> &
+      const std::string& factor_id,
+      const std::array<std::string, bearingFactor::meta_t::numberOfVars>&
           var_names)
       : BaseFactor<bearingFactor, metaBearing_t>(factor_id, var_names)
   {
@@ -85,10 +86,10 @@ using metaRangeBearing_t
 class rangeBearingFactor
     : public BaseFactor<rangeBearingFactor, metaRangeBearing_t>
 {
-public:
+  public:
   rangeBearingFactor(
-      const std::string & factor_id,
-      const std::array<std::string, rangeBearingFactor::meta_t::numberOfVars> &
+      const std::string& factor_id,
+      const std::array<std::string, rangeBearingFactor::meta_t::numberOfVars>&
           var_names)
       : BaseFactor<rangeBearingFactor, metaRangeBearing_t>(factor_id, var_names)
   {
@@ -112,10 +113,10 @@ using metaRangeBearingSliding_t
 class rangeBearingSlideFactor
     : public BaseFactor<rangeBearingSlideFactor, metaRangeBearingSliding_t>
 {
-public:
+  public:
   rangeBearingSlideFactor(
-      const std::string &                                   factor_id,
-      const std::array<std::string, meta_t::numberOfVars> & var_names)
+      const std::string&                                   factor_id,
+      const std::array<std::string, meta_t::numberOfVars>& var_names)
       : BaseFactor<rangeBearingSlideFactor, metaRangeBearingSliding_t>(
           factor_id,
           var_names)
@@ -125,7 +126,7 @@ public:
 
 // some quick and dirty print helper function
 template <typename FACTOR_T>
-void print_some_meta_info(const FACTOR_T & factor)
+void print_some_meta_info(const FACTOR_T& factor)
 {
   std::cout << "\n *****  Printing Meta of factor " << factor.factor_id
             << " of scope (" << stringify_array_of_strings(factor.variables)
@@ -137,7 +138,8 @@ void print_some_meta_info(const FACTOR_T & factor)
     std::cout << vrange[0] << "," << vrange[1] << "\t";
   std::cout << "\n";
 
-  for (const auto & var : factor.variables) {
+  for (const auto& var : factor.variables)
+  {
     std::cout
         << var << " -> ["
         << FACTOR_T::meta_t::varIdxRanges[factor.variable_position.at(var)][0]
@@ -163,10 +165,13 @@ int main()
   print_some_meta_info(eFactor);
 
   // query test
-  try {
+  try
+  {
     std::cout << "Variable ordering of x1 is : "
               << aFactor.variable_position.at("x1") << '\n';
-  } catch (std::out_of_range e) {
+  }
+  catch (std::out_of_range e)
+  {
     throw e;
   }
 
