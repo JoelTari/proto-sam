@@ -7,12 +7,11 @@
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <tuple>
-#include <vector>
 #include <type_traits>
+#include <vector>
 
 namespace SAM
 {
-
   template <typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
   class SamSystem
@@ -54,21 +53,41 @@ namespace SAM
         place_factor_in_container<I + 1, FT>(std::forward<Args>(args)...);
       }
     }
+    
+    template <std::size_t I = 0>
+      void loop_factors()
+    {
+      if constexpr (I == S_)
+        return;
+      else
+      {
+        for(const auto & factor : std::get<I>(this->all_factors_tuple_))
+        {
+            std::cout << "\t";
+            ShortPrintFactorInfo(factor);
+            // TODO: CONTINUE: replace the print by filling A the right block
+        }
+        std::cout << "\n";
+        // compile-time recursion
+        loop_factors<I+1>();
+      }
+    }
 
 
     void smooth_and_map()
     {
-      int M = bookkeeper_.aggr_dim_mes;
-      int N = bookkeeper_.aggr_dim_keys;
-      Eigen::MatrixXd A(M,N);
+      int             M = bookkeeper_.aggr_dim_mes;
+      int             N = bookkeeper_.aggr_dim_keys;
+      Eigen::MatrixXd A(M, N);
       Eigen::VectorXd b(M);
       // loop the factors, and fill A and b
       //
       // solve  A,b
-       auto Xmap = A.colPivHouseholderQr().solve(b);
+      auto Xmap  = A.colPivHouseholderQr().solve(b);
+      auto Xmap2 = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
 
       // declarer la matrice d'info H
-      
+
 
       // declarer/reutiliser un pt de linearisation
 
