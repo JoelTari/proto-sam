@@ -1,6 +1,7 @@
 #include <array>
 #include <cstddef>
 #include <eigen3/Eigen/Dense>
+#include <initializer_list>
 #include <iostream>
 #include <map>
 #include <numeric>
@@ -120,8 +121,9 @@ struct FactorMetaInfo
  *
  * @tparam Derived  Static polymorphic trick
  * @tparam META_INFO_T meta information (dimensions of various entities)
+ * @tparam FACTOR_TYPE_NAME[] the name of the factor type (odometry, range-bearing, initialPose etc...)
  */
-template <typename Derived, typename META_INFO_T>
+template <typename Derived, typename META_INFO_T, const char FACTOR_TYPE_NAME[]>
 class BaseFactor
 {
   public:
@@ -137,6 +139,10 @@ class BaseFactor
       = Eigen::Matrix<double, Meta_t::kMesDim, Meta_t::kMesDim>;
   // state vector type
   using state_vector_t = Eigen::Matrix<double, Meta_t::kAggrVarDim, 1>;
+
+  // the type of factor (eg odometry, range bearing, linear)
+  // static const char* GetFactorTypeName() { return FACTOR_TYPE_NAME; };
+  static constexpr const char* kFactorTypeName =  FACTOR_TYPE_NAME  ;
 
   // factor id
   const std::string factor_id;
@@ -154,19 +160,19 @@ class BaseFactor
   const std::map<std::string, int> variable_position
       = LinkVariablesToStateVectorIdx();
 
-      /**
-      * @brief Base Factor consturctor
-      *
-      * @param factor_id str id of the factor (eg "f0")
-      * @param variable_names array str of the variables (or keys) (eg ["x2","l5"])
-      */
+  /**
+   * @brief Base Factor consturctor
+   *
+   * @param factor_id str id of the factor (eg "f0")
+   * @param variable_names array str of the variables (or keys) (eg ["x2","l5"])
+   */
   BaseFactor(
       const std::string&                                    factor_id,
       const std::array<std::string, Meta_t::kNumberOfVars>& variable_names)
       : variables(variable_names)
       , factor_id(factor_id)
   {
-    std::cout << "creating factor " << factor_id << " with variables : ";
+    std::cout << "Create " << this->kFactorTypeName <<  " factor " << factor_id << " with variables : ";
     for (const auto& varname : this->variables) std::cout << varname << " ";
     std::cout << "\n";
   }
@@ -207,7 +213,17 @@ std::string StringifyArrayOfStrings(
     ss << array_of_variable_names[i];
   }
   return ss.str();
+  // can be tested with:
+  // auto test_arr = std::array<std::string,4>({"x45","x448","x85","Xs8"});
+  // std::cout << stringify_array_of_strings(test_arr) << "\n";
 }
-// can be tested with:
-// auto test_arr = std::array<std::string,4>({"x45","x448","x85","Xs8"});
-// std::cout << stringify_array_of_strings(test_arr) << "\n";
+
+template <typename FACTOR_T>
+void ShortPrintFactorInfo(const FACTOR_T& factor)
+{
+  std::cout << FACTOR_T::kFactorTypeName
+            << " " 
+            << factor.factor_id
+            << " :: Scope : " << StringifyArrayOfStrings(factor.variables);
+}
+
