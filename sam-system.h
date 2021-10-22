@@ -4,6 +4,7 @@
 #include "bookkeeper.h"
 // #include "definitions.h"
 
+#include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <tuple>
 #include <vector>
@@ -11,14 +12,6 @@
 
 namespace SAM
 {
-  /***
-   * Mainly a class to keep track of associations between variables and index
-   *positions in matrix representations
-   ***/
-  class Bookkeeper
-  {
-  };
-
 
   template <typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
@@ -35,7 +28,8 @@ namespace SAM
                          FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
           "This type of factor doesnt exist ");
 
-      // TODO: check at run-time that the factor_id doesn't exist already
+      // TODO: - check at run-time that the factor_id doesn't exist already
+      // TODO: - update the bookkeeper
 
       // recursively find, at compile time, the corresponding container (amongst
       // the ones in the tuple) to emplace back the factor FT
@@ -64,7 +58,17 @@ namespace SAM
 
     void smooth_and_map()
     {
+      int M = bookkeeper_.aggr_dim_mes;
+      int N = bookkeeper_.aggr_dim_keys;
+      Eigen::MatrixXd A(M,N);
+      Eigen::VectorXd b(M);
+      // loop the factors, and fill A and b
+      //
+      // solve  A,b
+       auto Xmap = A.colPivHouseholderQr().solve(b);
+
       // declarer la matrice d'info H
+      
 
       // declarer/reutiliser un pt de linearisation
 
