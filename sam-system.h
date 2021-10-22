@@ -2,9 +2,11 @@
 #define SAM_SYSTEM_H_
 
 #include "bookkeeper.h"
-#include "definitions.h"
+// #include "definitions.h"
 
 #include <iostream>
+#include <tuple>
+#include <vector>
 #include <type_traits>
 
 namespace SAM
@@ -25,36 +27,37 @@ namespace SAM
     public:
     SamSystem() {}
 
-    // TODO: - Is std::size_t I=0 necessary ?
-    // TODO: - register_new_factor via perfect forwarding
-    template <std::size_t I = 0, typename FT>
-    void register_new_factor(const FT& factor)
+    template <typename FT, typename... Args>
+    void register_new_factor(Args&&... args)
     {
       static_assert(
           std::is_same_v<FT,
                          FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
           "This type of factor doesnt exist ");
 
-      place_factor_in_container(factor);
+      // TODO: check at run-time that the factor_id doesn't exist already
+
+      // recursively find, at compile time, the corresponding container (amongst
+      // the ones in the tuple) to emplace back the factor FT
+      place_factor_in_container<0, FT>(std::forward<Args>(args)...);
     }
 
-    template <std::size_t I = 0, typename FT>
-    void place_factor_in_container(const FT& factor)
+    template <std::size_t I = 0, typename FT, typename... Args>
+    void place_factor_in_container(Args&&... args)
     {
       // beginning of static recursion (expanded at compile time)
       if constexpr (I == S_)
         return;
       else
       {
-        // if constexpr( std::is_same_v<FT, typename
-        // std::tuple_element<I,decltype(this->all_factors_tuple_)>::type::value_type
-        // > )
+        // if this is the type we are looking for, emplace back in
         if constexpr (std::is_same_v<FT, factor_type_in_tuple_t<I>>)
         {
-          std::get<I>(this->all_factors_tuple_).push_back(factor);
+          std::get<I>(this->all_factors_tuple_)
+              .emplace_back(std::forward<Args>(args)...);
         }
         // recursion :  compile time call
-        place_factor_in_container<I + 1, FT>(factor);
+        place_factor_in_container<I + 1, FT>(std::forward<Args>(args)...);
       }
     }
 
@@ -102,8 +105,8 @@ namespace SAM
     }
 
     // TODO: remove, too specific
-    Eigen::VectorXd mean_;
-    Eigen::MatrixXd covariance_;
+    // Eigen::VectorXd mean_;
+    // Eigen::MatrixXd covariance_;
 
     /**
      * @brief dummy iteration over tuple of std::vector
@@ -115,7 +118,7 @@ namespace SAM
         return;
       else
       {
-        std::cout << factor_type_in_tuple_t<I>::kFactorTypeName
+        std::cout << factor_type_in_tuple_t<I>::kFactorCategory
                   << "  -- Number of elements registered : "
                   << std::get<I>(this->all_factors_tuple_).size() << "\n";
 
@@ -150,7 +153,7 @@ namespace SAM
      * @brief Gets the factor type of the Ith tuple element. Use case: get some
      * static info about the factors such as :
      * - factor type name of 0th factor collection :
-     * `factor_type_in_tuple_t<0>::kFactorTypeName`
+     * `factor_type_in_tuple_t<0>::kFactorCategory`
      * - some meta (dimensions) about the Ith factors collection:
      * `factor_type_in_tuple_t<I>::Meta_t::kMesDim`.
      *

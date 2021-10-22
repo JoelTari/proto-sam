@@ -6,7 +6,7 @@
 //------------------------------------------------------------------//
 //                  Odom factor type instantiation                  //
 //------------------------------------------------------------------//
-static constexpr char             kFactorTypeName[] = "SE2-odometry";
+static constexpr char             kFactorCategory[] = "SE2-odometry";
 constexpr int                     kNbVar            = 2;
 constexpr int                     kXDimtOt          = 6;
 constexpr std::array<int, kNbVar> kVarSizes         = {3, 3};
@@ -16,13 +16,13 @@ using metaOdom_t = FactorMetaInfo<kNbVar, kXDimtOt, kVarSizes, kMesDim>;
 /**
  * @brief Factor odometry
  */
-class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t, kFactorTypeName>
+class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t, kFactorCategory>
 {
   public:
   OdomFactor(const std::string& factor_id,
              const std::array<std::string, OdomFactor::Meta_t::kNumberOfVars>&
                  var_names)
-      : BaseFactor<OdomFactor, metaOdom_t, kFactorTypeName>(factor_id,
+      : BaseFactor<OdomFactor, metaOdom_t, kFactorCategory>(factor_id,
                                                             var_names)
   {
   }
@@ -31,7 +31,7 @@ class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t, kFactorTypeName>
 //------------------------------------------------------------------//
 //                Initial pose factor instantiation                 //
 //------------------------------------------------------------------//
-static constexpr char              kFactorTypeName2[] = "SO2-prior";
+static constexpr char              kFactorCategory2[] = "SO2-prior";
 constexpr int                      kNbVar2            = 1;
 constexpr int                      kXDimTot2          = 3;
 constexpr std::array<int, kNbVar2> kVarSizes2         = {3};
@@ -40,13 +40,13 @@ using metaIni_t = FactorMetaInfo<kNbVar2, kXDimTot2, kVarSizes2, kMesDim2>;
 /**
  * @brief Factor initial pose (2.5d)
  */
-class IniFactor : public BaseFactor<IniFactor, metaIni_t, kFactorTypeName2>
+class IniFactor : public BaseFactor<IniFactor, metaIni_t, kFactorCategory2>
 {
   public:
   IniFactor(const std::string& factor_id,
             const std::array<std::string, IniFactor::Meta_t::kNumberOfVars>&
                 var_names)
-      : BaseFactor<IniFactor, metaIni_t, kFactorTypeName2>(factor_id, var_names)
+      : BaseFactor<IniFactor, metaIni_t, kFactorCategory2>(factor_id, var_names)
   {
   }
 };
@@ -54,7 +54,7 @@ class IniFactor : public BaseFactor<IniFactor, metaIni_t, kFactorTypeName2>
 //------------------------------------------------------------------//
 //              Bearing-only factor type instantiation              //
 //------------------------------------------------------------------//
-static constexpr char              kFactorTypeName3[] = "Bearing-Only";
+static constexpr char              kFactorCategory3[] = "Bearing-Only";
 constexpr int                      kNbVar3            = 2;
 constexpr int                      kXDimTot3          = 5;
 constexpr std::array<int, kNbVar3> kVarSizes3         = {3, 2};
@@ -64,14 +64,14 @@ using metaBearing_t = FactorMetaInfo<kNbVar3, kXDimTot3, kVarSizes3, kMesDim3>;
  * @brief Factor for bearing only
  */
 class bearingFactor
-    : public BaseFactor<bearingFactor, metaBearing_t, kFactorTypeName3>
+    : public BaseFactor<bearingFactor, metaBearing_t, kFactorCategory3>
 {
   public:
   bearingFactor(
       const std::string& factor_id,
       const std::array<std::string, bearingFactor::Meta_t::kNumberOfVars>&
           var_names)
-      : BaseFactor<bearingFactor, metaBearing_t, kFactorTypeName3>(factor_id,
+      : BaseFactor<bearingFactor, metaBearing_t, kFactorCategory3>(factor_id,
                                                                    var_names)
   {
   }
@@ -80,7 +80,7 @@ class bearingFactor
 //------------------------------------------------------------------//
 //             Range-bearing factor type instantiation              //
 //------------------------------------------------------------------//
-static constexpr char              kFactorTypeName4[] = "Range-Bearing";
+static constexpr char              kFactorCategory4[] = "Range-Bearing";
 constexpr int                      kNbVar4            = 2;
 constexpr int                      kXDimTot4          = 5;
 constexpr std::array<int, kNbVar4> kVarSizes4         = {3, 2};
@@ -93,14 +93,14 @@ using metaRangeBearing_t
 class rangeBearingFactor
     : public BaseFactor<rangeBearingFactor,
                         metaRangeBearing_t,
-                        kFactorTypeName4>
+                        kFactorCategory4>
 {
   public:
   rangeBearingFactor(
       const std::string& factor_id,
       const std::array<std::string, rangeBearingFactor::Meta_t::kNumberOfVars>&
           var_names)
-      : BaseFactor<rangeBearingFactor, metaRangeBearing_t, kFactorTypeName4>(
+      : BaseFactor<rangeBearingFactor, metaRangeBearing_t, kFactorCategory4>(
           factor_id,
           var_names)
   {
@@ -112,7 +112,7 @@ class rangeBearingFactor
 //                     Position toward position                     //
 //           Orientation is given wrt the world main axis           //
 //------------------------------------------------------------------//
-static constexpr char              kFactorTypeName5[] = "orFixed-Range-Bearing";
+static constexpr char              kFactorCategory5[] = "orFixed-Range-Bearing";
 constexpr int                      kNbVar5            = 2;
 constexpr int                      kXDimTot5          = 4;
 constexpr std::array<int, kNbVar5> kVarSizes5         = {2, 2};
@@ -125,7 +125,7 @@ using metaRangeBearingSliding_t
 class rangeBearingSlideFactor
     : public BaseFactor<rangeBearingSlideFactor,
                         metaRangeBearingSliding_t,
-                        kFactorTypeName5>
+                        kFactorCategory5>
 {
   public:
   rangeBearingSlideFactor(
@@ -133,7 +133,7 @@ class rangeBearingSlideFactor
       const std::array<std::string, Meta_t::kNumberOfVars>& var_names)
       : BaseFactor<rangeBearingSlideFactor,
                    metaRangeBearingSliding_t,
-                   kFactorTypeName5>(factor_id, var_names)
+                   kFactorCategory5>(factor_id, var_names)
   {
   }
 };
@@ -145,7 +145,7 @@ void printSomeMetaInfo(const FACTOR_T& factor);
 template <typename FACTOR_T>
 void printSomeMetaInfo(const FACTOR_T& factor)
 {
-  std::cout << "\n *****  Printing Meta of " << factor.kFactorTypeName //FACTOR_T::kFactorTypeName
+  std::cout << "\n *****  Printing Meta of " << factor.kFactorCategory //FACTOR_T::kFactorCategory
             << " factor " 
             << factor.factor_id
             << " of scope (" << StringifyArrayOfStrings(factor.variables)

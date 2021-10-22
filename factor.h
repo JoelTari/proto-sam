@@ -121,9 +121,10 @@ struct FactorMetaInfo
  *
  * @tparam Derived  Static polymorphic trick
  * @tparam META_INFO_T meta information (dimensions of various entities)
- * @tparam FACTOR_TYPE_NAME[] the name of the factor type (odometry, range-bearing, initialPose etc...)
+ * @tparam FACTOR_TYPE_NAME[] the name of the factor type (odometry,
+ * range-bearing, initialPose etc...)
  */
-template <typename Derived, typename META_INFO_T, const char FACTOR_TYPE_NAME[]>
+template <typename Derived, typename META_INFO_T, const char FACTOR_CATEGORY[]>
 class BaseFactor
 {
   public:
@@ -139,10 +140,11 @@ class BaseFactor
       = Eigen::Matrix<double, Meta_t::kMesDim, Meta_t::kMesDim>;
   // state vector type
   using state_vector_t = Eigen::Matrix<double, Meta_t::kAggrVarDim, 1>;
+  // array of string: variable keys
+  using var_keys_t = std::array<std::string, Meta_t::kNumberOfVars>;
 
   // the type of factor (eg odometry, range bearing, linear)
-  // static const char* GetFactorTypeName() { return FACTOR_TYPE_NAME; };
-  static constexpr const char* kFactorTypeName =  FACTOR_TYPE_NAME  ;
+  static constexpr const char* kFactorCategory = FACTOR_CATEGORY;
 
   // factor id
   const std::string factor_id;
@@ -155,7 +157,7 @@ class BaseFactor
 
   state_vector_t linearization_point;
 
-  const std::array<std::string, Meta_t::kNumberOfVars> variables;
+  const var_keys_t variables;
 
   const std::map<std::string, int> variable_position
       = LinkVariablesToStateVectorIdx();
@@ -166,13 +168,12 @@ class BaseFactor
    * @param factor_id str id of the factor (eg "f0")
    * @param variable_names array str of the variables (or keys) (eg ["x2","l5"])
    */
-  BaseFactor(
-      const std::string&                                    factor_id,
-      const std::array<std::string, Meta_t::kNumberOfVars>& variable_names)
+  BaseFactor(const std::string& factor_id, const var_keys_t& variable_names)
       : variables(variable_names)
       , factor_id(factor_id)
   {
-    std::cout << "Create " << this->kFactorTypeName <<  " factor " << factor_id << " with variables : ";
+    std::cout << "Create " << this->kFactorCategory << " factor " << factor_id
+              << " with variables : ";
     for (const auto& varname : this->variables) std::cout << varname << " ";
     std::cout << "\n";
   }
@@ -221,9 +222,6 @@ std::string StringifyArrayOfStrings(
 template <typename FACTOR_T>
 void ShortPrintFactorInfo(const FACTOR_T& factor)
 {
-  std::cout << FACTOR_T::kFactorTypeName
-            << " " 
-            << factor.factor_id
+  std::cout << FACTOR_T::kFactorCategory << " " << factor.factor_id
             << " :: Scope : " << StringifyArrayOfStrings(factor.variables);
 }
-
