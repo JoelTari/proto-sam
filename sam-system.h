@@ -1,6 +1,8 @@
 #ifndef SAM_SYSTEM_H_
 #define SAM_SYSTEM_H_
 
+#define ENABLE_DEBUG 1 // TODO: move higher level
+
 #include "bookkeeper.h"
 // #include "definitions.h"
 
@@ -28,7 +30,7 @@ namespace SAM
           "This type of factor doesnt exist ");
 
       // check if factor id exists already
-      // TODO: consistent management failure (throw ? return value false ?)
+      // TODO: consistent management failure (throw ? return value false ? std::optional ?)
       if (this->bookkeeper_.factor_id_exists(factor_id)) return;
 
 
@@ -54,9 +56,42 @@ namespace SAM
           //      if key doesn't exist, add it (and it's meta)
           //  2. add this factor id to the keyinfo list
           //  3. add an element in FactorInfo
+          //  4. update the full system_info
+
+          // for each key of this factor.   keys_names.size() is same as FT::Meta_t::kNumberOfVars
+          for (std::size_t i = 0, endarray = keys_name.size(); i != endarray; i++)
+          {
+            // check if the key exists
+            try{
+              this->bookkeeper_.getKeyInfos(keys_name[i]);
+            }
+            catch(int e){
+              // add the key, the variable size is accessed via the factor Meta 
+              //              in the same order of the 
+              this->bookkeeper_.add_key(keys_name[i],FT::Meta_t::kVarsSizes[i]);
+            }
+            // each key has a list of factors_id that it is connected, so add this factor_id to it
+            this->bookkeeper_.add_factor_id_to_key(keys_name[i],factor_id);
+          }
+          // add the factor_id with its infos in the bookkeeper
+          // last argument is a conversion from std::array to std::vector
+          this->bookkeeper_.add_factor(factor_id, FT::Meta_t::kAggrVarDim , FT::Meta_t::kMesDim , { keys_name.begin(), keys_name.end() } );
+          // update the system info
+          this->bookkeeper_.update_system_info(FT::Meta_t::kMesDim,FT::Meta_t::kAggrVarDim,FT::Meta_t::kNumberOfVars,1);
+
 
           std::get<I>(this->all_factors_tuple_)
               .emplace_back(factor_id, keys_name, std::forward<Args>(args)...);
+          
+          // Debug consistency check of everything
+          #if ENABLE_DEBUG
+          // 1. checking if the bookkeeper is consistent with itself (systemInfo vs whats on the std::maps)
+          if ( !this->bookkeeper_.are_dimensions_consistent() ) 
+            std::cerr << "Bookkeeper internally not consistent.";
+          // 2. checking if the bookkeeper is consistent with the tuples of vector holding the factors
+          if ( !this->is_system_consistent() )
+            std::cerr << "SAM system is not consistent.";
+          #endif
         }
         // recursion :  compile time call
         place_factor_in_container<I + 1, FT>(factor_id, keys_name,
@@ -64,8 +99,9 @@ namespace SAM
       }
     }
 
+    // TODO: can we do it by adding a lambda inside the for{} ?
     template <std::size_t I = 0>
-    void loop_factors()
+    void loop_over_factors()
     {
       if constexpr (I == S_)
         return;
@@ -79,7 +115,7 @@ namespace SAM
         }
         std::cout << "\n";
         // compile-time recursion
-        loop_factors<I + 1>();
+        loop_over_factors<I + 1>();
       }
     }
 
@@ -169,6 +205,12 @@ namespace SAM
         // recursion :  compile time call
         IterFactorInfos<I + 1>();
       }
+    }
+
+    bool is_system_consistent()
+    {
+      // TODO:
+      return true;
     }
 
     private:
