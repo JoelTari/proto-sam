@@ -19,10 +19,8 @@ namespace SAM
     public:
     SamSystem() {}
 
-    // FIX: make the distinction in the factor args: all factor enter here with
-    // an id (str)
     template <typename FT, typename... Args>
-    void register_new_factor(const std::string& factor_id, Args&&... args)
+    void register_new_factor(const std::string& factor_id,const typename FT::var_keys_t& keys_name, Args&&... args)
     {
       static_assert(
           std::is_same_v<FT,
@@ -36,11 +34,11 @@ namespace SAM
 
       // recursively find, at compile time, the corresponding container (amongst
       // the ones in the tuple) to emplace back the factor FT
-      place_factor_in_container<0, FT>(factor_id, std::forward<Args>(args)...);
+      place_factor_in_container<0, FT>(factor_id, keys_name, std::forward<Args>(args)...);
     }
 
     template <std::size_t I = 0, typename FT, typename... Args>
-    void place_factor_in_container(const std::string& factor_id, Args&&... args)
+    void place_factor_in_container(const std::string& factor_id,const typename FT::var_keys_t& keys_name, Args&&... args)
     {
       // beginning of static recursion (expanded at compile time)
       if constexpr (I == S_)
@@ -50,13 +48,18 @@ namespace SAM
         // if this is the type we are looking for, emplace back in
         if constexpr (std::is_same_v<FT, factor_type_in_tuple_t<I>>)
         {
-          // TODO: At this point the factor is pushed in the system so we should
-          // update bookkeeper
+          // At this point the factor is pushed in the system so we should update bookkeeper
+          //  1. for each key
+          //      check if the keys exists
+          //      if key doesn't exist, add it (and it's meta)
+          //  2. add this factor id to the keyinfo list
+          //  3. add an element in FactorInfo
+
           std::get<I>(this->all_factors_tuple_)
-              .emplace_back(factor_id, std::forward<Args>(args)...);
+              .emplace_back(factor_id, keys_name, std::forward<Args>(args)...);
         }
         // recursion :  compile time call
-        place_factor_in_container<I + 1, FT>(factor_id,
+        place_factor_in_container<I + 1, FT>(factor_id, keys_name,
                                              std::forward<Args>(args)...);
       }
     }
