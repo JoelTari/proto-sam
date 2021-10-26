@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
   // create the sam system
   auto samsyst1 = SAM::SamSystem<IniFactor, OdomFactor>();
   // create some factors
-  auto f0 = IniFactor("f0", {"x0"});
+  auto f0 = IniFactor("f0a", {"x0a"});
 
   // std::vector<IniFactor> inif;
   // std::vector<BS> vBS;

@@ -19,24 +19,28 @@ namespace SAM
     public:
     SamSystem() {}
 
+    // FIX: make the distinction in the factor args: all factor enter here with
+    // an id (str)
     template <typename FT, typename... Args>
-    void register_new_factor(Args&&... args)
+    void register_new_factor(const std::string& factor_id, Args&&... args)
     {
       static_assert(
           std::is_same_v<FT,
                          FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
           "This type of factor doesnt exist ");
 
-      // TODO: - check at run-time that the factor_id doesn't exist already
-      // TODO: - update the bookkeeper
+      // check if factor id exists already
+      // TODO: consistent management failure (throw ? return value false ?)
+      if (this->bookkeeper_.factor_id_exists(factor_id)) return;
+
 
       // recursively find, at compile time, the corresponding container (amongst
       // the ones in the tuple) to emplace back the factor FT
-      place_factor_in_container<0, FT>(std::forward<Args>(args)...);
+      place_factor_in_container<0, FT>(factor_id, std::forward<Args>(args)...);
     }
 
     template <std::size_t I = 0, typename FT, typename... Args>
-    void place_factor_in_container(Args&&... args)
+    void place_factor_in_container(const std::string& factor_id, Args&&... args)
     {
       // beginning of static recursion (expanded at compile time)
       if constexpr (I == S_)
@@ -46,38 +50,42 @@ namespace SAM
         // if this is the type we are looking for, emplace back in
         if constexpr (std::is_same_v<FT, factor_type_in_tuple_t<I>>)
         {
+          // TODO: At this point the factor is pushed in the system so we should
+          // update bookkeeper
           std::get<I>(this->all_factors_tuple_)
-              .emplace_back(std::forward<Args>(args)...);
+              .emplace_back(factor_id, std::forward<Args>(args)...);
         }
         // recursion :  compile time call
-        place_factor_in_container<I + 1, FT>(std::forward<Args>(args)...);
+        place_factor_in_container<I + 1, FT>(factor_id,
+                                             std::forward<Args>(args)...);
       }
     }
-    
+
     template <std::size_t I = 0>
-      void loop_factors()
+    void loop_factors()
     {
       if constexpr (I == S_)
         return;
       else
       {
-        for(const auto & factor : std::get<I>(this->all_factors_tuple_))
+        for (const auto& factor : std::get<I>(this->all_factors_tuple_))
         {
-            std::cout << "\t";
-            ShortPrintFactorInfo(factor);
-            // TODO: CONTINUE: replace the print by filling A the right block
+          std::cout << "\t";
+          ShortPrintFactorInfo(factor);
+          // TODO: CONTINUE: replace the print by filling A the right block
         }
         std::cout << "\n";
         // compile-time recursion
-        loop_factors<I+1>();
+        loop_factors<I + 1>();
       }
     }
 
 
     void smooth_and_map()
     {
-      int             M = bookkeeper_.aggr_dim_mes;
-      int             N = bookkeeper_.aggr_dim_keys;
+      SystemInfo      system_infos = this->bookkeeper_.getSystemInfos();
+      int             M            = system_infos.aggr_dim_mes;
+      int             N            = system_infos.aggr_dim_keys;
       Eigen::MatrixXd A(M, N);
       Eigen::VectorXd b(M);
       // loop the factors, and fill A and b
