@@ -13,7 +13,7 @@
 struct KeyInfo
 {
   int dim;
-  int sysidx;   // the index in the big matrix FIX: add quickly
+  int sysidx;
   // WARNING: this is a matricial index, not a block matricial index
   // WARNING: the block matrix range of this key is [sysidx:sysidx+dim-1]
   // int order; // NOTE: feature order not active
