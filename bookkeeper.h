@@ -13,6 +13,9 @@
 struct KeyInfo
 {
   int dim;
+  int sysidx;   // the index in the big matrix FIX: add quickly
+  // WARNING: this is a matricial index, not a block matricial index
+  // WARNING: the block matrix range of this key is [sysidx:sysidx+dim-1]
   // int order; // NOTE: feature order not active
   std::vector<std::string> factors_id;
 };
@@ -43,9 +46,18 @@ class Bookkeeper
   void add_key(const std::string& key, int key_dimension)
   {
     KeyInfo new_key_info;
-    new_key_info.dim        = key_dimension;
+    new_key_info.dim = key_dimension;
+    // system related, the idx is set at the continuum (new column idx in the
+    // measurement & hessian matrices)
+    new_key_info.sysidx = this->system_info_.aggr_dim_keys;
+    // the aggregate dimension is then expanded by the key dimension
+    this->system_info_.aggr_dim_keys
+        = this->system_info_.aggr_dim_keys + key_dimension;
+    this->system_info_.number_of_keys++;
+    // add the key info in the map
     this->key_to_infos[key] = new_key_info;
   }
+
   void add_factor_id_to_key(const std::string& key,
                             const std::string& factor_id)
   {
@@ -62,20 +74,10 @@ class Bookkeeper
     factor_info.factor_aggr_mes_dim  = aggr_mes_dim;
     factor_info.keys                 = keys;
     this->factor_to_infos[factor_id] = factor_info;
+    // update the system info
+    this->system_info_.aggr_dim_mes += aggr_mes_dim;
+    this->system_info_.number_of_factors++;
   };
-
-  void update_system_info(int d_aggr_dim_keys,
-                          int d_aggr_dim_mes,
-                          int d_num_keys,
-                          int d_num_factors)
-  {
-    // NOTE: whats could happen if
-    // TODO: -> manage those cases (via tests ? run time checks ?)
-    system_info_.aggr_dim_keys += d_aggr_dim_keys;
-    system_info_.aggr_dim_mes += d_aggr_dim_mes;
-    system_info_.number_of_keys += d_num_keys;
-    system_info_.number_of_factors += d_num_factors;
-  }
 
   KeyInfo getKeyInfos(const std::string& key) const
   {
@@ -118,21 +120,22 @@ class Bookkeeper
     }
   }
 
-  #define ENABLE_DEBUG 1
-  #if ENABLE_DEBUG
+#define ENABLE_DEBUG 1
+#if ENABLE_DEBUG
   bool are_dimensions_consistent() const
-    {
-      // TODO: check if everything is right: dimensions does add up etc...
-      return true;
-    }
-  #endif
+  {
+    // TODO: check if everything is right: dimensions does add up etc...
+    return true;
+  }
+#endif
 
   private:
-  SystemInfo system_info_;
-  std::unordered_map<std::string, KeyInfo>    key_to_infos; // TODO: map better ? 
+  SystemInfo                               system_info_;
+  std::unordered_map<std::string, KeyInfo> key_to_infos;   // TODO: map better ?
   std::unordered_map<std::string, FactorInfo> factor_to_infos;
-    // PERFORMANCE: I have way more lookups than insert/delete, so I choose unordered_map
-    // PERFORMANCE: unordered has more overhead however
+  // PERFORMANCE: I have way more lookups than insert/delete -> unordered_map
+  // PERFORMANCE: unordered has more overhead however -> the smaller the
+  // collection, the better map is
 
   // std::vector< std::string > ordered_keys; // NOTE: feature order not active
 };

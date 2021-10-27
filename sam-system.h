@@ -1,7 +1,7 @@
 #ifndef SAM_SYSTEM_H_
 #define SAM_SYSTEM_H_
 
-#define ENABLE_DEBUG 1 // TODO: move higher level
+#define ENABLE_DEBUG 1   // TODO: move higher level
 
 #include "bookkeeper.h"
 // #include "definitions.h"
@@ -22,7 +22,9 @@ namespace SAM
     SamSystem() {}
 
     template <typename FT, typename... Args>
-    void register_new_factor(const std::string& factor_id,const typename FT::var_keys_t& keys_name, Args&&... args)
+    void register_new_factor(const std::string&             factor_id,
+                             const typename FT::var_keys_t& keys,
+                             Args&&... args)
     {
       static_assert(
           std::is_same_v<FT,
@@ -30,17 +32,22 @@ namespace SAM
           "This type of factor doesnt exist ");
 
       // check if factor id exists already
-      // TODO: consistent management failure (throw ? return value false ? std::optional ?)
+      // TODO: consistent management failure (throw ? return value false ?
+      // std::optional ?)
       if (this->bookkeeper_.factor_id_exists(factor_id)) return;
 
 
       // recursively find, at compile time, the corresponding container (amongst
       // the ones in the tuple) to emplace back the factor FT
-      place_factor_in_container<0, FT>(factor_id, keys_name, std::forward<Args>(args)...);
+      place_factor_in_container<0, FT>(factor_id,
+                                       keys,
+                                       std::forward<Args>(args)...);
     }
 
     template <std::size_t I = 0, typename FT, typename... Args>
-    void place_factor_in_container(const std::string& factor_id,const typename FT::var_keys_t& keys_name, Args&&... args)
+    void place_factor_in_container(const std::string&             factor_id,
+                                   const typename FT::var_keys_t& keys,
+                                   Args&&... args)
     {
       // beginning of static recursion (expanded at compile time)
       if constexpr (I == S_)
@@ -50,51 +57,59 @@ namespace SAM
         // if this is the type we are looking for, emplace back in
         if constexpr (std::is_same_v<FT, factor_type_in_tuple_t<I>>)
         {
-          // At this point the factor is pushed in the system so we should update bookkeeper
+          // At this point the factor is pushed in the system so we should
+          // update bookkeeper
           //  1. for each key
-          //      check if the keys exists
-          //      if key doesn't exist, add it (and it's meta)
-          //  2. add this factor id to the keyinfo list
-          //  3. add an element in FactorInfo
-          //  4. update the full system_info
+          //      - check if the keys exists if key doesn't exist, add it (and
+          //      it's meta)
+          //      - add this factor id to the keyinfo list
+          //  2. add an element in FactorInfo
 
-          // for each key of this factor.   keys_names.size() is same as FT::Meta_t::kNumberOfVars
-          for (std::size_t i = 0, endarray = keys_name.size(); i != endarray; i++)
+          // for each key of this factor.   keys.size() is same as
+          // FT::Meta_t::kNumberOfVars
+          for (std::size_t i = 0; i < keys.size(); i++)
           {
             // check if the key exists
-            try{
-              this->bookkeeper_.getKeyInfos(keys_name[i]);
+            try
+            {
+              this->bookkeeper_.getKeyInfos(keys[i]);
             }
-            catch(int e){
-              // add the key, the variable size is accessed via the factor Meta 
-              //              in the same order of the 
-              this->bookkeeper_.add_key(keys_name[i],FT::Meta_t::kVarsSizes[i]);
+            catch (int e)
+            {
+              // add the key, the variable size is accessed via the factor Meta
+              //              in the same order of the
+              this->bookkeeper_.add_key(keys[i], FT::Meta_t::kVarsSizes[i]);
             }
-            // each key has a list of factors_id that it is connected, so add this factor_id to it
-            this->bookkeeper_.add_factor_id_to_key(keys_name[i],factor_id);
+            // each key has a list of factors_id that it is connected, so add
+            // this factor_id to it
+            this->bookkeeper_.add_factor_id_to_key(keys[i], factor_id);
           }
           // add the factor_id with its infos in the bookkeeper
           // last argument is a conversion from std::array to std::vector
-          this->bookkeeper_.add_factor(factor_id, FT::Meta_t::kAggrVarDim , FT::Meta_t::kMesDim , { keys_name.begin(), keys_name.end() } );
-          // update the system info
-          this->bookkeeper_.update_system_info(FT::Meta_t::kMesDim,FT::Meta_t::kAggrVarDim,FT::Meta_t::kNumberOfVars,1);
+          this->bookkeeper_.add_factor(factor_id,
+                                       FT::Meta_t::kAggrVarDim,
+                                       FT::Meta_t::kMesDim,
+                                       {keys.begin(), keys.end()});
 
 
           std::get<I>(this->all_factors_tuple_)
-              .emplace_back(factor_id, keys_name, std::forward<Args>(args)...);
-          
-          // Debug consistency check of everything
-          #if ENABLE_DEBUG
-          // 1. checking if the bookkeeper is consistent with itself (systemInfo vs whats on the std::maps)
-          if ( !this->bookkeeper_.are_dimensions_consistent() ) 
+              .emplace_back(factor_id, keys, std::forward<Args>(args)...);
+
+// Debug consistency check of everything
+#if ENABLE_DEBUG
+          // 1. checking if the bookkeeper is consistent with itself (systemInfo
+          // vs whats on the std::maps)
+          if (!this->bookkeeper_.are_dimensions_consistent())
             std::cerr << "Bookkeeper internally not consistent.";
-          // 2. checking if the bookkeeper is consistent with the tuples of vector holding the factors
-          if ( !this->is_system_consistent() )
+          // 2. checking if the bookkeeper is consistent with the tuples of
+          // vector holding the factors
+          if (!this->is_system_consistent())
             std::cerr << "SAM system is not consistent.";
-          #endif
+#endif
         }
         // recursion :  compile time call
-        place_factor_in_container<I + 1, FT>(factor_id, keys_name,
+        place_factor_in_container<I + 1, FT>(factor_id,
+                                             keys,
                                              std::forward<Args>(args)...);
       }
     }
