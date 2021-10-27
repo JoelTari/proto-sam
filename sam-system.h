@@ -1,6 +1,7 @@
 #ifndef SAM_SYSTEM_H_
 #define SAM_SYSTEM_H_
 
+#include <functional>
 #define ENABLE_DEBUG 1   // TODO: move higher level
 
 #include "bookkeeper.h"
@@ -114,6 +115,16 @@ namespace SAM
       }
     }
 
+    // // this works for 1 type of std::vector<FT>, but not for the whole tuple
+    // template <std::size_t I=0, typename FT>
+    // void for_each_factor( std::function< void(const FT & func) >)
+    // {
+    //     for (const auto& factor : std::get<I>(this->all_factors_tuple_))
+    //     {
+    //       func(factor);
+    //     }
+    // }
+
     // TODO: can we do it by adding a lambda inside the for{} ?
     template <std::size_t I = 0>
     void loop_over_factors()
@@ -124,11 +135,8 @@ namespace SAM
       {
         for (const auto& factor : std::get<I>(this->all_factors_tuple_))
         {
-          std::cout << "\t";
-          ShortPrintFactorInfo(factor);
-          // TODO: CONTINUE: replace the print by filling A the right block
+          // ShortPrintFactorInfo(factor);
         }
-        std::cout << "\n";
         // compile-time recursion
         loop_over_factors<I + 1>();
       }
