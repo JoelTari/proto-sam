@@ -1,16 +1,18 @@
-#include "config.h"
+#ifndef SAM_FACTOR_H_
+#define SAM_FACTOR_H_
 
 #include <array>
 #include <cstddef>
 #include <eigen3/Eigen/Dense>
 #include <initializer_list>
-#include <iostream>
 #include <map>
 #include <numeric>
 #include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
+
+#include "config.h"
 
 // assert the validity of variables size list against the total aggregate
 // dimension variable
@@ -230,4 +232,6 @@ void ShortPrintFactorInfo(const FACTOR_T& factor)
   std::cout << FACTOR_T::kFactorCategory << " " << factor.factor_id
             << " :: Scope : " << StringifyArrayOfStrings(factor.variables);
 }
+#endif
+
 #endif
