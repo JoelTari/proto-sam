@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "config.h"
+
 // WARNING: must still decide if the Bookkeeper should be templated in the meta
 // info (for now, no, it would be too complicated)
 
@@ -120,8 +122,7 @@ class Bookkeeper
     }
   }
 
-#define ENABLE_DEBUG 1
-#if ENABLE_DEBUG
+#if ENABLE_RUNTIME_CONSISTENCY_CHECKS
   bool are_dimensions_consistent() const
   {
     // TODO: check if everything is right: dimensions does add up etc...

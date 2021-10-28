@@ -1,10 +1,10 @@
 #ifndef SAM_SYSTEM_H_
 #define SAM_SYSTEM_H_
 
-#include <functional>
-#define ENABLE_DEBUG 1   // TODO: move higher level
-
 #include "bookkeeper.h"
+#include "config.h"
+
+#include <functional>
 // #include "definitions.h"
 
 #include <eigen3/Eigen/Dense>
@@ -97,7 +97,7 @@ namespace SAM
               .emplace_back(factor_id, keys, std::forward<Args>(args)...);
 
 // Debug consistency check of everything
-#if ENABLE_DEBUG
+#if ENABLE_RUNTIME_CONSISTENCY_CHECKS
           // 1. checking if the bookkeeper is consistent with itself (systemInfo
           // vs whats on the std::maps)
           if (!this->bookkeeper_.are_dimensions_consistent())
@@ -201,6 +201,7 @@ namespace SAM
     // Eigen::VectorXd mean_;
     // Eigen::MatrixXd covariance_;
 
+#if ENABLE_DEBUG_TRACE
     /**
      * @brief dummy iteration over tuple of std::vector
      */
@@ -229,12 +230,15 @@ namespace SAM
         IterFactorInfos<I + 1>();
       }
     }
+#endif
 
+#if ENABLE_RUNTIME_CONSISTENCY_CHECKS
     bool is_system_consistent()
     {
       // TODO:
       return true;
     }
+#endif
 
     private:
     Bookkeeper bookkeeper_;

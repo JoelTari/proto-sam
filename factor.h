@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <array>
 #include <cstddef>
 #include <eigen3/Eigen/Dense>
@@ -172,10 +174,12 @@ class BaseFactor
       : variables(variable_names)
       , factor_id(factor_id)
   {
+#if ENABLE_DEBUG_TRACE
     std::cout << "Create " << this->kFactorCategory << " factor " << factor_id
               << " with variables : ";
     for (const auto& varname : this->variables) std::cout << varname << " ";
     std::cout << "\n";
+#endif
   }
 
   // TODO: call static polymorphic methods here
@@ -219,9 +223,11 @@ std::string StringifyArrayOfStrings(
   // std::cout << stringify_array_of_strings(test_arr) << "\n";
 }
 
+#if ENABLE_DEBUG_TRACE
 template <typename FACTOR_T>
 void ShortPrintFactorInfo(const FACTOR_T& factor)
 {
   std::cout << FACTOR_T::kFactorCategory << " " << factor.factor_id
             << " :: Scope : " << StringifyArrayOfStrings(factor.variables);
 }
+#endif
