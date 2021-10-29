@@ -9,4 +9,8 @@
 #include <iostream>
 #endif
 
+#if ENABLE_TIMER
+#include <chrono>
+#endif
+
 #endif

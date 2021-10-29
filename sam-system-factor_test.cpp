@@ -1,8 +1,6 @@
 #include "factor.h"
 #include "sam-system.h"
 
-#include <initializer_list>
-
 // struct DummyFactor1{
 //   static const std::string factor_typename;
 //   std::string factor_id;
@@ -63,6 +61,8 @@ class BS
 // some quick and dirty print helper function
 int main(int argc, char* argv[])
 {
+  // scoped Timer
+  auto mytimer = sam_utils::ScopedTimer(__FUNCTION__);
   // create the sam system
   auto samsyst1 = SAM::SamSystem<IniFactor, OdomFactor>();
   // create some factors
@@ -91,6 +91,7 @@ int main(int argc, char* argv[])
 
 
   // samsyst1.loop_over_factors<dosmthi>();
+  samsyst1.smooth_and_map();
 
   return 0;
 }

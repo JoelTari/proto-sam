@@ -3,12 +3,12 @@
 
 #include "bookkeeper.h"
 #include "config.h"
+#include "utils.h"
 
 #include <functional>
 // #include "definitions.h"
 
 #include <eigen3/Eigen/Dense>
-#include <iostream>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -145,6 +145,8 @@ namespace SAM
 
     void smooth_and_map()
     {
+      auto timer = sam_utils::ScopedTimer(__FUNCTION__);
+
       SystemInfo      system_infos = this->bookkeeper_.getSystemInfos();
       int             M            = system_infos.aggr_dim_mes;
       int             N            = system_infos.aggr_dim_keys;

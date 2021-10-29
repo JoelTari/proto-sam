@@ -1,7 +1,5 @@
 #include "factor.h"
 
-#include <array>
-#include <iostream>
 
 //------------------------------------------------------------------//
 //                  Odom factor type instantiation                  //

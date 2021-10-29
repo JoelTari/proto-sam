@@ -1,6 +1,4 @@
 #include "sam-system.h"
-#include <string>
-#include <iostream>
 
 struct DummyFactor1{
   static const std::string factor_typename;
@@ -9,6 +7,8 @@ struct DummyFactor1{
 
 int main()
 {
+    // auto test_timer = Timer<std::chrono::duration<float, std::micro> >("main"); // std::micro is same as std::ratio<1,1000>
+    auto main_timer = sam_utils::ScopedTimer<std::chrono::microseconds>(__FUNCTION__); // microseconds is same as duration<int64_t, ratio<1,1000> >
     auto samsyst1 = SAM::SamSystem<DummyFactor1>();
     return 0;
 }
