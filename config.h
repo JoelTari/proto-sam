@@ -11,6 +11,9 @@
 
 #if ENABLE_TIMER
 #include <chrono>
+#define PROFILE_SCOPE(name) Timer timer##__LINE__(name)
+#else
+#define PROFILE_SCOPE(name)
 #endif
 
 #endif

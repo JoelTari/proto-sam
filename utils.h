@@ -5,10 +5,103 @@
 #include <chrono>
 #include <ratio>
 #include <sstream>
+#include <fstream>
+#include <mutex>
+
+#define PROFILING 1
+#ifdef PROFILING
+    #define PROFILE_SCOPE(name) Timer timer##__LINE__(name)
+    // #define PROFILE_FUNCTION()  PROFILE_SCOPE(__FUNCTION__)
+#else
+    #define PROFILE_SCOPE(name)
+#endif
 
 namespace sam_utils
 {
 
+struct ProfileResult
+{
+    std::string name;
+    long long start;
+    long long duration;
+    uint32_t threadID;
+};
+ 
+
+class JSONLogger
+{
+    std::string     m_sessionName   = "None";
+    std::ofstream   m_outputStream;
+    int             m_profileCount  = 0;
+    std::mutex      m_lock;
+    bool            m_activeSession = false;
+ 
+    JSONLogger() { }
+ 
+public:
+ 
+    static JSONLogger& Instance()
+    {
+        static JSONLogger instance;
+        return instance;
+    }
+ 
+    ~JSONLogger()
+    {
+        endSession();
+    }
+ 
+    void beginSession(const std::string& name, const std::string& filepath = "results.json")
+    {
+        if (m_activeSession) { endSession(); }
+        m_activeSession = true;
+        m_outputStream.open(filepath);
+        writeHeader();
+        m_sessionName = name;
+    }
+ 
+    void endSession()
+    {
+        if (!m_activeSession) { return; }
+        m_activeSession = false;
+        writeFooter();
+        m_outputStream.close();
+        m_profileCount = 0;
+    }
+ 
+    void writeProfile(const ProfileResult& result)
+    {
+        std::lock_guard<std::mutex> lock(m_lock);
+ 
+        if (m_profileCount++ > 0) { m_outputStream << ","; }
+ 
+        std::string name = result.name;
+        // std::replace(name.begin(), name.end(), '"', '\'');
+ 
+        m_outputStream << "{";
+        m_outputStream << "\"cat\":\"function\",";
+        m_outputStream << "\"dur\":" << result.duration << ',';
+        m_outputStream << "\"name\":\"" << name << "\",";
+        m_outputStream << "\"ph\":\"X\",";
+        m_outputStream << "\"pid\":\"SAM\",";
+        m_outputStream << "\"tid\":" << result.threadID << ",";
+        m_outputStream << "\"ts\":" << result.start<< ",";
+        m_outputStream << "\"someBS\":" << "\"helloworld\"";
+        m_outputStream << "}";
+    }
+ 
+    void writeHeader()
+    {
+        m_outputStream << "{\"otherData\": {},\"traceEvents\":[";
+    }
+ 
+    void writeFooter()
+    {
+        m_outputStream << "]";
+        // m_outputStream << "\",displayTimeUnit\": \"ms\"";
+        m_outputStream << "}";
+    }
+};
 
 #if ENABLE_TIMER
 //------------------------------------------------------------------//
