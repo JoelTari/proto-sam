@@ -8,14 +8,6 @@
 #include <fstream>
 #include <mutex>
 
-#define PROFILING 1
-#ifdef PROFILING
-    #define PROFILE_SCOPE(name) Timer timer##__LINE__(name)
-    // #define PROFILE_FUNCTION()  PROFILE_SCOPE(__FUNCTION__)
-#else
-    #define PROFILE_SCOPE(name)
-#endif
-
 namespace sam_utils
 {
 

@@ -145,7 +145,8 @@ namespace SAM
 
     void smooth_and_map()
     {
-      auto timer = sam_utils::ScopedTimer(__FUNCTION__);
+      // scoped timer
+      PROFILE_FUNCTION();
 
       SystemInfo      system_infos = this->bookkeeper_.getSystemInfos();
       int             M            = system_infos.aggr_dim_mes;

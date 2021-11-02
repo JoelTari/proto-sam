@@ -9,11 +9,13 @@
 #include <iostream>
 #endif
 
-#if ENABLE_TIMER
-#include <chrono>
-#define PROFILE_SCOPE(name) Timer timer##__LINE__(name)
+#if ENABLE_TIMER > 0
+#include<chrono>
+    #define PROFILE_SCOPE(name) sam_utils::ScopedTimer timer##__LINE__(name)
+    #define PROFILE_FUNCTION()  PROFILE_SCOPE(__FUNCTION__)
 #else
-#define PROFILE_SCOPE(name)
+    #define PROFILE_SCOPE(name)  // nada
+    #define PROFILE_FUNCTION()   // nada
 #endif
 
 #endif

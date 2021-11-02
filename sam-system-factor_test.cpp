@@ -62,7 +62,7 @@ class BS
 int main(int argc, char* argv[])
 {
   // scoped Timer
-  auto mytimer = sam_utils::ScopedTimer(__FUNCTION__);
+  PROFILE_FUNCTION();
   // create the sam system
   auto samsyst1 = SAM::SamSystem<IniFactor, OdomFactor>();
   // create some factors
