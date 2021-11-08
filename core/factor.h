@@ -1,6 +1,8 @@
 #ifndef SAM_FACTOR_H_
 #define SAM_FACTOR_H_
 
+#include "config.h"
+
 #include <array>
 #include <cstddef>
 #include <eigen3/Eigen/Dense>
@@ -11,8 +13,6 @@
 #include <string>
 #include <type_traits>
 #include <utility>
-
-#include "config.h"
 
 // assert the validity of variables size list against the total aggregate
 // dimension variable
@@ -135,6 +135,7 @@ class BaseFactor
   // access meta info through Meta_t type
   using Meta_t = META_INFO_T;
   // jacobian matrix type
+  // TODO: maybe divide in tuples of jacobian, or static arrays of jacobian (one for each var)
   using jacobian_matrix_t
       = Eigen::Matrix<double, Meta_t::kAggrVarDim, Meta_t::kMesDim>;
   // measure vector type
@@ -186,6 +187,12 @@ class BaseFactor
 
   // TODO: call static polymorphic methods here
   //      cascades into the stationary factors and the linear factors
+
+  // typically, do this
+  void performAction()
+  {
+    return static_cast<Derived*>(this)->performActionImpl();
+  }
 
   private:
   std::map<std::string, int> LinkVariablesToStateVectorIdx()
