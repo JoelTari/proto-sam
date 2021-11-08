@@ -135,7 +135,6 @@ class BaseFactor
   // access meta info through Meta_t type
   using Meta_t = META_INFO_T;
   // jacobian matrix type
-  // TODO: maybe divide in tuples of jacobian, or static arrays of jacobian (one for each var)
   using jacobian_matrix_t
       = Eigen::Matrix<double, Meta_t::kAggrVarDim, Meta_t::kMesDim>;
   // measure vector type
@@ -158,6 +157,7 @@ class BaseFactor
   const measure_covariance_matrix_t mes_covariance;
   const measure_vector_t            mes_vector;
 
+  // TODO: maybe divide in tuples of jacobian, or static arrays of jacobian (one for each var)
   jacobian_matrix_t jacobian;
 
   state_vector_t linearization_point;
