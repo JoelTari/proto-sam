@@ -138,7 +138,7 @@ class BaseFactor
   using Meta_t = META_INFO_T;
   // jacobian matrix type
   using jacobian_matrix_t
-      = Eigen::Matrix<double, Meta_t::kAggrVarDim, Meta_t::kMesDim>;
+      = Eigen::Matrix<double, Meta_t::kMesDim, Meta_t::kAggrVarDim>;
   // using jacobian_matrices_t
   //   = std::array<Eigen::Matrix, std::size_t _Nm>
   // measure vector type

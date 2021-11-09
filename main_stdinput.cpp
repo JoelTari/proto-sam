@@ -44,18 +44,28 @@ class LinearTranslationFactor
                                                    var_names,
                                                    measure,
                                                    covariance)
+      , rho_(Eigen::LLT<LinearTranslationFactor::measure_covariance_matrix_t>(
+                 covariance.inverse())
+                 .matrixU())
+      , A_(rho_ * k_H)
+      , b_(rho_ * measure)
   {
   }
 
   std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
   {
-    jacobian_matrix_t A;
-    measure_vector_t  b;
-    // FIX: add normed jacobian/linear A here
-    return {A, b};
+    return {A_, b_};
   }
+
+  private:
+  static const LinearTranslationFactor::jacobian_matrix_t
+      k_H;   // NOTE: value declared out of line
+  const LinearTranslationFactor::measure_covariance_matrix_t rho_;
+  const LinearTranslationFactor::jacobian_matrix_t A_;
+  const LinearTranslationFactor::measure_vector_t  b_;
 };
 
+LinearTranslationFactor::jacobian_matrix_t const LinearTranslationFactor::k_H {{1, 0, -1, 0}, {0, 1, 0, -1}};
 
 //------------------------------------------------------------------//
 //                        Anchor (2d) factor                        //
@@ -89,7 +99,7 @@ class AnchorFactor
       , rho_(Eigen::LLT<AnchorFactor::measure_covariance_matrix_t>(
                  covariance.inverse())
                  .matrixU())
-      , A_(rho_ * H_)
+      , A_(rho_ * k_H)
       , b_(rho_ * measure)
   {
     // (Hx-z)^T Sigma^-1 (Hx-z) = || Ax-b || _Sigma ^2
@@ -108,13 +118,13 @@ class AnchorFactor
 
   private:
   static const AnchorFactor::jacobian_matrix_t
-      H_;   // NOTE: value declared out of line
-  const AnchorFactor::jacobian_matrix_t rho_;
+      k_H;   // NOTE: value declared out of line
+  const AnchorFactor::measure_covariance_matrix_t rho_;
   const AnchorFactor::jacobian_matrix_t A_;
   const AnchorFactor::measure_vector_t  b_;
 };
 
-AnchorFactor::jacobian_matrix_t const AnchorFactor::H_ {{1, 0}, {0, 1}};
+AnchorFactor::jacobian_matrix_t const AnchorFactor::k_H {{1, 0}, {0, 1}};
 
 //------------------------------------------------------------------//
 //                          Main function                           //
