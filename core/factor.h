@@ -137,7 +137,7 @@ class BaseFactor
   // access meta info through Meta_t type
   using Meta_t = META_INFO_T;
   // jacobian matrix type
-  using jacobian_matrix_t
+  using prediction_matrix_t
       = Eigen::Matrix<double, Meta_t::kMesDim, Meta_t::kAggrVarDim>;
   // using jacobian_matrices_t
   //   = std::array<Eigen::Matrix, std::size_t _Nm>
@@ -163,7 +163,7 @@ class BaseFactor
 
   // NOTE: it would be advantageous to split into bloc jacobian matrices (one of each key), but that would be a tuple difficult to implement (blocs may not have the same number of cols)
     // TODO: use a combination constexpr & tuple_cat
-  jacobian_matrix_t A; 
+  prediction_matrix_t A; 
   // jacobian_matrices_t AA;
   measure_vector_t b; // dont confuse with mes_vector: z
 
@@ -194,7 +194,7 @@ class BaseFactor
 #endif
   }
 
-  std::tuple<jacobian_matrix_t,measure_vector_t> compute_A_b()
+  std::tuple<prediction_matrix_t,measure_vector_t> compute_A_b()
   {
     // in linear it would just be a getter
     // in nonlinear, set_linearization_point must occur before

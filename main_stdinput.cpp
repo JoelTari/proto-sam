@@ -52,20 +52,20 @@ class LinearTranslationFactor
   {
   }
 
-  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  std::tuple<prediction_matrix_t, measure_vector_t> compute_A_b_impl()
   {
     return {A_, b_};
   }
 
   private:
-  static const LinearTranslationFactor::jacobian_matrix_t
+  static const LinearTranslationFactor::prediction_matrix_t
       k_H;   // NOTE: value declared out of line
   const LinearTranslationFactor::measure_covariance_matrix_t rho_;
-  const LinearTranslationFactor::jacobian_matrix_t A_;
+  const LinearTranslationFactor::prediction_matrix_t A_;
   const LinearTranslationFactor::measure_vector_t  b_;
 };
 
-LinearTranslationFactor::jacobian_matrix_t const LinearTranslationFactor::k_H {{1, 0, -1, 0}, {0, 1, 0, -1}};
+LinearTranslationFactor::prediction_matrix_t const LinearTranslationFactor::k_H {{1, 0, -1, 0}, {0, 1, 0, -1}};
 
 //------------------------------------------------------------------//
 //                        Anchor (2d) factor                        //
@@ -109,7 +109,7 @@ class AnchorFactor
     // => A = rho H  and b = rho z
   }
 
-  std::tuple<AnchorFactor::jacobian_matrix_t, AnchorFactor::measure_vector_t>
+  std::tuple<AnchorFactor::prediction_matrix_t, AnchorFactor::measure_vector_t>
       compute_A_b_impl()
   {
     return {A_, b_};
@@ -117,14 +117,14 @@ class AnchorFactor
 
 
   private:
-  static const AnchorFactor::jacobian_matrix_t
+  static const AnchorFactor::prediction_matrix_t
       k_H;   // NOTE: value declared out of line
   const AnchorFactor::measure_covariance_matrix_t rho_;
-  const AnchorFactor::jacobian_matrix_t A_;
+  const AnchorFactor::prediction_matrix_t A_;
   const AnchorFactor::measure_vector_t  b_;
 };
 
-AnchorFactor::jacobian_matrix_t const AnchorFactor::k_H {{1, 0}, {0, 1}};
+AnchorFactor::prediction_matrix_t const AnchorFactor::k_H {{1, 0}, {0, 1}};
 
 //------------------------------------------------------------------//
 //                          Main function                           //
