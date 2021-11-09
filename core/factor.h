@@ -161,8 +161,9 @@ class BaseFactor
   const measure_covariance_matrix_t mes_covariance;
   const measure_vector_t            mes_vector; // z
 
-  // TODO: maybe divide in tuples of jacobian, or static arrays of jacobian (one for each var)
-  jacobian_matrix_t A;
+  // NOTE: it would be advantageous to split into bloc jacobian matrices (one of each key), but that would be a tuple difficult to implement (blocs may not have the same number of cols)
+    // TODO: use a combination constexpr & tuple_cat
+  jacobian_matrix_t A; 
   // jacobian_matrices_t AA;
   measure_vector_t b; // dont confuse with mes_vector: z
 
@@ -191,14 +192,17 @@ class BaseFactor
 #endif
   }
 
-  // TODO: call static polymorphic methods here
-  //      cascades into the stationary factors and the linear factors
-    //      TODO: compute A and b
-
-  // typically, do this
-  void performAction()
+  std::tuple<jacobian_matrix_t,measure_vector_t> compute_A_b()
   {
-    return static_cast<Derived*>(this)->performActionImpl();
+    // in linear it would just be a getter
+    // in nonlinear, set_linearization_point must occur before
+    return static_cast<Derived*>(this)->compute_A_b_impl();
+  }
+
+  // for the nonlinears
+  void set_linearization_point(const state_vector_t & lin_point)
+  {
+    linearization_point = lin_point;
   }
 
   private:

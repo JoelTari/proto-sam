@@ -24,6 +24,14 @@ class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t, kFactorCategory>
                                                             var_names)
   {
   }
+
+  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  {
+    jacobian_matrix_t A;
+    measure_vector_t  b;
+    // FIX: add normed jacobian/linear A here
+    return {A, b};
+  }
 };
 
 //------------------------------------------------------------------//
@@ -46,6 +54,14 @@ class IniFactor : public BaseFactor<IniFactor, metaIni_t, kFactorCategory2>
                 var_names)
       : BaseFactor<IniFactor, metaIni_t, kFactorCategory2>(factor_id, var_names)
   {
+  }
+
+  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  {
+    jacobian_matrix_t A;
+    measure_vector_t  b;
+    // FIX: add normed jacobian/linear A here
+    return {A, b};
   }
 };
 
@@ -72,6 +88,14 @@ class bearingFactor
       : BaseFactor<bearingFactor, metaBearing_t, kFactorCategory3>(factor_id,
                                                                    var_names)
   {
+  }
+
+  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  {
+    jacobian_matrix_t A;
+    measure_vector_t  b;
+    // FIX: add normed jacobian/linear A here
+    return {A, b};
   }
 };
 
@@ -103,6 +127,14 @@ class rangeBearingFactor
           var_names)
   {
   }
+
+  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  {
+    jacobian_matrix_t A;
+    measure_vector_t  b;
+    // FIX: add normed jacobian/linear A here
+    return {A, b};
+  }
 };
 
 //------------------------------------------------------------------//
@@ -133,6 +165,14 @@ class rangeBearingSlideFactor
                    metaRangeBearingSliding_t,
                    kFactorCategory5>(factor_id, var_names)
   {
+  }
+
+  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  {
+    jacobian_matrix_t A;
+    measure_vector_t  b;
+    // FIX: add normed jacobian/linear A here
+    return {A, b};
   }
 };
 

@@ -28,6 +28,14 @@ class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t, kFactorCategory>
                                                             var_names)
   {
   }
+
+  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  {
+    jacobian_matrix_t A;
+    measure_vector_t  b;
+    // FIX: add normed jacobian/linear A here
+    return {A, b};
+  }
 };
 
 //------------------------------------------------------------------//
@@ -49,6 +57,14 @@ class IniFactor : public BaseFactor<IniFactor, metaIni_t, kFactorCategory2>
             const IniFactor::var_keys_t& var_names)
       : BaseFactor<IniFactor, metaIni_t, kFactorCategory2>(factor_id, var_names)
   {
+  }
+
+  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  {
+    jacobian_matrix_t A;
+    measure_vector_t  b;
+    // FIX: add normed jacobian/linear A here
+    return {A, b};
   }
 };
 

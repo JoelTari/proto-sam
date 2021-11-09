@@ -3,6 +3,8 @@
 #include "factor_impl/linear-translation.h"
 #include "sam-system.h"
 
+#include <tuple>
+
 //------------------------------------------------------------------//
 //                  Linear-translation factor                       //
 //------------------------------------------------------------------//
@@ -38,6 +40,14 @@ class LinearTranslationFactor
                    kLinearTranslationCategoryName>(factor_id, var_names)
   {
   }
+
+  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  {
+    jacobian_matrix_t A;
+    measure_vector_t  b;
+    // FIX: add normed jacobian/linear A here
+    return {A, b};
+  }
 };
 
 
@@ -68,6 +78,14 @@ class AnchorFactor
                                                                     var_names)
   {
   }
+
+  std::tuple<jacobian_matrix_t, measure_vector_t> compute_A_b_impl()
+  {
+    jacobian_matrix_t A;
+    measure_vector_t  b;
+    // FIX: add normed jacobian/linear A here
+    return {A, b};
+  }
 };
 
 //------------------------------------------------------------------//
@@ -82,6 +100,8 @@ int main(int argc, char* argv[])
   // C++ container)
 
   auto firstFactor = AnchorFactor("f0", {"x0"});
+
+  syst.smooth_and_map();
 
   return 0;
 }
