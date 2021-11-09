@@ -34,10 +34,12 @@ class LinearTranslationFactor
 {
   public:
   LinearTranslationFactor(const std::string&                         factor_id,
-                          const LinearTranslationFactor::var_keys_t& var_names)
+                          const LinearTranslationFactor::var_keys_t& var_names,
+    const LinearTranslationFactor::measure_vector_t & measure,
+    const LinearTranslationFactor::measure_covariance_matrix_t & covariance)
       : BaseFactor<LinearTranslationFactor,
                    linTranslMeta_t,
-                   kLinearTranslationCategoryName>(factor_id, var_names)
+                   kLinearTranslationCategoryName>(factor_id, var_names, measure, covariance)
   {
   }
 
@@ -73,9 +75,11 @@ class AnchorFactor
 {
   public:
   AnchorFactor(const std::string&              factor_id,
-               const AnchorFactor::var_keys_t& var_names)
+               const AnchorFactor::var_keys_t& var_names,
+    const AnchorFactor::measure_vector_t & measure,
+    const AnchorFactor::measure_covariance_matrix_t & covariance)
       : BaseFactor<AnchorFactor, AnchorMeta_t, kAnchorCategoryName>(factor_id,
-                                                                    var_names)
+                                                                    var_names,measure,covariance)
   {
   }
 
@@ -99,7 +103,9 @@ int main(int argc, char* argv[])
   // receive the measurement from stdin (as a string that can be converted in a
   // C++ container)
 
-  auto firstFactor = AnchorFactor("f0", {"x0"});
+  AnchorFactor::measure_vector_t z{0,0};
+  AnchorFactor::measure_covariance_matrix_t Omega{{0.2,0},{0.2}};
+  auto firstFactor = AnchorFactor("f0", {"x0"},z,Omega);
 
   syst.smooth_and_map();
 

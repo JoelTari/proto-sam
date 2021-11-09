@@ -180,9 +180,11 @@ class BaseFactor
    * @param factor_id str id of the factor (eg "f0")
    * @param variable_names array str of the variables (or keys) (eg ["x2","l5"])
    */
-  BaseFactor(const std::string& factor_id, const var_keys_t& variable_names)
+  BaseFactor(const std::string& factor_id, const var_keys_t& variable_names, const measure_vector_t measure, const measure_covariance_matrix_t & covariance)
       : variables(variable_names)
       , factor_id(factor_id)
+      , mes_vector(measure)
+      , mes_covariance(covariance)
   {
 #if ENABLE_DEBUG_TRACE
     std::cout << "Create " << this->kFactorCategory << " factor " << factor_id

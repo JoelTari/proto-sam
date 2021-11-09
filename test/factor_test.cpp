@@ -19,9 +19,13 @@ class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t, kFactorCategory>
   public:
   OdomFactor(const std::string& factor_id,
              const std::array<std::string, OdomFactor::Meta_t::kNumberOfVars>&
-                 var_names)
+                                                            var_names,
+             const OdomFactor::measure_vector_t&            measure,
+             const OdomFactor::measure_covariance_matrix_t& covariance)
       : BaseFactor<OdomFactor, metaOdom_t, kFactorCategory>(factor_id,
-                                                            var_names)
+                                                            var_names,
+                                                            measure,
+                                                            covariance)
   {
   }
 
@@ -51,8 +55,13 @@ class IniFactor : public BaseFactor<IniFactor, metaIni_t, kFactorCategory2>
   public:
   IniFactor(const std::string& factor_id,
             const std::array<std::string, IniFactor::Meta_t::kNumberOfVars>&
-                var_names)
-      : BaseFactor<IniFactor, metaIni_t, kFactorCategory2>(factor_id, var_names)
+                                                          var_names,
+            const IniFactor::measure_vector_t&            measure,
+            const IniFactor::measure_covariance_matrix_t& covariance)
+      : BaseFactor<IniFactor, metaIni_t, kFactorCategory2>(factor_id,
+                                                           var_names,
+                                                           measure,
+                                                           covariance)
   {
   }
 
@@ -84,9 +93,13 @@ class bearingFactor
   bearingFactor(
       const std::string& factor_id,
       const std::array<std::string, bearingFactor::Meta_t::kNumberOfVars>&
-          var_names)
+                                                        var_names,
+      const bearingFactor::measure_vector_t&            measure,
+      const bearingFactor::measure_covariance_matrix_t& covariance)
       : BaseFactor<bearingFactor, metaBearing_t, kFactorCategory3>(factor_id,
-                                                                   var_names)
+                                                                   var_names,
+                                                                   measure,
+                                                                   covariance)
   {
   }
 
@@ -121,10 +134,14 @@ class rangeBearingFactor
   rangeBearingFactor(
       const std::string& factor_id,
       const std::array<std::string, rangeBearingFactor::Meta_t::kNumberOfVars>&
-          var_names)
+                                                             var_names,
+      const rangeBearingFactor::measure_vector_t&            measure,
+      const rangeBearingFactor::measure_covariance_matrix_t& covariance)
       : BaseFactor<rangeBearingFactor, metaRangeBearing_t, kFactorCategory4>(
           factor_id,
-          var_names)
+          var_names,
+          measure,
+          covariance)
   {
   }
 
@@ -159,11 +176,13 @@ class rangeBearingSlideFactor
 {
   public:
   rangeBearingSlideFactor(
-      const std::string&                                    factor_id,
-      const std::array<std::string, Meta_t::kNumberOfVars>& var_names)
+      const std::string&                                          factor_id,
+      const std::array<std::string, Meta_t::kNumberOfVars>&       var_names,
+      const rangeBearingSlideFactor::measure_vector_t&            measure,
+      const rangeBearingSlideFactor::measure_covariance_matrix_t& covariance)
       : BaseFactor<rangeBearingSlideFactor,
                    metaRangeBearingSliding_t,
-                   kFactorCategory5>(factor_id, var_names)
+                   kFactorCategory5>(factor_id, var_names, measure, covariance)
   {
   }
 
@@ -183,11 +202,10 @@ void printSomeMetaInfo(const FACTOR_T& factor);
 template <typename FACTOR_T>
 void printSomeMetaInfo(const FACTOR_T& factor)
 {
-  std::cout << "\n *****  Printing Meta of " << factor.kFactorCategory //FACTOR_T::kFactorCategory
-            << " factor " 
-            << factor.factor_id
-            << " of scope (" << StringifyArrayOfStrings(factor.variables)
-            << ") ***** \n";
+  std::cout << "\n *****  Printing Meta of "
+            << factor.kFactorCategory   // FACTOR_T::kFactorCategory
+            << " factor " << factor.factor_id << " of scope ("
+            << StringifyArrayOfStrings(factor.variables) << ") ***** \n";
 
   std::cout << "Automated var idx ranges (in the factor state vector): \n";
 
@@ -209,15 +227,32 @@ void printSomeMetaInfo(const FACTOR_T& factor)
 
 int main()
 {
-  OdomFactor              aFactor("f1", {"x1", "x2"});
-  IniFactor               bFactor("f2", {"x0"});
-  bearingFactor           cFactor("f3", {"x2", "l1"});
-  rangeBearingFactor      dFactor("f4", {"x3", "l2"});
-  rangeBearingSlideFactor eFactor("f5", {"x8", "x9"});
+  OdomFactor::measure_vector_t            zf1 {0, 0, 0.5};
+  OdomFactor::measure_covariance_matrix_t Omegaf1 {{1, 0, 0},
+                                                   {0, 1, 0},
+                                                   {0, 0, 1}};
+  OdomFactor                  aFactor("f1", {"x1", "x2"}, zf1, Omegaf1);
+  IniFactor::measure_vector_t zf2 {0, 0, 0};
+  IniFactor::measure_covariance_matrix_t Omegaf2 {{1, 0, 0},
+                                                  {0, 1, 0},
+                                                  {0, 0, 1}};
+  IniFactor                              bFactor("f2", {"x0"}, zf2, Omegaf2);
+  // bearingFactor           cFactor("f3", {"x2", "l1"}, {3.14159 / 4}, {0.2});
+  rangeBearingFactor dFactor(
+      "f4",
+      {"x3", "l2"},
+      rangeBearingFactor::measure_vector_t {2.01, 0.41},
+      rangeBearingFactor::measure_covariance_matrix_t {{0.15, 0}, {0, 0.03}});
+  rangeBearingSlideFactor eFactor(
+      "f5",
+      {"x8", "x9"},
+      rangeBearingSlideFactor::measure_vector_t {2.01, 0.41},
+      rangeBearingSlideFactor::measure_covariance_matrix_t {{0.15, 0},
+                                                            {0, 0.03}});
 
   printSomeMetaInfo(aFactor);
   printSomeMetaInfo(bFactor);
-  printSomeMetaInfo(cFactor);
+  // printSomeMetaInfo(cFactor);
   printSomeMetaInfo(dFactor);
   printSomeMetaInfo(eFactor);
 
