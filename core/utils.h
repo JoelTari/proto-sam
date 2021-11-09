@@ -1,12 +1,13 @@
 #ifndef SAM_UTILS_H_
 #define SAM_UTILS_H_
 
-#include "config.h"
 #include <chrono>
 #include <ratio>
 #include <sstream>
 #include <fstream>
 #include <mutex>
+
+#include "config.h"
 
 namespace sam_utils
 {
@@ -133,9 +134,11 @@ struct ScopedTimer
     else
        duration = std::chrono::duration_cast<TIME_UNIT>(end - start);
 
+#if ENABLE_DEBUG_TRACE
     // add a cout or an I/O here
     std::cout << "Timer for " << name << " : " << duration.count()
               << get_unit_str() <<"\n"; 
+#endif
   }
 
   // NOTE: these are the same thing:

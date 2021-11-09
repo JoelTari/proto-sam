@@ -4,12 +4,14 @@
 #include "config.h"
 
 #include <array>
-#include <cstddef>
+// #include <cstddef>
 #include <eigen3/Eigen/Dense>
 #include <initializer_list>
 #include <map>
 #include <numeric>
+#if ENABLE_DEBUG_TRACE
 #include <sstream>
+#endif
 #include <string>
 #include <type_traits>
 #include <utility>

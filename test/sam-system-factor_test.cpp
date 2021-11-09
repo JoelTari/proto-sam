@@ -132,8 +132,10 @@ int main(int argc, char* argv[])
   // NOTE: the xxFactor::var_keys_t{...}, filling only the initializer_list
   // {...} creates problem with forwarding
 
+#if ENABLE_DEBUG_TRACE
   // print all infos about the factors in the sam system
   samsyst1.IterFactorInfos();
+#endif
 
   // samsyst1.loop_over_factors<dosmthi>();
   samsyst1.smooth_and_map();

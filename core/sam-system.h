@@ -24,14 +24,14 @@ namespace SAM
     SamSystem() {}
 
     /**
-    * @brief emplace new factor in the system
-    *
-    * @tparam FT
-    * @tparam Args
-    * @param factor_id
-    * @param keys
-    * @param args
-    */
+     * @brief emplace new factor in the system
+     *
+     * @tparam FT
+     * @tparam Args
+     * @param factor_id
+     * @param keys
+     * @param args
+     */
     template <typename FT, typename... Args>
     void register_new_factor(const std::string&             factor_id,
                              const typename FT::var_keys_t& keys,
@@ -92,7 +92,11 @@ namespace SAM
       auto [A, b] = fill_system(M, N, nnz);
       // and solve the system
       auto Xmap = solve_system(A, b);
-      // TODO: return properly
+#if ENABLE_DEBUG_TRACE
+      std::cout << "#### Syst: A computed :\n" << Eigen::MatrixXd(A) << "\n\n";
+      std::cout << "#### Syst: b computed :\n" << b << "\n";
+      std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
+#endif
     }
 
 #if ENABLE_DEBUG_TRACE
@@ -134,16 +138,18 @@ namespace SAM
     }
 
     bool AreMatricesFilled()
-    { 
-      // TODO: put after the end of the fill routine (check, for examples that the last line_counter is coherent with A,b sizes)
+    {
+      // TODO: put after the end of the fill routine (check, for examples that
+      // the last line_counter is coherent with A,b sizes)
       return true;
     }
 #endif
 
     private:
     /**
-    * @brief bookkeeper : store the infos of variables and factors, as well as associative relations, total sizes, indexes , ordering
-    */
+     * @brief bookkeeper : store the infos of variables and factors, as well as
+     * associative relations, total sizes, indexes , ordering
+     */
     Bookkeeper bookkeeper_;
 
     // there's at least one factor, the rest are expanded
@@ -151,20 +157,21 @@ namespace SAM
         all_factors_tuple_;
 
     /**
-    * @brief how many different types of factor there are
-    */
+     * @brief how many different types of factor there are
+     */
     constexpr static const size_t S_
         = std::tuple_size<decltype(all_factors_tuple_)>::value;
 
 
-        /**
-        * @brief loop over factors and get the data to fill the system (sparse matrix A through list of triplets and rhs vector)
-        *
-        * @tparam I
-        * @param triplets
-        * @param b
-        * @param line_counter
-        */
+    /**
+     * @brief loop over factors and get the data to fill the system (sparse
+     * matrix A through list of triplets and rhs vector)
+     *
+     * @tparam I
+     * @param triplets
+     * @param b
+     * @param line_counter
+     */
     template <std::size_t I = 0>
     void loop_over_factors(std::vector<Eigen::Triplet<double>>& triplets,
                            Eigen::VectorXd&                     b,
@@ -174,34 +181,60 @@ namespace SAM
         return;
       else
       {
-        for (auto& factor : std::get<I>(this->all_factors_tuple_)) // may not be constant
+#if ENABLE_DEBUG_TRACE
+        std::cout << "### Looping over factors of type "
+                  << factor_type_in_tuple_t<I>::kFactorCategory << "\n";
+#endif
+        for (auto& factor :
+             std::get<I>(this->all_factors_tuple_))   // may not be constant
         {
           // update the factor's A and b matrices (new lin point)
-          // if constexpr nonlinear factor  =>  set lin point (given by bookkeeper)
-          auto [factorA,factorb] = factor.compute_A_b();
+          // if constexpr nonlinear factor  =>  set lin point (given by
+          // bookkeeper)
+          auto [factorA, factorb] = factor.compute_A_b();
+#if ENABLE_DEBUG_TRACE
+          std::cout << "A and b: \n" << factorA << "\n::\n" << factorb << "\n";
+#endif
 
           // easy part : fill the rhs b from factor.b
-          constexpr int mesdim = factor_type_in_tuple_t<I>::Meta_t::kMesDim; 
-          b.block<mesdim, 1>(line_counter, 0) = factor.b;
+          constexpr int mesdim = factor_type_in_tuple_t<I>::Meta_t::kMesDim;
+          b.block<mesdim, 1>(line_counter, 0) = factorb;
           // add elements in the triplets from factor.A
-          //    1. for each var bloc of factor.A, get the equivalent col in big A (use bookkeeper)
-          //    put each element of that column of A in the triplet list (increment a tmp_line_counter)
-          for (int k = 0; k < factor_type_in_tuple_t<I>::Meta_t::kVarIdxRanges.size(); k++ )
+          //    1. for each var bloc of factor.A, get the equivalent col in big
+          //    A (use bookkeeper) put each element of that column of A in the
+          //    triplet list (increment a tmp_line_counter)
+          for (int k = 0;
+               k < factor_type_in_tuple_t<I>::Meta_t::kVarIdxRanges.size();
+               k++)   // TODO: could be a constexpr loop
           {
             // this is the jacobian part associated with a var
-            int colInBigA = this->bookkeeper_.getKeyInfos(factor.variables[k]).sysidx;
+            int colInBigA
+                = this->bookkeeper_.getKeyInfos(factor.variables[k]).sysidx;
+#if ENABLE_DEBUG_TRACE
+            std::cout << "Column Index in A of " << factor.variables[k]
+                      << " is " << colInBigA << " . \n";
+#endif
             // select the subblock only for the k-th variable
-            auto factorAsubblock = 
-              factor.A.block(mesdim, factor_type_in_tuple_t<I>::Meta_t::kVarsSizes[k],0, factor_type_in_tuple_t<I>::Meta_t::kVarIdxRanges[k][0] ); // TODO: static block
+            auto factorAsubblock = factorA.block(
+                0,
+                factor_type_in_tuple_t<I>::Meta_t::kVarIdxRanges[k][0],
+                mesdim,
+                factor_type_in_tuple_t<
+                    I>::Meta_t::kVarsSizes[k]);   // TODO: static block
             // factor.Asubblock is reshaped in 1d (in a column-major fashion)
-            auto A1d = factorAsubblock.reshaped(); 
-            for(int i=0;i < A1d.size(); i++ )
+            auto A1d = factorAsubblock.reshaped();
+#if ENABLE_DEBUG_TRACE
+            std::cout << "factorAsubblock : " << factorAsubblock << "\n";
+#endif
+            for (int i = 0; i < factorAsubblock.cols() * factorAsubblock.rows();
+                 i++)
             {
-              // row in big A is easier, just wrap the i index & add the line counter
+              // row in big A is easier, just wrap the i index & add the line
+              // counter
               int row = line_counter + (i % mesdim);
               // col idx in big A : we know
-              int col = colInBigA +  i/mesdim ;
-              triplets.emplace_back(row,col,A1d[i]);
+              int col = colInBigA + i / mesdim;
+              triplets.emplace_back(row, col, A1d[i]);
             }
           }
 
@@ -215,18 +248,22 @@ namespace SAM
     }
 
     /**
-    * @brief fill A & b system matrices 
-    *
-    * @param dim_mes
-    * @param dim_keys
-    * @param nnz
-    *
-    * @return 
-    */
+     * @brief fill A & b system matrices
+     *
+     * @param dim_mes
+     * @param dim_keys
+     * @param nnz
+     *
+     * @return
+     */
     std::tuple<Eigen::SparseMatrix<double>, Eigen::VectorXd>
         fill_system(uint dim_mes, uint dim_keys, uint nnz)
     {
       PROFILE_FUNCTION();
+#if ENABLE_DEBUG_TRACE
+      std::cout << "starting filling system of size M= " << dim_mes
+                << " , N= " << dim_keys << " , NNZ= " << nnz << '\n';
+#endif
       // declare matrix A and b
       Eigen::SparseMatrix<double> A(dim_mes,
                                     dim_keys);   // colum-major (default)
@@ -237,20 +274,20 @@ namespace SAM
       // loop over all factors
       // fill in the triplets and the rhs
       this->loop_over_factors(triplets, b);
-      A.setFromTriplets(triplets.begin(),triplets.end());
+      A.setFromTriplets(triplets.begin(), triplets.end());
       return {A, b};
     }
 
     /**
-    * @brief emplace back factor in the right container (recursive static)
-    *
-    * @tparam I
-    * @tparam FT
-    * @tparam Args
-    * @param factor_id
-    * @param keys
-    * @param args
-    */
+     * @brief emplace back factor in the right container (recursive static)
+     *
+     * @tparam I
+     * @tparam FT
+     * @tparam Args
+     * @param factor_id
+     * @param keys
+     * @param args
+     */
     template <std::size_t I = 0, typename FT, typename... Args>
     void place_factor_in_container(const std::string&             factor_id,
                                    const typename FT::var_keys_t& keys,
@@ -306,12 +343,10 @@ namespace SAM
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
           // 1. checking if the bookkeeper is consistent with itself (systemInfo
           // vs whats on the std::maps)
-          if (!this->bookkeeper_.are_dimensions_consistent())
-            std::cerr << "Bookkeeper internally not consistent.";
+          assert(this->bookkeeper_.are_dimensions_consistent());
           // 2. checking if the bookkeeper is consistent with the tuples of
           // vector holding the factors
-          if (!this->is_system_consistent())
-            std::cerr << "SAM system is not consistent.";
+          assert(this->is_system_consistent());
 #endif
         }
         // recursion :  compile time call
@@ -320,7 +355,6 @@ namespace SAM
                                              std::forward<Args>(args)...);
       }
     }
-
 
 
     /**

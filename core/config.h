@@ -1,9 +1,15 @@
 #ifndef SAM_CONFIG_H_
 #define SAM_CONFIG_H_
 
+#ifndef ENABLE_DEBUG_TRACE
 #define ENABLE_DEBUG_TRACE 1
+#endif
+#ifndef ENABLE_RUNTIME_CONSISTENCY_CHECKS
 #define ENABLE_RUNTIME_CONSISTENCY_CHECKS 1
+#endif
+#ifndef ENABLE_TIMER
 #define ENABLE_TIMER 1
+#endif
 
 #if ENABLE_DEBUG_TRACE
 #include <iostream>

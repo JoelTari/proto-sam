@@ -61,11 +61,12 @@ class LinearTranslationFactor
   static const LinearTranslationFactor::prediction_matrix_t
       k_H;   // NOTE: value declared out of line
   const LinearTranslationFactor::measure_covariance_matrix_t rho_;
-  const LinearTranslationFactor::prediction_matrix_t A_;
-  const LinearTranslationFactor::measure_vector_t  b_;
+  const LinearTranslationFactor::prediction_matrix_t         A_;
+  const LinearTranslationFactor::measure_vector_t            b_;
 };
 
-LinearTranslationFactor::prediction_matrix_t const LinearTranslationFactor::k_H {{1, 0, -1, 0}, {0, 1, 0, -1}};
+LinearTranslationFactor::prediction_matrix_t const
+    LinearTranslationFactor::k_H {{1, 0, -1, 0}, {0, 1, 0, -1}};
 
 //------------------------------------------------------------------//
 //                        Anchor (2d) factor                        //
@@ -120,8 +121,8 @@ class AnchorFactor
   static const AnchorFactor::prediction_matrix_t
       k_H;   // NOTE: value declared out of line
   const AnchorFactor::measure_covariance_matrix_t rho_;
-  const AnchorFactor::prediction_matrix_t A_;
-  const AnchorFactor::measure_vector_t  b_;
+  const AnchorFactor::prediction_matrix_t         A_;
+  const AnchorFactor::measure_vector_t            b_;
 };
 
 AnchorFactor::prediction_matrix_t const AnchorFactor::k_H {{1, 0}, {0, 1}};
@@ -138,10 +139,15 @@ int main(int argc, char* argv[])
   // C++ container)
 
   AnchorFactor::measure_vector_t            z {0, 0};
-  AnchorFactor::measure_covariance_matrix_t Omega {{0.2, 0}, {0.2}};
-  auto firstFactor = AnchorFactor("f0", {"x0"}, z, Omega);
+  AnchorFactor::measure_covariance_matrix_t Sigma {{0.2, 0}, {0, 0.2}};
 
-  syst.register_new_factor<AnchorFactor>("f0", {"x0"}, z, Omega);
+  syst.register_new_factor<AnchorFactor>("f0", {"x0"}, z, Sigma);
+  syst.register_new_factor<LinearTranslationFactor>(
+      "f1",
+      {"x0", "x1"},
+      LinearTranslationFactor::measure_vector_t {-0.95, 0.1},
+      LinearTranslationFactor::measure_covariance_matrix_t {{0.1, 0},
+                                                            {0, 0.1}});
 
   syst.smooth_and_map();
 

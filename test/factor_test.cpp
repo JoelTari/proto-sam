@@ -1,4 +1,5 @@
 #include "factor.h"
+#include <iostream>
 
 
 //------------------------------------------------------------------//
@@ -228,15 +229,15 @@ void printSomeMetaInfo(const FACTOR_T& factor)
 int main()
 {
   OdomFactor::measure_vector_t            zf1 {0, 0, 0.5};
-  OdomFactor::measure_covariance_matrix_t Omegaf1 {{1, 0, 0},
+  OdomFactor::measure_covariance_matrix_t Sigmaf1 {{1, 0, 0},
                                                    {0, 1, 0},
                                                    {0, 0, 1}};
-  OdomFactor                  aFactor("f1", {"x1", "x2"}, zf1, Omegaf1);
+  OdomFactor                  aFactor("f1", {"x1", "x2"}, zf1, Sigmaf1);
   IniFactor::measure_vector_t zf2 {0, 0, 0};
-  IniFactor::measure_covariance_matrix_t Omegaf2 {{1, 0, 0},
+  IniFactor::measure_covariance_matrix_t Sigmaf2 {{1, 0, 0},
                                                   {0, 1, 0},
                                                   {0, 0, 1}};
-  IniFactor                              bFactor("f2", {"x0"}, zf2, Omegaf2);
+  IniFactor                              bFactor("f2", {"x0"}, zf2, Sigmaf2);
   // bearingFactor           cFactor("f3", {"x2", "l1"}, {3.14159 / 4}, {0.2});
   rangeBearingFactor dFactor(
       "f4",
