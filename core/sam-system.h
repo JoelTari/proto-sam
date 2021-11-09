@@ -8,7 +8,8 @@
 #include <functional>
 // #include "definitions.h"
 
-#include <eigen3/Eigen/Dense>
+// #include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Sparse>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -125,41 +126,98 @@ namespace SAM
     //     }
     // }
 
-    // TODO: can we do it by adding a lambda inside the for{} ?
     template <std::size_t I = 0>
-    void loop_over_factors()
+    void loop_over_factors(std::vector<Eigen::Triplet<double>>& triplets,
+                           Eigen::VectorXd&                     b,
+                           int line_counter = 0)
     {
       if constexpr (I == S_)
         return;
       else
       {
-        for (const auto& factor : std::get<I>(this->all_factors_tuple_))
+        for (const auto& factor : std::get<I>(this->all_factors_tuple_)) // may not be constant
         {
-          // ShortPrintFactorInfo(factor);
+          // easy part : fill the rhs b from factor.b
+          constexpr int mesdim = factor_type_in_tuple_t<I>::Meta_t::kMesDim;   // HACK: check if ok at runtime
+          constexpr int nbScalarElements = factor_type_in_tuple_t<I>::Meta_t::kNbScalarElements;   // HACK: check if ok at runtime
+          b.block<mesdim, 1>(line_counter, 0)
+              = factor.b;   // HACK: check if ok at runtime
+          // add elements in the triplets from factor.A
+          //    1. for each var bloc of factor.A, get the equivalent col in big A (use bookkeeper)
+          //    put each element of that column of A in the triplet list (increment a tmp_line_counter)
+          for (int k = 0; k < factor_type_in_tuple_t<I>::Meta_t::kVarIdxRanges.size(); k++ )
+          {
+            // this loop a var
+            int colInBigA = this->bookkeeper_.getKeyInfos(factor.variables[k]).sysidx;
+            // select the subblock only for the k-th variable
+            auto factorAsubblock = factor.A.block(mesdim, factor_type_in_tuple_t<I>::Meta_t::kVarsSizes[k],0, factor_type_in_tuple_t<I>::Meta_t::kVarIdxRanges[k][0] );
+            // factor.A is reshaped in 1d (in a column-major fashion)
+            auto A1d = factorAsubblock.reshaped(); 
+            for(int i=0;i < nbScalarElements; i++ )
+            {
+              // row in big A is easier, just wrap the i index & add the line counter
+              int row = line_counter + (i % mesdim);
+              // col idx in big A : we know
+              int col = colInBigA +  i/mesdim ;
+              triplets.emplace_back(row,col,A1d[i]);
+            }
+          }
+
+
+          // increment the line number by as many lines filled here
+          line_counter += mesdim;
         }
         // compile-time recursion
-        loop_over_factors<I + 1>();
+        loop_over_factors<I + 1>(triplets, b, line_counter);
       }
     }
 
+    std::tuple<Eigen::SparseMatrix<double>, Eigen::VectorXd>
+        fill_system(uint dim_mes, uint dim_keys, uint nnz)
+    {
+      PROFILE_FUNCTION();
+      // declare matrix A and b
+      Eigen::SparseMatrix<double> A(dim_mes,
+                                    dim_keys);   // colum-major (default)
+      Eigen::VectorXd             b(dim_mes);
+      // triplets to fill the matrix A
+      std::vector<Eigen::Triplet<double>> triplets;
+      triplets.reserve(nnz);
+      // loop over all factors
+      // fill in the triplets and the rhs
+      this->loop_over_factors(triplets, b);
+      A.setFromTriplets(triplets.begin(),triplets.end());
+      return {A, b};
+    }
+
+    Eigen::VectorXd solve_system(const Eigen::SparseMatrix<double>& A,
+                                 const Eigen::VectorXd&             b)
+    {
+      PROFILE_FUNCTION();
+      // solver
+      Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>>
+          solver;
+      // MAP
+      solver.compute(A);
+      return solver.solve(b);
+    }
 
     void smooth_and_map()
     {
       // scoped timer
       PROFILE_FUNCTION();
 
-      SystemInfo      system_infos = this->bookkeeper_.getSystemInfos();
-      int             M            = system_infos.aggr_dim_mes;
-      int             N            = system_infos.aggr_dim_keys;
-      Eigen::MatrixXd A(M, N);
-      Eigen::VectorXd b(M);
-      // loop the factors, and fill A and b
-      //
-      // solve  A,b
-      auto Xmap  = A.colPivHouseholderQr().solve(b);
-      auto Xmap2 = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+      SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
+      int        M            = system_infos.aggr_dim_mes;
+      int        N            = system_infos.aggr_dim_keys;
 
-      // declarer la matrice d'info H
+      uint nnz = this->bookkeeper_.getSystemInfos().nnz;
+
+      // the big steps: fill the system (sparse matrix A and rhs vector b)
+      auto [A, b] = fill_system(M, N, nnz);
+      // and solve the system
+      auto Xmap = solve_system(A, b);
+      // TODO: return properly
 
 
       // declarer/reutiliser un pt de linearisation
@@ -199,10 +257,6 @@ namespace SAM
       //    REMARQUES 2:
       //  il faut gerer l'ordering, et modifier en consequence le bookkeeping
     }
-
-    // TODO: remove, too specific
-    // Eigen::VectorXd mean_;
-    // Eigen::MatrixXd covariance_;
 
 #if ENABLE_DEBUG_TRACE
     /**

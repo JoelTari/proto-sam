@@ -91,17 +91,19 @@ template <int                             NB_VARS,
 struct FactorMetaInfo
 {
   /// Number of groups of variables of the factor (ex: {x1,x2} -> 2)
-  static constexpr auto kNumberOfVars {NB_VARS};
+  static constexpr int kNumberOfVars {NB_VARS};
   /// Aggregate dimension of the variable(s) combined (ex: SE2 odom -> 6)
   ///  = dimension of the factor's (aggregate) variable vector
-  static constexpr auto kAggrVarDim {VAR_TOTAL_DIM};
+  static constexpr int kAggrVarDim {VAR_TOTAL_DIM};
   /// Array of the respective dimension of each variable (ex: SE2 odom -> [3,3])
   static constexpr auto kVarsSizes {VAR_SIZES};
   /// Array of the idx start & end of each variable in the aggregate factor
   /// variable array. (ex: SO2 odom -> [[0,2],[3,5]])
   /* static constexpr auto varIdxRanges {VAR_IDX_RANGES_T}; */
   /// Dimension of the measurement vector (ex: SO2 odom -> 3, bearing-only -> 1)
-  static constexpr auto kMesDim {MES_DIM};
+  static constexpr int kMesDim {MES_DIM};
+  // Number of scalar elements in the lhs (matrix measurement)
+  static constexpr int kNbScalarElements {kMesDim*kAggrVarDim};
 
   // for each variable, the range in the state. Ex: SE2 : -> [[0,2],[3,5]]
   // this will work in conjunction with the variable_position & variable_range
@@ -137,6 +139,8 @@ class BaseFactor
   // jacobian matrix type
   using jacobian_matrix_t
       = Eigen::Matrix<double, Meta_t::kAggrVarDim, Meta_t::kMesDim>;
+  // using jacobian_matrices_t
+  //   = std::array<Eigen::Matrix, std::size_t _Nm>
   // measure vector type
   using measure_vector_t = Eigen::Matrix<double, Meta_t::kMesDim, 1>;
   // measure covariance type
@@ -155,10 +159,12 @@ class BaseFactor
 
   // the actual measurement made
   const measure_covariance_matrix_t mes_covariance;
-  const measure_vector_t            mes_vector;
+  const measure_vector_t            mes_vector; // z
 
   // TODO: maybe divide in tuples of jacobian, or static arrays of jacobian (one for each var)
-  jacobian_matrix_t jacobian;
+  jacobian_matrix_t A;
+  // jacobian_matrices_t AA;
+  measure_vector_t b; // dont confuse with mes_vector: z
 
   state_vector_t linearization_point;
 
@@ -187,6 +193,7 @@ class BaseFactor
 
   // TODO: call static polymorphic methods here
   //      cascades into the stationary factors and the linear factors
+    //      TODO: compute A and b
 
   // typically, do this
   void performAction()

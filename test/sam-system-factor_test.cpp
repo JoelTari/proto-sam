@@ -89,7 +89,6 @@ int main(int argc, char* argv[])
   // print all infos about the factors in the sam system
   samsyst1.IterFactorInfos();
 
-
   // samsyst1.loop_over_factors<dosmthi>();
   samsyst1.smooth_and_map();
 

@@ -34,10 +34,11 @@ struct FactorInfo
  */
 struct SystemInfo
 {
-  int aggr_dim_keys;
-  int aggr_dim_mes;
-  int number_of_keys;
-  int number_of_factors;
+  uint aggr_dim_keys = 0;
+  uint aggr_dim_mes = 0;
+  uint number_of_keys = 0;
+  uint number_of_factors = 0;
+  uint nnz = 0; // number of non zero (in the measurement matrix)
 };
 
 class Bookkeeper
@@ -74,9 +75,10 @@ class Bookkeeper
     factor_info.factor_aggr_mes_dim  = aggr_mes_dim;
     factor_info.keys                 = keys;
     this->factor_to_infos[factor_id] = factor_info;
-    // update the system info
+    // update the system info (aggregate size rise, number of elements grows in the sparse matrix)
     this->system_info_.aggr_dim_mes += aggr_mes_dim;
     this->system_info_.number_of_factors++;
+    this->system_info_.nnz += factor_info.factor_aggr_key_dim*factor_info.factor_aggr_mes_dim;
   };
 
   KeyInfo getKeyInfos(const std::string& key) const
@@ -88,9 +90,10 @@ class Bookkeeper
     }
     else
     {
-      throw 1;   // TODO: consistent failure management std::optinal ??
+      throw 1;   // TODO: consistent failure management std::optional ??
     }
   }
+
   FactorInfo getFactorInfos(const std::string& factor_id) const
   {
     if (auto it {factor_to_infos.find(factor_id)};
