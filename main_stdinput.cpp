@@ -131,7 +131,8 @@ AnchorFactor::prediction_matrix_t const AnchorFactor::k_H {{1, 0}, {0, 1}};
 //                          Main function                           //
 //------------------------------------------------------------------//
 int main(int argc, char* argv[])
-{
+{ 
+  sam_utils::JSONLogger::Instance().beginSession("main_session");
   PROFILE_FUNCTION();
   auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>();
 
@@ -148,6 +149,30 @@ int main(int argc, char* argv[])
       LinearTranslationFactor::measure_vector_t {-0.95, 0.1},
       LinearTranslationFactor::measure_covariance_matrix_t {{0.1, 0},
                                                             {0, 0.1}});
+
+  syst.register_new_factor<LinearTranslationFactor>(
+      "f2",
+      {"x1", "x2"},
+      LinearTranslationFactor::measure_vector_t {-0.01654, 1.21},
+      LinearTranslationFactor::measure_covariance_matrix_t {{0.02, 0},
+                                                            {0, 0.3}});
+
+  syst.register_new_factor<LinearTranslationFactor>(
+      "f3",
+      {"x2", "x3"},
+      LinearTranslationFactor::measure_vector_t {1.01654, -.11},
+      LinearTranslationFactor::measure_covariance_matrix_t {{0.32, 0},
+                                                            {0, 0.1}});
+
+  // loop-closure
+  syst.register_new_factor<LinearTranslationFactor>(
+      "f4",
+      {"x3", "x4"},
+      LinearTranslationFactor::measure_vector_t {0.01654, -.981},
+      LinearTranslationFactor::measure_covariance_matrix_t {{0.002, 0},
+                                                            {0, 0.173}});
+
+
 
   syst.smooth_and_map();
 

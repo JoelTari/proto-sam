@@ -6,6 +6,7 @@
 #include <sstream>
 #include <fstream>
 #include <mutex>
+#include <thread>
 
 #include "config.h"
 
@@ -133,6 +134,15 @@ struct ScopedTimer
        duration = end-start;
     else
        duration = std::chrono::duration_cast<TIME_UNIT>(end - start);
+
+    // output to json logger
+    ProfileResult result;
+    result.name = name;
+    result.start = std::chrono::time_point_cast<TIME_UNIT>(start).time_since_epoch().count();
+    result.duration = duration.count();
+    result.threadID = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    JSONLogger::Instance().writeProfile(result);
+
 
 #if ENABLE_DEBUG_TRACE
     // add a cout or an I/O here

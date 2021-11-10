@@ -80,7 +80,7 @@ namespace SAM
     void smooth_and_map()
     {
       // scoped timer
-      PROFILE_FUNCTION();
+      // PROFILE_FUNCTION();
 
       SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
       int        M            = system_infos.aggr_dim_mes;
