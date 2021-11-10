@@ -56,42 +56,10 @@ namespace SAM
                                        std::forward<Args>(args)...);
     }
 
-    // // this works for 1 type of std::vector<FT>, but not for the whole tuple
-    // template <std::size_t I=0, typename FT>
-    // void for_each_factor( std::function< void(const FT & func) >)
-    // {
-    //     for (const auto& factor : std::get<I>(this->all_factors_tuple_))
-    //     {
-    //       func(factor);
-    //     }
-    // }
-
-    Eigen::VectorXd solve_system(const Eigen::SparseMatrix<double>& A,
-                                 const Eigen::VectorXd&             b)
-    // TODO: add a solverOpts variable: check rank or not, check success, etc..
-    {
-      PROFILE_FUNCTION();
-      // solver
-      Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>>
-          solver;
-      // MAP
-      solver.compute(A);
-
-      // rank check: not considered a consistency check
-      if (solver.rank() < A.cols()) throw "RANK DEFICIENT PROBLEM";
-      Eigen::VectorXd map = solver.solve(b);
-      // residual error
-#if ENABLE_DEBUG_TRACE
-      auto residual_error = solver.matrixQ().transpose() * b;
-      std::cout << "### Syst solver : residual value: " << residual_error.norm()
-                << "\n";
-      std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS")
-                << "\n";
-#endif
-      return map;
-    }
 
     void smooth_and_map()
+    // TODO: add a solverOpts variable: check rank or not, check success, write
+    // bookkeeper etc..
     {
       // scoped timer
       // PROFILE_FUNCTION();
@@ -112,7 +80,9 @@ namespace SAM
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
 #endif
 
-      // compute error: loop over factors with the solution
+      // CONTINUE: HERE
+      // keep the records
+      // loop over the Xmap vector, and copy the value in the bookkeeper (key_info) 
     }
 
 #if ENABLE_DEBUG_TRACE
@@ -372,6 +342,40 @@ namespace SAM
       }
     }
 
+
+    /**
+    * @brief solve the system given the big matrices A and b. Use the sparseQR solver.
+    *
+    * @param A sparse matrix
+    * @param b 
+    * @throw rank deficient (columnwise) matrix A
+    *
+    * @return 
+    */
+    Eigen::VectorXd solve_system(const Eigen::SparseMatrix<double>& A,
+                                 const Eigen::VectorXd&             b)
+    // TODO: add a solverOpts variable: check rank or not, check success
+    {
+      PROFILE_FUNCTION();
+      // solver
+      Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>>
+          solver;
+      // MAP
+      solver.compute(A);
+
+      // rank check: not considered a consistency check
+      if (solver.rank() < A.cols()) throw "RANK DEFICIENT PROBLEM";
+      Eigen::VectorXd map = solver.solve(b);
+      // residual error
+#if ENABLE_DEBUG_TRACE
+      auto residual_error = solver.matrixQ().transpose() * b;
+      std::cout << "### Syst solver : residual value: " << residual_error.norm()
+                << "\n";
+      std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS")
+                << "\n";
+#endif
+      return map;
+    }
 
     /**
      * @brief Gets the factor type of the Ith tuple element. Use case: get some
