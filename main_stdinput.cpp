@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
   syst.register_new_factor<LinearTranslationFactor>(
       "f2",
       {"x1", "x2"},
-      LinearTranslationFactor::measure_vector_t {-0.01654, 1.21},
+      LinearTranslationFactor::measure_vector_t {-0.01654, -1.21},
       LinearTranslationFactor::measure_covariance_matrix_t {{0.02, 0},
                                                             {0, 0.3}});
 
@@ -168,11 +168,9 @@ int main(int argc, char* argv[])
   syst.register_new_factor<LinearTranslationFactor>(
       "f4",
       {"x3", "x4"},
-      LinearTranslationFactor::measure_vector_t {0.01654, -.981},
+      LinearTranslationFactor::measure_vector_t {0.01654, 1.981},
       LinearTranslationFactor::measure_covariance_matrix_t {{0.002, 0},
                                                             {0, 0.173}});
-
-
 
   syst.smooth_and_map();
 
