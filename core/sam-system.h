@@ -76,14 +76,31 @@ namespace SAM
       auto Xmap = solve_system(A, b);
 #if ENABLE_DEBUG_TRACE
       std::cout << "#### Syst: A computed :\n" << Eigen::MatrixXd(A) << "\n\n";
+      // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) << "\n\n";
       std::cout << "#### Syst: b computed :\n" << b << "\n";
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
 #endif
 
       // CONTINUE: HERE
-      // keep the records
-      // loop over the Xmap vector, and copy the value in the bookkeeper (key_info) 
+      // keep the records: update the bookkeeper
     }
+
+    /**
+     * @brief With current graph, containing  the last recorded results, from
+     * the bookkeeper WARNING: perhaps use it only in the bookkeeper, or another new class (inverse dependency)
+     */
+    void write_factor_graph()
+    {
+      // TODO: fill a 'graph' field in the json logger
+      // CONTINUE:
+
+      // TODO: cout in std output (if enable debug trace flag is on)
+      // CONTINUE:
+    }
+
+    // Eigen::VectorXd getLastLinPoint()
+    // {
+    // }
 
 #if ENABLE_DEBUG_TRACE
     /**
@@ -344,14 +361,15 @@ namespace SAM
 
 
     /**
-    * @brief solve the system given the big matrices A and b. Use the sparseQR solver.
-    *
-    * @param A sparse matrix
-    * @param b 
-    * @throw rank deficient (columnwise) matrix A
-    *
-    * @return 
-    */
+     * @brief solve the system given the big matrices A and b. Use the sparseQR
+     * solver.
+     *
+     * @param A sparse matrix
+     * @param b
+     * @throw rank deficient (columnwise) matrix A
+     *
+     * @return
+     */
     Eigen::VectorXd solve_system(const Eigen::SparseMatrix<double>& A,
                                  const Eigen::VectorXd&             b)
     // TODO: add a solverOpts variable: check rank or not, check success
@@ -373,6 +391,11 @@ namespace SAM
                 << "\n";
       std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS")
                 << "\n";
+      std::cout << "### Syst solver :  nnz in square root : "
+                << solver.matrixR().nonZeros() << " (from "
+                << A.nonZeros() << ") in Hessian."
+                << "\n";
+      std::cout << "### Syst solver : matrix R : \n" << Eigen::MatrixXd(solver.matrixR()) << '\n';
 #endif
       return map;
     }

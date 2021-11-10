@@ -3,6 +3,7 @@
 #include "factor_impl/linear-translation.h"
 #include "sam-system.h"
 
+#include <iostream>
 #include <tuple>
 
 //------------------------------------------------------------------//
@@ -59,7 +60,7 @@ class LinearTranslationFactor
 
   private:
   static const LinearTranslationFactor::prediction_matrix_t
-      k_H;   // NOTE: value declared out of line
+                                                             k_H;   // NOTE: value declared out of line
   const LinearTranslationFactor::measure_covariance_matrix_t rho_;
   const LinearTranslationFactor::prediction_matrix_t         A_;
   const LinearTranslationFactor::measure_vector_t            b_;
@@ -119,7 +120,7 @@ class AnchorFactor
 
   private:
   static const AnchorFactor::prediction_matrix_t
-      k_H;   // NOTE: value declared out of line
+                                                  k_H;   // NOTE: value declared out of line
   const AnchorFactor::measure_covariance_matrix_t rho_;
   const AnchorFactor::prediction_matrix_t         A_;
   const AnchorFactor::measure_vector_t            b_;
@@ -131,7 +132,7 @@ AnchorFactor::prediction_matrix_t const AnchorFactor::k_H {{1, 0}, {0, 1}};
 //                          Main function                           //
 //------------------------------------------------------------------//
 int main(int argc, char* argv[])
-{ 
+{
   sam_utils::JSONLogger::Instance().beginSession("main_session");
   PROFILE_FUNCTION();
 
@@ -169,11 +170,27 @@ int main(int argc, char* argv[])
   syst.register_new_factor<LinearTranslationFactor>(
       "f4",
       {"x3", "x0"},
-      LinearTranslationFactor::measure_vector_t {0.01654, 1.981},
+      LinearTranslationFactor::measure_vector_t {0.01654, 1.181},
       LinearTranslationFactor::measure_covariance_matrix_t {{0.002, 0},
                                                             {0, 0.173}});
+  syst.register_new_factor<LinearTranslationFactor>(
+      "f5",
+      {"x0", "x2"},
+      LinearTranslationFactor::measure_vector_t {-1.01654, -0.8},
+      LinearTranslationFactor::measure_covariance_matrix_t {{0.2, 0},
+                                                            {0, 0.17}});
 
-  syst.smooth_and_map();
+
+  try
+  {
+    syst.smooth_and_map();
+  }
+  catch (const char* e)
+  {
+#if ENABLE_DEBUG_TRACE
+    std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
+#endif
+  }
 
   return 0;
 }
