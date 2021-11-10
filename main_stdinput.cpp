@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
   // loop-closure
   syst.register_new_factor<LinearTranslationFactor>(
       "f4",
-      {"x3", "x4"},
+      {"x3", "x0"},
       LinearTranslationFactor::measure_vector_t {0.01654, 1.981},
       LinearTranslationFactor::measure_covariance_matrix_t {{0.002, 0},
                                                             {0, 0.173}});

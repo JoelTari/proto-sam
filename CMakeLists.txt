@@ -22,3 +22,5 @@ target_compile_features(factor_test PUBLIC cxx_std_17)
 target_compile_features(sam-system_test PUBLIC cxx_std_17)
 target_compile_features(sam-system-factor_test PUBLIC cxx_std_17)
 target_compile_features(main_stdinput PUBLIC cxx_std_17)
+
+# target_compile_definitions(main_stdinput PUBLIC ENABLE_DEBUG_TRACE=1 ENABLE_TIMER=1)

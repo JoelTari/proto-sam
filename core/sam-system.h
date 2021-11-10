@@ -10,6 +10,7 @@
 
 // #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Sparse>
+#include <thread>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -67,6 +68,7 @@ namespace SAM
 
     Eigen::VectorXd solve_system(const Eigen::SparseMatrix<double>& A,
                                  const Eigen::VectorXd&             b)
+    // TODO: add a solverOpts variable: check rank or not, check success, etc..
     {
       PROFILE_FUNCTION();
       // solver
@@ -74,13 +76,19 @@ namespace SAM
           solver;
       // MAP
       solver.compute(A);
+
+      // rank check: not considered a consistency check
+      if (solver.rank() < A.cols()) throw "RANK DEFICIENT PROBLEM";
       Eigen::VectorXd map = solver.solve(b);
       // residual error
 #if ENABLE_DEBUG_TRACE
-      auto error =    solver.matrixQ().transpose()*b;
-      std::cout << "### Syst solver : residual value: " << error.norm() << "\n";
+      auto residual_error = solver.matrixQ().transpose() * b;
+      std::cout << "### Syst solver : residual value: " << residual_error.norm()
+                << "\n";
+      std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS")
+                << "\n";
 #endif
-      return solver.solve(b);
+      return map;
     }
 
     void smooth_and_map()
@@ -103,9 +111,8 @@ namespace SAM
       std::cout << "#### Syst: b computed :\n" << b << "\n";
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
 #endif
-      
-      // compute error: loop over factors with the solution
 
+      // compute error: loop over factors with the solution
     }
 
 #if ENABLE_DEBUG_TRACE
