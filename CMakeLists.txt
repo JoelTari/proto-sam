@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(proto-sam)
 
+find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 set(CMAKE_CXX_STANDARD 17) # this will be reflected in compile commands
 
