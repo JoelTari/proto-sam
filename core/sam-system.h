@@ -74,6 +74,12 @@ namespace SAM
           solver;
       // MAP
       solver.compute(A);
+      Eigen::VectorXd map = solver.solve(b);
+      // residual error
+#if ENABLE_DEBUG_TRACE
+      auto error =    solver.matrixQ().transpose()*b;
+      std::cout << "### Syst solver : residual value: " << error.norm() << "\n";
+#endif
       return solver.solve(b);
     }
 
@@ -97,6 +103,9 @@ namespace SAM
       std::cout << "#### Syst: b computed :\n" << b << "\n";
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
 #endif
+      
+      // compute error: loop over factors with the solution
+
     }
 
 #if ENABLE_DEBUG_TRACE

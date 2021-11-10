@@ -134,6 +134,7 @@ int main(int argc, char* argv[])
 { 
   sam_utils::JSONLogger::Instance().beginSession("main_session");
   PROFILE_FUNCTION();
+
   auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>();
 
   // receive the measurement from stdin (as a string that can be converted in a
