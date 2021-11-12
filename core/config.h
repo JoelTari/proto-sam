@@ -17,8 +17,8 @@
 
 #if ENABLE_TIMER > 0
 #include<chrono>
-    #define PROFILE_SCOPE(name) sam_utils::ScopedTimer timer##__LINE__(name)
-    #define PROFILE_FUNCTION()  PROFILE_SCOPE(__FUNCTION__)
+    #define PROFILE_SCOPE(name,logger) sam_utils::ScopedTimer timer##__LINE__(name,logger)
+    #define PROFILE_FUNCTION(logger)  PROFILE_SCOPE(__FUNCTION__,logger)
 #else
     #define PROFILE_SCOPE(name)  // nada
     #define PROFILE_FUNCTION()   // nada

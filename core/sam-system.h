@@ -10,6 +10,7 @@
 
 // #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Sparse>
+#include <stdexcept>
 #include <thread>
 #include <tuple>
 #include <type_traits>
@@ -22,7 +23,9 @@ namespace SAM
   class SamSystem
   {
     public:
-    SamSystem() {}
+    SamSystem() {
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+    }
 
     /**
      * @brief emplace new factor in the system
@@ -42,11 +45,12 @@ namespace SAM
           std::is_same_v<FT,
                          FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
           "This type of factor doesnt exist ");
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
       // check if factor id exists already
       // TODO: consistent management failure (throw ? return value false ?
       // std::optional ?)
-      if (this->bookkeeper_.factor_id_exists(factor_id)) return;
+      if (this->bookkeeper_.factor_id_exists(factor_id)) throw std::runtime_error("Factor id already exists");
 
 
       // recursively find, at compile time, the corresponding container (amongst
@@ -62,7 +66,7 @@ namespace SAM
     // bookkeeper etc..
     {
       // scoped timer
-      // PROFILE_FUNCTION();
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());;
 
       SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
       int        M            = system_infos.aggr_dim_mes;
@@ -88,6 +92,7 @@ namespace SAM
     /**
      * @brief With current graph, containing  the last recorded results, from
      * the bookkeeper WARNING: perhaps use it only in the bookkeeper, or another new class (inverse dependency)
+     * WARNING: single responsibility principle is broken
      */
     void write_factor_graph()
     {
@@ -262,7 +267,7 @@ namespace SAM
     std::tuple<Eigen::SparseMatrix<double>, Eigen::VectorXd>
         fill_system(uint dim_mes, uint dim_keys, uint nnz)
     {
-      PROFILE_FUNCTION();
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());;
 #if ENABLE_DEBUG_TRACE
       std::cout << "starting filling system of size M= " << dim_mes
                 << " , N= " << dim_keys << " , NNZ= " << nnz << '\n';
@@ -374,7 +379,7 @@ namespace SAM
                                  const Eigen::VectorXd&             b)
     // TODO: add a solverOpts variable: check rank or not, check success
     {
-      PROFILE_FUNCTION();
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());;
       // solver
       Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>>
           solver;

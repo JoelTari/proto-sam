@@ -1,10 +1,14 @@
 #include "config.h"
-#include "factor_impl/anchor.h"
+#include "factor_impl/anchor.h" // TODO: .hpp rather
 #include "factor_impl/linear-translation.h"
 #include "sam-system.h"
 
+#include <chrono>
 #include <iostream>
+#include <thread>
 #include <tuple>
+
+// TODO: move the factors explicit instantiations to factor_impl/{{factor-name}}.hpp
 
 //------------------------------------------------------------------//
 //                  Linear-translation factor                       //
@@ -134,7 +138,8 @@ AnchorFactor::prediction_matrix_t const AnchorFactor::k_H {{1, 0}, {0, 1}};
 int main(int argc, char* argv[])
 {
   sam_utils::JSONLogger::Instance().beginSession("main_session");
-  PROFILE_FUNCTION();
+
+  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
   auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>();
 
@@ -180,6 +185,7 @@ int main(int argc, char* argv[])
       LinearTranslationFactor::measure_covariance_matrix_t {{0.2, 0},
                                                             {0, 0.17}});
 
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
   try
   {

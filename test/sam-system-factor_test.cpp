@@ -86,8 +86,10 @@ class BS
 // some quick and dirty print helper function
 int main(int argc, char* argv[])
 {
+  // logger
+  sam_utils::JSONLogger::Instance().beginSession("sam-system-factor_test.cpp");
   // scoped Timer
-  PROFILE_FUNCTION();
+  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
   // create the sam system
   auto samsyst1 = SAM::SamSystem<IniFactor, OdomFactor>();
   // create some factors

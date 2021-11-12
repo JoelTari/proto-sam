@@ -17,6 +17,11 @@ target_include_directories(sam-system_test PUBLIC core)
 target_include_directories(sam-system-factor_test PUBLIC core)
 target_include_directories(main_stdinput PUBLIC core)
 
+target_link_libraries(main_stdinput jsoncpp)
+target_link_libraries(sam-system-factor_test jsoncpp)
+target_link_libraries(sam-system_test jsoncpp)
+target_link_libraries(factor_test jsoncpp)
+
 # BUG: cxx_std_17 is not reflected afterwards in compile commands
 target_compile_features(factor_test PUBLIC cxx_std_17)
 target_compile_features(sam-system_test PUBLIC cxx_std_17)
