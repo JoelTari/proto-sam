@@ -1,6 +1,5 @@
 #include "config.h"
-#include "factor_impl/anchor.h" // TODO: .hpp rather
-#include "factor_impl/linear-translation.h"
+#include "factor.h"
 #include "sam-system.h"
 
 #include <chrono>

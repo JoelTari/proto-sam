@@ -1,3 +1,6 @@
+#ifndef FACTORV3_H_
+#define FACTORV3_H_
+
 #include <array>
 #include <eigen3/Eigen/Dense>
 #include <iostream>
@@ -7,53 +10,6 @@
 #include <utility>
 
 
-//------------------------------------------------------------------//
-//                         KeyMeta Template                         //
-//------------------------------------------------------------------//
-template <const char  NAME[],
-          std::size_t DIM,
-          const char... ORDERRED_COMPONENT_NAMEs[]>
-struct KeyMeta
-{
-  static constexpr const char* kKeyName {
-      NAME};   // "position2d" "pose2d" etc...
-  static constexpr size_t kN {DIM};
-
-  // maps the idx to the component name. e.g. component[0] returns "x" etc..
-  static constexpr const std::array<const char*,
-                                    sizeof...(ORDERRED_COMPONENT_NAMEs)>
-      components {ORDERRED_COMPONENT_NAMEs...};
-  // static constexpr const std::array<const char*, 2> ttc = {"dz","dw"};
-  // NOT SUPPORTING THE component name to idx for now
-
-  // type enunciation to play well with type_trait convention
-  using type = KeyMeta<NAME, DIM, ORDERRED_COMPONENT_NAMEs...>;
-};
-
-
-//------------------------------------------------------------------//
-//                       MeasureMeta Template                       //
-//------------------------------------------------------------------//
-template <const char  NAME[],
-          std::size_t DIM,
-          const char*... ORDERRED_COMPONENT_NAMEs>
-struct MeasureMeta
-{
-  static constexpr const char* kMeasureName {
-      NAME};   // "linear-translation" "rigid-transformation2"
-               // "rigid-transformation3"
-  static constexpr size_t kM {DIM};
-
-  // maps the idx to the component name. e.g. component[0] returns "dx" etc..
-  static constexpr std::array<const char*, sizeof...(ORDERRED_COMPONENT_NAMEs)>
-      components
-      = std::array<const char*, sizeof...(ORDERRED_COMPONENT_NAMEs)> {
-          ORDERRED_COMPONENT_NAMEs...};
-  // components {"da","db"};
-  static constexpr const std::array<const char*, 2> ttc = {"dz", "dw"};
-
-  using type = MeasureMeta<NAME, DIM, ORDERRED_COMPONENT_NAMEs...>;
-};
 
 
 // some helper: "tie" a string to a type (a key meta here)
@@ -102,7 +58,7 @@ class FactorV3
   static constexpr size_t      kN = (KeyTs::type::kN + ...);
   static constexpr size_t      kM = MEASURE_META::kM;
   static constexpr size_t      kNbKeys = sizeof...(KeyTs);
-  // make a tuple of KeyIn.  Michelin *** vaut le détour.
+  // make a tuple of KeySet.  Michelin *** vaut le détour.
   using KeysSet
       = std::tuple<__internalKey::ContextualKeyInfo<KeyTs::type::kKeyName,
                                                     KeyTs::kRole,
@@ -167,91 +123,22 @@ class FactorV3
   // }
 };
 
-//------------------------------------------------------------------//
-//                       Meta Instantiations                        //
-//------------------------------------------------------------------//
-// Key meta
-namespace __MetaKeyPosition
-{
-  static constexpr const char position[] = "position";
-  static constexpr const char x[]        = "x";
-  static constexpr const char y[]        = "y";
-  using MetaKeyPosition_t                = KeyMeta<position, 2, x, y>;
-}   // namespace __MetaKeyPosition
-using MetaKeyPosition_t = __MetaKeyPosition::MetaKeyPosition_t;
 
-// meta linear translation measure
-namespace __MetaLinearTranslation
-{
-  static constexpr const char linearTranslation[] = "linear-translation";
-  static constexpr const char dx[]                = "dx";
-  static constexpr const char dy[]                = "dy";
-  using MetaMeasureLinearTranslation_t
-      = MeasureMeta<linearTranslation, 2, dx, dy>;
-}   // namespace __MetaLinearTranslation
-using MetaMeasureLinearTranslation_t
-    = __MetaLinearTranslation::MetaMeasureLinearTranslation_t;
 
-// meta absolute position measure
-namespace __MetaMeasureAbsolutePosition
-{
-  // namespace is necessary so that the vars names (x) doesnt pollute global
-  // scope
-  static constexpr const char absolute_position[] = "absolute_position";
-  static constexpr const char x[]                 = "x";
-  static constexpr const char y[]                 = "y";
-  using MetaMeasureAbsolutePosition_t = MeasureMeta<absolute_position, 2, x, y>;
-}   // namespace __MetaMeasureAbsolutePosition
-using MetaMeasureAbsolutePosition_t = __MetaMeasureAbsolutePosition::
-    MetaMeasureAbsolutePosition_t;   // unwind namespace
+// // meta absolute position measure
+// namespace __MetaMeasureAbsolutePosition
+// {
+//   // namespace is necessary so that the vars names (x) doesnt pollute global
+//   // scope
+//   static constexpr const char absolute_position[] = "absolute_position";
+//   static constexpr const char x[]                 = "x";
+//   static constexpr const char y[]                 = "y";
+//   using MetaMeasureAbsolutePosition_t = MeasureMeta<absolute_position, 2, x, y>;
+// }   // namespace __MetaMeasureAbsolutePosition
+// using MetaMeasureAbsolutePosition_t = __MetaMeasureAbsolutePosition::
+//     MetaMeasureAbsolutePosition_t;   // unwind namespace
 
-// factor instantiation from templates
-// 1. anchor
-static constexpr const char anchorLabel[] = "anchor";
-static constexpr const char anchor_var[]  = "unique var";
-class AnchorFactor
-    : public FactorV3<AnchorFactor,
-                      anchorLabel,
-                      MetaMeasureAbsolutePosition_t,
-                      StrTie<anchor_var, MetaKeyPosition_t>>
-{
-    public:
-  AnchorFactor(const std::string&                               factor_id,
-           const measure_vect_t&                            mes_vect,
-           const measure_cov_t&                             measure_cov,
-           const std::array<std::string, AnchorFactor::kNbKeys >& keys_id):
-  FactorV3(factor_id,
-           mes_vect,
-           measure_cov,
-           keys_id)
-  {
-  }
-  const Eigen::Matrix2d mymat {{1, 2}, {3, 4}};
-};
 // 2. linear translation
-static constexpr const char LinearTranslationLabel[] = "linear translation";
-static constexpr const char observee_var[]           = "observee";
-static constexpr const char observer_var[]           = "observer";
-class LinearTranslationFactor
-    : public FactorV3<LinearTranslationFactor,
-                      LinearTranslationLabel,
-                      MetaMeasureLinearTranslation_t,
-                      StrTie<observee_var, MetaKeyPosition_t>,
-                      StrTie<observer_var, MetaKeyPosition_t>>
-{
-    public:
-  LinearTranslationFactor(const std::string&                               factor_id,
-           const measure_vect_t&                            mes_vect,
-           const measure_cov_t&                             measure_cov,
-           const std::array<std::string, LinearTranslationFactor::kNbKeys >& keys_id):
-  FactorV3(factor_id,
-           mes_vect,
-           measure_cov,
-           keys_id)
-  {
-  }
-  const Eigen::Matrix2d mymat {{1, 2}, {3, 4}};
-};
 
 
 //------------------------------------------------------------------//
@@ -331,33 +218,4 @@ void factor_print(const FT& fact)
   std::cout << "\t----- \n";
 }
 
-
-//------------------------------------------------------------------//
-//                               MAIN                               //
-//------------------------------------------------------------------//
-int main(int argc, char* argv[])
-{
-  Eigen::Matrix2d mymat((Eigen::Matrix2d() << 1, 2, 3, 4).finished());
-  // AnchorFactor A;
-  AnchorFactor::measure_vect_t            m;
-  AnchorFactor::measure_cov_t             cov;
-  LinearTranslationFactor::measure_vect_t m2;
-  LinearTranslationFactor::measure_cov_t  cov2;
-
-  auto FA = AnchorFactor("f0", m, cov, {"x0"});
-  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"});
-
-  std::cout << "Printing runtime infos of a factor : \n";
-  factor_print(FA);
-  factor_print(FB);
-
-  std::cout << "\nPrinting infos of a factor type (only static infos since it "
-               "is just a type) : \n\n";
-  factor_print<AnchorFactor>();
-  factor_print<LinearTranslationFactor>();
-
-  // std::cout << AnchorFactor::kN << '\n';
-  // std::cout << LinearTranslationMetaFactor::kN << '\n';
-
-  return 0;
-}
+#endif
