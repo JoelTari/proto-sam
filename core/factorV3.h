@@ -20,13 +20,11 @@ struct StrTie
   using type = T;
 };
 
-namespace __internalKey
-{
   template <const char KeyName[],
             const char Role[],
             size_t     DimKey,
             size_t     DimMes>
-  struct ContextualKeyInfo   // in the context of a factor
+  struct KeyContextConduct   // in the context of a factor
   {
     static constexpr const char* kKeyName {KeyName};
     static constexpr const char* kRole {Role};
@@ -38,7 +36,31 @@ namespace __internalKey
     process_matrix_t A;   // NOTE: normed or not normed
     measure_vect_t   b;
   };
-}   // namespace __internalKey
+
+
+template<typename DerivedKCC, typename KEYMETA, size_t DimMes, const char* ContextRole>
+struct KeyContextualConduct : KEYMETA
+{
+  // static constexpr const char* kKeyName {};
+  // static constexpr const char* kRole {Role};
+  // static constexpr size_t      kN = DimKey;
+    static constexpr const char* kRole {ContextRole};
+  // non static but const
+  std::string                  keyId;   // TODO: add const keyword
+  // non static, not const
+  using process_matrix_t = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
+  using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
+  process_matrix_t A;   // NOTE: normed or not normed
+  measure_vect_t   b;
+
+  std::tuple< process_matrix_t,  measure_vect_t>
+      compute_key_A_b()
+  {
+    // in linear it would just be a getter
+    // in nonlinear, set_linearization_point must occur before
+    return static_cast<DerivedKCC*>(this)->compute_A_b_impl();
+  }
+};
 
 //------------------------------------------------------------------//
 //                         Factor Template                          //
@@ -46,7 +68,7 @@ namespace __internalKey
 template <typename DerivedFactor,
           const char FactorLabel[],
           typename MEASURE_META,
-          typename... KeyTs>
+          typename... KeyConducts>
 class FactorV3
 {
   public:
@@ -55,15 +77,16 @@ class FactorV3
       = Eigen::Matrix<double, MEASURE_META::kM, MEASURE_META::kM>;
   // using keys_ids_t = std::array<std::string, sizeof...(KeyTs)>;
   static constexpr const char* kFactorLabel {FactorLabel};
-  static constexpr size_t      kN = (KeyTs::type::kN + ...);
+  static constexpr size_t      kN = (KeyConducts::kN + ...);
   static constexpr size_t      kM = MEASURE_META::kM;
-  static constexpr size_t      kNbKeys = sizeof...(KeyTs);
+  static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
   // make a tuple of KeySet.  Michelin *** vaut le détour.
   using KeysSet
-      = std::tuple<__internalKey::ContextualKeyInfo<KeyTs::type::kKeyName,
-                                                    KeyTs::kRole,
-                                                    KeyTs::type::kN,
-                                                    kM>...>;
+      // = std::tuple<KeyContextConduct<KeyTs::type::kKeyName,
+      //                                               KeyTs::kRole,
+      //                                               KeyTs::type::kN,
+      //                                               kM>...>;
+    = std::tuple<KeyConducts ...>;
 
   static constexpr const char* kMeasureName {MEASURE_META::kMeasureName};
   static constexpr std::array<const char*, kM> kMeasureComponentsName
@@ -81,9 +104,9 @@ class FactorV3
 
   // ctor helper
   template <size_t I = 0>
-  void set_map_keyid(const std::array<std::string, sizeof...(KeyTs)>& keys_id)
+  void set_map_keyid(const std::array<std::string, kNbKeys>& keys_id)
   {
-    if constexpr (I == sizeof...(KeyTs))
+    if constexpr (I == kNbKeys)
       return;
     else
     {
@@ -98,7 +121,7 @@ class FactorV3
   FactorV3(const std::string&                               factor_id,
            const measure_vect_t&                            mes_vect,
            const measure_cov_t&                             measure_cov,
-           const std::array<std::string, sizeof...(KeyTs)>& keys_id)
+           const std::array<std::string, kNbKeys>& keys_id)
       : measure_vect(mes_vect)
       , measure_cov(measure_cov)
       , factor_id(factor_id)
@@ -106,15 +129,6 @@ class FactorV3
     set_map_keyid(keys_id);
   }
 
-
-  template <typename KeySet>
-  std::tuple<typename KeySet::process_matrix_t, typename KeySet::measure_vect_t>
-      compute_key_A_b()
-  {
-    // in linear it would just be a getter
-    // in nonlinear, set_linearization_point must occur before
-    return static_cast<DerivedFactor*>(this)->compute_A_b_impl();
-  }
 
   // for the nonlinears
   // void set_linearization_point(const state_vector_t & lin_point)

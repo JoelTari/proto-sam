@@ -1,5 +1,5 @@
-#ifndef META_H_
-#define META_H_
+#ifndef SAM_META_H_
+#define SAM_META_H_
 
 #include <array>
 
