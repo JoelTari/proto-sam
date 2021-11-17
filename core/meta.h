@@ -13,7 +13,7 @@ struct KeyMeta
 {
   static constexpr const char* kKeyName {
       NAME};   // "position2d" "pose2d" etc...
-  static constexpr size_t kN {DIM};
+  static constexpr std::size_t kN {DIM};
 
   // maps the idx to the component name. e.g. component[0] returns "x" etc..
   static constexpr const std::array<const char*,
@@ -38,7 +38,7 @@ struct MeasureMeta
   static constexpr const char* kMeasureName {
       NAME};   // "linear-translation" "rigid-transformation2"
                // "rigid-transformation3"
-  static constexpr size_t kM {DIM};
+  static constexpr std::size_t kM {DIM};
 
   // maps the idx to the component name. e.g. component[0] returns "dx" etc..
   static constexpr std::array<const char*, sizeof...(ORDERRED_COMPONENT_NAMEs)>
