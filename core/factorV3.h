@@ -75,17 +75,22 @@ namespace __internalKey
     static constexpr const char* kKeyName {KeyName};
     static constexpr const char* kRole {Role};
     static constexpr size_t      kN = DimKey;
-    std::string            keyId;
-    // lin point ?
+    std::string                  keyId;   // TODO: add const keyword
+    // non static, not const
     using process_matrix_t = Eigen::Matrix<double, DimKey, kN>;
-    process_matrix_t process_matrix;
+    using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
+    process_matrix_t A;   // NOTE: normed or not normed
+    measure_vect_t   b;
   };
 }   // namespace __internalKey
 
 //------------------------------------------------------------------//
 //                         Factor Template                          //
 //------------------------------------------------------------------//
-template <const char FactorLabel[], typename MEASURE_META, typename... KeyTs>
+template <typename DerivedFactor,
+          const char FactorLabel[],
+          typename MEASURE_META,
+          typename... KeyTs>
 class FactorV3
 {
   public:
@@ -96,6 +101,7 @@ class FactorV3
   static constexpr const char* kFactorLabel {FactorLabel};
   static constexpr size_t      kN = (KeyTs::type::kN + ...);
   static constexpr size_t      kM = MEASURE_META::kM;
+  static constexpr size_t      kNbKeys = sizeof...(KeyTs);
   // make a tuple of KeyIn.  Michelin *** vaut le détour.
   using KeysSet
       = std::tuple<__internalKey::ContextualKeyInfo<KeyTs::type::kKeyName,
@@ -118,32 +124,47 @@ class FactorV3
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
   // ctor helper
-  template <size_t I = 0> 
-  void set_map_keyid(const std::array<std::string,sizeof...(KeyTs)>& keys_id)
+  template <size_t I = 0>
+  void set_map_keyid(const std::array<std::string, sizeof...(KeyTs)>& keys_id)
   {
-     if constexpr (I == sizeof...(KeyTs))
+    if constexpr (I == sizeof...(KeyTs))
       return;
     else
     {
-      keyIdToTupleIdx[ keys_id[I] ] = I;
+      keyIdToTupleIdx[keys_id[I]] = I;
       std::get<I>(keys_set).keyId = keys_id[I];
-      set_map_keyid<I+1>(keys_id);
+      set_map_keyid<I + 1>(keys_id);
     }
-
   }
 
   // the ctor
   // template <const char* ... VarStrArgs>
-  FactorV3(const std::string&    factor_id,
-           const measure_vect_t& mes_vect,
-           const measure_cov_t&  measure_cov,
-           const std::array<std::string,sizeof...(KeyTs)>& keys_id):
-    measure_vect(mes_vect)
-    ,measure_cov(measure_cov)
-    ,factor_id(factor_id)
+  FactorV3(const std::string&                               factor_id,
+           const measure_vect_t&                            mes_vect,
+           const measure_cov_t&                             measure_cov,
+           const std::array<std::string, sizeof...(KeyTs)>& keys_id)
+      : measure_vect(mes_vect)
+      , measure_cov(measure_cov)
+      , factor_id(factor_id)
   {
     set_map_keyid(keys_id);
   }
+
+
+  template <typename KeySet>
+  std::tuple<typename KeySet::process_matrix_t, typename KeySet::measure_vect_t>
+      compute_key_A_b()
+  {
+    // in linear it would just be a getter
+    // in nonlinear, set_linearization_point must occur before
+    return static_cast<DerivedFactor*>(this)->compute_A_b_impl();
+  }
+
+  // for the nonlinears
+  // void set_linearization_point(const state_vector_t & lin_point)
+  // {
+  //   linearization_point = lin_point;
+  // }
 };
 
 //------------------------------------------------------------------//
@@ -186,20 +207,51 @@ using MetaMeasureAbsolutePosition_t = __MetaMeasureAbsolutePosition::
 
 // factor instantiation from templates
 // 1. anchor
-static constexpr const char anchor[]     = "anchor";
-static constexpr const char anchor_var[] = "unique var";
-using AnchorFactor                       = FactorV3<anchor,
-                              MetaMeasureAbsolutePosition_t,
-                              StrTie<anchor_var, MetaKeyPosition_t>>;
+static constexpr const char anchorLabel[] = "anchor";
+static constexpr const char anchor_var[]  = "unique var";
+class AnchorFactor
+    : public FactorV3<AnchorFactor,
+                      anchorLabel,
+                      MetaMeasureAbsolutePosition_t,
+                      StrTie<anchor_var, MetaKeyPosition_t>>
+{
+    public:
+  AnchorFactor(const std::string&                               factor_id,
+           const measure_vect_t&                            mes_vect,
+           const measure_cov_t&                             measure_cov,
+           const std::array<std::string, AnchorFactor::kNbKeys >& keys_id):
+  FactorV3(factor_id,
+           mes_vect,
+           measure_cov,
+           keys_id)
+  {
+  }
+  const Eigen::Matrix2d mymat {{1, 2}, {3, 4}};
+};
 // 2. linear translation
 static constexpr const char LinearTranslationLabel[] = "linear translation";
 static constexpr const char observee_var[]           = "observee";
 static constexpr const char observer_var[]           = "observer";
-using LinearTranslationMetaFactor
-    = FactorV3<LinearTranslationLabel,
-               MetaMeasureLinearTranslation_t,
-               StrTie<observee_var, MetaKeyPosition_t>,
-               StrTie<observer_var, MetaKeyPosition_t>>;
+class LinearTranslationFactor
+    : public FactorV3<LinearTranslationFactor,
+                      LinearTranslationLabel,
+                      MetaMeasureLinearTranslation_t,
+                      StrTie<observee_var, MetaKeyPosition_t>,
+                      StrTie<observer_var, MetaKeyPosition_t>>
+{
+    public:
+  LinearTranslationFactor(const std::string&                               factor_id,
+           const measure_vect_t&                            mes_vect,
+           const measure_cov_t&                             measure_cov,
+           const std::array<std::string, LinearTranslationFactor::kNbKeys >& keys_id):
+  FactorV3(factor_id,
+           mes_vect,
+           measure_cov,
+           keys_id)
+  {
+  }
+  const Eigen::Matrix2d mymat {{1, 2}, {3, 4}};
+};
 
 
 //------------------------------------------------------------------//
@@ -222,7 +274,7 @@ constexpr void traverse_tup()
 }
 
 // runtime traverse of the KeySet tuple
-template <typename TUP, size_t I =0>
+template <typename TUP, size_t I = 0>
 void traverse_tup(const TUP& tup)
 {
   if constexpr (I == std::tuple_size<TUP>::value) { return; }
@@ -230,8 +282,9 @@ void traverse_tup(const TUP& tup)
   {
     using KT = std::tuple_element_t<I, TUP>;
     std::cout << "\t\t+ Key Nature: " << KT::kKeyName
-              << ".  Role: " << KT::kRole <<  ". Id: " << std::get<I>(tup).keyId <<'\n';
-    std::cout << "\t\t\t A:\n" << std::get<I>(tup).process_matrix << '\n';
+              << ".  Role: " << KT::kRole << ". Id: " << std::get<I>(tup).keyId
+              << '\n';
+    std::cout << "\t\t\t A:\n" << std::get<I>(tup).A << '\n';
 
     // recursive call
     traverse_tup<TUP, I + 1>(tup);
@@ -261,9 +314,9 @@ constexpr void factor_print()
 
 // This is the non static version
 template <typename FT>
-void factor_print(const FT & fact)
+void factor_print(const FT& fact)
 {
-  std::cout << FT::kFactorLabel << " - id : "<< fact.factor_id << '\n';
+  std::cout << FT::kFactorLabel << " - id : " << fact.factor_id << '\n';
   std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n'
             << "\tKeys (in order):\n";
 
@@ -279,30 +332,32 @@ void factor_print(const FT & fact)
 }
 
 
-// //------------------------------------------------------------------//
-// //                               MAIN                               //
-// //------------------------------------------------------------------//
-// int main(int argc, char* argv[])
-// {
-//   // AnchorFactor A;
-//   AnchorFactor::measure_vect_t m;
-//   AnchorFactor::measure_cov_t cov;
-//   LinearTranslationMetaFactor::measure_vect_t m2;
-//   LinearTranslationMetaFactor::measure_cov_t cov2;
-//
-//   auto FA = AnchorFactor("f0",m,cov,{"x0"});
-//   auto FB = LinearTranslationMetaFactor("f1",m2,cov2,{"x0","x1"});
-//
-//   std::cout << "Printing runtime infos of a factor : \n";
-//   factor_print(FA);
-//   factor_print(FB);
-//
-//   std::cout << "\nPrinting infos of a factor type (only static infos since it is just a type) : \n\n";
-//   factor_print<AnchorFactor>();
-//   factor_print<LinearTranslationMetaFactor>();
-//
-//   // std::cout << AnchorFactor::kN << '\n';
-//   // std::cout << LinearTranslationMetaFactor::kN << '\n';
-//
-//   return 0;
-// }
+//------------------------------------------------------------------//
+//                               MAIN                               //
+//------------------------------------------------------------------//
+int main(int argc, char* argv[])
+{
+  Eigen::Matrix2d mymat((Eigen::Matrix2d() << 1, 2, 3, 4).finished());
+  // AnchorFactor A;
+  AnchorFactor::measure_vect_t            m;
+  AnchorFactor::measure_cov_t             cov;
+  LinearTranslationFactor::measure_vect_t m2;
+  LinearTranslationFactor::measure_cov_t  cov2;
+
+  auto FA = AnchorFactor("f0", m, cov, {"x0"});
+  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"});
+
+  std::cout << "Printing runtime infos of a factor : \n";
+  factor_print(FA);
+  factor_print(FB);
+
+  std::cout << "\nPrinting infos of a factor type (only static infos since it "
+               "is just a type) : \n\n";
+  factor_print<AnchorFactor>();
+  factor_print<LinearTranslationFactor>();
+
+  // std::cout << AnchorFactor::kN << '\n';
+  // std::cout << LinearTranslationMetaFactor::kN << '\n';
+
+  return 0;
+}
