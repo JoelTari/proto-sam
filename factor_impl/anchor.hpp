@@ -14,21 +14,20 @@ struct UniqueKeyConduct
                            MetaMeasureAbsolutePosition_t::kM,
                            anchor_var>
 {
-  const process_matrix_t H {{1, 0}, {0, 1}};
+  inline static const process_matrix_t H {{1, 0}, {0, 1}}; // cant make it constexpr, but it's probably still compile time
+  const process_matrix_t partA;
 
-  process_matrix_t compute_part_A_impl()
+  process_matrix_t compute_part_A_impl() const
   {
-    process_matrix_t partA;
-    // TODO: partA = rho*H which is constant (but not constexpr)
-    // TODO: need to get rho here
-
-    return A;
+    return partA; // since it is linear, no need to do anything
   }
 
   UniqueKeyConduct(const std::string key_id, const measure_cov_t & rho):
       KeyContextualConduct(key_id,rho)
+      , partA(rho*H)
     {}
 };
+// UniqueKeyConduct::H = {{1, 0}, {0, 1}};
 
 static constexpr const char anchorLabel[] = "anchor";
 class AnchorFactor
@@ -45,7 +44,6 @@ class AnchorFactor
       : FactorV3(factor_id, mes_vect, measure_cov, keys_id)
   {
   }
-  // const Eigen::Matrix2d mymat {{1, 2}, {3, 4}};
 };
 
 

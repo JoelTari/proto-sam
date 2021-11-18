@@ -19,43 +19,20 @@ struct StrTie
   using type = T;
 };
 
-// template <const char KeyName[],
-//           const char Role[],
-//           size_t     DimKey,
-//           size_t     DimMes>
-// struct KeyContextConduct   // in the context of a factor
-// {
-//   static constexpr const char* kKeyName {KeyName};
-//   static constexpr const char* kRole {Role};
-//   static constexpr size_t      kN = DimKey;
-//   std::string                  key_id;   // TODO: add const keyword
-//   // non static, not const
-//   using process_matrix_t = Eigen::Matrix<double, DimKey, kN>;
-//   using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
-//   process_matrix_t A;   // NOTE: normed or not normed
-//   measure_vect_t   b;
-// };
-
-
 template <typename DerivedKCC,
           typename KEYMETA,
           size_t      DimMes,
           const char* ContextRole>
 struct KeyContextualConduct : KEYMETA
 {
-  // static constexpr const char* kKeyName {};
-  // static constexpr const char* kRole {Role};
-  // static constexpr size_t      kN = DimKey;
   static constexpr const char* kRole {ContextRole};
   // non static but const
-  const std::string key_id;   // TODO: add const keyword
+  const std::string key_id; 
   // non static, not const
   using process_matrix_t = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
   using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
   using measure_cov_t    = Eigen::Matrix<double, DimMes, DimMes>;
-  process_matrix_t A;   // NOTE: normed or not normed
   // measure_vect_t   b;
-  // TODO: const rho = ... (det at ctor)
   const measure_cov_t& rho;
 
   process_matrix_t compute_part_A()
@@ -70,7 +47,7 @@ struct KeyContextualConduct : KEYMETA
       : key_id(key_id)
       , rho(rho)
   {
-  }   // TODO: CTOR must receive rho and key_id
+  }
 };
 
 //------------------------------------------------------------------//
@@ -86,88 +63,76 @@ class FactorV3
   using measure_vect_t = Eigen::Matrix<double, MEASURE_META::kM, 1>;
   using measure_cov_t
       = Eigen::Matrix<double, MEASURE_META::kM, MEASURE_META::kM>;
-  // using keys_ids_t = std::array<std::string, sizeof...(KeyTs)>;
   static constexpr const char* kFactorLabel {FactorLabel};
   static constexpr size_t      kN      = (KeyConducts::kN + ...);
   static constexpr size_t      kM      = MEASURE_META::kM;
   static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
+  using state_vector_t = Eigen::Matrix<double,kN,1>;
   // make a tuple of KeySet.  Michelin *** vaut le détour.
-  using KeysSet_t
-      // = std::tuple<KeyContextConduct<KeyTs::type::kKeyName,
-      //                                               KeyTs::kRole,
-      //                                               KeyTs::type::kN,
-      //                                               kM>...>;
-      = std::tuple<KeyConducts...>;
+  using KeysSet_t = std::tuple<KeyConducts...>;
 
   static constexpr const char* kMeasureName {MEASURE_META::kMeasureName};
   static constexpr std::array<const char*, kM> kMeasureComponentsName
       = MEASURE_META::components;
   const std::string    factor_id;      // fill at ctor
-  const measure_vect_t measure_vect;   // fill at ctor
-  const measure_cov_t  measure_cov;    // fill at ctor
+  const measure_vect_t z;   // fill at ctor
+  const measure_cov_t  z_cov;    // fill at ctor
   const measure_cov_t  rho;    // fill at ctor
   KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
                         // process matrix), fill at ctor, modifiable
-  // id must be filled at ctor
-  // partial process matrices and linpoint (if any) are runtime mutable (except
-  // if the factor is linear)
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
   // ctor helper
-  std::map<std::string, std::size_t> map_keyid(const std::array<std::string, kNbKeys>& keys_id)
+  std::map<std::string, std::size_t> map_keyid(const std::array<std::string, kNbKeys>& keys_id) const
   {
     std::map<std::string, std::size_t> result;
     for(int i=0;i<keys_id.size();i++)
       result[keys_id[i]]=i;
     return result;
-    //   std::map<std::string, std::size_t> result;
-    // if constexpr (I == kNbKeys)
-    //   return;
-    // else
-    // {
-    //   result[keys_id[I]]  = I;
-    //   std::get<I>(keys_set).key_id = keys_id[I];
-    //   set_map_keyid<I + 1>(keys_id);
-    // }
   }
 
 
-  // HACK: make_index_sequence <3
-   template<typename Indices = std::make_index_sequence<kNbKeys>>
-    auto init_tuple_keys(const std::array<std::string, kNbKeys>& my_keys_id,const measure_cov_t &rho)
+  // HACK: make_index_sequence <3  . This pattern allows the underlying function to be defined with expansion syntax
+    KeysSet_t init_tuple_keys(const std::array<std::string, kNbKeys>& my_keys_id,const measure_cov_t &rho) const
     {
-        return init_tuple_keys_impl(my_keys_id,rho, Indices{});
+        return init_tuple_keys_impl(my_keys_id,rho, std::make_index_sequence<kNbKeys>{});
     }
+
     template<std::size_t... I>
-    auto init_tuple_keys_impl(const std::array<std::string, kNbKeys>& my_keys_id, const measure_cov_t& rho, std::index_sequence<I...>)
+    KeysSet_t init_tuple_keys_impl(const std::array<std::string, kNbKeys>& my_keys_id, const measure_cov_t& rho, std::index_sequence<I...>) const
     {
-        // return std::make_tuple(a[I]...);
        return std::make_tuple(KeyConducts(my_keys_id[I],rho)...);
     }
 
   // the ctor
-  // template <const char* ... VarStrArgs>
   FactorV3(const std::string&                      factor_id,
-           const measure_vect_t&                   mes_vect,
-           const measure_cov_t&                    measure_cov,
+           const measure_vect_t&                   z,
+           const measure_cov_t&                    z_cov,
            const std::array<std::string, kNbKeys>& keys_id)
-      : measure_vect(mes_vect)
-      , measure_cov(measure_cov)
+      : z(z)
+      , z_cov(z_cov)
       , factor_id(factor_id)
-      , rho(Eigen::LLT<measure_cov_t>(measure_cov.inverse()).matrixU())
-      ,keys_set(init_tuple_keys(keys_id,rho))
-      ,keyIdToTupleIdx(map_keyid(keys_id))
+      , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
+      , keys_set(init_tuple_keys(keys_id,rho))
+      , keyIdToTupleIdx(map_keyid(keys_id))
   {
     // TODO: put trace  (see factor.h)
   }
 
-  measure_vect_t compute_b()
-  {
-    measure_vect_t b;
-    // TODO: b = rho * z  (linear)
-    return b;
+  measure_vect_t compute_rosie() const  // rho*z = rosie !
+  { // TODO: move as a constant member
+    return rho*z;
   }
+
+  measure_vect_t compute_h_of_x(const state_vector_t & x) const
+  {
+    // this is implementation specific
+      return static_cast<DerivedFactor*>(this->compute_h_of_x_impl(x));
+  }
+  // NOTE: no compute_b explicitely for now, until the mix NL Lin of a var is understood
+
+  
 
   // for the nonlinears
   // void set_linearization_point(const state_vector_t & lin_point)
@@ -257,9 +222,9 @@ void factor_print(const FT& fact)
   std::cout << "\t Measure: " << FT::kMeasureName;
   std::cout << "\n\t\t [ ";
   for (int i = 0; i < FT::kMeasureComponentsName.size(); i++)
-    std::cout << FT::kMeasureComponentsName[i] << ": " << fact.measure_vect[i]
+    std::cout << FT::kMeasureComponentsName[i] << ": " << fact.z[i]
               << "  ";
-  std::cout << "]\n\t\t Cov: [ " << fact.measure_cov.format(CommaInitFmt)
+  std::cout << "]\n\t\t Cov: [ " << fact.z_cov.format(CommaInitFmt)
             << " ] \n";
 
 

@@ -17,19 +17,17 @@ struct ObserverKeyConduct
                            MetaMeasureLinearTranslation_t::kM,
                            observer_var>
 {
-  const process_matrix_t H {{-1, 0}, {0, -1}};
+  inline static const process_matrix_t H {{-1, 0}, {0, -1}};
+  const process_matrix_t partA;
 
-  process_matrix_t compute_part_A_impl()
+  process_matrix_t compute_part_A_impl() const
   {
-    process_matrix_t partA;
-    // TODO: partA = rho*H which is constant (but not constexpr)
-    // TODO: need to get rho here
-
-    return A;
+    return partA;
   }
 
   ObserverKeyConduct(const std::string key_id, const measure_cov_t & rho):
       KeyContextualConduct(key_id,rho)
+      , partA(rho*H)
     {}
 };
 
@@ -41,18 +39,16 @@ struct ObserveeKeyConduct
                            observee_var>
 {
   const process_matrix_t H {{1, 0}, {0, 1}};
+  const process_matrix_t partA;
 
-  process_matrix_t compute_part_A_impl()
+  process_matrix_t compute_part_A_impl() const
   {
-      process_matrix_t partA;
-    // TODO: fill, it should receive at least the measure rho_, and vect z
-    // TODO: and it should use its lin point for NL processes
-
     return partA;
   }
 
   ObserveeKeyConduct(const std::string key_id, const measure_cov_t & rho):
       KeyContextualConduct(key_id,rho)
+      , partA(rho*H)
     {}
 };
 
@@ -72,7 +68,6 @@ class LinearTranslationFactor
       : FactorV3(factor_id, mes_vect, measure_cov, keys_id)
   {
   }
-  // const Eigen::Matrix2d mymat {{1, 2}, {3, 4}};
 };
 
 

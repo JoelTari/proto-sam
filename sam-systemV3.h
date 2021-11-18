@@ -265,6 +265,7 @@ namespace SAM
       triplets.reserve(nnz);
       // loop over all factors
       // fill in the triplets and the rhs
+      // TODO: is there a way to use incdex_sequence rather than the if constepx recursive pattern, the goal is to handle return values more gracefully
       this->loop_over_factors(triplets, b);
       A.setFromTriplets(triplets.begin(), triplets.end());
       return {A, b};
