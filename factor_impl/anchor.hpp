@@ -14,17 +14,16 @@ struct UniqueKeyConduct
                            MetaMeasureAbsolutePosition_t::kM,
                            anchor_var>
 {
-    const process_matrix_t H  {{1,0},{0,1}}; 
+  const process_matrix_t H {{1, 0}, {0, 1}};
 
-    std::tuple < process_matrix_t, measure_vect_t> compute_A_b_impl()
-    {
-      process_matrix_t A;
-      measure_vect_t b;
-      // TODO: fill, it should receive at least the measure rho_, and vect z
-      // TODO: and it should use its lin point for NL processes
+  process_matrix_t compute_part_A_impl()
+  {
+    process_matrix_t partA;
+    // TODO: partA = rho*H which is constant (but not constexpr)
+    // TODO: need to get rho here
 
-      return {A,b};
-    }
+    return A;
+  }
 };
 
 static constexpr const char anchorLabel[] = "anchor";

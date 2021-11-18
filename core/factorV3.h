@@ -20,22 +20,22 @@ struct StrTie
   using type = T;
 };
 
-  template <const char KeyName[],
-            const char Role[],
-            size_t     DimKey,
-            size_t     DimMes>
-  struct KeyContextConduct   // in the context of a factor
-  {
-    static constexpr const char* kKeyName {KeyName};
-    static constexpr const char* kRole {Role};
-    static constexpr size_t      kN = DimKey;
-    std::string                  keyId;   // TODO: add const keyword
-    // non static, not const
-    using process_matrix_t = Eigen::Matrix<double, DimKey, kN>;
-    using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
-    process_matrix_t A;   // NOTE: normed or not normed
-    measure_vect_t   b;
-  };
+  // template <const char KeyName[],
+  //           const char Role[],
+  //           size_t     DimKey,
+  //           size_t     DimMes>
+  // struct KeyContextConduct   // in the context of a factor
+  // {
+  //   static constexpr const char* kKeyName {KeyName};
+  //   static constexpr const char* kRole {Role};
+  //   static constexpr size_t      kN = DimKey;
+  //   std::string                  key_id;   // TODO: add const keyword
+  //   // non static, not const
+  //   using process_matrix_t = Eigen::Matrix<double, DimKey, kN>;
+  //   using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
+  //   process_matrix_t A;   // NOTE: normed or not normed
+  //   measure_vect_t   b;
+  // };
 
 
 template<typename DerivedKCC, typename KEYMETA, size_t DimMes, const char* ContextRole>
@@ -46,20 +46,24 @@ struct KeyContextualConduct : KEYMETA
   // static constexpr size_t      kN = DimKey;
     static constexpr const char* kRole {ContextRole};
   // non static but const
-  std::string                  keyId;   // TODO: add const keyword
+  std::string                  key_id;   // TODO: add const keyword
   // non static, not const
   using process_matrix_t = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
   using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
   process_matrix_t A;   // NOTE: normed or not normed
-  measure_vect_t   b;
+  // measure_vect_t   b;
+    // TODO: const rho = ... (det at ctor)
 
-  std::tuple< process_matrix_t,  measure_vect_t>
-      compute_key_A_b()
+    process_matrix_t
+      compute_part_A()
   {
-    // in linear it would just be a getter
+    // in linear it would just be a getter to  rho * H
     // in nonlinear, set_linearization_point must occur before
-    return static_cast<DerivedKCC*>(this)->compute_A_b_impl();
+    return static_cast<DerivedKCC*>(this)->compute_part_A_impl();
   }
+
+  //KeyContextualConduct() // TODO: CTOR must receive rho and key_id
+
 };
 
 //------------------------------------------------------------------//
@@ -81,7 +85,7 @@ class FactorV3
   static constexpr size_t      kM = MEASURE_META::kM;
   static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
   // make a tuple of KeySet.  Michelin *** vaut le détour.
-  using KeysSet
+  using KeysSet_t
       // = std::tuple<KeyContextConduct<KeyTs::type::kKeyName,
       //                                               KeyTs::kRole,
       //                                               KeyTs::type::kN,
@@ -94,7 +98,7 @@ class FactorV3
   const std::string    factor_id;      // fill at ctor
   const measure_vect_t measure_vect;   // fill at ctor
   const measure_cov_t  measure_cov;    // fill at ctor
-  KeysSet keys_set;   // a tuple of the structures of each keys (dim, id,
+  KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
                       // process matrix)
   // id must be filled at ctor
   // partial process matrices and linpoint (if any) are runtime mutable (except
@@ -111,7 +115,7 @@ class FactorV3
     else
     {
       keyIdToTupleIdx[keys_id[I]] = I;
-      std::get<I>(keys_set).keyId = keys_id[I];
+      std::get<I>(keys_set).key_id = keys_id[I];
       set_map_keyid<I + 1>(keys_id);
     }
   }
@@ -129,6 +133,12 @@ class FactorV3
     set_map_keyid(keys_id);
   }
 
+  measure_vect_t compute_b()
+  {
+    measure_vect_t b;
+    // TODO: b = rho * z  (linear)
+    return b;
+  }
 
   // for the nonlinears
   // void set_linearization_point(const state_vector_t & lin_point)
@@ -137,22 +147,6 @@ class FactorV3
   // }
 };
 
-
-
-// // meta absolute position measure
-// namespace __MetaMeasureAbsolutePosition
-// {
-//   // namespace is necessary so that the vars names (x) doesnt pollute global
-//   // scope
-//   static constexpr const char absolute_position[] = "absolute_position";
-//   static constexpr const char x[]                 = "x";
-//   static constexpr const char y[]                 = "y";
-//   using MetaMeasureAbsolutePosition_t = MeasureMeta<absolute_position, 2, x, y>;
-// }   // namespace __MetaMeasureAbsolutePosition
-// using MetaMeasureAbsolutePosition_t = __MetaMeasureAbsolutePosition::
-//     MetaMeasureAbsolutePosition_t;   // unwind namespace
-
-// 2. linear translation
 
 
 //------------------------------------------------------------------//
@@ -183,9 +177,9 @@ void traverse_tup(const TUP& tup)
   {
     using KT = std::tuple_element_t<I, TUP>;
     std::cout << "\t\t+ Key Nature: " << KT::kKeyName
-              << ".  Role: " << KT::kRole << ". Id: " << std::get<I>(tup).keyId
+              << ".  Role: " << KT::kRole << ". Id: " << std::get<I>(tup).key_id
               << '\n';
-    std::cout << "\t\t\t A:\n" << std::get<I>(tup).A << '\n';
+    // std::cout << "\t\t\t A:\n" << std::get<I>(tup).A << '\n';
 
     // recursive call
     traverse_tup<TUP, I + 1>(tup);
@@ -202,7 +196,7 @@ constexpr void factor_print()
             << "\tKeys (in order):\n";
 
   // traverse statically the tuple of keys data
-  traverse_tup<typename FT::KeysSet>();
+  traverse_tup<typename FT::KeysSet_t>();
 
   std::cout << "\t Measure: " << FT::kMeasureName;
   std::cout << " [ ";
