@@ -38,14 +38,13 @@ struct ObserveeKeyConduct
 {
   const process_matrix_t H {{1, 0}, {0, 1}};
 
-  std::tuple<process_matrix_t, measure_vect_t> compute_A_b_impl()
+  process_matrix_t compute_part_A_impl()
   {
-    process_matrix_t A;
-    measure_vect_t   b;
+      process_matrix_t partA;
     // TODO: fill, it should receive at least the measure rho_, and vect z
     // TODO: and it should use its lin point for NL processes
 
-    return {A, b};
+    return partA;
   }
 };
 

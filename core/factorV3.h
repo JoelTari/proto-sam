@@ -3,13 +3,12 @@
 
 #include <array>
 #include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/src/Core/IO.h>
 #include <iostream>
 #include <map>
 #include <string_view>
 #include <tuple>
 #include <utility>
-
-
 
 
 // some helper: "tie" a string to a type (a key meta here)
@@ -20,50 +19,58 @@ struct StrTie
   using type = T;
 };
 
-  // template <const char KeyName[],
-  //           const char Role[],
-  //           size_t     DimKey,
-  //           size_t     DimMes>
-  // struct KeyContextConduct   // in the context of a factor
-  // {
-  //   static constexpr const char* kKeyName {KeyName};
-  //   static constexpr const char* kRole {Role};
-  //   static constexpr size_t      kN = DimKey;
-  //   std::string                  key_id;   // TODO: add const keyword
-  //   // non static, not const
-  //   using process_matrix_t = Eigen::Matrix<double, DimKey, kN>;
-  //   using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
-  //   process_matrix_t A;   // NOTE: normed or not normed
-  //   measure_vect_t   b;
-  // };
+// template <const char KeyName[],
+//           const char Role[],
+//           size_t     DimKey,
+//           size_t     DimMes>
+// struct KeyContextConduct   // in the context of a factor
+// {
+//   static constexpr const char* kKeyName {KeyName};
+//   static constexpr const char* kRole {Role};
+//   static constexpr size_t      kN = DimKey;
+//   std::string                  key_id;   // TODO: add const keyword
+//   // non static, not const
+//   using process_matrix_t = Eigen::Matrix<double, DimKey, kN>;
+//   using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
+//   process_matrix_t A;   // NOTE: normed or not normed
+//   measure_vect_t   b;
+// };
 
 
-template<typename DerivedKCC, typename KEYMETA, size_t DimMes, const char* ContextRole>
+template <typename DerivedKCC,
+          typename KEYMETA,
+          size_t      DimMes,
+          const char* ContextRole>
 struct KeyContextualConduct : KEYMETA
 {
   // static constexpr const char* kKeyName {};
   // static constexpr const char* kRole {Role};
   // static constexpr size_t      kN = DimKey;
-    static constexpr const char* kRole {ContextRole};
+  static constexpr const char* kRole {ContextRole};
   // non static but const
-  std::string                  key_id;   // TODO: add const keyword
+  const std::string key_id;   // TODO: add const keyword
   // non static, not const
   using process_matrix_t = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
   using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
+  using measure_cov_t    = Eigen::Matrix<double, DimMes, DimMes>;
   process_matrix_t A;   // NOTE: normed or not normed
   // measure_vect_t   b;
-    // TODO: const rho = ... (det at ctor)
+  // TODO: const rho = ... (det at ctor)
+  const measure_cov_t& rho;
 
-    process_matrix_t
-      compute_part_A()
+  process_matrix_t compute_part_A()
   {
     // in linear it would just be a getter to  rho * H
     // in nonlinear, set_linearization_point must occur before
     return static_cast<DerivedKCC*>(this)->compute_part_A_impl();
   }
 
-  //KeyContextualConduct() // TODO: CTOR must receive rho and key_id
-
+  KeyContextualConduct() = delete;
+  KeyContextualConduct(const measure_cov_t& rho, const std::string& key_id)
+      : key_id(key_id)
+      , rho(rho)
+  {
+  }   // TODO: CTOR must receive rho and key_id
 };
 
 //------------------------------------------------------------------//
@@ -81,8 +88,8 @@ class FactorV3
       = Eigen::Matrix<double, MEASURE_META::kM, MEASURE_META::kM>;
   // using keys_ids_t = std::array<std::string, sizeof...(KeyTs)>;
   static constexpr const char* kFactorLabel {FactorLabel};
-  static constexpr size_t      kN = (KeyConducts::kN + ...);
-  static constexpr size_t      kM = MEASURE_META::kM;
+  static constexpr size_t      kN      = (KeyConducts::kN + ...);
+  static constexpr size_t      kM      = MEASURE_META::kM;
   static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
   // make a tuple of KeySet.  Michelin *** vaut le détour.
   using KeysSet_t
@@ -90,7 +97,7 @@ class FactorV3
       //                                               KeyTs::kRole,
       //                                               KeyTs::type::kN,
       //                                               kM>...>;
-    = std::tuple<KeyConducts ...>;
+      = std::tuple<KeyConducts...>;
 
   static constexpr const char* kMeasureName {MEASURE_META::kMeasureName};
   static constexpr std::array<const char*, kM> kMeasureComponentsName
@@ -99,7 +106,7 @@ class FactorV3
   const measure_vect_t measure_vect;   // fill at ctor
   const measure_cov_t  measure_cov;    // fill at ctor
   KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
-                      // process matrix)
+                        // process matrix), fill at ctor, modifiable
   // id must be filled at ctor
   // partial process matrices and linpoint (if any) are runtime mutable (except
   // if the factor is linear)
@@ -110,25 +117,41 @@ class FactorV3
   template <size_t I = 0>
   void set_map_keyid(const std::array<std::string, kNbKeys>& keys_id)
   {
+      std::map<std::string, std::size_t> result;
     if constexpr (I == kNbKeys)
       return;
     else
     {
-      keyIdToTupleIdx[keys_id[I]] = I;
+      result[keys_id[I]]  = I;
       std::get<I>(keys_set).key_id = keys_id[I];
       set_map_keyid<I + 1>(keys_id);
     }
   }
 
+  // FIX: deal with that fast
+   template<std::size_t N=kNbKeys, typename Indices = std::make_index_sequence<N>>
+    auto a2t(const std::array<std::string, N>& my_keys_id)
+    {
+        return a2t_impl(my_keys_id, Indices{});
+    }
+    template<typename Array, std::size_t... I>
+    auto a2t_impl(const Array& a, std::index_sequence<I...>)
+    {
+        // return std::make_tuple(a[I]...);
+       //return std::map
+    }
+
   // the ctor
   // template <const char* ... VarStrArgs>
-  FactorV3(const std::string&                               factor_id,
-           const measure_vect_t&                            mes_vect,
-           const measure_cov_t&                             measure_cov,
+  FactorV3(const std::string&                      factor_id,
+           const measure_vect_t&                   mes_vect,
+           const measure_cov_t&                    measure_cov,
            const std::array<std::string, kNbKeys>& keys_id)
       : measure_vect(mes_vect)
       , measure_cov(measure_cov)
       , factor_id(factor_id)
+      ,keys_set(init_tuple_keys(keys_id,rho))
+      ,keyIdToTupleIdx(keys_id)
   {
     set_map_keyid(keys_id);
   }
@@ -146,7 +169,6 @@ class FactorV3
   //   linearization_point = lin_point;
   // }
 };
-
 
 
 //------------------------------------------------------------------//
@@ -211,6 +233,15 @@ constexpr void factor_print()
 template <typename FT>
 void factor_print(const FT& fact)
 {
+  Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision,
+                               Eigen::DontAlignCols,
+                               ", ",
+                               ", ",
+                               "",
+                               "",
+                               "  ",
+                               ";");
+
   std::cout << FT::kFactorLabel << " - id : " << fact.factor_id << '\n';
   std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n'
             << "\tKeys (in order):\n";
@@ -218,9 +249,12 @@ void factor_print(const FT& fact)
   traverse_tup(fact.keys_set);
 
   std::cout << "\t Measure: " << FT::kMeasureName;
-  std::cout << " [ ";
-  for (const auto& comp : FT::kMeasureComponentsName) std::cout << comp << " ";
-  std::cout << "]\n";
+  std::cout << "\n\t\t [ ";
+  for (int i = 0; i < FT::kMeasureComponentsName.size(); i++)
+    std::cout << FT::kMeasureComponentsName[i] << ": " << fact.measure_vect[i]
+              << "  ";
+  std::cout << "]\n\t\t Cov: [ " << fact.measure_cov.format(CommaInitFmt)
+            << " ] \n";
 
 
   std::cout << "\t----- \n";

@@ -7,11 +7,10 @@
 //------------------------------------------------------------------//
 int main(int argc, char* argv[])
 {
-  Eigen::Matrix2d mymat((Eigen::Matrix2d() << 1, 2, 3, 4).finished());
   // AnchorFactor A;
-  AnchorFactor::measure_vect_t            m;
+  AnchorFactor::measure_vect_t            m={0,0};
   AnchorFactor::measure_cov_t             cov;
-  LinearTranslationFactor::measure_vect_t m2;
+  LinearTranslationFactor::measure_vect_t m2={-1,0.1};
   LinearTranslationFactor::measure_cov_t  cov2;
 
   auto FA = AnchorFactor("f0", m, cov, {"x0"});
