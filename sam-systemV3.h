@@ -94,10 +94,6 @@ namespace SAM
       // CONTINUE:
     }
 
-    // Eigen::VectorXd getLastLinPoint()
-    // {
-    // }
-
 #if ENABLE_DEBUG_TRACE
     /**
      * @brief dummy iteration over tuple of std::vector
@@ -205,48 +201,6 @@ namespace SAM
             ( ( this->compute_partialA_and_fill_triplet(keycc,triplets,line_counter) ),...);
           },factor.keys_set);
 
-//           // add elements in the triplets from factor.A
-//           //    1. for each var bloc of factor.A, get the equivalent col in big
-//           //    A (use bookkeeper) put each element of that column of A in the
-//           //    triplet list (increment a tmp_line_counter)
-//           // NOTE: DEBUT OLD HERE
-//           for (int k = 0;
-//                k < factor_type_in_tuple_t<I>::Meta_t::kVarIdxRanges.size();
-//                k++)   // TODO: could be a constexpr loop
-//           {
-//             // this is the jacobian part associated with a var
-//             int colInBigA
-//                 = this->bookkeeper_.getKeyInfos(factor.variables[k]).sysidx;
-// #if ENABLE_DEBUG_TRACE
-//             std::cout << "Column Index in A of " << factor.variables[k]
-//                       << " is " << colInBigA << " . \n";
-// #endif
-//             // select the subblock only for the k-th variable
-//             auto factorAsubblock = factorA.block(
-//                 0,
-//                 factor_type_in_tuple_t<I>::Meta_t::kVarIdxRanges[k][0],
-//                 mesdim,
-//                 factor_type_in_tuple_t<
-//                     I>::Meta_t::kVarsSizes[k]);   // TODO: static block
-//             // factor.Asubblock is reshaped in 1d (in a column-major fashion)
-//             auto A1d = factorAsubblock.reshaped();
-// #if ENABLE_DEBUG_TRACE
-//             std::cout << "factorAsubblock : " << factorAsubblock << "\n";
-// #endif
-//             for (int i = 0; i < factorAsubblock.cols() * factorAsubblock.rows();
-//                  i++)
-//             {
-//               // row in big A is easier, just wrap the i index & add the line
-//               // counter
-//               int row = line_counter + (i % mesdim);
-//               // col idx in big A : we know
-//               int col = colInBigA + i / mesdim;
-//               triplets.emplace_back(row, col, A1d[i]);
-//             }
-//           }
-//           // NOTE: FIN OLD HERE
-
-
           // increment the line number by as many lines filled here
           line_counter += mesdim;
         }
@@ -256,8 +210,16 @@ namespace SAM
     }
 
     template <typename KeyContextConduct>
+      /**
+      * @brief compute a part of a factor's A matrix, only the columns associated with one key are computed. Note that if factor is univariate, then partA = A 
+      *
+      * @param keycc
+      * @param triplets
+      * @param line_counter
+      */
     void compute_partialA_and_fill_triplet(KeyContextConduct& keycc,std::vector<Eigen::Triplet<double>>& triplets, int line_counter)
     {
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
         // compute partial A (partial = only a block of the A of the factor) 
       auto partA = keycc.compute_part_A();
       // get the col in systA (the big A of the system)
@@ -345,7 +307,7 @@ namespace SAM
           for (std::size_t i = 0; i < keys_id.size(); i++)
           {
             // check if the key exists, if it doesn't, we will catch
-            // TODO: a standard if/else might be more desirable
+            // TODO: a standard if/else might be more desirable (or std::optional)
             try
             {
               this->bookkeeper_.getKeyInfos(keys_id[i]);
