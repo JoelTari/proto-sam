@@ -27,6 +27,10 @@ struct ObserverKeyConduct
 
     return A;
   }
+
+  ObserverKeyConduct(const std::string key_id, const measure_cov_t & rho):
+      KeyContextualConduct(key_id,rho)
+    {}
 };
 
 // observee (xi)
@@ -46,6 +50,10 @@ struct ObserveeKeyConduct
 
     return partA;
   }
+
+  ObserveeKeyConduct(const std::string key_id, const measure_cov_t & rho):
+      KeyContextualConduct(key_id,rho)
+    {}
 };
 
 class LinearTranslationFactor

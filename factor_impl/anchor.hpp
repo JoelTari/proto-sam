@@ -24,6 +24,10 @@ struct UniqueKeyConduct
 
     return A;
   }
+
+  UniqueKeyConduct(const std::string key_id, const measure_cov_t & rho):
+      KeyContextualConduct(key_id,rho)
+    {}
 };
 
 static constexpr const char anchorLabel[] = "anchor";

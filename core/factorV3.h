@@ -66,7 +66,7 @@ struct KeyContextualConduct : KEYMETA
   }
 
   KeyContextualConduct() = delete;
-  KeyContextualConduct(const measure_cov_t& rho, const std::string& key_id)
+  KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho)
       : key_id(key_id)
       , rho(rho)
   {
@@ -105,6 +105,7 @@ class FactorV3
   const std::string    factor_id;      // fill at ctor
   const measure_vect_t measure_vect;   // fill at ctor
   const measure_cov_t  measure_cov;    // fill at ctor
+  const measure_cov_t  rho;    // fill at ctor
   KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
                         // process matrix), fill at ctor, modifiable
   // id must be filled at ctor
@@ -114,31 +115,35 @@ class FactorV3
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
   // ctor helper
-  template <size_t I = 0>
-  void set_map_keyid(const std::array<std::string, kNbKeys>& keys_id)
+  std::map<std::string, std::size_t> map_keyid(const std::array<std::string, kNbKeys>& keys_id)
   {
-      std::map<std::string, std::size_t> result;
-    if constexpr (I == kNbKeys)
-      return;
-    else
-    {
-      result[keys_id[I]]  = I;
-      std::get<I>(keys_set).key_id = keys_id[I];
-      set_map_keyid<I + 1>(keys_id);
-    }
+    std::map<std::string, std::size_t> result;
+    for(int i=0;i<keys_id.size();i++)
+      result[keys_id[i]]=i;
+    return result;
+    //   std::map<std::string, std::size_t> result;
+    // if constexpr (I == kNbKeys)
+    //   return;
+    // else
+    // {
+    //   result[keys_id[I]]  = I;
+    //   std::get<I>(keys_set).key_id = keys_id[I];
+    //   set_map_keyid<I + 1>(keys_id);
+    // }
   }
 
-  // FIX: deal with that fast
-   template<std::size_t N=kNbKeys, typename Indices = std::make_index_sequence<N>>
-    auto a2t(const std::array<std::string, N>& my_keys_id)
+
+  // HACK: make_index_sequence <3
+   template<typename Indices = std::make_index_sequence<kNbKeys>>
+    auto init_tuple_keys(const std::array<std::string, kNbKeys>& my_keys_id,const measure_cov_t &rho)
     {
-        return a2t_impl(my_keys_id, Indices{});
+        return init_tuple_keys_impl(my_keys_id,rho, Indices{});
     }
-    template<typename Array, std::size_t... I>
-    auto a2t_impl(const Array& a, std::index_sequence<I...>)
+    template<std::size_t... I>
+    auto init_tuple_keys_impl(const std::array<std::string, kNbKeys>& my_keys_id, const measure_cov_t& rho, std::index_sequence<I...>)
     {
         // return std::make_tuple(a[I]...);
-       //return std::map
+       return std::make_tuple(KeyConducts(my_keys_id[I],rho)...);
     }
 
   // the ctor
@@ -150,10 +155,11 @@ class FactorV3
       : measure_vect(mes_vect)
       , measure_cov(measure_cov)
       , factor_id(factor_id)
+      , rho(Eigen::LLT<measure_cov_t>(measure_cov.inverse()).matrixU())
       ,keys_set(init_tuple_keys(keys_id,rho))
-      ,keyIdToTupleIdx(keys_id)
+      ,keyIdToTupleIdx(map_keyid(keys_id))
   {
-    set_map_keyid(keys_id);
+    // TODO: put trace  (see factor.h)
   }
 
   measure_vect_t compute_b()
