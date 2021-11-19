@@ -23,16 +23,14 @@ namespace SAM
   class SamSystem
   {
     public:
-    SamSystem() {
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-    }
+    SamSystem() { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
 
     template <typename FT>
-    void register_new_factor(const std::string&             factor_id,
-                              const typename FT::measure_vect_t& mes_vect,
-                              const typename FT::measure_cov_t& measure_cov,
-                             const std::array<std::string,FT::kNbKeys> & keys_id
-                             )
+    void
+        register_new_factor(const std::string&                 factor_id,
+                            const typename FT::measure_vect_t& mes_vect,
+                            const typename FT::measure_cov_t&  measure_cov,
+                            const std::array<std::string, FT::kNbKeys>& keys_id)
     {
       static_assert(
           std::is_same_v<FT,
@@ -43,12 +41,16 @@ namespace SAM
       // check if factor id exists already
       // TODO: consistent management failure (throw ? return value false ?
       // std::optional ?)
-      if (this->bookkeeper_.factor_id_exists(factor_id)) throw std::runtime_error("Factor id already exists");
+      if (this->bookkeeper_.factor_id_exists(factor_id))
+        throw std::runtime_error("Factor id already exists");
 
 
       // recursively find, at compile time, the corresponding container (amongst
       // the ones in the tuple) to emplace back the factor FT
-      place_factor_in_container<0, FT>(factor_id,mes_vect,measure_cov,keys_id);
+      place_factor_in_container<0, FT>(factor_id,
+                                       mes_vect,
+                                       measure_cov,
+                                       keys_id);
     }
 
 
@@ -57,7 +59,8 @@ namespace SAM
     // bookkeeper etc..
     {
       // scoped timer
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());;
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+      ;
 
       SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
       int        M            = system_infos.aggr_dim_mes;
@@ -71,7 +74,8 @@ namespace SAM
       auto Xmap = solve_system(A, b);
 #if ENABLE_DEBUG_TRACE
       std::cout << "#### Syst: A computed :\n" << Eigen::MatrixXd(A) << "\n\n";
-      // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) << "\n\n";
+      // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
+      // "\n\n";
       std::cout << "#### Syst: b computed :\n" << b << "\n";
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
 #endif
@@ -82,11 +86,13 @@ namespace SAM
 
     /**
      * @brief With current graph, containing  the last recorded results, from
-     * the bookkeeper WARNING: perhaps use it only in the bookkeeper, or another new class (inverse dependency)
-     * WARNING: single responsibility principle is broken
+     * the bookkeeper WARNING: perhaps use it only in the bookkeeper, or another
+     * new class (inverse dependency) WARNING: single responsibility principle
+     * is broken
      */
     void write_factor_graph()
     {
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       // TODO: fill a 'graph' field in the json logger
       // CONTINUE:
 
@@ -187,19 +193,26 @@ namespace SAM
           // if constexpr nonlinear factor  =>  set lin point (given by
           // bookkeeper)
           // auto [factorA, factorb] = factor.compute_A_b();
-          auto factorb = factor.compute_rosie(); // TODO: change for NL
+          auto factorb = factor.compute_rosie();   // TODO: change for NL
 #if ENABLE_DEBUG_TRACE
           std::cout << " b: \n" << factorb << "\n";
 #endif
 
           // easy part : fill the rhs b from factor.b
-          constexpr int mesdim = factor_type_in_tuple_t<I>::kM;
+          constexpr int mesdim                = factor_type_in_tuple_t<I>::kM;
           b.block<mesdim, 1>(line_counter, 0) = factorb;
-          // suckless method: consider the A matrix of the factor (not the system) iterate over the keycontext, compute A, and 
-          // fill the triplet list
-          std::apply([this,&triplets,line_counter](auto&&... keycc){
-            ( ( this->compute_partialA_and_fill_triplet(keycc,triplets,line_counter) ),...);
-          },factor.keys_set);
+          // suckless method: consider the A matrix of the factor (not the
+          // system) iterate over the keycontext, compute A, and fill the
+          // triplet list
+          std::apply(
+              [this, &triplets, line_counter](auto&&... keycc)
+              {
+                ((this->compute_partialA_and_fill_triplet(keycc,
+                                                          triplets,
+                                                          line_counter)),
+                 ...);
+              },
+              factor.keys_set);
 
           // increment the line number by as many lines filled here
           line_counter += mesdim;
@@ -209,34 +222,39 @@ namespace SAM
       }
     }
 
+    /**
+     * @brief compute a part of a factor's A matrix, only the columns associated
+     * with one key are computed. Note that if factor is univariate, then partA
+     * = A
+     *
+     * @param keycc
+     * @param triplets
+     * @param line_counter
+     */
     template <typename KeyContextConduct>
-      /**
-      * @brief compute a part of a factor's A matrix, only the columns associated with one key are computed. Note that if factor is univariate, then partA = A 
-      *
-      * @param keycc
-      * @param triplets
-      * @param line_counter
-      */
-    void compute_partialA_and_fill_triplet(KeyContextConduct& keycc,std::vector<Eigen::Triplet<double>>& triplets, int line_counter)
+    void compute_partialA_and_fill_triplet(
+        KeyContextConduct&                   keycc,
+        std::vector<Eigen::Triplet<double>>& triplets,
+        int                                  line_counter)
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-        // compute partial A (partial = only a block of the A of the factor) 
+      // compute partial A (partial = only a block of the A of the factor)
       auto partA = keycc.compute_part_A();
       // get the col in systA (the big A of the system)
       int colInBigA = this->bookkeeper_.getKeyInfos(keycc.key_id).sysidx;
       // reshape the partA matrix, so that it is easier to loop. (column major)
       auto partA1d = partA.reshaped();
-      // now, loop and write 
+      // now, loop and write
       int mesdim = partA.rows();
-        for (int i = 0; i < partA.cols() * mesdim; i++)
-        {
-          // row in big A is easier, just wrap the i index & add the line
-          // counter
-          int row = line_counter + (i % mesdim);
-          // col idx in big A : we know
-          int col = colInBigA + i / mesdim;
-          triplets.emplace_back(row, col, partA1d[i]);
-        }
+      for (int i = 0; i < partA.cols() * mesdim; i++)
+      {
+        // row in big A is easier, just wrap the i index & add the line
+        // counter
+        int row = line_counter + (i % mesdim);
+        // col idx in big A : we know
+        int col = colInBigA + i / mesdim;
+        triplets.emplace_back(row, col, partA1d[i]);
+      }
     }
 
     /**
@@ -251,7 +269,8 @@ namespace SAM
     std::tuple<Eigen::SparseMatrix<double>, Eigen::VectorXd>
         fill_system(uint dim_mes, uint dim_keys, uint nnz)
     {
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());;
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+      ;
 #if ENABLE_DEBUG_TRACE
       std::cout << "starting filling system of size M= " << dim_mes
                 << " , N= " << dim_keys << " , NNZ= " << nnz << '\n';
@@ -265,7 +284,8 @@ namespace SAM
       triplets.reserve(nnz);
       // loop over all factors
       // fill in the triplets and the rhs
-      // TODO: is there a way to use incdex_sequence rather than the if constepx recursive pattern, the goal is to handle return values more gracefully
+      // TODO: is there a way to use incdex_sequence rather than the if constepx
+      // recursive pattern, the goal is to handle return values more gracefully
       this->loop_over_factors(triplets, b);
       A.setFromTriplets(triplets.begin(), triplets.end());
       return {A, b};
@@ -282,10 +302,11 @@ namespace SAM
      * @param args
      */
     template <std::size_t I = 0, typename FT>
-    void place_factor_in_container(const std::string&             factor_id,
-                              const typename FT::measure_vect_t& mes_vect,
-                              const typename FT::measure_cov_t& measure_cov,
-                             const std::array<std::string,FT::kNbKeys> & keys_id)
+    void place_factor_in_container(
+        const std::string&                          factor_id,
+        const typename FT::measure_vect_t&          mes_vect,
+        const typename FT::measure_cov_t&           measure_cov,
+        const std::array<std::string, FT::kNbKeys>& keys_id)
     {
       // beginning of static recursion (expanded at compile time)
       if constexpr (I == S_)
@@ -295,8 +316,8 @@ namespace SAM
         // if this is the type we are looking for, emplace back in
         if constexpr (std::is_same_v<FT, factor_type_in_tuple_t<I>>)
         {
-          // During this step, the factor is garanted to be pushed in the system so we should
-          // update bookkeeper
+          // During this step, the factor is garanted to be pushed in the system
+          // so we should update bookkeeper
           //  1. for each key
           //      - check if the keys exists if key doesn't exist, add it (and
           //      it's meta)
@@ -308,21 +329,22 @@ namespace SAM
           // for (std::size_t i = 0; i < keys_id.size(); i++)
           // {
           //   // check if the key exists, if it doesn't, we will catch
-          //   // TODO: a standard if/else might be more desirable (or std::optional)
-          //   try
+          //   // TODO: a standard if/else might be more desirable (or
+          //   std::optional) try
           //   {
           //     this->bookkeeper_.getKeyInfos(keys_id[i]);
           //   }
           //   catch (int e)
           //   {
-          //     // add the key, the variable size is accessed via the factor Meta
-          //     this->bookkeeper_.add_key(keys_id[i], FT::KeysSet_t::kNb); // BUG:
+          //     // add the key, the variable size is accessed via the factor
+          //     Meta this->bookkeeper_.add_key(keys_id[i], FT::KeysSet_t::kNb);
+          //     // BUG:
           //   }
           //   // each key has a list of factors_id that it is connected, so add
           //   // this factor_id to it
           //   this->bookkeeper_.add_factor_id_to_key(keys_id[i], factor_id);
           // }
-          add_keys_to_bookkeeper<FT>(keys_id,factor_id);
+          add_keys_to_bookkeeper<FT>(keys_id, factor_id);
           // add the factor_id with its infos in the bookkeeper
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id,
@@ -332,7 +354,10 @@ namespace SAM
 
 
           std::get<I>(this->all_factors_tuple_)
-              .emplace_back(factor_id,mes_vect,measure_cov,keys_id);
+              .emplace_back(factor_id, mes_vect, measure_cov, keys_id);
+          #if ENABLE_DEBUG_TRACE
+          std::cout << "\t\t:: Factor " << factor_id << " properly integrated in system.\n";
+          #endif
 
 // Debug consistency check of everything
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
@@ -345,41 +370,55 @@ namespace SAM
 #endif
         }
         // recursion :  compile time call
-        place_factor_in_container<I + 1, FT>(factor_id,mes_vect,measure_cov,keys_id);
+        place_factor_in_container<I + 1, FT>(factor_id,
+                                             mes_vect,
+                                             measure_cov,
+                                             keys_id);
       }
     }
 
-    template<typename FT>
-    void add_keys_to_bookkeeper(const std::array<std::string,FT::kNbKeys>& keys_id,const std::string &factor_id)
+    template <typename FT>
+    void add_keys_to_bookkeeper(
+        const std::array<std::string, FT::kNbKeys>& keys_id,
+        const std::string&                          factor_id)
     {
-       add_keys_to_bookkeeper_impl<FT>(factor_id,keys_id,std::make_index_sequence<FT::kNbKeys>{});
+      add_keys_to_bookkeeper_impl<FT>(factor_id,
+                                      keys_id,
+                                      std::make_index_sequence<FT::kNbKeys> {});
     }
 
-    template <typename FT,std::size_t...I>
-    void add_keys_to_bookkeeper_impl(const std::string& factor_id, const std::array<std::string,FT::kNbKeys>& keys_id, std::index_sequence<I...>)
+    template <typename FT, std::size_t... I>
+    void add_keys_to_bookkeeper_impl(
+        const std::string&                          factor_id,
+        const std::array<std::string, FT::kNbKeys>& keys_id,
+        std::index_sequence<I...>)
     {
-        ( dosomething(factor_id,keys_id[I], std::tuple_element_t<I,typename FT::KeysSet_t>::kN ) ,...);
+      (dosomething(factor_id,
+                   keys_id[I],
+                   std::tuple_element_t<I, typename FT::KeysSet_t>::kN),
+       ...);
     }
-    void dosomething(const std::string & factor_id, const std::string & key_id, int key_dimension) // string_view?
+    void dosomething(const std::string& factor_id,
+                     const std::string& key_id,
+                     int                key_dimension)   // string_view?
     {
-        // check if the key exists, if it doesn't, we will catch
-        // TODO: a standard if/else might be more desirable (or std::optional)
-      // TODO: would it be possible to check that the dimension and/or meta name of the key is consistent ?
-        try
-        {
-          this->bookkeeper_.getKeyInfos(key_id);
-        }
-        catch (int e)
-        {
-          // add the key, the variable size is accessed via the factor Meta
-          this->bookkeeper_.add_key(key_id, key_dimension);
-        }
-        // each key has a list of factors_id that it is connected, so add
-        // this factor_id to it
-        this->bookkeeper_.add_factor_id_to_key(key_id, factor_id);
+      // check if the key exists, if it doesn't, we will catch
+      // TODO: a standard if/else might be more desirable (or std::optional)
+      // TODO: would it be possible to check that the dimension and/or meta name
+      // of the key is consistent ?
+      try
+      {
+        this->bookkeeper_.getKeyInfos(key_id);
+      }
+      catch (int e)
+      {
+        // add the key, the variable size is accessed via the factor Meta
+        this->bookkeeper_.add_key(key_id, key_dimension);
+      }
+      // each key has a list of factors_id that it is connected, so add
+      // this factor_id to it
+      this->bookkeeper_.add_factor_id_to_key(key_id, factor_id);
     }
-
-    
 
 
     /**
@@ -396,7 +435,8 @@ namespace SAM
                                  const Eigen::VectorXd&             b)
     // TODO: add a solverOpts variable: check rank or not, check success
     {
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());;
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+      ;
       // solver
       Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>>
           solver;
@@ -414,10 +454,11 @@ namespace SAM
       std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS")
                 << "\n";
       std::cout << "### Syst solver :  nnz in square root : "
-                << solver.matrixR().nonZeros() << " (from "
-                << A.nonZeros() << ") in Hessian."
+                << solver.matrixR().nonZeros() << " (from " << A.nonZeros()
+                << ") in Hessian."
                 << "\n";
-      std::cout << "### Syst solver : matrix R : \n" << Eigen::MatrixXd(solver.matrixR()) << '\n';
+      std::cout << "### Syst solver : matrix R : \n"
+                << Eigen::MatrixXd(solver.matrixR()) << '\n';
 #endif
       return map;
     }
