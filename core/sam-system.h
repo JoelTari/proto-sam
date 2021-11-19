@@ -1,6 +1,7 @@
 #ifndef SAM_SYSTEM_H_
 #define SAM_SYSTEM_H_
 
+#include "anchor.hpp"
 #include "bookkeeper.h"
 #include "config.h"
 #include "utils.h"
@@ -10,10 +11,12 @@
 
 // #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Sparse>
+#include <iterator>
 #include <stdexcept>
 #include <thread>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace SAM
@@ -53,6 +56,43 @@ namespace SAM
                                        keys_id);
     }
 
+    double compute_factor_system_residual(const Eigen::VectorXd & xmap)
+    {
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+      unwrap_system_residual(xmap,std::make_index_sequence<S_>{});
+    }
+
+    template <std::size_t...I>
+    double unwrap_system_residual(const Eigen::VectorXd & xmap,std::index_sequence<I...>)
+    {
+      return ( sum_errors<I>(xmap) + ... ); // one term of each type of factor that represent the sum of all its vector
+    }
+
+    // sum all factor errors in a vector of factors
+    template<size_t I>
+    double sum_errors(const Eigen::VectorXd & xmap)
+    {
+      // access the number of keys this type of factor hold
+       constexpr int NbKeys = factor_type_in_tuple_t<I>::kNbKeys;
+       double sum=0;
+       for (const auto & factor : std::get<I>(all_factors_tuple_))
+       {
+         // need to compute tailored state vector
+         // each factor must only receive an ordered subset of xmap
+         // 1. get keys of factor
+         // 2. get global idx of those keys
+         // 3. make the subblock of xmap
+         // 4. pass the argument
+         //  xmap.block< FTNkey ,1 >(globalIdxofKey,0)
+         // auto keys = factor.keys_set;
+         // for (const auto & keycc : factor.keys_set)
+         //     std::cout << "bip boop\n";
+         // sum+=factor.compute_error(xmap);
+         // std::apply([](auto ...x){std::make_tuple(some_function(x)...);} , the_tuple);
+       }
+       return sum;
+    }
+
 
     void smooth_and_map()
     // TODO: add a solverOpts variable: check rank or not, check success, write
@@ -79,9 +119,12 @@ namespace SAM
       std::cout << "#### Syst: b computed :\n" << b << "\n";
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
 #endif
+      
+      double factor_error = compute_factor_system_residual(Xmap);
 
       // CONTINUE: HERE
       // keep the records: update the bookkeeper
+      write_factor_graph(sam_utils::JSONLogger::Instance());
     }
 
     /**
@@ -90,14 +133,44 @@ namespace SAM
      * new class (inverse dependency) WARNING: single responsibility principle
      * is broken
      */
-    void write_factor_graph()
+    void write_factor_graph(sam_utils::JSONLogger& logger)
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-      // TODO: fill a 'graph' field in the json logger
-      // CONTINUE:
+      Json::Value json_graph;
 
+      // TODO: fill a 'graph' field in the json logger
+      // principle: loop the factors, write the 'factors' in the logger 
+      for_each_in_tuple(this->all_factors_tuple_, 
+        [&json_graph](const auto & vect_of_f, auto I)
+        {
+          std::string factor_type = std::decay_t<decltype(vect_of_f[0])>::kFactorLabel;
+          for (const auto & factor : vect_of_f)
+          {
+            Json::Value json_factor;
+            json_factor["factor_id"] = factor.factor_id;
+            json_factor["type"] = factor_type;   // CONTINUE: HERE
+            // write the vars_id
+            Json::Value json_factor_vars_id;
+            for_each_in_tuple(factor.keys_set,[&json_factor_vars_id](const auto & keycc, auto I)
+              {
+                  json_factor_vars_id.append(keycc.key_id);
+              }
+            );
+            json_factor["vars_id"] = json_factor_vars_id;
+            // json_factor["MAPerror"] = factor_type;
+            // json_factor["measurement"] = factor_type;
+            // append in the json 'graph > factors'
+            json_graph["factors"].append(json_factor);
+          }
+        }
+      );
+      // Access the keys of each of those factor
+      // loop the keys in the bookkeeper to write the 'marginals' in the logger
+      // also use the cov matrix to extract the marginal covariance 
+      // CONTINUE: TODO: the keys -> mean covariance var_id category kind
+
+      logger.writeGraph(json_graph);
       // TODO: cout in std output (if enable debug trace flag is on)
-      // CONTINUE:
     }
 
 #if ENABLE_DEBUG_TRACE
@@ -284,7 +357,7 @@ namespace SAM
       triplets.reserve(nnz);
       // loop over all factors
       // fill in the triplets and the rhs
-      // TODO: is there a way to use incdex_sequence rather than the if constepx
+      // TODO: is there a way to use incdex_sequence rather than the if constexpr
       // recursive pattern, the goal is to handle return values more gracefully
       this->loop_over_factors(triplets, b);
       A.setFromTriplets(triplets.begin(), triplets.end());

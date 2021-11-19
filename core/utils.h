@@ -93,6 +93,12 @@ public:
         // if(m_JsonRoot["traceEvents"][spanIdx]["name"] == "main")
         //   std::cout << duration << '\n';
     }
+
+    void writeGraph(const Json::Value & graph)
+    {
+        std::lock_guard<std::mutex> lock(m_lock);
+        m_JsonRoot["graph"] = graph;
+    }
 };
 
 #if ENABLE_TIMER
@@ -189,6 +195,26 @@ struct ScopedTimer
 
 
 #endif
+}
+
+
+//------------------------------------------------------------------//
+//                            TUPLE LOOP                            //
+//------------------------------------------------------------------//
+namespace detail
+{
+    template<typename T, typename F, std::size_t... Is>
+    void
+    for_each(T&& t, F f, std::index_sequence<Is...>)
+    {
+        auto l = { (f(std::get<Is>(t),Is), 0)... };
+    }
+} // namespace detail
+
+template<typename... Ts, typename F>
+void for_each_in_tuple(std::tuple<Ts...> const& t, F f)
+{
+    detail::for_each(t, f, std::make_index_sequence<sizeof...(Ts)>{});
 }
 
 #endif
