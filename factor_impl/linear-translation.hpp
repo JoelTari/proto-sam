@@ -7,9 +7,10 @@
 #include "measure-meta-linear-translation.h"
 
 
-static constexpr const char LinearTranslationLabel[] = "linear translation";
-static constexpr const char observee_var[]           = "observee";
-static constexpr const char observer_var[]           = "observer";
+namespace{
+inline static constexpr const char LinearTranslationLabel[] = "linear translation";
+inline static constexpr const char observee_var[]           = "observee";
+inline static constexpr const char observer_var[]           = "observer";
 
 // observer (xipp)
 struct ObserverKeyConduct
@@ -35,7 +36,10 @@ struct ObserverKeyConduct
   {
   }
 };
+}
 
+namespace
+{
 // observee (xi)
 struct ObserveeKeyConduct
     : KeyContextualConduct<ObserveeKeyConduct,
@@ -55,6 +59,10 @@ struct ObserveeKeyConduct
   }
 };
 
+}
+
+namespace
+{
 class LinearTranslationFactor
     : public Factor<LinearTranslationFactor,
                     LinearTranslationLabel,
@@ -75,6 +83,8 @@ class LinearTranslationFactor
 #endif
   }
 };
+
+}
 
 
 #endif

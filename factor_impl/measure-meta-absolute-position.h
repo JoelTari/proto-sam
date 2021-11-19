@@ -5,7 +5,7 @@
 
 
 // meta absolute position measure
-namespace __MetaMeasureAbsolutePosition
+namespace
 {
   // namespace is necessary so that the vars names (x) doesnt pollute global
   // scope
@@ -13,8 +13,6 @@ namespace __MetaMeasureAbsolutePosition
   static constexpr const char x[]                 = "x";
   static constexpr const char y[]                 = "y";
   using MetaMeasureAbsolutePosition_t = MeasureMeta<absolute_position, 2, x, y>;
-}   // namespace __MetaMeasureAbsolutePosition
-using MetaMeasureAbsolutePosition_t = __MetaMeasureAbsolutePosition::
-    MetaMeasureAbsolutePosition_t;   // unwind namespace
+}   // namespace
 
 #endif

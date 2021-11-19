@@ -59,7 +59,7 @@ namespace SAM
     double compute_factor_system_residual(const Eigen::VectorXd & xmap)
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-      unwrap_system_residual(xmap,std::make_index_sequence<S_>{});
+      return unwrap_system_residual(xmap,std::make_index_sequence<S_>{});
     }
 
     template <std::size_t...I>

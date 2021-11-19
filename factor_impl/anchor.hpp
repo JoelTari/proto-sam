@@ -6,9 +6,11 @@
 #include "key-meta-position.h"
 #include "measure-meta-absolute-position.h"
 
+namespace
+{
 // factor instantiation from templates
 // instantiate the (unique) key conduct
-static constexpr const char anchor_var[] = "unique var";
+inline static constexpr const char anchor_var[] = "unique var";
 struct UniqueKeyConduct
     : KeyContextualConduct<UniqueKeyConduct,
                            MetaKeyPosition_t,
@@ -37,9 +39,10 @@ struct UniqueKeyConduct
   {
   }
 };
-// UniqueKeyConduct::H = {{1, 0}, {0, 1}};
+}
 
-static constexpr const char anchorLabel[] = "anchor";
+namespace{
+inline static constexpr const char anchorLabel[] = "anchor";
 class AnchorFactor
     : public Factor<AnchorFactor,
                     anchorLabel,
@@ -58,6 +61,8 @@ class AnchorFactor
 #endif
   }
 };
+
+}
 
 
 #endif
