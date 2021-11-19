@@ -1,259 +1,226 @@
-#ifndef SAM_FACTOR_H_
-#define SAM_FACTOR_H_
-
-#include "config.h"
+#ifndef FACTOR_H_
+#define FACTOR_H_
 
 #include <array>
-// #include <cstddef>
 #include <eigen3/Eigen/Dense>
-#include <initializer_list>
+#include <eigen3/Eigen/src/Core/IO.h>
+#include <iostream>
 #include <map>
-#include <numeric>
-#if ENABLE_DEBUG_TRACE
-#include <sstream>
-#endif
-#include <string>
-#include <type_traits>
+#include <string_view>
+#include <tuple>
 #include <utility>
 
-// assert the validity of variables size list against the total aggregate
-// dimension variable
-//       also, a variable size cannot be zero
-/**
- * @brief Assert the coherence of variables size list VS total aggregate
- * dimension variable. The sum of the former must equal the later.
- *
- * @tparam EXPECTED_VAR_TOTAL_DIM
- * @tparam T
- * @param slist
- *
- * @return
- */
-template <int EXPECTED_VAR_TOTAL_DIM, typename T>
-constexpr bool IsSizesOfVarsValid(T slist)
+
+template <typename DerivedKCC,
+          typename KEYMETA,
+          size_t      DimMes,
+          const char* ContextRole>
+struct KeyContextualConduct : KEYMETA
 {
-  // check if sizes elements are in valid range
-  int sum = 0;
-  for (const auto& e : slist)
+  static constexpr const char* kRole {ContextRole};
+  // non static but const
+  const std::string key_id; 
+  // non static, not const
+  using process_matrix_t = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
+  using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
+  using measure_cov_t    = Eigen::Matrix<double, DimMes, DimMes>;
+  // measure_vect_t   b;
+  const measure_cov_t& rho;
+
+  process_matrix_t compute_part_A()
   {
-    sum += e;
-    if (e <= 0) return false;
+    // in linear it would just be a getter to  rho * H
+    // in nonlinear, set_linearization_point must occur before
+    return static_cast<DerivedKCC*>(this)->compute_part_A_impl();
   }
-  // check if the sum of the sizes is coherent with total dimension size
-  if (sum != EXPECTED_VAR_TOTAL_DIM) return false;
-  // checks are coherent
-  return true;
-}
 
-template <int EXPECTED_AGGR_DIM_VAR, typename T>
-constexpr bool IsVarIdxRangesValid(T ranges)
-{
-  // TODO: complete
-  return true;
-}
-
-/**
- * @brief Given the sizes of the variables, infer the start and end positions of
- * each variable in the joint variable array
- *
- * @tparam NB_VARS
- * @param sizes_of_vars
- *
- * @return
- */
-template <size_t NB_VARS>
-static constexpr std::array<std::array<int, 2>, NB_VARS>
-    GenerateIndexesRanges(const std::array<int, NB_VARS>& sizes_of_vars)
-{
-  std::array<std::array<int, 2>, NB_VARS> result {};
-
-  int idx = 0;
-  int i   = 0;
-  for (const auto& vsize : sizes_of_vars)
+  KeyContextualConduct() = delete;
+  KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho)
+      : key_id(key_id)
+      , rho(rho)
   {
-    result[i] = std::array<int, 2> {idx, idx + vsize - 1};
-    i++;
-    idx = idx + vsize;
   }
-  return result;
-}
-
-/**
- * @brief metafunction holding the structure of a factor type
- *
- * @tparam NB_VARS
- * @tparam VAR_TOTAL_DIM
- * @tparam VAR_SIZES
- * @tparam NB_VARS
- */
-template <int                             NB_VARS,
-          int                             VAR_TOTAL_DIM,
-          const std::array<int, NB_VARS>& VAR_SIZES,
-          int                             MES_DIM>
-struct FactorMetaInfo
-{
-  /// Number of groups of variables of the factor (ex: {x1,x2} -> 2)
-  static constexpr int kNumberOfVars {NB_VARS};
-  /// Aggregate dimension of the variable(s) combined (ex: SE2 odom -> 6)
-  ///  = dimension of the factor's (aggregate) variable vector
-  static constexpr int kAggrVarDim {VAR_TOTAL_DIM};
-  /// Array of the respective dimension of each variable (ex: SE2 odom -> [3,3])
-  static constexpr auto kVarsSizes {VAR_SIZES};
-  /// Array of the idx start & end of each variable in the aggregate factor
-  /// variable array. (ex: SO2 odom -> [[0,2],[3,5]])
-  /* static constexpr auto varIdxRanges {VAR_IDX_RANGES_T}; */
-  /// Dimension of the measurement vector (ex: SO2 odom -> 3, bearing-only -> 1)
-  static constexpr int kMesDim {MES_DIM};
-  // Number of scalar elements in the lhs (matrix measurement)
-  static constexpr int kNbScalarElements {kMesDim*kAggrVarDim};
-
-  // for each variable, the range in the state. Ex: SE2 : -> [[0,2],[3,5]]
-  // this will work in conjunction with the variable_position & variable_range
-  // members in the factor class std::array<std::array<int, 2>, NB_VARS_T>
-  static constexpr std::array<std::array<int, 2>, kNumberOfVars> kVarIdxRanges {
-      GenerateIndexesRanges<kNumberOfVars>(kVarsSizes)};
-
-  // The meta data stored statically is expressive in nature to serve
-  // effiencitly all runtime requirements without overhead. Howerver, the above
-  // metadata is filled-in by an user who wants to instantiate a custom factor
-  // type. Coherence issues might arise, if for example, the total sum of
-  // variable sizes does not equal the total dimension.
-  // This motivates the asserts.
-  static_assert(IsSizesOfVarsValid<kAggrVarDim>(kVarsSizes),
-                "FACTOR META ASSERT: the list of variable dimension is not "
-                "coherent with the total dimension");
 };
 
-/**
- * @brief
- *
- * @tparam Derived  Static polymorphic trick
- * @tparam META_INFO_T meta information (dimensions of various entities)
- * @tparam FACTOR_TYPE_NAME[] the name of the factor type (odometry,
- * range-bearing, initialPose etc...)
- */
-template <typename Derived, typename META_INFO_T, const char FACTOR_CATEGORY[]>
-class BaseFactor
+//------------------------------------------------------------------//
+//                         Factor Template                          //
+//------------------------------------------------------------------//
+template <typename DerivedFactor,
+          const char FactorLabel[],
+          typename MEASURE_META,
+          typename... KeyConducts>
+class Factor
 {
   public:
-  // access meta info through Meta_t type
-  using Meta_t = META_INFO_T;
-  // jacobian matrix type
-  using prediction_matrix_t
-      = Eigen::Matrix<double, Meta_t::kMesDim, Meta_t::kAggrVarDim>;
-  // using jacobian_matrices_t
-  //   = std::array<Eigen::Matrix, std::size_t _Nm>
-  // measure vector type
-  using measure_vector_t = Eigen::Matrix<double, Meta_t::kMesDim, 1>;
-  // measure covariance type
-  using measure_covariance_matrix_t
-      = Eigen::Matrix<double, Meta_t::kMesDim, Meta_t::kMesDim>;
-  // state vector type
-  using state_vector_t = Eigen::Matrix<double, Meta_t::kAggrVarDim, 1>;
-  // array of string: variable keys
-  using var_keys_t = std::array<std::string, Meta_t::kNumberOfVars>;
+  using measure_vect_t = Eigen::Matrix<double, MEASURE_META::kM, 1>;
+  using measure_cov_t
+      = Eigen::Matrix<double, MEASURE_META::kM, MEASURE_META::kM>;
+  static constexpr const char* kFactorLabel {FactorLabel};
+  static constexpr size_t      kN      = (KeyConducts::kN + ...);
+  static constexpr size_t      kM      = MEASURE_META::kM;
+  static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
+  using state_vector_t = Eigen::Matrix<double,kN,1>;
+  // make a tuple of KeySet.  Michelin *** vaut le détour.
+  using KeysSet_t = std::tuple<KeyConducts...>;
 
-  // the type of factor (eg odometry, range bearing, linear)
-  static constexpr const char* kFactorCategory = FACTOR_CATEGORY;
+  static constexpr const char* kMeasureName {MEASURE_META::kMeasureName};
+  static constexpr std::array<const char*, kM> kMeasureComponentsName
+      = MEASURE_META::components;
+  const std::string    factor_id;      // fill at ctor
+  const measure_vect_t z;   // fill at ctor
+  const measure_cov_t  z_cov;    // fill at ctor
+  const measure_cov_t  rho;    // fill at ctor
+  KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
+                        // process matrix), fill at ctor, modifiable
 
-  // factor id
-  const std::string factor_id;
+  std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
-  // the actual measurement made
-  const measure_covariance_matrix_t mes_covariance;
-  const measure_vector_t            mes_vector; // z
+  // ctor helper
+  std::map<std::string, std::size_t> map_keyid(const std::array<std::string, kNbKeys>& keys_id) const
+  {
+    std::map<std::string, std::size_t> result;
+    for(int i=0;i<keys_id.size();i++)
+      result[keys_id[i]]=i;
+    return result;
+  }
 
-  // NOTE: it would be advantageous to split into bloc jacobian matrices (one of each key), but that would be a tuple difficult to implement (blocs may not have the same number of cols)
-    // TODO: use a combination constexpr & tuple_cat
-  prediction_matrix_t A; 
-  // jacobian_matrices_t AA;
-  measure_vector_t b; // dont confuse with mes_vector: z
 
-  state_vector_t linearization_point;
+  // HACK: make_index_sequence <3  . This pattern allows the underlying function to be defined with expansion syntax
+    KeysSet_t init_tuple_keys(const std::array<std::string, kNbKeys>& my_keys_id,const measure_cov_t &rho) const
+    {
+        return init_tuple_keys_impl(my_keys_id,rho, std::make_index_sequence<kNbKeys>{});
+    }
 
-  const var_keys_t variables;
+    template<std::size_t... I>
+    KeysSet_t init_tuple_keys_impl(const std::array<std::string, kNbKeys>& my_keys_id, const measure_cov_t& rho, std::index_sequence<I...>) const
+    {
+       return std::make_tuple(KeyConducts(my_keys_id[I],rho)...);
+    }
 
-  const std::map<std::string, int> variable_position
-      = LinkVariablesToStateVectorIdx();
-
-  /**
-   * @brief Base Factor consturctor
-   *
-   * @param factor_id str id of the factor (eg "f0")
-   * @param variable_names array str of the variables (or keys) (eg ["x2","l5"])
-   */
-  BaseFactor(const std::string& factor_id, const var_keys_t& variable_names, const measure_vector_t measure, const measure_covariance_matrix_t & covariance)
-      : variables(variable_names)
+  // the ctor
+  Factor(const std::string&                      factor_id,
+           const measure_vect_t&                   z,
+           const measure_cov_t&                    z_cov,
+           const std::array<std::string, kNbKeys>& keys_id)
+      : z(z)
+      , z_cov(z_cov)
       , factor_id(factor_id)
-      , mes_vector(measure)
-      , mes_covariance(covariance)
+      , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
+      , keys_set(init_tuple_keys(keys_id,rho))
+      , keyIdToTupleIdx(map_keyid(keys_id))
   {
-#if ENABLE_DEBUG_TRACE
-    std::cout << "Create " << this->kFactorCategory << " factor " << factor_id
-              << " with variables : ";
-    for (const auto& varname : this->variables) std::cout << varname << " ";
-    std::cout << "\n";
-#endif
+    // TODO: put trace  (see factor.h)
   }
 
-  std::tuple<prediction_matrix_t,measure_vector_t> compute_A_b()
-  {
-    // in linear it would just be a getter
-    // in nonlinear, set_linearization_point must occur before
-    return static_cast<Derived*>(this)->compute_A_b_impl();
+  measure_vect_t compute_rosie() const  // rho*z = rosie !
+  { // TODO: move as a constant member
+    return rho*z;
   }
+
+  measure_vect_t compute_h_of_x(const state_vector_t & x) const
+  {
+    // this is implementation specific
+      return static_cast<DerivedFactor*>(this->compute_h_of_x_impl(x));
+  }
+  // NOTE: no compute_b explicitely for now, until the mix NL Lin of a var is understood
+
+  
 
   // for the nonlinears
-  void set_linearization_point(const state_vector_t & lin_point)
-  {
-    linearization_point = lin_point;
-  }
-
-  private:
-  std::map<std::string, int> LinkVariablesToStateVectorIdx()
-  {
-    std::map<std::string, int> m;
-    int                        i = 0;
-    for (const auto& e : this->variables) m[e] = i++;
-    return m;
-  };
+  // void set_linearization_point(const state_vector_t & lin_point)
+  // {
+  //   linearization_point = lin_point;
+  // }
 };
 
-/**
- * @brief Returns a string given an array of string
- *
- * @tparam S
- * @param array_of_variable_names
- * @param separator
- * @param ""
- *
- * @return
- */
-template <size_t S>
-std::string StringifyArrayOfStrings(
-    const std::array<std::string, S>& array_of_variable_names,
-    const std::string&                separator = ",")
+
+//------------------------------------------------------------------//
+//                      Helper print functions                      //
+//------------------------------------------------------------------//
+// static traverse of the KeySet tuple
+template <typename TUP, size_t I = 0>
+constexpr void traverse_tup()
 {
-  std::stringstream ss;
-  // for (const auto & str : array_of_variable_names)
-  for (int i = 0; i < S; i++)
+  if constexpr (I == std::tuple_size<TUP>::value) { return; }
+  else
   {
-    if (i) ss << separator;
-    ss << array_of_variable_names[i];
+    using KT = std::tuple_element_t<I, TUP>;
+    std::cout << "\t\t+ Key Nature: " << KT::kKeyName
+              << ".  Role: " << KT::kRole << '\n';
+
+    // recursive call
+    traverse_tup<TUP, I + 1>();
   }
-  return ss.str();
-  // can be tested with:
-  // auto test_arr = std::array<std::string,4>({"x45","x448","x85","Xs8"});
-  // std::cout << stringify_array_of_strings(test_arr) << "\n";
 }
 
-#if ENABLE_DEBUG_TRACE
-template <typename FACTOR_T>
-void ShortPrintFactorInfo(const FACTOR_T& factor)
+// runtime traverse of the KeySet tuple
+template <typename TUP, size_t I = 0>
+void traverse_tup(const TUP& tup)
 {
-  std::cout << FACTOR_T::kFactorCategory << " " << factor.factor_id
-            << " :: Scope : " << StringifyArrayOfStrings(factor.variables);
+  if constexpr (I == std::tuple_size<TUP>::value) { return; }
+  else
+  {
+    using KT = std::tuple_element_t<I, TUP>;
+    std::cout << "\t\t+ Key Nature: " << KT::kKeyName
+              << ".  Role: " << KT::kRole << ". Id: " << std::get<I>(tup).key_id
+              << '\n';
+    // std::cout << "\t\t\t A:\n" << std::get<I>(tup).A << '\n';
+
+    // recursive call
+    traverse_tup<TUP, I + 1>(tup);
+  }
 }
-#endif
+
+
+// print static information of a factor label
+template <typename FT>
+constexpr void factor_print()
+{
+  std::cout << FT::kFactorLabel << '\n';
+  std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n'
+            << "\tKeys (in order):\n";
+
+  // traverse statically the tuple of keys data
+  traverse_tup<typename FT::KeysSet_t>();
+
+  std::cout << "\t Measure: " << FT::kMeasureName;
+  std::cout << " [ ";
+  for (const auto& comp : FT::kMeasureComponentsName) std::cout << comp << " ";
+  std::cout << "]\n";
+
+
+  std::cout << "\t----- \n";
+}
+
+// This is the non static version
+template <typename FT>
+void factor_print(const FT& fact)
+{
+  Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision,
+                               Eigen::DontAlignCols,
+                               ", ",
+                               ", ",
+                               "",
+                               "",
+                               "  ",
+                               ";");
+
+  std::cout << FT::kFactorLabel << " - id : " << fact.factor_id << '\n';
+  std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n'
+            << "\tKeys (in order):\n";
+
+  traverse_tup(fact.keys_set);
+
+  std::cout << "\t Measure: " << FT::kMeasureName;
+  std::cout << "\n\t\t { ";
+  for (int i = 0; i < FT::kMeasureComponentsName.size(); i++)
+    std::cout << FT::kMeasureComponentsName[i] << ": " << fact.z[i]
+              << "  ";
+  std::cout << "}\n\t\t Cov: [ " << fact.z_cov.format(CommaInitFmt)
+            << " ] \n";
+
+
+  std::cout << "\t----- \n";
+}
 
 #endif

@@ -1,146 +1,65 @@
-#include "factor.h"
+#include "anchor.hpp"
+#include "linear-translation.hpp"
 #include "sam-system.h"
 
-// struct DummyFactor1{
-//   static const std::string factor_typename;
-//   std::string factor_id;
-// };
-
 //------------------------------------------------------------------//
-//                  Odom factor type instantiation                  //
+//                               MAIN                               //
 //------------------------------------------------------------------//
-static constexpr char             kFactorCategory[] = "Odom-Factor";
-constexpr int                     kNbVar            = 2;
-constexpr int                     kXDimtOt          = 6;
-constexpr std::array<int, kNbVar> kVarSizes         = {3, 3};
-constexpr int                     kMesDim           = 3;
-using metaOdom_t = FactorMetaInfo<kNbVar, kXDimtOt, kVarSizes, kMesDim>;
-
-/**
- * @brief Factor odometry
- */
-class OdomFactor : public BaseFactor<OdomFactor, metaOdom_t, kFactorCategory>
-{
-  public:
-  OdomFactor(const std::string&                             factor_id,
-             const OdomFactor::var_keys_t&                  var_names,
-             const OdomFactor::measure_vector_t&            measure,
-             const OdomFactor::measure_covariance_matrix_t& covariance)
-      : BaseFactor<OdomFactor, metaOdom_t, kFactorCategory>(factor_id,
-                                                            var_names,
-                                                            measure,
-                                                            covariance)
-  {
-  }
-
-  std::tuple<prediction_matrix_t, measure_vector_t> compute_A_b_impl()
-  {
-    prediction_matrix_t A;
-    measure_vector_t  b;
-    // FIX: add normed jacobian/linear A here
-    return {A, b};
-  }
-};
-
-//------------------------------------------------------------------//
-//                Initial pose factor instantiation                 //
-//------------------------------------------------------------------//
-static constexpr char              kFactorCategory2[] = "SO2-prior";
-constexpr int                      kNbVar2            = 1;
-constexpr int                      kXDimTot2          = 3;
-constexpr std::array<int, kNbVar2> kVarSizes2         = {3};
-constexpr int                      kMesDim2           = 3;
-using metaIni_t = FactorMetaInfo<kNbVar2, kXDimTot2, kVarSizes2, kMesDim2>;
-/**
- * @brief Factor initial pose (2.5d)
- */
-class IniFactor : public BaseFactor<IniFactor, metaIni_t, kFactorCategory2>
-{
-  public:
-  IniFactor(const std::string&                            factor_id,
-            const IniFactor::var_keys_t&                  var_names,
-            const IniFactor::measure_vector_t&            measure,
-            const IniFactor::measure_covariance_matrix_t& covariance)
-      : BaseFactor<IniFactor, metaIni_t, kFactorCategory2>(factor_id,
-                                                           var_names,
-                                                           measure,
-                                                           covariance)
-  {
-  }
-
-  std::tuple<prediction_matrix_t, measure_vector_t> compute_A_b_impl()
-  {
-    prediction_matrix_t A;
-    measure_vector_t  b;
-    // FIX: add normed jacobian/linear A here
-    return {A, b};
-  }
-};
-
-class BS
-{
-  public:
-  BS(int a, double b) {}
-};
-
-// some quick and dirty print helper function
 int main(int argc, char* argv[])
 {
   // logger
   sam_utils::JSONLogger::Instance().beginSession("sam-system-factor_test.cpp");
   // scoped Timer
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-  // create the sam system
-  auto samsyst1 = SAM::SamSystem<IniFactor, OdomFactor>();
-  // create some factors
-  auto f0 = IniFactor("f0a",
-                      {"x0a"},
-                      IniFactor::measure_vector_t {0, 0, 0},
-                      IniFactor::measure_covariance_matrix_t {{1, 0, 0},
-                                                              {0, 1, 0},
-                                                              {0, 0, .1}});
 
-  // std::vector<IniFactor> inif;
-  // std::vector<BS> vBS;
-  // vBS.emplace_back(2, 3.158691);
-  // IniFactor::var_keys_t var_names = {"x0"};
-  // inif.emplace_back("f0",var_names);
-  // inif.emplace_back("f0",{"x0"});
+  // AnchorFactor A;
+  AnchorFactor::measure_vect_t m = {0, 0};
+  AnchorFactor::measure_cov_t  cov;
+  cov << 3.15, 0, 0, 1.09;
+  LinearTranslationFactor::measure_vect_t m2
+      = {-1, 0.1};   // Matrix<2,1> can be init by '='
+  LinearTranslationFactor::measure_cov_t cov2 {
+      {2.1, 0},
+      {0, 0.008}};   // Matrix<2,2> can't haha
 
-  // auto f1 = OdomFactor("f1", {"x0","x1"});
-  // auto f2 = OdomFactor("f2", {"x1","x2"});
-  // register the factors
-  samsyst1.register_new_factor<IniFactor>(
+  auto FA = AnchorFactor("f0", m, cov, {"x0"});
+  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"});
+
+  std::cout << "Printing runtime infos of a factor : \n\n";
+  factor_print(FA);
+  factor_print(FB);
+
+  std::cout << "\nPrinting infos of a factor type (only static infos since it "
+               "is just a type) : \n\n";
+  factor_print<AnchorFactor>();
+  factor_print<LinearTranslationFactor>();
+
+
+  std::cout << "\n\n Declaring a sam system:\n";
+  auto samsyst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>();
+
+  // samsyst.register_new_factor<AnchorFactor>("f0", m,cov , {"x0"});
+  // samsyst.register_new_factor<LinearTranslationFactor>("f1",m2,cov2,{"x0","x1"});
+  samsyst.register_new_factor<AnchorFactor>(
       "f0",
-      IniFactor::var_keys_t {"x0"},
-      IniFactor::measure_vector_t {0, 0, 0},
-      IniFactor::measure_covariance_matrix_t {{1, 0, 0},
-                                              {0, 1, 0},
-                                              {0, 0, .1}});
-  samsyst1.register_new_factor<OdomFactor>(
+      AnchorFactor::measure_vect_t { 0, 0},
+      AnchorFactor::measure_cov_t {{1, 0}, {0, 1}},
+      {"x0"});
+  samsyst.register_new_factor<LinearTranslationFactor>(
       "f1",
-      OdomFactor::var_keys_t {"x0", "x1"},
-      OdomFactor::measure_vector_t {0, 0, 0},
-      OdomFactor::measure_covariance_matrix_t {{1, 0, 0},
-                                               {0, 1, 0},
-                                               {0, 0, .1}});
-  samsyst1.register_new_factor<OdomFactor>(
+      LinearTranslationFactor::measure_vect_t {0, 0},
+      LinearTranslationFactor::measure_cov_t {{1, 0}, {0, 1}},
+      {"x0", "x1"});
+  samsyst.register_new_factor<LinearTranslationFactor>(
       "f2",
-      OdomFactor::var_keys_t {"x1", "x2"},
-      OdomFactor::measure_vector_t {0, 0, 0},
-      OdomFactor::measure_covariance_matrix_t {{1, 0, 0},
-                                               {0, 1, 0},
-                                               {0, 0, .1}});
-  // NOTE: the xxFactor::var_keys_t{...}, filling only the initializer_list
-  // {...} creates problem with forwarding
+      LinearTranslationFactor::measure_vect_t {0, 0},
+      LinearTranslationFactor::measure_cov_t {{1, 0}, {0, 1}},
+      {"x1", "x2"});
 
-#if ENABLE_DEBUG_TRACE
-  // print all infos about the factors in the sam system
-  samsyst1.IterFactorInfos();
-#endif
+    
+  samsyst.smooth_and_map();
 
-  // samsyst1.loop_over_factors<dosmthi>();
-  samsyst1.smooth_and_map();
+  std::cout << "\n NOTA: above result doesnt matter, point of this test is : compile, run/print \n";
 
   return 0;
 }

@@ -1,7 +1,7 @@
 #ifndef FACTOR_IMPL_ANCHOR_H_
 #define FACTOR_IMPL_ANCHOR_H_
 
-#include "factorV3.h"
+#include "factor.h"
 #include "key-meta-position.h"
 #include "measure-meta-absolute-position.h"
 
@@ -31,7 +31,7 @@ struct UniqueKeyConduct
 
 static constexpr const char anchorLabel[] = "anchor";
 class AnchorFactor
-    : public FactorV3<AnchorFactor,
+    : public Factor<AnchorFactor,
                       anchorLabel,
                       MetaMeasureAbsolutePosition_t,
                       UniqueKeyConduct>
@@ -41,7 +41,7 @@ class AnchorFactor
                const measure_vect_t& mes_vect,
                const measure_cov_t&  measure_cov,
                const std::array<std::string, AnchorFactor::kNbKeys>& keys_id)
-      : FactorV3(factor_id, mes_vect, measure_cov, keys_id)
+      : Factor(factor_id, mes_vect, measure_cov, keys_id)
   {
   }
 };
