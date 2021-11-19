@@ -187,7 +187,7 @@ namespace SAM
           // if constexpr nonlinear factor  =>  set lin point (given by
           // bookkeeper)
           // auto [factorA, factorb] = factor.compute_A_b();
-          auto factorb = factor.compute_b();
+          auto factorb = factor.compute_rosie(); // TODO: change for NL
 #if ENABLE_DEBUG_TRACE
           std::cout << " b: \n" << factorb << "\n";
 #endif
@@ -303,26 +303,26 @@ namespace SAM
           //      - add this factor id to the keyinfo list
           //  2. add an element in FactorInfo
 
-          // for each key of this factor.   keys.size() is same as
-          // FT::Meta_t::kNumberOfVars
-          for (std::size_t i = 0; i < keys_id.size(); i++)
-          {
-            // check if the key exists, if it doesn't, we will catch
-            // TODO: a standard if/else might be more desirable (or std::optional)
-            try
-            {
-              this->bookkeeper_.getKeyInfos(keys_id[i]);
-            }
-            catch (int e)
-            {
-              // add the key, the variable size is accessed via the factor Meta
-              //              in the same order of the
-              this->bookkeeper_.add_key(keys_id[i], FT::kNbKeys[i]);
-            }
-            // each key has a list of factors_id that it is connected, so add
-            // this factor_id to it
-            this->bookkeeper_.add_factor_id_to_key(keys_id[i], factor_id);
-          }
+          // for each key of this factor.
+          // std::apply(,FT::KeysSet);
+          // for (std::size_t i = 0; i < keys_id.size(); i++)
+          // {
+          //   // check if the key exists, if it doesn't, we will catch
+          //   // TODO: a standard if/else might be more desirable (or std::optional)
+          //   try
+          //   {
+          //     this->bookkeeper_.getKeyInfos(keys_id[i]);
+          //   }
+          //   catch (int e)
+          //   {
+          //     // add the key, the variable size is accessed via the factor Meta
+          //     this->bookkeeper_.add_key(keys_id[i], FT::KeysSet_t::kNb); // BUG:
+          //   }
+          //   // each key has a list of factors_id that it is connected, so add
+          //   // this factor_id to it
+          //   this->bookkeeper_.add_factor_id_to_key(keys_id[i], factor_id);
+          // }
+          add_keys_to_bookkeeper<FT>(keys_id,factor_id);
           // add the factor_id with its infos in the bookkeeper
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id,
@@ -348,6 +348,38 @@ namespace SAM
         place_factor_in_container<I + 1, FT>(factor_id,mes_vect,measure_cov,keys_id);
       }
     }
+
+    template<typename FT>
+    void add_keys_to_bookkeeper(const std::array<std::string,FT::kNbKeys>& keys_id,const std::string &factor_id)
+    {
+       add_keys_to_bookkeeper_impl<FT>(factor_id,keys_id,std::make_index_sequence<FT::kNbKeys>{});
+    }
+
+    template <typename FT,std::size_t...I>
+    void add_keys_to_bookkeeper_impl(const std::string& factor_id, const std::array<std::string,FT::kNbKeys>& keys_id, std::index_sequence<I...>)
+    {
+        ( dosomething(factor_id,keys_id[I], std::tuple_element_t<I,typename FT::KeysSet_t>::kN ) ,...);
+    }
+    void dosomething(const std::string & factor_id, const std::string & key_id, int key_dimension) // string_view?
+    {
+        // check if the key exists, if it doesn't, we will catch
+        // TODO: a standard if/else might be more desirable (or std::optional)
+      // TODO: would it be possible to check that the dimension and/or meta name of the key is consistent ?
+        try
+        {
+          this->bookkeeper_.getKeyInfos(key_id);
+        }
+        catch (int e)
+        {
+          // add the key, the variable size is accessed via the factor Meta
+          this->bookkeeper_.add_key(key_id, key_dimension);
+        }
+        // each key has a list of factors_id that it is connected, so add
+        // this factor_id to it
+        this->bookkeeper_.add_factor_id_to_key(key_id, factor_id);
+    }
+
+    
 
 
     /**

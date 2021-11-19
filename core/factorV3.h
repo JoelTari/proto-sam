@@ -11,14 +11,6 @@
 #include <utility>
 
 
-// some helper: "tie" a string to a type (a key meta here)
-template <const char Role[], typename T>
-struct StrTie
-{
-  static constexpr const char* kRole {Role};
-  using type = T;
-};
-
 template <typename DerivedKCC,
           typename KEYMETA,
           size_t      DimMes,
@@ -220,11 +212,11 @@ void factor_print(const FT& fact)
   traverse_tup(fact.keys_set);
 
   std::cout << "\t Measure: " << FT::kMeasureName;
-  std::cout << "\n\t\t [ ";
+  std::cout << "\n\t\t { ";
   for (int i = 0; i < FT::kMeasureComponentsName.size(); i++)
     std::cout << FT::kMeasureComponentsName[i] << ": " << fact.z[i]
               << "  ";
-  std::cout << "]\n\t\t Cov: [ " << fact.z_cov.format(CommaInitFmt)
+  std::cout << "}\n\t\t Cov: [ " << fact.z_cov.format(CommaInitFmt)
             << " ] \n";
 
 
