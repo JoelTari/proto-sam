@@ -10,7 +10,7 @@
 #include <thread>
 #include <json/json.h>
 
-#include "config.h"
+#include "core/config.h"
 
 namespace sam_utils
 {
