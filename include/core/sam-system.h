@@ -1,10 +1,10 @@
 #ifndef SAM_SYSTEM_H_
 #define SAM_SYSTEM_H_
 
-#include "anchor.hpp"
-#include "bookkeeper.h"
-#include "config.h"
-#include "utils.h"
+#include "factor_impl/anchor.hpp"
+#include "core/bookkeeper.h"
+#include "core/config.h"
+#include "core/utils.h"
 
 #include <functional>
 // #include "definitions.h"
@@ -138,7 +138,6 @@ namespace SAM
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       Json::Value json_graph;
 
-      // TODO: fill a 'graph' field in the json logger
       // principle: loop the factors, write the 'factors' in the logger 
       for_each_in_tuple(this->all_factors_tuple_, 
         [&json_graph](const auto & vect_of_f, auto I)

@@ -4,7 +4,8 @@
 
 - `C++17` compiler
 - `cmake` >= v3.10
-- `eigen3`
+- `eigen3` = `3.4`
+- [`jsoncpp`](https://github.com/open-source-parsers/jsoncpp/) >= `1.9.4` 
 
 ## Building
 

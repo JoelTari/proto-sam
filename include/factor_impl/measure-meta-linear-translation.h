@@ -1,7 +1,7 @@
 #ifndef MEASURE_META_LINEAR_TRANSLATION_H_
 #define MEASURE_META_LINEAR_TRANSLATION_H_
 
-#include "meta.h"
+#include "core/meta.h"
 
 // meta linear translation measure
 namespace __MetaLinearTranslation

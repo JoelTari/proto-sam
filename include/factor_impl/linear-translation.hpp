@@ -1,10 +1,10 @@
 #ifndef FACTOR_IMPL_LINEAR_TRANSLATION_H_
 #define FACTOR_IMPL_LINEAR_TRANSLATION_H_
 
-#include "config.h"
-#include "factor.h"
-#include "key-meta-position.h"
-#include "measure-meta-linear-translation.h"
+#include "core/config.h"
+#include "core/factor.h"
+#include "factor_impl/key-meta-position.h"
+#include "factor_impl/measure-meta-linear-translation.h"
 
 
 namespace{

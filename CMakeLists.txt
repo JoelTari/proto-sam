@@ -10,21 +10,21 @@ set(CMAKE_CXX_STANDARD 17) # this will be reflected in compile commands
 
 add_executable(factor_test test/factor_test.cpp)
 add_executable(sam-system-factor_test test/sam-system-factor_test.cpp)
-add_executable(main_stdinput main_stdinput.cpp)
+add_executable(toy_linear_test test/toy_linear_test.cpp)
 
-target_include_directories(factor_test PUBLIC core factor_impl)
-target_include_directories(sam-system-factor_test PUBLIC core factor_impl)
-target_include_directories(main_stdinput PUBLIC core factor_impl)
+target_include_directories(factor_test PUBLIC include)
+target_include_directories(sam-system-factor_test PUBLIC include)
+target_include_directories(toy_linear_test PUBLIC include)
 
 # TODO: try jsoncpp_static and compare size of binaries
-target_link_libraries(main_stdinput jsoncpp_lib)
+target_link_libraries(toy_linear_test jsoncpp_lib)
 target_link_libraries(sam-system-factor_test jsoncpp_lib)
 target_link_libraries(factor_test jsoncpp_lib)
 
 # BUG: cxx_std_17 is not reflected afterwards in compile commands
 target_compile_features(factor_test PUBLIC cxx_std_17)
 target_compile_features(sam-system-factor_test PUBLIC cxx_std_17)
-target_compile_features(main_stdinput PUBLIC cxx_std_17)
+target_compile_features(toy_linear_test PUBLIC cxx_std_17)
 
 # NOTE: to manage some definitions
-# target_compile_definitions(main_stdinput PUBLIC ENABLE_DEBUG_TRACE=1 ENABLE_TIMER=1)
+# target_compile_definitions(toy_linear_test PUBLIC ENABLE_DEBUG_TRACE=1 ENABLE_TIMER=1)

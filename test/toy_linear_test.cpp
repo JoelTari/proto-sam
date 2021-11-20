@@ -1,6 +1,6 @@
-#include "anchor.hpp"
-#include "linear-translation.hpp"
-#include "sam-system.h"
+#include "factor_impl/anchor.hpp"
+#include "factor_impl/linear-translation.hpp"
+#include "core/sam-system.h"
 
 //------------------------------------------------------------------//
 //                               MAIN                               //

@@ -1,7 +1,7 @@
 #ifndef MEASURE_META_ABSOLUTE_POSITION_H_
 #define MEASURE_META_ABSOLUTE_POSITION_H_
 
-#include "meta.h"
+#include "core/meta.h"
 
 
 // meta absolute position measure
