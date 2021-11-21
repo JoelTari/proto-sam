@@ -6,7 +6,7 @@ find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(jsoncpp 1.9.4 REQUIRED CONFIG)  # this sets 'jsoncpp_lib'
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
-set(CMAKE_CXX_STANDARD 20) # this will be reflected in compile commands
+set(CMAKE_CXX_STANDARD 17) # this will be reflected in compile commands
 
 add_executable(factor_test test/factor_test.cpp)
 add_executable(sam-system-factor_test test/sam-system-factor_test.cpp)
@@ -21,10 +21,10 @@ target_link_libraries(toy_linear_test jsoncpp_lib)
 target_link_libraries(sam-system-factor_test jsoncpp_lib)
 target_link_libraries(factor_test jsoncpp_lib)
 
-# BUG: cxx_std_20 is not reflected afterwards in compile commands
-target_compile_features(factor_test PUBLIC cxx_std_20)
-target_compile_features(sam-system-factor_test PUBLIC cxx_std_20)
-target_compile_features(toy_linear_test PUBLIC cxx_std_20)
+# BUG: cxx_std_17 is not reflected afterwards in compile commands
+target_compile_features(factor_test PUBLIC cxx_std_17)
+target_compile_features(sam-system-factor_test PUBLIC cxx_std_17)
+target_compile_features(toy_linear_test PUBLIC cxx_std_17)
 
 # NOTE: to manage some definitions
 # target_compile_definitions(toy_linear_test PUBLIC ENABLE_DEBUG_TRACE=1 ENABLE_TIMER=1)
