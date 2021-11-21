@@ -17,6 +17,7 @@ template <typename DerivedKCC, typename KEYMETA, size_t DimMes, const char* Cont
 struct KeyContextualConduct : KEYMETA
 {
   static constexpr const char* kRole {ContextRole};
+  static constexpr const std::size_t kM {DimMes};  // TODO: really necessary ?
   // non static but const
   const std::string key_id;
   // non static, not const
@@ -75,6 +76,7 @@ class Factor
   const measure_cov_t                          rho;         // fill at ctor
   KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
                         // process matrix), fill at ctor, modifiable
+  double error=0;
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 

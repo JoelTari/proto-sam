@@ -73,20 +73,22 @@ namespace SAM
       // access the number of keys this type of factor hold
        constexpr int NbKeys = factor_type_in_tuple_t<I>::kNbKeys;
        double sum=0;
-       for (const auto & factor : std::get<I>(all_factors_tuple_))
+       for ( auto & factor : std::get<I>(all_factors_tuple_))
        {
          // need to compute tailored state vector
          // each factor must only receive an ordered subset of xmap
          // 1. get keys of factor
-         // 2. get global idx of those keys
-         // 3. make the subblock of xmap
-         // 4. pass the argument
-         //  xmap.block< FTNkey ,1 >(globalIdxofKey,0)
-         // auto keys = factor.keys_set;
-         // for (const auto & keycc : factor.keys_set)
-         //     std::cout << "bip boop\n";
-         // sum+=factor.compute_error(xmap);
-         // std::apply([](auto ...x){std::make_tuple(some_function(x)...);} , the_tuple);
+         std::apply( [this,&xmap,&sum,&factor](auto... kcc  ){
+           // get the global idx
+           // std::size_t globalIdxOfKey = ;
+           // now we know how extract a subcomponent of xmap
+          // WARNING: may revisit for NL, or move that line in the factors jurisdiction
+           auto innovation = ( ( kcc.compute_part_A()* xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx,0,decltype(kcc)::kM,1) ) + ... ) - factor.compute_rosie();
+          factor.error = std::pow(innovation.norm(),2);
+             // this factor norm2 squared is added to the total error
+          sum+= factor.error;
+
+        } , factor.keys_set);
        }
        return sum;
     }
@@ -110,15 +112,18 @@ namespace SAM
       auto [A, b] = fill_system(M, N, nnz);
       // and solve the system
       auto Xmap = solve_system(A, b);
+      double aggregate_factors_error = compute_factor_system_residual(Xmap);
+
 #if ENABLE_DEBUG_TRACE
       std::cout << "#### Syst: A computed :\n" << Eigen::MatrixXd(A) << "\n\n";
       // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
       // "\n\n";
       std::cout << "#### Syst: b computed :\n" << b << "\n";
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
+      std::cout << "#### Syst: sum of factors error : " << aggregate_factors_error << '\n';
 #endif
       
-      double factor_error = compute_factor_system_residual(Xmap);
+
 
       // CONTINUE: HERE
       // keep the records: update the bookkeeper
