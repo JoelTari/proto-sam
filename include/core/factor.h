@@ -1,6 +1,9 @@
 #ifndef FACTOR_H_
 #define FACTOR_H_
 
+#include "utils/tuple_patterns.h"
+#include "utils/utils.h"
+
 #include <array>
 #include <eigen3/Eigen/Dense>
 #include <iostream>
@@ -84,22 +87,22 @@ class Factor
     return result;
   }
 
-
-  // HACK: make_index_sequence <3  . This pattern allows the underlying function
-  // to be defined with expansion syntax
-  KeysSet_t init_tuple_keys(const std::array<std::string, kNbKeys>& my_keys_id,
-                            const measure_cov_t&                    rho) const
-  {
-    return init_tuple_keys_impl(my_keys_id, rho, std::make_index_sequence<kNbKeys> {});
-  }
-
-  template <std::size_t... I>
-  KeysSet_t init_tuple_keys_impl(const std::array<std::string, kNbKeys>& my_keys_id,
-                                 const measure_cov_t&                    rho,
-                                 std::index_sequence<I...>) const
-  {
-    return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
-  }
+  // // DEPRECATED: replaced by tuple::reduce_variadically(    )
+  // // HACK: make_index_sequence <3  . This pattern allows the underlying function
+  // // to be defined with expansion syntax
+  // static KeysSet_t init_tuple_keys(const std::array<std::string, kNbKeys>& my_keys_id,
+  //                                  const measure_cov_t&                    rho)
+  // {
+  //   return init_tuple_keys_impl(my_keys_id, rho, std::make_index_sequence<kNbKeys> {});
+  // }
+  //
+  // template <std::size_t... I>
+  // static KeysSet_t init_tuple_keys_impl(const std::array<std::string, kNbKeys>& my_keys_id,
+  //                                       const measure_cov_t&                    rho,
+  //                                       std::index_sequence<I...>)
+  // {
+  //   return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
+  // }
 
   template <typename... PARTIAL_STATE_VECTORS_T>
   measure_vect_t compute_h_of_x(const PARTIAL_STATE_VECTORS_T&... x) const
@@ -128,11 +131,21 @@ class Factor
       , z_cov(z_cov)
       , factor_id(factor_id)
       , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
-      , keys_set(init_tuple_keys(keys_id, rho))
+      , keys_set(sam_tuples::reduce_variadically(
+            keys_id,
+            []<std::size_t... I>(const auto& my_keys_id,
+                                 const auto& rho,
+                                 std::index_sequence<I...>) {
+              return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
+            },
+            rho))
+      // , keys_set(sam_tuples::reduce_variadically(keys_id,this->init_tuple_keys,rho))
+      // , keys_set(init_tuple_keys(keys_id, rho))
       , keyIdToTupleIdx(map_keyid(keys_id))
   {
   }
 
+  // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
   measure_vect_t compute_rosie() const   // rho*z = rosie !
   {                                      // TODO: move as a constant member
     return rho * z;
@@ -190,6 +203,13 @@ void traverse_tup(const TUP& tup)
   }
 }
 
+template <typename KC>
+void print_KeyContextConduct(const KC& kcc)
+{
+    std::cout << "\t\t+ Key Nattupelemure: " << KC::kKeyName << ".  Role: " << KC::kRole
+              << ". Id: " << kcc.key_id << '\n';
+}
+
 
 // print static information of a factor label
 template <typename FT>
@@ -198,7 +218,7 @@ constexpr void factor_print()
   std::cout << FT::kFactorLabel << '\n';
   std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n' << "\tKeys (in order):\n";
 
-  // traverse statically the tuple of keys data
+  // traverse statically the ttupelemuple of keys data
   traverse_tup<typename FT::KeysSet_t>();
 
   std::cout << "\t Measure: " << FT::kMeasureName;
@@ -220,7 +240,18 @@ void factor_print(const FT& fact)
   std::cout << FT::kFactorLabel << " - id : " << fact.factor_id << '\n';
   std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n' << "\tKeys (in order):\n";
 
-  traverse_tup(fact.keys_set);
+  // traverse_tup(fact.keys_set);
+  // for_each_in_tuple(fact.keys_set, [](const auto& kcc){
+  //   // using KT = ;
+  //   std::cout << "\t\t+ Key Nature: " << decltype(kcc)::kKeyName << ".  Role: " << decltype(kcc)::kRole
+  //             << ". Id: " << kcc.key_id << '\n';
+  // });
+  // for_each_in_tuple(fact.keys_set, &printtupelem);
+  std::apply([](auto... kcc) 
+  { 
+    ((print_KeyContextConduct(kcc)), ...); 
+  }, fact.keys_set);
+
 
   std::cout << "\t Measure: " << FT::kMeasureName;
   std::cout << "\n\t\t { ";

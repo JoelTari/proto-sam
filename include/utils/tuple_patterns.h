@@ -12,20 +12,16 @@ namespace sam_tuples
   //------------------------------------------------------------------//
   //                           reduce tuple                           //
   //------------------------------------------------------------------//
-  template <typename ARRAY, typename FUNC>
-  auto reduce_variadically(const ARRAY& my_array, FUNC f)
+  template <typename ARRAY, typename FUNC, typename... Args>
+  auto reduce_variadically(const ARRAY& my_array, FUNC f, Args... args)
   {
-    // or add the folowing template argument :  Indices =
-    // std::make_index_sequence< std::tuple_size_v<ARRAY> >
-    //  and use Indices{} instead of N
-
     // WOW !!!!
-    if constexpr (std::is_invocable_v<FUNC, ARRAY>)   // HACK:
-      return f(my_array);
+    if constexpr (std::is_invocable_v<FUNC, ARRAY, Args...>)   // HACK:
+      return f(my_array, args...);
     else
     {
       std::make_index_sequence<std::tuple_size_v<ARRAY>> N {};
-      return f(my_array, N);
+      return f(my_array, args..., N);
     }
   }
   // // typical use : sum, multiply, make_tuple
@@ -59,11 +55,12 @@ namespace sam_tuples
   //   // std::get<I>(my_tuple).something_value(array[I]) + ... );
   //   return array[I0] + (array[I] + ...);
   // };
-  // reduce_variadically(A, lambda_result); 
+  // reduce_variadically(A, lambda_result);
 
   //------------------------------------------------------------------//
   //                           foreach tup                            //
   //------------------------------------------------------------------//
+  // WARNING: try with lambda and regular, didn't work
   namespace detail
   {
     template <typename T, typename F, std::size_t... Is>
@@ -78,16 +75,33 @@ namespace sam_tuples
   {
     detail::for_each(t, f, std::make_index_sequence<sizeof...(Ts)> {});
   }
-  
-  // //------------------------------------------------------------------//
-  // //                std::apply (permits lambda c++17)                 //
-  // //------------------------------------------------------------------//
+
+  //------------------------------------------------------------------//
+  //         foreach tup : varidically style, and array input         //
+  //------------------------------------------------------------------//
+  template <typename FUNC, typename ARRAY>
+  auto foreach_tup_variadically(const ARRAY& my_array, FUNC f)
+  {
+    // WOW !!!!
+    if constexpr (std::is_invocable_v<FUNC, ARRAY>)   // HACK:
+      f(my_array);
+    else
+    {
+      std::make_index_sequence<std::tuple_size_v<ARRAY>> N {};
+      f(my_array, N);
+    }
+  }
+
+
+  //------------------------------------------------------------------//
+  //                std::apply (permits lambda c++17)                 //
+  //          std::apply should be the prefer way for tuple           //
+  //                            traversing                            //
+  //------------------------------------------------------------------//
   // std::apply([](auto... e) { ((std::cout << e << '\n'), ...); int a = 1+1; }, my_tuple);
   // std::apply([](auto... e) { ((customAction(e)), ...);  std::cout<< '\n'; }, my_tuple);
-  // std::apply([](auto... e) { auto l = [](auto e){ std::cout << e << '\t';}; ((l(e)), ...);  std::cout<< '\n'; }, my_tuple);
-
-  // int i;
-  // std::apply([i](auto...e){ if (i)},my_tuple);
+  // std::apply([](auto... e) { auto l = [](auto e){ std::cout << e << '\t';}; ((l(e)), ...);
+  // std::cout<< '\n'; }, my_tuple);
 
 }   // namespace sam_tuples
 #endif

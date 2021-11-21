@@ -8,9 +8,6 @@
 #include "utils/tuple_patterns.h"
 
 #include <functional>
-// #include "definitions.h"
-
-// #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Sparse>
 #include <iterator>
 #include <stdexcept>
