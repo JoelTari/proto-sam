@@ -5,6 +5,7 @@
 #include "core/bookkeeper.h"
 #include "core/config.h"
 #include "utils/utils.h"
+#include "utils/tuple_patterns.h"
 
 #include <functional>
 // #include "definitions.h"
@@ -139,7 +140,7 @@ namespace SAM
       Json::Value json_graph;
 
       // principle: loop the factors, write the 'factors' in the logger 
-      for_each_in_tuple(this->all_factors_tuple_, 
+      sam_tuples::for_each_in_tuple(this->all_factors_tuple_, 
         [&json_graph](const auto & vect_of_f, auto I)
         {
           std::string factor_type = std::decay_t<decltype(vect_of_f[0])>::kFactorLabel;
@@ -150,7 +151,7 @@ namespace SAM
             json_factor["type"] = factor_type;   // CONTINUE: HERE
             // write the vars_id
             Json::Value json_factor_vars_id;
-            for_each_in_tuple(factor.keys_set,[&json_factor_vars_id](const auto & keycc, auto I)
+            sam_tuples::for_each_in_tuple(factor.keys_set,[&json_factor_vars_id](const auto & keycc, auto I)
               {
                   json_factor_vars_id.append(keycc.key_id);
               }

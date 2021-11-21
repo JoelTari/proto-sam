@@ -47,7 +47,7 @@ SpaceBeforeCtorInitializerColon: 'true'
 SpaceBeforeInheritanceColon: 'true'
 SpaceBeforeRangeBasedForLoopColon: 'true'
 SpacesBeforeTrailingComments: '3'
-ColumnLimit:     80
+ColumnLimit:     100
 Standard: Cpp11
 
 ...

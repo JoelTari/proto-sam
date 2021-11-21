@@ -3,7 +3,6 @@
 
 #include <array>
 #include <eigen3/Eigen/Dense>
-#include <eigen3/Eigen/src/Core/IO.h>
 #include <iostream>
 #include <map>
 #include <string_view>
@@ -11,20 +10,17 @@
 #include <utility>
 
 
-template <typename DerivedKCC,
-          typename KEYMETA,
-          size_t      DimMes,
-          const char* ContextRole>
+template <typename DerivedKCC, typename KEYMETA, size_t DimMes, const char* ContextRole>
 struct KeyContextualConduct : KEYMETA
 {
   static constexpr const char* kRole {ContextRole};
   // non static but const
   const std::string key_id;
   // non static, not const
-  using process_matrix_t = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
-  using measure_vect_t   = Eigen::Matrix<double, DimMes, 1>;
-  using measure_cov_t    = Eigen::Matrix<double, DimMes, DimMes>;
-  using part_state_vect_t = Eigen::Matrix<double, KEYMETA::kN,1>;
+  using process_matrix_t  = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
+  using measure_vect_t    = Eigen::Matrix<double, DimMes, 1>;
+  using measure_cov_t     = Eigen::Matrix<double, DimMes, DimMes>;
+  using part_state_vect_t = Eigen::Matrix<double, KEYMETA::kN, 1>;
   // measure_vect_t   b;
   const measure_cov_t& rho;
 
@@ -35,7 +31,7 @@ struct KeyContextualConduct : KEYMETA
     return static_cast<DerivedKCC*>(this)->compute_part_A_impl();
   }
 
-  measure_vect_t compute_part_h_of_part_x(const part_state_vect_t & x)
+  measure_vect_t compute_part_h_of_part_x(const part_state_vect_t& x)
   {
     return static_cast<DerivedKCC*>(this)->compute_part_h_of_part_x_impl(x);
   }
@@ -59,8 +55,7 @@ class Factor
 {
   public:
   using measure_vect_t = Eigen::Matrix<double, MEASURE_META::kM, 1>;
-  using measure_cov_t
-      = Eigen::Matrix<double, MEASURE_META::kM, MEASURE_META::kM>;
+  using measure_cov_t  = Eigen::Matrix<double, MEASURE_META::kM, MEASURE_META::kM>;
   static constexpr const char* kFactorLabel {FactorLabel};
   static constexpr size_t      kN      = (KeyConducts::kN + ...);
   static constexpr size_t      kM      = MEASURE_META::kM;
@@ -69,13 +64,12 @@ class Factor
   // make a tuple of KeySet.  Michelin *** vaut le détour.
   using KeysSet_t = std::tuple<KeyConducts...>;
 
-  static constexpr const char* kMeasureName {MEASURE_META::kMeasureName};
-  static constexpr std::array<const char*, kM> kMeasureComponentsName
-      = MEASURE_META::components;
-  const std::string    factor_id;   // fill at ctor
-  const measure_vect_t z;           // fill at ctor
-  const measure_cov_t  z_cov;       // fill at ctor
-  const measure_cov_t  rho;         // fill at ctor
+  static constexpr const char*                 kMeasureName {MEASURE_META::kMeasureName};
+  static constexpr std::array<const char*, kM> kMeasureComponentsName = MEASURE_META::components;
+  const std::string                            factor_id;   // fill at ctor
+  const measure_vect_t                         z;           // fill at ctor
+  const measure_cov_t                          z_cov;       // fill at ctor
+  const measure_cov_t                          rho;         // fill at ctor
   KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
                         // process matrix), fill at ctor, modifiable
 
@@ -96,36 +90,33 @@ class Factor
   KeysSet_t init_tuple_keys(const std::array<std::string, kNbKeys>& my_keys_id,
                             const measure_cov_t&                    rho) const
   {
-    return init_tuple_keys_impl(my_keys_id,
-                                rho,
-                                std::make_index_sequence<kNbKeys> {});
+    return init_tuple_keys_impl(my_keys_id, rho, std::make_index_sequence<kNbKeys> {});
   }
 
   template <std::size_t... I>
-  KeysSet_t
-      init_tuple_keys_impl(const std::array<std::string, kNbKeys>& my_keys_id,
-                           const measure_cov_t&                    rho,
-                           std::index_sequence<I...>) const
+  KeysSet_t init_tuple_keys_impl(const std::array<std::string, kNbKeys>& my_keys_id,
+                                 const measure_cov_t&                    rho,
+                                 std::index_sequence<I...>) const
   {
     return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
   }
 
-  template <typename ...PARTIAL_STATE_VECTORS_T>
-  measure_vect_t compute_h_of_x(const PARTIAL_STATE_VECTORS_T&...x) const
+  template <typename... PARTIAL_STATE_VECTORS_T>
+  measure_vect_t compute_h_of_x(const PARTIAL_STATE_VECTORS_T&... x) const
   {
-    static_assert( sizeof...(PARTIAL_STATE_VECTORS_T)==kNbKeys);
+    static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
     // this is implementation specific
     // if linear, this is the  sum of the part_h_of_part_x (that are part_h \times part_x)
     // In some nonlinear cases, it may still be develop as  \sum part_h_of_x
-    return compute_sum_of_part_h_of_part_x(x...,std::make_index_sequence<kNbKeys>{});
+    return compute_sum_of_part_h_of_part_x(x..., std::make_index_sequence<kNbKeys> {});
   }
 
-  template <typename ...PARTIAL_STATE_VECTORS_T>
-  measure_vect_t compute_sum_of_part_h_of_part_x(const PARTIAL_STATE_VECTORS_T&...x) const
+  template <typename... PARTIAL_STATE_VECTORS_T>
+  measure_vect_t compute_sum_of_part_h_of_part_x(const PARTIAL_STATE_VECTORS_T&... x) const
   {
-    // WARNING:  proves the need of the start index for each key ?? 
-      std::make_index_sequence<kNbKeys> I{};
-      return ( std::get<I>(keys_set).compute_part_h_of_part_x(x) + ... );
+    // WARNING:  proves the need of the start index for each key ??
+    std::make_index_sequence<kNbKeys> I {};
+    return (std::get<I>(keys_set).compute_part_h_of_part_x(x) + ...);
   }
 
   // the ctor
@@ -149,11 +140,11 @@ class Factor
 
   // NOTE: no compute_b explicitely for now, until the mix NL Lin of a var is
   // understood
-  
+
   // \|Ax-b\|^2_2
-  double compute_error(const state_vector_t &x)
+  double compute_error(const state_vector_t& x)
   {
-      return (rho*compute_h_of_x(x) - compute_rosie()).norm();
+    return (rho * compute_h_of_x(x) - compute_rosie()).norm();
   }
 
   // for the nonlinears
@@ -175,8 +166,7 @@ constexpr void traverse_tup()
   else
   {
     using KT = std::tuple_element_t<I, TUP>;
-    std::cout << "\t\t+ Key Nature: " << KT::kKeyName
-              << ".  Role: " << KT::kRole << '\n';
+    std::cout << "\t\t+ Key Nature: " << KT::kKeyName << ".  Role: " << KT::kRole << '\n';
 
     // recursive call
     traverse_tup<TUP, I + 1>();
@@ -191,9 +181,8 @@ void traverse_tup(const TUP& tup)
   else
   {
     using KT = std::tuple_element_t<I, TUP>;
-    std::cout << "\t\t+ Key Nature: " << KT::kKeyName
-              << ".  Role: " << KT::kRole << ". Id: " << std::get<I>(tup).key_id
-              << '\n';
+    std::cout << "\t\t+ Key Nature: " << KT::kKeyName << ".  Role: " << KT::kRole
+              << ". Id: " << std::get<I>(tup).key_id << '\n';
     // std::cout << "\t\t\t A:\n" << std::get<I>(tup).A << '\n';
 
     // recursive call
@@ -207,8 +196,7 @@ template <typename FT>
 constexpr void factor_print()
 {
   std::cout << FT::kFactorLabel << '\n';
-  std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n'
-            << "\tKeys (in order):\n";
+  std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n' << "\tKeys (in order):\n";
 
   // traverse statically the tuple of keys data
   traverse_tup<typename FT::KeysSet_t>();
@@ -226,18 +214,11 @@ constexpr void factor_print()
 template <typename FT>
 void factor_print(const FT& fact)
 {
-  Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision,
-                               Eigen::DontAlignCols,
-                               ", ",
-                               ", ",
-                               "",
-                               "",
-                               "  ",
-                               ";");
+  Eigen::IOFormat
+      CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "  ", ";");
 
   std::cout << FT::kFactorLabel << " - id : " << fact.factor_id << '\n';
-  std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n'
-            << "\tKeys (in order):\n";
+  std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n' << "\tKeys (in order):\n";
 
   traverse_tup(fact.keys_set);
 
