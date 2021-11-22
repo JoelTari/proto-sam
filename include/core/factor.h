@@ -16,8 +16,8 @@
 template <typename DerivedKCC, typename KEYMETA, size_t DimMes, const char* ContextRole>
 struct KeyContextualConduct : KEYMETA
 {
-  static constexpr const char* kRole {ContextRole};
-  static constexpr const std::size_t kM {DimMes};  // TODO: really necessary ?
+  static constexpr const char*       kRole {ContextRole};
+  static constexpr const std::size_t kM {DimMes};   // TODO: really necessary ?
   // non static but const
   const std::string key_id;
   // non static, not const
@@ -76,7 +76,7 @@ class Factor
   const measure_cov_t                          rho;         // fill at ctor
   KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
                         // process matrix), fill at ctor, modifiable
-  double error=0;
+  double error = 0;
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
@@ -133,7 +133,7 @@ class Factor
       , z_cov(z_cov)
       , factor_id(factor_id)
       , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
-      , keys_set(sam_tuples::reduce_variadically(
+      , keys_set(sam_tuples::reduce_array_variadically(
             keys_id,
             []<std::size_t... I>(const auto& my_keys_id,
                                  const auto& rho,
@@ -208,8 +208,8 @@ void traverse_tup(const TUP& tup)
 template <typename KC>
 void print_KeyContextConduct(const KC& kcc)
 {
-    std::cout << "\t\t+ Key Nattupelemure: " << KC::kKeyName << ".  Role: " << KC::kRole
-              << ". Id: " << kcc.key_id << '\n';
+  std::cout << "\t\t+ Key Nattupelemure: " << KC::kKeyName << ".  Role: " << KC::kRole
+            << ". Id: " << kcc.key_id << '\n';
 }
 
 
@@ -245,14 +245,12 @@ void factor_print(const FT& fact)
   // traverse_tup(fact.keys_set);
   // for_each_in_tuple(fact.keys_set, [](const auto& kcc){
   //   // using KT = ;
-  //   std::cout << "\t\t+ Key Nature: " << decltype(kcc)::kKeyName << ".  Role: " << decltype(kcc)::kRole
+  //   std::cout << "\t\t+ Key Nature: " << decltype(kcc)::kKeyName << ".  Role: " <<
+  //   decltype(kcc)::kRole
   //             << ". Id: " << kcc.key_id << '\n';
   // });
   // for_each_in_tuple(fact.keys_set, &printtupelem);
-  std::apply([](auto... kcc) 
-  { 
-    ((print_KeyContextConduct(kcc)), ...); 
-  }, fact.keys_set);
+  std::apply([](auto... kcc) { ((print_KeyContextConduct(kcc)), ...); }, fact.keys_set);
 
 
   std::cout << "\t Measure: " << FT::kMeasureName;

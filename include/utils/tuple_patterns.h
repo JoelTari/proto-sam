@@ -10,10 +10,11 @@ namespace sam_tuples
 
 
   //------------------------------------------------------------------//
-  //                           reduce tuple                           //
+  //             Reduce an array by zipping with a tuple              //
+  //        and producing some variadic logic (embedded in f)         //
   //------------------------------------------------------------------//
   template <typename ARRAY, typename FUNC, typename... Args>
-  auto reduce_variadically(const ARRAY& my_array, FUNC f, Args... args)
+  auto reduce_array_variadically(const ARRAY& my_array, FUNC f, Args... args)
   {
     // WOW !!!!
     if constexpr (std::is_invocable_v<FUNC, ARRAY, Args...>)   // HACK:
@@ -22,6 +23,40 @@ namespace sam_tuples
     {
       std::make_index_sequence<std::tuple_size_v<ARRAY>> N {};
       return f(my_array, args..., N);
+    }
+  }
+
+  //------------------------------------------------------------------//
+  //        Reduce a tuple with variadic logic (embedded in f)        //
+  //------------------------------------------------------------------//
+  template <typename FUNC, typename TUP>
+  auto reduce_tuple_variadically(const TUP& my_tuple, FUNC f)
+  {
+    // WOW !!!!
+    if constexpr (std::is_invocable_v<FUNC, TUP>)   // HACK:
+      return f(my_tuple);
+    else
+    {
+      std::make_index_sequence<std::tuple_size_v<TUP>> N {};
+      return f(my_tuple, N);
+    }
+  }
+
+  //------------------------------------------------------------------//
+  //        reduce statically a tuple type with variadic logic        //
+  //            logic (embedded in f). Should be called by            //
+  //                    explicitely instanciating                     //
+  //          the TUP template argument (see lambda example)          //
+  //------------------------------------------------------------------//
+  template <typename TUP, typename FUNC>
+  constexpr auto reduce_static_tuple_variadically(FUNC f)
+  {
+    if constexpr (std::is_invocable_v<FUNC>)   // HACK:
+      return f();
+    else
+    {
+      std::make_index_sequence<std::tuple_size_v<TUP>> N {};
+      return f(N);
     }
   }
   // // typical use : sum, multiply, make_tuple
@@ -56,6 +91,16 @@ namespace sam_tuples
   //   return array[I0] + (array[I] + ...);
   // };
   // reduce_variadically(A, lambda_result);
+  //
+  // static example:
+  // auto cumul2 =reduce_static_tuple_variadically< tt_tuple_t >([]<std::size_t I0, std::size_t...
+  // I>(std::index_sequence<I0, I...>)
+  // {
+  //   return std::tuple_element_t<I0, tt_tuple_t>::value + (std::tuple_element_t<I,
+  //   tt_tuple_t>::value + ...);
+  // }
+  // );
+  // std::cout << "reduce static tuple variadically : " << cumul2 << '\n';
 
   //------------------------------------------------------------------//
   //                           foreach tup                            //

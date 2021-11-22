@@ -1,14 +1,14 @@
 #ifndef SAM_SYSTEM_H_
 #define SAM_SYSTEM_H_
 
-#include "factor_impl/anchor.hpp"
 #include "core/bookkeeper.h"
 #include "core/config.h"
-#include "utils/utils.h"
+#include "factor_impl/anchor.hpp"
 #include "utils/tuple_patterns.h"
+#include "utils/utils.h"
 
-#include <functional>
 #include <eigen3/Eigen/Sparse>
+#include <functional>
 #include <iterator>
 #include <stdexcept>
 #include <thread>
@@ -27,16 +27,13 @@ namespace SAM
     SamSystem() { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
 
     template <typename FT>
-    void
-        register_new_factor(const std::string&                 factor_id,
-                            const typename FT::measure_vect_t& mes_vect,
-                            const typename FT::measure_cov_t&  measure_cov,
-                            const std::array<std::string, FT::kNbKeys>& keys_id)
+    void register_new_factor(const std::string&                          factor_id,
+                             const typename FT::measure_vect_t&          mes_vect,
+                             const typename FT::measure_cov_t&           measure_cov,
+                             const std::array<std::string, FT::kNbKeys>& keys_id)
     {
-      static_assert(
-          std::is_same_v<FT,
-                         FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
-          "This type of factor doesnt exist ");
+      static_assert(std::is_same_v<FT, FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
+                    "This type of factor doesnt exist ");
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
       // check if factor id exists already
@@ -48,49 +45,56 @@ namespace SAM
 
       // recursively find, at compile time, the corresponding container (amongst
       // the ones in the tuple) to emplace back the factor FT
-      place_factor_in_container<0, FT>(factor_id,
-                                       mes_vect,
-                                       measure_cov,
-                                       keys_id);
+      place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
     }
 
-    double compute_factor_system_residual(const Eigen::VectorXd & xmap)
+    double compute_factor_system_residual(const Eigen::VectorXd& xmap)
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-      return unwrap_system_residual(xmap,std::make_index_sequence<S_>{});
+      return unwrap_system_residual(xmap, std::make_index_sequence<S_> {});
+      // return sam_tuples::reduce_tuple_variadically(all_factors_tuple_, FUNC f)
     }
 
-    template <std::size_t...I>
-    double unwrap_system_residual(const Eigen::VectorXd & xmap,std::index_sequence<I...>)
+    template <std::size_t... I>
+    double unwrap_system_residual(const Eigen::VectorXd& xmap, std::index_sequence<I...>)
     {
-      return ( sum_errors<I>(xmap) + ... ); // one term of each type of factor that represent the sum of all its vector
+      return (sum_errors<I>(xmap)
+              + ...);   // one term of each type of factor that represent the sum of all its vector
     }
 
     // sum all factor errors in a vector of factors
-    template<size_t I>
-    double sum_errors(const Eigen::VectorXd & xmap)
+    template <size_t I>
+    double sum_errors(const Eigen::VectorXd& xmap)
     {
       // access the number of keys this type of factor hold
-       constexpr int NbKeys = factor_type_in_tuple_t<I>::kNbKeys;
-       double sum=0;
-       for ( auto & factor : std::get<I>(all_factors_tuple_))
-       {
-         // need to compute tailored state vector
-         // each factor must only receive an ordered subset of xmap
-         // 1. get keys of factor
-         std::apply( [this,&xmap,&sum,&factor](auto... kcc  ){
-           // get the global idx
-           // std::size_t globalIdxOfKey = ;
-           // now we know how extract a subcomponent of xmap
-          // WARNING: may revisit for NL, or move that line in the factors jurisdiction
-           auto innovation = ( ( kcc.compute_part_A()* xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx,0,decltype(kcc)::kM,1) ) + ... ) - factor.compute_rosie();
-          factor.error = std::pow(innovation.norm(),2);
-             // this factor norm2 squared is added to the total error
-          sum+= factor.error;
-
-        } , factor.keys_set);
-       }
-       return sum;
+      constexpr int NbKeys = factor_type_in_tuple_t<I>::kNbKeys;
+      double        sum    = 0;
+      for (auto& factor : std::get<I>(all_factors_tuple_))
+      {
+        // need to compute tailored state vector
+        // each factor must only receive an ordered subset of xmap
+        // 1. get keys of factor
+        std::apply(
+            [this, &xmap, &sum, &factor](auto... kcc)
+            {
+              // get the global idx
+              // std::size_t globalIdxOfKey = ;
+              // now we know how extract a subcomponent of xmap
+              // WARNING: may revisit for NL, or move that line in the factors jurisdiction
+              auto innovation = ((kcc.compute_part_A()
+                                  * xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx,
+                                               0,
+                                               decltype(kcc)::kM,
+                                               1))
+                                 + ...)
+                                - factor.compute_rosie();
+              factor.error = std::pow(innovation.norm(), 2);
+              // this factor norm2 squared is added to the total error
+              sum += factor.error;
+            },
+            factor.keys_set);
+      }
+      return sum;
     }
 
 
@@ -111,7 +115,8 @@ namespace SAM
       // the big steps: fill the system (sparse matrix A and rhs vector b)
       auto [A, b] = fill_system(M, N, nnz);
       // and solve the system
-      auto Xmap = solve_system(A, b);
+      auto   Xmap                    = solve_system(A, b);
+      // given the map, compute NLL error
       double aggregate_factors_error = compute_factor_system_residual(Xmap);
 
 #if ENABLE_DEBUG_TRACE
@@ -122,7 +127,6 @@ namespace SAM
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
       std::cout << "#### Syst: sum of factors error : " << aggregate_factors_error << '\n';
 #endif
-      
 
 
       // CONTINUE: HERE
@@ -141,34 +145,32 @@ namespace SAM
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       Json::Value json_graph;
 
-      // principle: loop the factors, write the 'factors' in the logger 
-      sam_tuples::for_each_in_tuple(this->all_factors_tuple_, 
-        [&json_graph](const auto & vect_of_f, auto I)
-        {
-          std::string factor_type = std::decay_t<decltype(vect_of_f[0])>::kFactorLabel;
-          for (const auto & factor : vect_of_f)
+      // principle: loop the factors, write the 'factors' in the logger
+      sam_tuples::for_each_in_tuple(
+          this->all_factors_tuple_,
+          [&json_graph](const auto& vect_of_f, auto I)
           {
-            Json::Value json_factor;
-            json_factor["factor_id"] = factor.factor_id;
-            json_factor["type"] = factor_type;   // CONTINUE: HERE
-            // write the vars_id
-            Json::Value json_factor_vars_id;
-            sam_tuples::for_each_in_tuple(factor.keys_set,[&json_factor_vars_id](const auto & keycc, auto I)
-              {
-                  json_factor_vars_id.append(keycc.key_id);
-              }
-            );
-            json_factor["vars_id"] = json_factor_vars_id;
-            // json_factor["MAPerror"] = factor_type;
-            // json_factor["measurement"] = factor_type;
-            // append in the json 'graph > factors'
-            json_graph["factors"].append(json_factor);
-          }
-        }
-      );
+            std::string factor_type = std::decay_t<decltype(vect_of_f[0])>::kFactorLabel;
+            for (const auto& factor : vect_of_f)
+            {
+              Json::Value json_factor;
+              json_factor["factor_id"] = factor.factor_id;
+              json_factor["type"]      = factor_type;   // CONTINUE: HERE
+              // write the vars_id
+              Json::Value json_factor_vars_id;
+              sam_tuples::for_each_in_tuple(factor.keys_set,
+                                            [&json_factor_vars_id](const auto& keycc, auto I)
+                                            { json_factor_vars_id.append(keycc.key_id); });
+              json_factor["vars_id"] = json_factor_vars_id;
+              // json_factor["MAPerror"] = factor_type;
+              // json_factor["measurement"] = factor_type;
+              // append in the json 'graph > factors'
+              json_graph["factors"].append(json_factor);
+            }
+          });
       // Access the keys of each of those factor
       // loop the keys in the bookkeeper to write the 'marginals' in the logger
-      // also use the cov matrix to extract the marginal covariance 
+      // also use the cov matrix to extract the marginal covariance
       // CONTINUE: TODO: the keys -> mean covariance var_id category kind
 
       logger.writeGraph(json_graph);
@@ -229,14 +231,12 @@ namespace SAM
     Bookkeeper bookkeeper_;
 
     // there's at least one factor, the rest are expanded
-    std::tuple<std::vector<FACTOR_T>, std::vector<FACTORS_Ts>...>
-        all_factors_tuple_;
+    std::tuple<std::vector<FACTOR_T>, std::vector<FACTORS_Ts>...> all_factors_tuple_;
 
     /**
      * @brief how many different types of factor there are
      */
-    constexpr static const size_t S_
-        = std::tuple_size<decltype(all_factors_tuple_)>::value;
+    constexpr static const size_t S_ = std::tuple_size<decltype(all_factors_tuple_)>::value;
 
 
     /**
@@ -251,18 +251,17 @@ namespace SAM
     template <std::size_t I = 0>
     void loop_over_factors(std::vector<Eigen::Triplet<double>>& triplets,
                            Eigen::VectorXd&                     b,
-                           int line_counter = 0)
+                           int                                  line_counter = 0)
     {
       if constexpr (I == S_)
         return;
       else
       {
 #if ENABLE_DEBUG_TRACE
-        std::cout << "### Looping over factors of type "
-                  << factor_type_in_tuple_t<I>::kFactorLabel << "\n";
+        std::cout << "### Looping over factors of type " << factor_type_in_tuple_t<I>::kFactorLabel
+                  << "\n";
 #endif
-        for (auto& factor :
-             std::get<I>(this->all_factors_tuple_))   // may not be constant
+        for (auto& factor : std::get<I>(this->all_factors_tuple_))   // may not be constant
         {
           // update the factor's A and b matrices (new lin point)
           // if constexpr nonlinear factor  =>  set lin point (given by
@@ -281,12 +280,7 @@ namespace SAM
           // triplet list
           std::apply(
               [this, &triplets, line_counter](auto&&... keycc)
-              {
-                ((this->compute_partialA_and_fill_triplet(keycc,
-                                                          triplets,
-                                                          line_counter)),
-                 ...);
-              },
+              { ((this->compute_partialA_and_fill_triplet(keycc, triplets, line_counter)), ...); },
               factor.keys_set);
 
           // increment the line number by as many lines filled here
@@ -307,10 +301,9 @@ namespace SAM
      * @param line_counter
      */
     template <typename KeyContextConduct>
-    void compute_partialA_and_fill_triplet(
-        KeyContextConduct&                   keycc,
-        std::vector<Eigen::Triplet<double>>& triplets,
-        int                                  line_counter)
+    void compute_partialA_and_fill_triplet(KeyContextConduct&                   keycc,
+                                           std::vector<Eigen::Triplet<double>>& triplets,
+                                           int                                  line_counter)
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       // compute partial A (partial = only a block of the A of the factor)
@@ -347,8 +340,8 @@ namespace SAM
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       ;
 #if ENABLE_DEBUG_TRACE
-      std::cout << "starting filling system of size M= " << dim_mes
-                << " , N= " << dim_keys << " , NNZ= " << nnz << '\n';
+      std::cout << "starting filling system of size M= " << dim_mes << " , N= " << dim_keys
+                << " , NNZ= " << nnz << '\n';
 #endif
       // declare matrix A and b
       Eigen::SparseMatrix<double> A(dim_mes,
@@ -377,11 +370,10 @@ namespace SAM
      * @param args
      */
     template <std::size_t I = 0, typename FT>
-    void place_factor_in_container(
-        const std::string&                          factor_id,
-        const typename FT::measure_vect_t&          mes_vect,
-        const typename FT::measure_cov_t&           measure_cov,
-        const std::array<std::string, FT::kNbKeys>& keys_id)
+    void place_factor_in_container(const std::string&                          factor_id,
+                                   const typename FT::measure_vect_t&          mes_vect,
+                                   const typename FT::measure_cov_t&           measure_cov,
+                                   const std::array<std::string, FT::kNbKeys>& keys_id)
     {
       // beginning of static recursion (expanded at compile time)
       if constexpr (I == S_)
@@ -422,17 +414,14 @@ namespace SAM
           add_keys_to_bookkeeper<FT>(keys_id, factor_id);
           // add the factor_id with its infos in the bookkeeper
           // last argument is a conversion from std::array to std::vector
-          this->bookkeeper_.add_factor(factor_id,
-                                       FT::kN,
-                                       FT::kM,
-                                       {keys_id.begin(), keys_id.end()});
+          this->bookkeeper_.add_factor(factor_id, FT::kN, FT::kM, {keys_id.begin(), keys_id.end()});
 
 
           std::get<I>(this->all_factors_tuple_)
               .emplace_back(factor_id, mes_vect, measure_cov, keys_id);
-          #if ENABLE_DEBUG_TRACE
+#if ENABLE_DEBUG_TRACE
           std::cout << "\t\t:: Factor " << factor_id << " properly integrated in system.\n";
-          #endif
+#endif
 
 // Debug consistency check of everything
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
@@ -445,32 +434,23 @@ namespace SAM
 #endif
         }
         // recursion :  compile time call
-        place_factor_in_container<I + 1, FT>(factor_id,
-                                             mes_vect,
-                                             measure_cov,
-                                             keys_id);
+        place_factor_in_container<I + 1, FT>(factor_id, mes_vect, measure_cov, keys_id);
       }
     }
 
     template <typename FT>
-    void add_keys_to_bookkeeper(
-        const std::array<std::string, FT::kNbKeys>& keys_id,
-        const std::string&                          factor_id)
+    void add_keys_to_bookkeeper(const std::array<std::string, FT::kNbKeys>& keys_id,
+                                const std::string&                          factor_id)
     {
-      add_keys_to_bookkeeper_impl<FT>(factor_id,
-                                      keys_id,
-                                      std::make_index_sequence<FT::kNbKeys> {});
+      add_keys_to_bookkeeper_impl<FT>(factor_id, keys_id, std::make_index_sequence<FT::kNbKeys> {});
     }
 
     template <typename FT, std::size_t... I>
-    void add_keys_to_bookkeeper_impl(
-        const std::string&                          factor_id,
-        const std::array<std::string, FT::kNbKeys>& keys_id,
-        std::index_sequence<I...>)
+    void add_keys_to_bookkeeper_impl(const std::string&                          factor_id,
+                                     const std::array<std::string, FT::kNbKeys>& keys_id,
+                                     std::index_sequence<I...>)
     {
-      (dosomething(factor_id,
-                   keys_id[I],
-                   std::tuple_element_t<I, typename FT::KeysSet_t>::kN),
+      (dosomething(factor_id, keys_id[I], std::tuple_element_t<I, typename FT::KeysSet_t>::kN),
        ...);
     }
     void dosomething(const std::string& factor_id,
@@ -506,15 +486,13 @@ namespace SAM
      *
      * @return
      */
-    Eigen::VectorXd solve_system(const Eigen::SparseMatrix<double>& A,
-                                 const Eigen::VectorXd&             b)
+    Eigen::VectorXd solve_system(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b)
     // TODO: add a solverOpts variable: check rank or not, check success
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       ;
       // solver
-      Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>>
-          solver;
+      Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> solver;
       // MAP
       solver.compute(A);
 
@@ -524,16 +502,12 @@ namespace SAM
       // residual error
 #if ENABLE_DEBUG_TRACE
       auto residual_error = solver.matrixQ().transpose() * b;
-      std::cout << "### Syst solver : residual value: " << residual_error.norm()
+      std::cout << "### Syst solver : residual value: " << residual_error.norm() << "\n";
+      std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
+      std::cout << "### Syst solver :  nnz in square root : " << solver.matrixR().nonZeros()
+                << " (from " << A.nonZeros() << ") in Hessian."
                 << "\n";
-      std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS")
-                << "\n";
-      std::cout << "### Syst solver :  nnz in square root : "
-                << solver.matrixR().nonZeros() << " (from " << A.nonZeros()
-                << ") in Hessian."
-                << "\n";
-      std::cout << "### Syst solver : matrix R : \n"
-                << Eigen::MatrixXd(solver.matrixR()) << '\n';
+      std::cout << "### Syst solver : matrix R : \n" << Eigen::MatrixXd(solver.matrixR()) << '\n';
 #endif
       return map;
     }
@@ -552,8 +526,8 @@ namespace SAM
      * @tparam I
      */
     template <size_t I>
-    using factor_type_in_tuple_t = typename std::
-        tuple_element<I, decltype(all_factors_tuple_)>::type::value_type;
+    using factor_type_in_tuple_t =
+        typename std::tuple_element<I, decltype(all_factors_tuple_)>::type::value_type;
   };
 
 };   // namespace SAM
