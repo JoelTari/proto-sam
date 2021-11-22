@@ -16,6 +16,7 @@
 template <typename DerivedKCC, typename KEYMETA, size_t DimMes, const char* ContextRole>
 struct KeyContextualConduct : KEYMETA
 {
+  using KeyMeta_t = KEYMETA;
   static constexpr const char*       kRole {ContextRole};
   static constexpr const std::size_t kM {DimMes};   // TODO: really necessary ?
   // non static but const
@@ -40,7 +41,12 @@ struct KeyContextualConduct : KEYMETA
     return static_cast<DerivedKCC*>(this)->compute_part_h_of_part_x_impl(x);
   }
 
+  // prevent default constructor, copy constructor, copy assignemnt operator
   KeyContextualConduct() = delete;
+  // KeyContextualConduct(const KeyContextualConduct  &) = delete;
+  // KeyContextualConduct& operator=(const KeyContextualConduct&) = delete;
+ // ~KeyContextualConduct() = delete;
+ // imposed constructor
   KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho)
       : key_id(key_id)
       , rho(rho)

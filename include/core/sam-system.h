@@ -100,7 +100,7 @@ namespace SAM
 
     void smooth_and_map()
     // TODO: add a solverOpts variable: check rank or not, check success, write
-    // bookkeeper etc..
+    // TODO: bookkeeper, compute covariance etc..
     {
       // scoped timer
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
@@ -118,6 +118,9 @@ namespace SAM
       auto   Xmap                    = solve_system(A, b);
       // given the map, compute NLL error
       double aggregate_factors_error = compute_factor_system_residual(Xmap);
+      // optionaly compute the covariance
+      auto SigmaCovariance = Eigen::MatrixXd(A.transpose()*A).inverse();
+      // fill the marginals with Xmap
 
 #if ENABLE_DEBUG_TRACE
       std::cout << "#### Syst: A computed :\n" << Eigen::MatrixXd(A) << "\n\n";

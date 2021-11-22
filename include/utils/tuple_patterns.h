@@ -2,6 +2,7 @@
 #define SAM_TUPLE_PATTERNS_H_
 
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace sam_tuples
@@ -147,6 +148,44 @@ namespace sam_tuples
   // std::apply([](auto... e) { ((customAction(e)), ...);  std::cout<< '\n'; }, my_tuple);
   // std::apply([](auto... e) { auto l = [](auto e){ std::cout << e << '\t';}; ((l(e)), ...);
   // std::cout<< '\n'; }, my_tuple);
+
+//------------------------------------------------------------------//
+//                       extend tuple by type                       //
+//------------------------------------------------------------------//
+template <typename, typename>
+struct tuple_type_cat;
+template <typename... First, typename... Second>
+struct tuple_type_cat<std::tuple<First...>, std::tuple<Second...>> {
+    using type = std::tuple<First..., Second...>;
+};
+
+// template <class, class>
+// struct tuple_type_uniq_cat;
+// template <class... First, class Second>
+// struct tuple_type_uniq_cat<std::tuple<First...>, std::tuple<Second>>
+// {
+//   ( std::is_same_v<First,Second> || ... );
+//   //   using type = std::tuple<First...>;
+//   // else
+//   //   using type = std::tuple<First...,Second>;
+//   // using unitype = std::is_same;
+//   // using newtype = std::integral_constant<0>::type;
+// };
+
+template <std::size_t IS_U_IN_T_V, class U, class...T>
+struct tuple_type_uniq_cat;
+// IS_U_IN_T_V   <-  (std::is_same_v<U,T> || ... ) 
+// if type U already in 
+template <class U, class ...T>
+struct tuple_type_uniq_cat<0, std::tuple<U>,std::tuple<T...>>
+{
+    using type = std::tuple<T...,U>;
+}; 
+template <class U, class ...T>
+struct tuple_type_uniq_cat<1, std::tuple<U>,std::tuple<T...>>
+{
+    using type = std::tuple<T...>;
+}; 
 
 }   // namespace sam_tuples
 #endif

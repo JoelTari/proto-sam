@@ -91,6 +91,7 @@ class Bookkeeper
     }
     else
     {
+      // TODO: return std::nullopt
       throw 1;   // TODO: consistent failure management std::optional ??
     }
   }
