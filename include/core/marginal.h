@@ -95,6 +95,10 @@ class MarginalsContainer
 
 };
 
+// specialization: if tuple of marginals is given, then extract whats inside the tuple and fallback to the struct above
+template<typename MARGINAL_T, typename ... MARGINAL_Ts> 
+class MarginalsContainer<std::tuple<MARGINAL_T,MARGINAL_Ts...> > :  MarginalsContainer<MARGINAL_T,MARGINAL_Ts...> // WOW !!
+{};
   
 }
 

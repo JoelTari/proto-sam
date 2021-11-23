@@ -159,19 +159,6 @@ struct tuple_type_cat<std::tuple<First...>, std::tuple<Second...>> {
     using type = std::tuple<First..., Second...>;
 };
 
-// template <class, class>
-// struct tuple_type_uniq_cat;
-// template <class... First, class Second>
-// struct tuple_type_uniq_cat<std::tuple<First...>, std::tuple<Second>>
-// {
-//   ( std::is_same_v<First,Second> || ... );
-//   //   using type = std::tuple<First...>;
-//   // else
-//   //   using type = std::tuple<First...,Second>;
-//   // using unitype = std::is_same;
-//   // using newtype = std::integral_constant<0>::type;
-// };
-
 template <std::size_t IS_U_IN_T_V, class U, class...T>
 struct tuple_type_uniq_cat;
 // IS_U_IN_T_V   <-  (std::is_same_v<U,T> || ... ) 
@@ -186,6 +173,41 @@ struct tuple_type_uniq_cat<1, std::tuple<U>,std::tuple<T...>>
 {
     using type = std::tuple<T...>;
 }; 
+
+
+//------------------------------------------------------------------//
+//           filter out duplicate template argument types           //
+//         and output type a tuple of this filtered set of          //
+//                              types                               //
+//------------------------------------------------------------------//
+template<typename ...Ts>
+struct tuple_filter_duplicate;
+// unitype specialisation, wow !
+template<typename T>
+struct tuple_filter_duplicate<T>
+{
+  using type = typename std::tuple<T>;
+};
+// recurse
+template<typename TNEW,typename Ts0,typename ...Ts>
+struct tuple_filter_duplicate<TNEW,Ts0,Ts...>
+{
+  // check if the new type TNEW exists in the set
+   static constexpr std::size_t B= std::is_same_v<TNEW,Ts0> || ( std::is_same_v<TNEW,Ts> || ... );
+   // using type = typename std::conditional_t<B, std::tuple<Ts...>, std::tuple<TNEW,Ts...>>;
+   using type = typename std::conditional_t<B,typename tuple_filter_duplicate<Ts0,Ts...>::type, std::tuple<TNEW,Ts0,Ts...>>;
+   // using recurs_type = typename std::tuple<Ts...>;
+};
+
+// // NOTE: the duplicates are eleminated from left to right: the first "int" is gone (play with the initializer list)
+// inline static constexpr tuple_filter_duplicate<int,std::array<int,2>, double, int,const char*>::type AAAA {{1,2},-3.1654,45,"jk"};
+// // NOTE: Obvious advise is then to use a typedef/using after instanciating
+// using my_filtered_tuple_t = tuple_filter_duplicate<int,std::array<int,2>, double, int,const char*>;
+
+// TODO: specialize tuple_filter_duplicate if given argument is tuple ?
+// tuple argument specialisation (-> extract what's inside the tuple, and filter duplicate)
+template<typename ...Ts>
+struct tuple_filter_duplicate< std::tuple<Ts...> >: tuple_filter_duplicate<Ts...>{};
 
 }   // namespace sam_tuples
 #endif
