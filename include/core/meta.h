@@ -2,19 +2,19 @@
 #define SAM_META_H_
 
 #include <array>
+#include <string>
 
 // namespace
 // {
   //------------------------------------------------------------------//
   //                         KeyMeta Template                         //
   //------------------------------------------------------------------//
-  template <const char  NAME[],
+  template <const char*  NAME,
             std::size_t DIM,
             const char... ORDERRED_COMPONENT_NAMEs[]>
   struct KeyMeta
   {
-    static constexpr const char* kKeyName {
-        NAME};   // "position2d" "pose2d" etc...
+    inline static constexpr const char* kKeyName = NAME;
     static constexpr std::size_t kN {DIM};
 
     // maps the idx to the component name. e.g. component[0] returns "x" etc..
@@ -31,12 +31,12 @@
   //------------------------------------------------------------------//
   //                       MeasureMeta Template                       //
   //------------------------------------------------------------------//
-  template <const char  NAME[],
+  template <const char*  NAME,
             std::size_t DIM,
             const char*... ORDERRED_COMPONENT_NAMEs>
   struct MeasureMeta
   {
-    static constexpr const char* kMeasureName {
+    inline static constexpr const char* kMeasureName {
         NAME};   // "linear-translation" "rigid-transformation2"
                  // "rigid-transformation3"
     static constexpr std::size_t kM {DIM};

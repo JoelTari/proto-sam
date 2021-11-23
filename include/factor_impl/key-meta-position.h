@@ -5,12 +5,11 @@
 
 namespace __MetaKeyPosition
 {
-  static constexpr const char position[] = "position";
-  static constexpr const char x[]        = "x";
-  static constexpr const char y[]        = "y";
+  inline static constexpr const char position[] = "position";
+  inline static constexpr const char x[]        = "x";
+  inline static constexpr const char y[]        = "y";
   using MetaKeyPosition_t                = KeyMeta<position, 2, x, y>;
 }   // namespace __MetaKeyPosition
-using MetaKeyPosition_t = __MetaKeyPosition::MetaKeyPosition_t;
-
+using MetaKeyPosition_t                = __MetaKeyPosition::MetaKeyPosition_t;
 #endif
 

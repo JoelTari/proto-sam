@@ -58,7 +58,7 @@ struct KeyContextualConduct : KEYMETA
 //                         Factor Template                          //
 //------------------------------------------------------------------//
 template <typename DerivedFactor,
-          const char FactorLabel[],
+          const char* FactorLabel,
           typename MEASURE_META,
           typename... KeyConducts>
 class Factor
