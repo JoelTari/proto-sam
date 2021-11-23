@@ -152,12 +152,19 @@ namespace sam_tuples
 //------------------------------------------------------------------//
 //                       extend tuple by type                       //
 //------------------------------------------------------------------//
-template <typename, typename>
-struct tuple_type_cat;
-template <typename... First, typename... Second>
-struct tuple_type_cat<std::tuple<First...>, std::tuple<Second...>> {
-    using type = std::tuple<First..., Second...>;
-};
+// template <typename, typename>
+// struct tuple_type_cat;
+// template <typename... First, typename... Second>
+// struct tuple_type_cat<std::tuple<First...>, std::tuple<Second...>> {
+//     using type = std::tuple<First..., Second...>;
+// };
+
+// quite good
+template<typename ... input_t>
+using tuple_cat_t=
+decltype(std::tuple_cat(
+    std::declval<input_t>()...
+));
 
 //------------------------------------------------------------------//
 //          define a tuple by catting a type member of the          //
@@ -165,22 +172,29 @@ struct tuple_type_cat<std::tuple<First...>, std::tuple<Second...>> {
 //------------------------------------------------------------------//
 template< typename ...Ts>
 struct cat_tuple_in_depth;
-
+// FIX: the "REPLACE_ME_T" must be replaced by the static member name
 template<typename T>
 struct cat_tuple_in_depth<T>
 {
-  using type = std::tuple<typename T::underlyingT>; // WARNING: weakness here: use macro ?
+  using type = std::tuple<typename T::REPLACE_ME_T>; // WARNING: weakness here: use macro ?
 };
-
 template<typename T,typename ...Ts>
 struct cat_tuple_in_depth<T,Ts...>
 {
-  using type = tuple_type_cat<std::tuple<typename T::underlyingT>, typename cat_tuple_in_depth<Ts...>::type >;
+  using type = tuple_cat_t<std::tuple<typename T::REPLACE_ME_T>, typename cat_tuple_in_depth<Ts...>::type >;
 };
 // extract tuple template argument specialisation
 template<typename...Ts>
 struct cat_tuple_in_depth< std::tuple<Ts...> >: cat_tuple_in_depth<Ts...>
 {};
+template <typename... Ts, typename... Tss>
+struct cat_tuple_in_depth<std::tuple<Ts...>, std::tuple<Tss...>> : cat_tuple_in_depth<Ts..., Tss...>
+{
+};
+template <typename T>
+struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
+{
+};
 
 
 // template <std::size_t IS_U_IN_T_V, class U, class...T>
@@ -206,10 +220,13 @@ struct cat_tuple_in_depth< std::tuple<Ts...> >: cat_tuple_in_depth<Ts...>
 //------------------------------------------------------------------//
 template<typename ...Ts>
 struct tuple_filter_duplicate;
+template<typename ...Ts> // not sure 1/2
+using tuple_filter_duplicate_t =typename tuple_filter_duplicate<Ts...>::type; // not sure 2/2
 // unitype specialisation, wow !
 template<typename T>
 struct tuple_filter_duplicate<T>
 {
+  static constexpr std::size_t size = 1;
   using type = typename std::tuple<T>;
 };
 // recurse
@@ -221,6 +238,7 @@ struct tuple_filter_duplicate<TNEW,Ts0,Ts...>
    // using type = typename std::conditional_t<B, std::tuple<Ts...>, std::tuple<TNEW,Ts...>>;
    using type = typename std::conditional_t<B,typename tuple_filter_duplicate<Ts0,Ts...>::type, std::tuple<TNEW,Ts0,Ts...>>;
    // using recurs_type = typename std::tuple<Ts...>;
+  static constexpr std::size_t size = std::tuple_size_v<type>;
 };
 
 // // NOTE: the duplicates are eleminated from left to right: the first "int" is gone (play with the initializer list)
