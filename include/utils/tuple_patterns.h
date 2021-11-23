@@ -159,20 +159,44 @@ struct tuple_type_cat<std::tuple<First...>, std::tuple<Second...>> {
     using type = std::tuple<First..., Second...>;
 };
 
-template <std::size_t IS_U_IN_T_V, class U, class...T>
-struct tuple_type_uniq_cat;
-// IS_U_IN_T_V   <-  (std::is_same_v<U,T> || ... ) 
-// if type U already in 
-template <class U, class ...T>
-struct tuple_type_uniq_cat<0, std::tuple<U>,std::tuple<T...>>
+//------------------------------------------------------------------//
+//          define a tuple by catting a type member of the          //
+//                           input types                            //
+//------------------------------------------------------------------//
+template< typename ...Ts>
+struct cat_tuple_in_depth;
+
+template<typename T>
+struct cat_tuple_in_depth<T>
 {
-    using type = std::tuple<T...,U>;
-}; 
-template <class U, class ...T>
-struct tuple_type_uniq_cat<1, std::tuple<U>,std::tuple<T...>>
+  using type = std::tuple<typename T::underlyingT>; // WARNING: weakness here: use macro ?
+};
+
+template<typename T,typename ...Ts>
+struct cat_tuple_in_depth<T,Ts...>
 {
-    using type = std::tuple<T...>;
-}; 
+  using type = tuple_type_cat<std::tuple<typename T::underlyingT>, typename cat_tuple_in_depth<Ts...>::type >;
+};
+// extract tuple template argument specialisation
+template<typename...Ts>
+struct cat_tuple_in_depth< std::tuple<Ts...> >: cat_tuple_in_depth<Ts...>
+{};
+
+
+// template <std::size_t IS_U_IN_T_V, class U, class...T>
+// struct tuple_type_uniq_cat;
+// // IS_U_IN_T_V   <-  (std::is_same_v<U,T> || ... ) 
+// // if type U already in 
+// template <class U, class ...T>
+// struct tuple_type_uniq_cat<0, std::tuple<U>,std::tuple<T...>>
+// {
+//     using type = std::tuple<T...,U>;
+// }; 
+// template <class U, class ...T>
+// struct tuple_type_uniq_cat<1, std::tuple<U>,std::tuple<T...>>
+// {
+//     using type = std::tuple<T...>;
+// }; 
 
 
 //------------------------------------------------------------------//
