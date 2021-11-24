@@ -22,6 +22,7 @@
                                       sizeof...(ORDERRED_COMPONENT_NAMEs)>
         components {ORDERRED_COMPONENT_NAMEs...};
     // NOT SUPPORTING THE component name to idx for now
+    // TODO: static assert that the nb of components is the DIM
 
     // type enunciation to play well with type_trait convention
     using type = KeyMeta<NAME, DIM, ORDERRED_COMPONENT_NAMEs...>;

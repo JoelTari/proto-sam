@@ -202,12 +202,12 @@ namespace SAM
                                 // std::cout << std::tuple_element_t<kccIdx,typename decltype(factor)::KeysSet_t>::kN << '\n';
                                 // this->all_marginals_.insert<typename std::decay_t<decltype(kcc)>::KeyMeta_t>(kcc.key_id,xmap_marg,cov_marg);
 
-                                Marginal<kcc_keymeta_t> marg(xmap_marg,cov_marg);
+                                Marginal<kcc_keymeta_t> marg(xmap_marg,cov_marg); // OPTIMIZE: (carefully, marg is needed in the write)
                                 this->all_marginals_.insertt(kcc.key_id,marg);
                                 
                                 // save the marginal in the json graph
-                                Json::Value json_marginal; // FIX: tmp,remove
-                                // Json::Value json_marginal = write_marginal(key_marginal, key_id);
+                                // Json::Value json_marginal; // FIX: tmp,remove
+                                Json::Value json_marginal = write_marginal(marg, kcc.key_id);
                                 json_graph["marginals"].append(json_marginal);
                                 // finally 
                                 already_processed_keys.insert(kcc.key_id);
@@ -272,11 +272,16 @@ namespace SAM
        json_marginal["var_id"] = var_id; 
        json_marginal["category"] = MG::KeyMeta_t::kKeyName ;
        json_marginal["kind"] = "2D" ;
-       // json_marginal["mean"] =  ; // TODO: loop tuple with the subcomponent names etc...
+          Json::Value json_mean;
+        for (std::size_t i = 0; i< MG::KeyMeta_t::components.size(); i++)
+        {
+          json_mean[MG::KeyMeta_t::components[i]] = marginal.mean(i,0);
+        }
+       json_marginal["mean"] = json_mean ; 
         auto [sig,rot] = marginal.get_visual_2d_covariance();
-       json_marginal["covariance"]["sigma"].append(2); 
-       json_marginal["covariance"]["sigma"].append(1); 
-       json_marginal["covariance"]["rot"] = 3.14159/6; // TODO: remove dummy values once tested
+       json_marginal["covariance"]["sigma"].append(sig[0]); 
+       json_marginal["covariance"]["sigma"].append(sig[1]);
+       json_marginal["covariance"]["rot"] = rot;
 
        return json_marginal;
     }

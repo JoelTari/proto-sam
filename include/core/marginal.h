@@ -26,8 +26,8 @@ namespace
 
     std::tuple<std::array<double, 2>, double> get_visual_2d_covariance() const
     {
-      Eigen::EigenSolver    es(covariance,
-                            true);   // true = compute the eigenvectors too (default is true anyway)
+      // true = compute the eigenvectors too (default is true anyway)
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>>    es(covariance, true);   
       std::array<double, 2> sigma {sqrt(es.eigenvalues()[0]), sqrt(es.eigenvalues()[1])};
       auto                  R = es.eigenvectors();
 
@@ -83,7 +83,7 @@ namespace
     {
       // static assert the size of vect/cov
       constexpr std::size_t I = get_correct_tuple_idx_by_marg<Q_MARG_T>();
-      std::cout << "correct margcont idx : " << I << '\n';
+      // std::cout << "correct margcont idx : " << I << '\n';
       std::get<I>(this->data_map_tuple).insert({key_id,marg});
     }
 
