@@ -15,7 +15,7 @@
   struct KeyMeta
   {
     inline static constexpr const char* kKeyName = NAME;
-    static constexpr std::size_t kN {DIM};
+    static constexpr const std::size_t kN {DIM};
 
     // maps the idx to the component name. e.g. component[0] returns "x" etc..
     static constexpr const std::array<const char*,

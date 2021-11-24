@@ -4,8 +4,8 @@
 #include "core/bookkeeper.h"
 #include "core/marginal.h"
 #include "core/config.h"
-#include "factor_impl/anchor.hpp"
-#include "factor_impl/key-meta-position.h"
+// #include "factor_impl/anchor.hpp"
+// #include "factor_impl/key-meta-position.h"
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"
 
@@ -34,8 +34,8 @@ namespace SAM
     using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
     // declare marginal container type of those keymetas
     using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
-    static_assert( std::tuple_size_v<___uniq_keymeta_set_t> > 0 );
-    static_assert( std::is_same_v< ___uniq_keymeta_set_t, std::tuple<MetaKeyPosition_t> > ); // FIX: tmp, remove !
+    // static_assert( std::tuple_size_v<___uniq_keymeta_set_t> > 0 );
+    // static_assert( std::is_same_v< ___uniq_keymeta_set_t, std::tuple<MetaKeyPosition_t> > ); // FIX: tmp, remove !
 
     SamSystem() { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
 
@@ -191,15 +191,23 @@ namespace SAM
                             auto search = already_processed_keys.find( kcc.key_id );
                             if (search == already_processed_keys.end())
                             {
-                                // fill the marginal
-                                // using keymeta_t = typename std::decay_t<decltype(kcc)>::KeyMeta_t;
-                                // this->all_marginals_.findt<___uniq_keymeta_set_t>(kcc.key_id);
-                                // this->all_marginals_.finasdflkasdjf<___uniq_keymeta_set_t>(kcc.key_id);
-                                // auto key_marginal = this->all_marginals_.findt<typename keymeta_t>(kcc.key_id);
+                                // // fill the marginal
+                                using kcc_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(kcc)>>::KeyMeta_t;
+                                // std::cout << kcc_keymeta_t::kN << '\n';
+                                constexpr std::size_t kN = kcc_keymeta_t::kN;
+                                Eigen::Vector<double,kN> xmap_marg = Xmap.block<kN,1>(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx, 0);
+                                Eigen::Matrix<double,kN,kN> cov_marg = SigmaCov.block<kN,kN>(
+                                            this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx
+                                          , this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx);
+                                // std::cout << std::tuple_element_t<kccIdx,typename decltype(factor)::KeysSet_t>::kN << '\n';
+                                // this->all_marginals_.insert<typename std::decay_t<decltype(kcc)>::KeyMeta_t>(kcc.key_id,xmap_marg,cov_marg);
+
+                                Marginal<kcc_keymeta_t> marg(xmap_marg,cov_marg);
+                                this->all_marginals_.insertt(kcc.key_id,marg);
                                 
                                 // save the marginal in the json graph
+                                Json::Value json_marginal; // FIX: tmp,remove
                                 // Json::Value json_marginal = write_marginal(key_marginal, key_id);
-                                Json::Value json_marginal;
                                 json_graph["marginals"].append(json_marginal);
                                 // finally 
                                 already_processed_keys.insert(kcc.key_id);
@@ -221,7 +229,7 @@ namespace SAM
                     auto innovation = ((kcc.compute_part_A()
                                         * Xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx, // TODO: replace by a call to marginal container
                                                      0,
-                                                     decltype(kcc)::kM,
+                                                     decltype(kcc)::kN,
                                                      1))
                                        + ...)
                                       - factor.compute_rosie();

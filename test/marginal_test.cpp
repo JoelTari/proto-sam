@@ -1,16 +1,20 @@
 #include "factor_impl/key-meta-position.h"
+#include "factor_impl/anchor.hpp"
 #include "core/marginal.h"
 #include <iostream>
 
 int main (int argc, char *argv[])
 {
   MarginalsContainer<std::tuple<MetaKeyPosition_t>> container;  
-  //  static_assert( std::is_same_v
-  // <
-  // std::unordered_map<std::string,MetaKeyPosition_t>
-  // ,typename std::tuple_element_t<0, typename MarginalsContainer<std::tuple<MetaKeyPosition_t>>::marginals_containers_t>>
-  // );
+    
+    // UniqueKeyConduct::measure_cov_t rho({{1,0},{0,1}});
+    auto adfs = UniqueKeyConduct({ "test"}, Eigen::Matrix2d{{1,0},{0,1}} ) ;
+    const UniqueKeyConduct & adfss = UniqueKeyConduct({ "test"}, Eigen::Matrix2d{{1,0},{0,1}} ) ;
+    auto & dd = adfs;
 
+
+    std::cout << std::decay_t<decltype(adfss)>::kN << '\n';
+    std::cout << std::decay_t<decltype(dd)>::kN << '\n';
 
     // Marginal<MetaKeyPosition> ;
     Eigen::Vector2d xmap_marg {1,2};
