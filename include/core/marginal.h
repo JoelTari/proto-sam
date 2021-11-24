@@ -6,14 +6,17 @@
 #include "utils/tuple_patterns.h"
 
 #include <cmath>
+#include <tuple>
 #include <string>
 #include <optional>
 #include <type_traits>
+#include <unordered_map>
+#include <iostream>  // FIX: tmp, remove
 
 namespace 
 {
 template <typename KEYMETA>
-class Marginal
+class Marginal : KEYMETA
 {
   public:
   using KeyMeta_t = KEYMETA;
@@ -31,41 +34,62 @@ class Marginal
     double rot = std::atan2(R(1, 0), R(0, 0));
 
     return {sigma, rot};
-  };
+  }
   // using type = typename Marginal<KEYMETA>;
+    // TODO: ctor with mean,cov given
+    // TODO: a flag ?
+  Marginal(const  Eigen::Vector<double, KEYMETA::kN>& xmap_marg, const  Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>& cov_marg): mean(xmap_marg),covariance(cov_marg){};
 };
 
 
 
 // template<typename MARGINAL_T, typename ... MARGINAL_Ts> 
+// TODO: compile check against duplicate keymeta
 template<typename KEYMETA_T, typename ... KEYMETA_Ts>
 class MarginalsContainer
 {
-  using marginals_containers_t = std::tuple<Marginal<KEYMETA_T>, Marginal<KEYMETA_Ts>...>;
   public:
+  using type = MarginalsContainer<KEYMETA_T,KEYMETA_Ts...>;
+
+  using marginals_containers_t = std::tuple< std::unordered_map<std::string,Marginal<KEYMETA_T>>
+                                           , std::unordered_map<std::string,Marginal<KEYMETA_Ts>>...
+                                           >;
+  static constexpr const std::size_t kNbMarginals  {std::tuple_size_v<marginals_containers_t>}; // sizeof...KEYMETA_Ts + 1
 
     template<typename Q_KEYMETA_T>
-    std::optional<Marginal<Q_KEYMETA_T>> findt(const std::string& key_id)   // OPTIMIZE: std::optional<Q_KEYMETA_T&>
+    std::optional<Marginal<Q_KEYMETA_T>> find(const std::string& key_id)   // OPTIMIZE: std::optional<Q_KEYMETA_T&>
     {
       // static assert
+      static_assert(std::is_same_v<Q_KEYMETA_T,KEYMETA_T> || ( std::is_same_v<Q_KEYMETA_T,KEYMETA_Ts> || ...));
       
       // get the correct tuple element
-      constexpr size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
+      constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
 
       // OPTIMIZE: pass a reference
-      if (auto it {std::get<I>(data_map_tuple).find(key_id)};
-        it != std::end(this->key_to_infos))
+      if (auto it {std::get<I>(this->data_map_tuple).find(key_id)};
+        it != std::end(std::get<I>(this->data_map_tuple)))
       {
           return it->second;
       }
       else
         return std::nullopt;
+
     }
+    
+    template<typename Q_KEYMETA_T>
+    void insert(const std::string& key_id, const Eigen::Vector<double,Q_KEYMETA_T::kN> & xmap_marg, const Eigen::Matrix<double,Q_KEYMETA_T::kN,Q_KEYMETA_T::kN> & sigmacov )  // TODO:  use perfect forwarding
+    {
+      Marginal<Q_KEYMETA_T> my_marg(xmap_marg,sigmacov);
+      // static assert the size of vect/cov
+      constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
+      std::cout << "correct margcont idx : "<< I << '\n';
+      std::get<I>(this->data_map_tuple).insert({key_id,my_marg});
+    }
+    
 
-
-  private:
     marginals_containers_t data_map_tuple;
-    static constexpr const std::size_t kNbMarginals  {std::tuple_size_v<marginals_containers_t>};
+
+  protected:
 
     /**
     * @brief get an idx in a tuple statically (recursive until the meta matches)
@@ -80,7 +104,7 @@ class MarginalsContainer
     {
       static_assert(I < kNbMarginals);
       constexpr std::size_t Res = 0;
-      if constexpr ( std::is_same_v<typename std::tuple_element_t<I,marginals_containers_t>::KeyMeta_t,Q_KEYMETA_T> ) // maybe thats the keymeta that need compare
+      if constexpr ( std::is_same_v<typename std::tuple_element_t<I,marginals_containers_t>::mapped_type::KeyMeta_t,Q_KEYMETA_T> ) // maybe thats the keymeta that need compare
       {
           return I;
       }
@@ -93,10 +117,16 @@ class MarginalsContainer
 };
 
 // specialization: if tuple of marginals is given, then extract whats inside the tuple and fallback to the struct above
-template<typename MARGINAL_T, typename ... MARGINAL_Ts> 
-class MarginalsContainer<std::tuple<MARGINAL_T,MARGINAL_Ts...> > :  MarginalsContainer<MARGINAL_T,MARGINAL_Ts...> // WOW !!
+template<typename KEYMETA_T, typename ... KEYMETA_Ts> 
+class MarginalsContainer<std::tuple<KEYMETA_T,KEYMETA_Ts...> > : public  MarginalsContainer<KEYMETA_T,KEYMETA_Ts...> // WOW !!
 {};
-  
+template<typename KEYMETA_T> 
+class MarginalsContainer<std::tuple<KEYMETA_T> > : public MarginalsContainer<KEYMETA_T> // WOW !!
+{};
+
+
+// TODO: stop gap ??
+
 }
 
 #endif

@@ -5,6 +5,7 @@
 #include "core/marginal.h"
 #include "core/config.h"
 #include "factor_impl/anchor.hpp"
+#include "factor_impl/key-meta-position.h"
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"
 
@@ -27,12 +28,14 @@ namespace SAM
   {
     public:
     // marginals: infer the different types of marginals by looking into the keymeta of the factors (and filtering duplicates)
-    using aggrkeymeta_t
+    using ___aggrkeymeta_t
         = typename sam_tuples::cat_tuple_in_depth<typename FACTOR_T::KeysSet_t, typename FACTORS_Ts::KeysSet_t ... >::type;
     // remove duplicates
-    using uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::type ;
+    using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
     // declare marginal container type of those keymetas
-    using marginals_t = MarginalsContainer<uniq_keymeta_set_t> ;
+    using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
+    static_assert( std::tuple_size_v<___uniq_keymeta_set_t> > 0 );
+    static_assert( std::is_same_v< ___uniq_keymeta_set_t, std::tuple<MetaKeyPosition_t> > ); // FIX: tmp, remove !
 
     SamSystem() { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
 
@@ -58,54 +61,54 @@ namespace SAM
       place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
     }
 
-    double compute_factor_system_residual(const Eigen::VectorXd& xmap)
-    {
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-      return unwrap_system_residual(xmap, std::make_index_sequence<S_> {});
-      // return sam_tuples::reduce_tuple_variadically(all_factors_tuple_, FUNC f)
-    }
-
-    template <std::size_t... I>
-    double unwrap_system_residual(const Eigen::VectorXd& xmap, std::index_sequence<I...>)
-    {
-      return (sum_errors<I>(xmap)
-              + ...);   // one term of each type of factor that represent the sum of all its vector
-    }
-
-    // sum all factor errors in a vector of factors
-    template <size_t I>
-    double sum_errors(const Eigen::VectorXd& xmap)
-    {
-      // access the number of keys this type of factor hold
-      constexpr int NbKeys = factor_type_in_tuple_t<I>::kNbKeys;
-      double        sum    = 0;
-      for (auto& factor : std::get<I>(all_factors_tuple_))
-      {
-        // need to compute tailored state vector
-        // each factor must only receive an ordered subset of xmap
-        // 1. get keys of factor
-        std::apply(
-            [this, &xmap, &sum, &factor](auto... kcc)
-            {
-              // get the global idx
-              // std::size_t globalIdxOfKey = ;
-              // now we know how extract a subcomponent of xmap
-              // WARNING: may revisit for NL, or move that line in the factors jurisdiction
-              auto innovation = ((kcc.compute_part_A()
-                                  * xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx,
-                                               0,
-                                               decltype(kcc)::kM,
-                                               1))
-                                 + ...)
-                                - factor.compute_rosie();
-              factor.error = std::pow(innovation.norm(), 2);
-              // this factor norm2 squared is added to the total error
-              sum += factor.error;
-            },
-            factor.keys_set);
-      }
-      return sum;
-    }
+    // double compute_factor_system_residual(const Eigen::VectorXd& xmap)
+    // {
+    //   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+    //   return unwrap_system_residual(xmap, std::make_index_sequence<S_> {});
+    //   // return sam_tuples::reduce_tuple_variadically(all_factors_tuple_, FUNC f)
+    // }
+    //
+    // template <std::size_t... I>
+    // double unwrap_system_residual(const Eigen::VectorXd& xmap, std::index_sequence<I...>)
+    // {
+    //   return (sum_errors<I>(xmap)
+    //           + ...);   // one term of each type of factor that represent the sum of all its vector
+    // }
+    //
+    // // sum all factor errors in a vector of factors
+    // template <size_t I>
+    // double sum_errors(const Eigen::VectorXd& xmap)
+    // {
+    //   // access the number of keys this type of factor hold
+    //   constexpr int NbKeys = factor_type_in_tuple_t<I>::kNbKeys;
+    //   double        sum    = 0;
+    //   for (auto& factor : std::get<I>(all_factors_tuple_))
+    //   {
+    //     // need to compute tailored state vector
+    //     // each factor must only receive an ordered subset of xmap
+    //     // 1. get keys of factor
+    //     std::apply(
+    //         [this, &xmap, &sum, &factor](auto... kcc)
+    //         {
+    //           // get the global idx
+    //           // std::size_t globalIdxOfKey = ;
+    //           // now we know how extract a subcomponent of xmap
+    //           // WARNING: may revisit for NL, or move that line in the factors jurisdiction
+    //           auto innovation = ((kcc.compute_part_A()
+    //                               * xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx,
+    //                                            0,
+    //                                            decltype(kcc)::kM,
+    //                                            1))
+    //                              + ...)
+    //                             - factor.compute_rosie();
+    //           factor.error = std::pow(innovation.norm(), 2);
+    //           // this factor norm2 squared is added to the total error
+    //           sum += factor.error;
+    //         },
+    //         factor.keys_set);
+    //   }
+    //   return sum;
+    // }
 
 
     void smooth_and_map()
@@ -127,7 +130,7 @@ namespace SAM
       // and solve the system
       auto   Xmap                    = solve_system(A, b);
       // given the map, compute NLL error
-      double aggregate_factors_error = compute_factor_system_residual(Xmap); // TODO: move
+      // double aggregate_factors_error = compute_factor_system_residual(Xmap);
       // optionaly compute the covariance
       auto SigmaCovariance = Eigen::MatrixXd(A.transpose()*A).inverse();
       // fill the marginals with Xmap
@@ -138,7 +141,7 @@ namespace SAM
       // "\n\n";
       std::cout << "#### Syst: b computed :\n" << b << "\n";
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
-      std::cout << "#### Syst: sum of factors error : " << aggregate_factors_error << '\n';
+      // std::cout << "#### Syst: sum of factors error : " << aggregate_factors_error << '\n'; // TODO: move
 #endif
       
       // Another factor loop that does several things while traversing.
@@ -161,18 +164,18 @@ namespace SAM
       // declare a json structure to hold the factor graph (will be attatched to the logger)
       Json::Value json_graph;
       // TODO: write the json graph header here
+      // first define some ways to registered that a marginal has been treated,
+      // since we loop the factors, we encounter the same key several times.
+      std::unordered_set<std::string> already_processed_keys = {};  // TODO: check the size of the set = nb of var; (after the loop)
 
       // principle: loop the factors, write the 'factors' in the logger
       sam_tuples::for_each_in_tuple(
           this->all_factors_tuple_,
-          [&Xmap,&json_graph, this, &SigmaCov](auto& vect_of_f, auto I)
+          [&Xmap,&json_graph, this, &SigmaCov,&already_processed_keys](auto& vect_of_f, auto I)
           {
             // there are several loops in the factor kcc, I consider thats ok, micro-optimizing it would make readability more difficult than it already is 
             for (auto& factor : vect_of_f)
             {
-              // first define some ways to registered that a marginal has been treated,
-              // since we loop the factors, we encounter the same key several times.
-              std::unordered_set<std::string> already_processed_keys = {}; 
               // std::apply -> for each kcc of that factor, if unprocessed, update the marginal with xmap & cov 
               //               add the key_id in the process_keys set
               //------------------------------------------------------------------//
@@ -182,7 +185,7 @@ namespace SAM
               //           subcomponents of xmap/cov to our structure)            //
               //------------------------------------------------------------------//
               sam_tuples::for_each_in_const_tuple(factor.keys_set,
-                                        [this,&Xmap,&SigmaCov, &already_processed_keys](const auto& kcc, auto kccIdx)
+                                        [this,&Xmap,&SigmaCov, &already_processed_keys,&json_graph](const auto& kcc, auto kccIdx)
                         {
                             // check if key_id already processed
                             auto search = already_processed_keys.find( kcc.key_id );
@@ -190,18 +193,18 @@ namespace SAM
                             {
                                 // fill the marginal
                                 // using keymeta_t = typename std::decay_t<decltype(kcc)>::KeyMeta_t;
-                                // this->all_marginals_.findt(kcc.key_id);
+                                // this->all_marginals_.findt<___uniq_keymeta_set_t>(kcc.key_id);
+                                // this->all_marginals_.finasdflkasdjf<___uniq_keymeta_set_t>(kcc.key_id);
                                 // auto key_marginal = this->all_marginals_.findt<typename keymeta_t>(kcc.key_id);
+                                
+                                // save the marginal in the json graph
+                                // Json::Value json_marginal = write_marginal(key_marginal, key_id);
+                                Json::Value json_marginal;
+                                json_graph["marginals"].append(json_marginal);
                                 // finally 
                                 already_processed_keys.insert(kcc.key_id);
                             }
                         });
-              //------------------------------------------------------------------//
-              //                  Json graph: write the marginal                  //
-              //------------------------------------------------------------------//
-              Json::Value json_marginal;
-              // json_graph["marginals"].append(json_marginal);
-
               //------------------------------------------------------------------//
               //             compute factor error, accumulate errors              //
               //------------------------------------------------------------------//
@@ -241,6 +244,33 @@ namespace SAM
 
       logger.writeGraph(json_graph);
       // TODO: cout in std output (if enable debug trace flag is on)
+    }
+
+    // TODO: move this method as a friend of the factor base
+    template <typename MG>
+      Json::Value write_marginal(const MG& marginal,const std::string & var_id)
+    {
+      Json::Value json_marginal;
+    // {
+    //   "var_id": "x0",
+    //   "category": "position", // optional
+    //   "kind": "2D"
+    //   "mean": {
+    //     "x": 0,
+    //     "y": 0
+    //   },
+    //   "covariance": { "sigma": [1e-8, 1e-8], "rot": 0.7853981633974483 }
+    // },
+       json_marginal["var_id"] = var_id; 
+       json_marginal["category"] = MG::KeyMeta_t::kKeyName ;
+       json_marginal["kind"] = "2D" ;
+       // json_marginal["mean"] =  ; // TODO: loop tuple with the subcomponent names etc...
+        auto [sig,rot] = marginal.get_visual_2d_covariance();
+       json_marginal["covariance"]["sigma"].append(2); 
+       json_marginal["covariance"]["sigma"].append(1); 
+       json_marginal["covariance"]["rot"] = 3.14159/6; // TODO: remove dummy values once tested
+
+       return json_marginal;
     }
 
     // TODO: move this method as a friend of the factor base

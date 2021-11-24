@@ -9,10 +9,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 set(CMAKE_CXX_STANDARD 17) # this will be reflected in compile commands
 
 add_executable(factor_test test/factor_test.cpp)
+add_executable(marginal_test test/marginal_test.cpp)
 add_executable(sam-system-factor_test test/sam-system-factor_test.cpp)
 add_executable(toy_linear_test test/toy_linear_test.cpp)
 
 target_include_directories(factor_test PUBLIC include)
+target_include_directories(marginal_test PUBLIC include)
 target_include_directories(sam-system-factor_test PUBLIC include)
 target_include_directories(toy_linear_test PUBLIC include)
 
@@ -23,6 +25,7 @@ target_link_libraries(factor_test jsoncpp_lib)
 
 # BUG: cxx_std_17 is not reflected afterwards in compile commands
 target_compile_features(factor_test PUBLIC cxx_std_17)
+target_compile_features(marginal_test PUBLIC cxx_std_17)
 target_compile_features(sam-system-factor_test PUBLIC cxx_std_17)
 target_compile_features(toy_linear_test PUBLIC cxx_std_17)
 
