@@ -12,14 +12,17 @@ add_executable(factor_test test/factor_test.cpp)
 add_executable(marginal_test test/marginal_test.cpp)
 add_executable(sam-system-factor_test test/sam-system-factor_test.cpp)
 add_executable(toy_linear_test test/toy_linear_test.cpp)
+add_executable(mainstdin main/mainstdin.cpp)
 
 target_include_directories(factor_test PUBLIC include)
 target_include_directories(marginal_test PUBLIC include)
 target_include_directories(sam-system-factor_test PUBLIC include)
 target_include_directories(toy_linear_test PUBLIC include)
+target_include_directories(mainstdin PUBLIC include)
 
 # TODO: try jsoncpp_static and compare size of binaries
 target_link_libraries(toy_linear_test jsoncpp_lib)
+target_link_libraries(mainstdin jsoncpp_lib)
 target_link_libraries(sam-system-factor_test jsoncpp_lib)
 target_link_libraries(factor_test jsoncpp_lib)
 
@@ -28,6 +31,7 @@ target_compile_features(factor_test PUBLIC cxx_std_17)
 target_compile_features(marginal_test PUBLIC cxx_std_17)
 target_compile_features(sam-system-factor_test PUBLIC cxx_std_17)
 target_compile_features(toy_linear_test PUBLIC cxx_std_17)
+target_compile_features(mainstdin PUBLIC cxx_std_17)
 
 # NOTE: to manage some definitions
 # target_compile_definitions(toy_linear_test PUBLIC ENABLE_DEBUG_TRACE=1 ENABLE_TIMER=1)
