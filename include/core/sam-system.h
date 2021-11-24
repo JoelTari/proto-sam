@@ -8,6 +8,7 @@
 #include "utils/utils.h"
 
 #include <eigen3/Eigen/Sparse>
+#include <unordered_set>
 #include <functional>
 #include <iterator>
 #include <stdexcept>
@@ -117,7 +118,7 @@ namespace SAM
       // and solve the system
       auto   Xmap                    = solve_system(A, b);
       // given the map, compute NLL error
-      double aggregate_factors_error = compute_factor_system_residual(Xmap);
+      double aggregate_factors_error = compute_factor_system_residual(Xmap); // TODO: move
       // optionaly compute the covariance
       auto SigmaCovariance = Eigen::MatrixXd(A.transpose()*A).inverse();
       // fill the marginals with Xmap
@@ -130,44 +131,75 @@ namespace SAM
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
       std::cout << "#### Syst: sum of factors error : " << aggregate_factors_error << '\n';
 #endif
-
+      
+      // Another factor loop that does several things while traversing.
+      // dispatch xmap subvectors to marginals (with covariance if option is set), 
+      // compute the error for each factor, write the factor
+      // in the json graph. If option is set, compute next linearization points ().
+      // update bookkeeper ?
+      // OPTIMIZE: Lots of operation could be async
+      this->post_process_loop(Xmap,SigmaCovariance);
 
       // CONTINUE: HERE
       // keep the records: update the bookkeeper
-      write_factor_graph(sam_utils::JSONLogger::Instance());
+      // write_factor_graph(sam_utils::JSONLogger::Instance());
     }
 
-    /**
-     * @brief With current graph, containing  the last recorded results, from
-     * the bookkeeper WARNING: perhaps use it only in the bookkeeper, or another
-     * new class (inverse dependency) WARNING: single responsibility principle
-     * is broken
-     */
-    void write_factor_graph(sam_utils::JSONLogger& logger)
+    // TODO: overload when no cov matrix is given
+    void post_process_loop(const Eigen::VectorXd & Xmap, const Eigen::MatrixXd & SigmaCov, sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance())
     {
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+      PROFILE_FUNCTION( sam_utils::JSONLogger::Instance() );
+      // declare a json structure to hold the factor graph (will be attatched to the logger)
       Json::Value json_graph;
+      // TODO: write the json graph header here
 
       // principle: loop the factors, write the 'factors' in the logger
       sam_tuples::for_each_in_tuple(
           this->all_factors_tuple_,
-          [&json_graph](const auto& vect_of_f, auto I)
+          [&Xmap,&json_graph, this](auto& vect_of_f, auto I)
           {
-            std::string factor_type = std::decay_t<decltype(vect_of_f[0])>::kFactorLabel;
-            for (const auto& factor : vect_of_f)
+            // there are several loops in the factor kcc, I consider thats ok, micro-optimizing it would make readability more difficult than it already is 
+            for (auto& factor : vect_of_f)
             {
-              Json::Value json_factor;
-              json_factor["factor_id"] = factor.factor_id;
-              json_factor["type"]      = factor_type;   // CONTINUE: HERE
-              // write the vars_id
-              Json::Value json_factor_vars_id;
-              sam_tuples::for_each_in_tuple(factor.keys_set,
-                                            [&json_factor_vars_id](const auto& keycc, auto I)
-                                            { json_factor_vars_id.append(keycc.key_id); });
-              json_factor["vars_id"] = json_factor_vars_id;
-              // json_factor["MAPerror"] = factor_type;
-              // json_factor["measurement"] = factor_type;
-              // append in the json 'graph > factors'
+              // first define some ways to registered that a marginal has been treated,
+              // since we loop the factors, we encounter the same key several times.
+              std::unordered_set<std::string> process_keys; 
+              // std::apply -> for each kcc of that factor, if unprocessed, update the marginal with xmap & cov 
+              //               add the key_id in the process_keys set
+              //------------------------------------------------------------------//
+              //                  Json graph: write the marginal                  //
+              //------------------------------------------------------------------//
+              Json::Value json_marginal;
+              // json_graph["marginals"].append(json_marginal);
+
+              //------------------------------------------------------------------//
+              //             compute factor error, accumulate errors              //
+              //------------------------------------------------------------------//
+              double accumulated_factor_error = 0;
+              // loop the kcc of a factor
+              std::apply(
+                  [this, &Xmap, &accumulated_factor_error, &factor](auto... kcc) // TODO: remove Xmap process, replace by marginalcontainer element (by copy probably)
+                  {
+                    // get the global idx
+                    // std::size_t globalIdxOfKey = ;
+                    // now we know how extract a subcomponent of xmap
+                    // WARNING: may revisit for NL, or move that line in the factors jurisdiction
+                    auto innovation = ((kcc.compute_part_A()
+                                        * Xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx, // TODO: replace by a call to marginal container
+                                                     0,
+                                                     decltype(kcc)::kM,
+                                                     1))
+                                       + ...)
+                                      - factor.compute_rosie();
+                    factor.error = std::pow(innovation.norm(), 2);
+                    // this factor norm2 squared is added to the total error
+                    accumulated_factor_error += factor.error;
+                  },
+            factor.keys_set);
+              //------------------------------------------------------------------//
+              //                  Json graph: write  the factor                   //
+              //------------------------------------------------------------------//
+              Json::Value json_factor = write_factor(factor);
               json_graph["factors"].append(json_factor);
             }
           });
@@ -179,6 +211,69 @@ namespace SAM
       logger.writeGraph(json_graph);
       // TODO: cout in std output (if enable debug trace flag is on)
     }
+
+    // TODO: move this method as a friend of the factor base
+    template <typename FT>
+    Json::Value write_factor(const FT & factor) const
+    {
+              Json::Value json_factor;
+              json_factor["factor_id"] = factor.factor_id;
+              // json_factor["type"]      = std::decay_t<decltype(vect_of_f[0])>::kFactorLabel;
+              json_factor["type"]      = FT::kFactorLabel;   // NOTE: is good ?
+              // write the vars_id
+              Json::Value json_factor_vars_id;
+              sam_tuples::for_each_in_const_tuple(factor.keys_set,
+                                            [&json_factor_vars_id](const auto& keycc, auto I)
+                                            { json_factor_vars_id.append(keycc.key_id); });
+              json_factor["vars_id"] = json_factor_vars_id;
+              // json_factor["MAPerror"] = factor_type;
+              // json_factor["measurement"] = factor_type;
+              // append in the json 'graph > factors'
+              return json_factor;
+    }
+
+    /**
+     * @brief With current graph, containing  the last recorded results, from
+     * the bookkeeper WARNING: perhaps use it only in the bookkeeper, or another
+     * new class (inverse dependency) WARNING: single responsibility principle
+     * is broken
+     */
+    // void write_factor_graph(sam_utils::JSONLogger& logger)
+    // {
+    //   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+    //   Json::Value json_graph;
+    //
+    //   // principle: loop the factors, write the 'factors' in the logger
+    //   sam_tuples::for_each_in_tuple(
+    //       this->all_factors_tuple_,
+    //       [&json_graph](const auto& vect_of_f, auto I)
+    //       {
+    //         std::string factor_type = std::decay_t<decltype(vect_of_f[0])>::kFactorLabel;
+    //         for (const auto& factor : vect_of_f)
+    //         {
+    //           Json::Value json_factor;
+    //           json_factor["factor_id"] = factor.factor_id;
+    //           json_factor["type"]      = factor_type;   // CONTINUE: HERE
+    //           // write the vars_id
+    //           Json::Value json_factor_vars_id;
+    //           sam_tuples::for_each_in_tuple(factor.keys_set,
+    //                                         [&json_factor_vars_id](const auto& keycc, auto I)
+    //                                         { json_factor_vars_id.append(keycc.key_id); });
+    //           json_factor["vars_id"] = json_factor_vars_id;
+    //           // json_factor["MAPerror"] = factor_type;
+    //           // json_factor["measurement"] = factor_type;
+    //           // append in the json 'graph > factors'
+    //           json_graph["factors"].append(json_factor);
+    //         }
+    //       });
+    //   // Access the keys of each of those factor
+    //   // loop the keys in the bookkeeper to write the 'marginals' in the logger
+    //   // also use the cov matrix to extract the marginal covariance
+    //   // CONTINUE: TODO: the keys -> mean covariance var_id category kind
+    //
+    //   logger.writeGraph(json_graph);
+    //   // TODO: cout in std output (if enable debug trace flag is on)
+    // }
 
 #if ENABLE_DEBUG_TRACE
     /**

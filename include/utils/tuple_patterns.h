@@ -117,11 +117,16 @@ namespace sam_tuples
   }   // namespace detail
 
   template <typename... Ts, typename F>
-  void for_each_in_tuple(std::tuple<Ts...> const& t, F f)
+  void for_each_in_tuple(std::tuple<Ts...> & t, F f)
   {
     detail::for_each(t, f, std::make_index_sequence<sizeof...(Ts)> {});
   }
 
+  template <typename... Ts, typename F>
+  void for_each_in_const_tuple(std::tuple<Ts...> const& t, F f)
+  {
+    detail::for_each(t, f, std::make_index_sequence<sizeof...(Ts)> {});
+  }
   //------------------------------------------------------------------//
   //         foreach tup : varidically style, and array input         //
   //------------------------------------------------------------------//
