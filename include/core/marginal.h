@@ -32,26 +32,25 @@ class Marginal
 
     return {sigma, rot};
   };
-
-  // void mark(){marked=true;}
-  // void unmark(){marked=false;}
+  // using type = typename Marginal<KEYMETA>;
 };
 
 
 
-template<typename MARGINAL_T, typename ... MARGINAL_Ts> 
+// template<typename MARGINAL_T, typename ... MARGINAL_Ts> 
+template<typename KEYMETA_T, typename ... KEYMETA_Ts>
 class MarginalsContainer
 {
-  using marginals_containers_t = std::tuple<MARGINAL_T, MARGINAL_Ts...>;
+  using marginals_containers_t = std::tuple<Marginal<KEYMETA_T>, Marginal<KEYMETA_Ts>...>;
   public:
 
-    template<typename Q_MARGINAL_T>
-    std::optional<Q_MARGINAL_T> find(const std::string& key_id)   // OPTIMIZE: std::optional<Q_MARGINAL_T&>
+    template<typename Q_KEYMETA_T>
+    std::optional<Marginal<Q_KEYMETA_T>> findt(const std::string& key_id)   // OPTIMIZE: std::optional<Q_KEYMETA_T&>
     {
       // static assert
       
       // get the correct tuple element
-      constexpr size_t I = get_correct_tuple_idx<Q_MARGINAL_T>();
+      constexpr size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
 
       // OPTIMIZE: pass a reference
       if (auto it {std::get<I>(data_map_tuple).find(key_id)};
@@ -62,8 +61,6 @@ class MarginalsContainer
       else
         return std::nullopt;
     }
-
-    // void unmark_all();
 
 
   private:
@@ -78,12 +75,12 @@ class MarginalsContainer
     *
     * @return 
     */
-    template<typename Q_MARGINAL_T,std::size_t I = 0> 
+    template<typename Q_KEYMETA_T,std::size_t I = 0> 
     static constexpr std::size_t get_correct_tuple_idx()
     {
       static_assert(I < kNbMarginals);
       constexpr std::size_t Res = 0;
-      if constexpr ( std::is_same_v<std::tuple_element_t<I,marginals_containers_t>,Q_MARGINAL_T> ) // maybe thats the keymeta that need compare
+      if constexpr ( std::is_same_v<typename std::tuple_element_t<I,marginals_containers_t>::KeyMeta_t,Q_KEYMETA_T> ) // maybe thats the keymeta that need compare
       {
           return I;
       }

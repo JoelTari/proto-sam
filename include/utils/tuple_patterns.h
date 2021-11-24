@@ -181,12 +181,12 @@ struct cat_tuple_in_depth;
 template<typename T>
 struct cat_tuple_in_depth<T>
 {
-  using type = std::tuple<typename T::REPLACE_ME_T>; // WARNING: weakness here: use macro ?
+  using type = std::tuple<typename T::KeyMeta_t>; // WARNING: weakness here: use macro ?
 };
 template<typename T,typename ...Ts>
 struct cat_tuple_in_depth<T,Ts...>
 {
-  using type = tuple_cat_t<std::tuple<typename T::REPLACE_ME_T>, typename cat_tuple_in_depth<Ts...>::type >;
+  using type = tuple_cat_t<std::tuple<typename T::KeyMeta_t>, typename cat_tuple_in_depth<Ts...>::type >;
 };
 // extract tuple template argument specialisation
 template<typename...Ts>

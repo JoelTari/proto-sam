@@ -2,6 +2,7 @@
 #define SAM_SYSTEM_H_
 
 #include "core/bookkeeper.h"
+#include "core/marginal.h"
 #include "core/config.h"
 #include "factor_impl/anchor.hpp"
 #include "utils/tuple_patterns.h"
@@ -25,6 +26,14 @@ namespace SAM
   class SamSystem
   {
     public:
+    // marginals: infer the different types of marginals by looking into the keymeta of the factors (and filtering duplicates)
+    using aggrkeymeta_t
+        = typename sam_tuples::cat_tuple_in_depth<typename FACTOR_T::KeysSet_t, typename FACTORS_Ts::KeysSet_t ... >::type;
+    // remove duplicates
+    using uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::type ;
+    // declare marginal container type of those keymetas
+    using marginals_t = MarginalsContainer<uniq_keymeta_set_t> ;
+
     SamSystem() { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
 
     template <typename FT>
@@ -156,16 +165,37 @@ namespace SAM
       // principle: loop the factors, write the 'factors' in the logger
       sam_tuples::for_each_in_tuple(
           this->all_factors_tuple_,
-          [&Xmap,&json_graph, this](auto& vect_of_f, auto I)
+          [&Xmap,&json_graph, this, &SigmaCov](auto& vect_of_f, auto I)
           {
             // there are several loops in the factor kcc, I consider thats ok, micro-optimizing it would make readability more difficult than it already is 
             for (auto& factor : vect_of_f)
             {
               // first define some ways to registered that a marginal has been treated,
               // since we loop the factors, we encounter the same key several times.
-              std::unordered_set<std::string> process_keys; 
+              std::unordered_set<std::string> already_processed_keys = {}; 
               // std::apply -> for each kcc of that factor, if unprocessed, update the marginal with xmap & cov 
               //               add the key_id in the process_keys set
+              //------------------------------------------------------------------//
+              //           From the MAP vector Xmap, and optionally the           //
+              //                          associated cov,                         //
+              //            Write the marginals, (amounts to dispatch             //
+              //           subcomponents of xmap/cov to our structure)            //
+              //------------------------------------------------------------------//
+              sam_tuples::for_each_in_const_tuple(factor.keys_set,
+                                        [this,&Xmap,&SigmaCov, &already_processed_keys](const auto& kcc, auto kccIdx)
+                        {
+                            // check if key_id already processed
+                            auto search = already_processed_keys.find( kcc.key_id );
+                            if (search == already_processed_keys.end())
+                            {
+                                // fill the marginal
+                                // using keymeta_t = typename std::decay_t<decltype(kcc)>::KeyMeta_t;
+                                // this->all_marginals_.findt(kcc.key_id);
+                                // auto key_marginal = this->all_marginals_.findt<typename keymeta_t>(kcc.key_id);
+                                // finally 
+                                already_processed_keys.insert(kcc.key_id);
+                            }
+                        });
               //------------------------------------------------------------------//
               //                  Json graph: write the marginal                  //
               //------------------------------------------------------------------//
@@ -183,6 +213,7 @@ namespace SAM
                     // get the global idx
                     // std::size_t globalIdxOfKey = ;
                     // now we know how extract a subcomponent of xmap
+            //
                     // WARNING: may revisit for NL, or move that line in the factors jurisdiction
                     auto innovation = ((kcc.compute_part_A()
                                         * Xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx, // TODO: replace by a call to marginal container
@@ -278,6 +309,7 @@ namespace SAM
 #if ENABLE_DEBUG_TRACE
     /**
      * @brief dummy iteration over tuple of std::vector
+     *        WARNING: DEPRECATED, remove
      */
     template <size_t I = 0>
     void IterFactorInfos()
@@ -327,6 +359,9 @@ namespace SAM
      * associative relations, total sizes, indexes , ordering
      */
     Bookkeeper bookkeeper_;
+
+
+    marginals_t all_marginals_;
 
     // there's at least one factor, the rest are expanded
     std::tuple<std::vector<FACTOR_T>, std::vector<FACTORS_Ts>...> all_factors_tuple_;
