@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
       LinearTranslationFactor::measure_cov_t {{0.2, 0}, {0, 0.17}},
       {"x0", "x2"});
 
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  // std::this_thread::sleep_for(std::chrono::seconds(1));
 
   try
   {

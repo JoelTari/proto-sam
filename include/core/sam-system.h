@@ -10,6 +10,7 @@
 #include "utils/utils.h"
 
 #include <eigen3/Eigen/Sparse>
+#include <eigen3/Eigen/src/SparseCore/SparseMatrix.h>
 #include <unordered_set>
 #include <functional>
 #include <iterator>
@@ -34,10 +35,17 @@ namespace SAM
     using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
     // declare marginal container type of those keymetas
     using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
-    // static_assert( std::tuple_size_v<___uniq_keymeta_set_t> > 0 );
-    // static_assert( std::is_same_v< ___uniq_keymeta_set_t, std::tuple<MetaKeyPosition_t> > ); // FIX: tmp, remove !
 
     SamSystem() { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
+
+    std::tuple<Eigen::MatrixXd,double> compute_covariance(const Eigen::SparseMatrix<double> & A)
+    {
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+
+      auto At = Eigen::MatrixXd(A.transpose());
+      auto H = At*A;
+      return {H.inverse(),H.nonZeros()};
+    }
 
     template <typename FT>
     void register_new_factor(const std::string&                          factor_id,
@@ -85,12 +93,12 @@ namespace SAM
       // given the map, compute NLL error
       // double aggregate_factors_error = compute_factor_system_residual(Xmap);
       // optionaly compute the covariance
-      auto At = Eigen::MatrixXd(A.transpose());
-      auto H = At*A;
-      auto SigmaCovariance = H.inverse();
-      this->bookkeeper_.set_syst_Hnnz(H.nonZeros());
+      auto [SigmaCovariance,Hnnz] = compute_covariance(A);
+      this->bookkeeper_.set_syst_Hnnz(Hnnz);
 
 #if ENABLE_DEBUG_TRACE
+      {
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n" << Eigen::MatrixXd(A) << "\n\n";
       // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
       // "\n\n";
@@ -98,6 +106,7 @@ namespace SAM
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
       std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" 
                     << SigmaCovariance << '\n';
+      }
 #endif
       
       // Another factor loop that does several things while traversing.
@@ -108,9 +117,6 @@ namespace SAM
       // OPTIMIZE: Lots of operation could be async
       this->post_process_loop(Xmap,SigmaCovariance);
 
-      // CONTINUE: HERE
-      // keep the records: update the bookkeeper
-      // write_factor_graph(sam_utils::JSONLogger::Instance());
     }
 
     // TODO: overload when no cov matrix is given
@@ -164,7 +170,6 @@ namespace SAM
                                 this->all_marginals_.insertt(kcc.key_id,marg);
                                 
                                 // save the marginal in the json graph
-                                // Json::Value json_marginal; // FIX: tmp,remove
                                 Json::Value json_marginal = write_marginal(marg, kcc.key_id);
                                 json_graph["marginals"].append(json_marginal);
                                 // finally 
@@ -270,81 +275,6 @@ namespace SAM
               // append in the json 'graph > factors'
               return json_factor;
     }
-
-    /**
-     * @brief With current graph, containing  the last recorded results, from
-     * the bookkeeper WARNING: perhaps use it only in the bookkeeper, or another
-     * new class (inverse dependency) WARNING: single responsibility principle
-     * is broken
-     */
-    // void write_factor_graph(sam_utils::JSONLogger& logger)
-    // {
-    //   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-    //   Json::Value json_graph;
-    //
-    //   // principle: loop the factors, write the 'factors' in the logger
-    //   sam_tuples::for_each_in_tuple(
-    //       this->all_factors_tuple_,
-    //       [&json_graph](const auto& vect_of_f, auto I)
-    //       {
-    //         std::string factor_type = std::decay_t<decltype(vect_of_f[0])>::kFactorLabel;
-    //         for (const auto& factor : vect_of_f)
-    //         {
-    //           Json::Value json_factor;
-    //           json_factor["factor_id"] = factor.factor_id;
-    //           json_factor["type"]      = factor_type;   // CONTINUE: HERE
-    //           // write the vars_id
-    //           Json::Value json_factor_vars_id;
-    //           sam_tuples::for_each_in_tuple(factor.keys_set,
-    //                                         [&json_factor_vars_id](const auto& keycc, auto I)
-    //                                         { json_factor_vars_id.append(keycc.key_id); });
-    //           json_factor["vars_id"] = json_factor_vars_id;
-    //           // json_factor["MAPerror"] = factor_type;
-    //           // json_factor["measurement"] = factor_type;
-    //           // append in the json 'graph > factors'
-    //           json_graph["factors"].append(json_factor);
-    //         }
-    //       });
-    //   // Access the keys of each of those factor
-    //   // loop the keys in the bookkeeper to write the 'marginals' in the logger
-    //   // also use the cov matrix to extract the marginal covariance
-    //   // CONTINUE: TODO: the keys -> mean covariance var_id category kind
-    //
-    //   logger.writeGraph(json_graph);
-    //   // TODO: cout in std output (if enable debug trace flag is on)
-    // }
-
-#if ENABLE_DEBUG_TRACE
-    /**
-     * @brief dummy iteration over tuple of std::vector
-     *        WARNING: DEPRECATED, remove
-     */
-    template <size_t I = 0>
-    void IterFactorInfos()
-    {
-      if constexpr (I == S_)
-        return;
-      else
-      {
-        std::cout << factor_type_in_tuple_t<I>::kFactorLabel
-                  << "  -- Number of elements registered : "
-                  << std::get<I>(this->all_factors_tuple_).size() << "\n";
-
-        // if this collection is not empty, print the details of the factors
-        if (std::get<I>(this->all_factors_tuple_).size() > 0)
-        {
-          for (const auto& factor : std::get<I>(this->all_factors_tuple_))
-          {
-            std::cout << "\t";
-            factor_print(factor);
-            std::cout << "\n";
-          }
-        }
-        // recursion :  compile time call
-        IterFactorInfos<I + 1>();
-      }
-    }
-#endif
 
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
     bool is_system_consistent()
@@ -524,34 +454,6 @@ namespace SAM
         // if this is the type we are looking for, emplace back in
         if constexpr (std::is_same_v<FT, factor_type_in_tuple_t<I>>)
         {
-          // During this step, the factor is garanted to be pushed in the system
-          // so we should update bookkeeper
-          //  1. for each key
-          //      - check if the keys exists if key doesn't exist, add it (and
-          //      it's meta)
-          //      - add this factor id to the keyinfo list
-          //  2. add an element in FactorInfo
-
-          // for each key of this factor.
-          // std::apply(,FT::KeysSet);
-          // for (std::size_t i = 0; i < keys_id.size(); i++)
-          // {
-          //   // check if the key exists, if it doesn't, we will catch
-          //   // TODO: a standard if/else might be more desirable (or
-          //   std::optional) try
-          //   {
-          //     this->bookkeeper_.getKeyInfos(keys_id[i]);
-          //   }
-          //   catch (int e)
-          //   {
-          //     // add the key, the variable size is accessed via the factor
-          //     Meta this->bookkeeper_.add_key(keys_id[i], FT::KeysSet_t::kNb);
-          //     // BUG:
-          //   }
-          //   // each key has a list of factors_id that it is connected, so add
-          //   // this factor_id to it
-          //   this->bookkeeper_.add_factor_id_to_key(keys_id[i], factor_id);
-          // }
           add_keys_to_bookkeeper<FT>(keys_id, factor_id);
           // add the factor_id with its infos in the bookkeeper
           // last argument is a conversion from std::array to std::vector
