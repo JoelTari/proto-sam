@@ -6,7 +6,7 @@
 #include "utils/tuple_patterns.h"
 
 #include <cmath>
-#include <iostream>   // FIX: tmp, remove
+// #include <iostream> 
 #include <optional>
 #include <string>
 #include <tuple>
@@ -27,7 +27,9 @@ namespace
     std::tuple<std::array<double, 2>, double> get_visual_2d_covariance() const
     {
       // true = compute the eigenvectors too (default is true anyway)
-      Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>>    es(covariance, true);   
+      // Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>>    es(covariance, true);   
+      // std::cout << " The marginal cov:\n" << covariance << '\n';
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>>    es(covariance);   
       std::array<double, 2> sigma {sqrt(es.eigenvalues()[0]), sqrt(es.eigenvalues()[1])};
       auto                  R = es.eigenvectors();
 
@@ -36,7 +38,6 @@ namespace
       return {sigma, rot};
     }
     // using type = typename Marginal<KEYMETA>;
-    // TODO: ctor with mean,cov given
     // TODO: a flag ?
     Marginal(const Eigen::Vector<double, KEYMETA::kN>&              xmap_marg,
              const Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>& cov_marg)
@@ -96,7 +97,7 @@ namespace
       Marginal<Q_KEYMETA_T> my_marg(xmap_marg, sigmacov);
       // static assert the size of vect/cov
       constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
-      std::cout << "correct margcont idx : " << I << '\n';
+      // std::cout << "correct margcont idx : " << I << '\n';
       std::get<I>(this->data_map_tuple).insert({key_id, my_marg});
     }
 
@@ -153,9 +154,6 @@ namespace
   class MarginalsContainer<std::tuple<KEYMETA_T>> : public MarginalsContainer<KEYMETA_T>   // WOW !!
   {
   };
-
-
-  // TODO: stop gap ??
 
 }   // namespace
 
