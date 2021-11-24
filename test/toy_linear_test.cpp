@@ -3,6 +3,7 @@
 #include "factor_impl/key-meta-position.h"
 #include "factor_impl/linear-translation.hpp"
 #include "utils/tuple_patterns.h"
+#include "core/marginal.h"
 
 
 template <typename... Ts>
@@ -56,6 +57,10 @@ int main(int argc, char* argv[])
             << sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::size << '\n';
             // << std::tuple_size<typename sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::type>::value << '\n';
 
+  using uniq_keymeta_set_t = sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::type ;
+
+  using marginals_t = MarginalsContainer<uniq_keymeta_set_t> ;
+  
   // std::cout << MetaKeyPosition_t::kKeyName << '\n';
   // std::cout << __MetaKeyPosition::position << '\n';
 
