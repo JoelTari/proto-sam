@@ -1,0 +1,7 @@
+!#/bin/sh
+
+# TODO: take first argument, search the corresponding mes_{}.json (ex: linMono)
+# TODO: difficulty arrise in the last argument : *_results_$r.json, unfortunately
+# TODO: the last argument must be chosen (because the last file is actually the more recent )
+
+# r=Mono && cat examples/mes_lin$r.json | build/mainstdin $r && ./graph_publish.py *_results_$r.json
