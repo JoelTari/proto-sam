@@ -1,0 +1,100 @@
+{
+  "header": { "robot_id": "A", "base_unit": 0.15, "seq": 0 },
+  "marginals": [
+    {
+      "var_id": "x0",
+      "mean": {
+        "x": 0,
+        "y": 0
+      },
+      "covariance": { "sigma": [1e-8,1e-8], "rot": 0.7853981633974483 }
+    },
+    {
+      "var_id": "x1",
+      "mean": {
+        "x": -1,
+        "y": 0
+      },
+      "covariance": {
+        "sigma": [1e-8,1e-8],
+        "rot": 0.024479118789219278
+      }
+    },
+    {
+      "var_id": "x2",
+      "mean": {
+        "x": -2,
+        "y": 0
+      },
+      "covariance": {
+        "sigma": [1e-8,1e-8],
+        "rot": 3.099351839645064
+      }
+    },
+    {
+      "var_id": "x3",
+      "mean": {
+        "x": -2,
+        "y": 1
+      },
+      "covariance": {
+        "sigma": [1e-8,1e-8],
+        "rot": 3.1194533878617845
+      }
+    },
+    {
+      "var_id": "x4",
+      "mean": {
+        "x": -1,
+        "y": 2.5
+      },
+      "covariance": {
+        "sigma": [1e-8,1e-8],
+        "rot": 0.6037609650243583
+      }
+    },
+    {
+      "var_id": "x100",
+      "mean": {
+        "x": 0,
+        "y": 2.5
+      },
+      "covariance": {
+        "sigma": [1e-8,1e-8],
+        "rot": 0.0
+      }
+    },
+    {
+      "var_id": "x5",
+      "mean": {
+        "x": -0.5,
+        "y": 3
+      },
+      "covariance": {
+        "sigma": [1e-8,1e-8],
+        "rot": 2.838323410218508
+      }
+    },
+    {
+      "var_id": "x200",
+      "mean": {
+        "x": -0.5,
+        "y": 5
+      },
+      "covariance": {
+        "sigma": [1e-8,1e-8],
+        "rot": 2.933459847587758
+      }
+    }
+  ],
+  "factors": [
+    { "factor_id": "f0", "type": "anchor", "kind": "prior", "vars_id": ["x0"] },
+    { "factor_id": "f1", "type": "linear-translation","kind": "odometry", "vars_id": ["x0", "x1"] },
+    { "factor_id": "f2", "type": "linear-translation","kind": "odometry", "vars_id": ["x1", "x2"] },
+    { "factor_id": "f3", "type": "linear-translation","kind": "odometry", "vars_id": ["x2", "x3"] },
+    { "factor_id": "f4", "type": "linear-translation","kind": "odometry", "vars_id": ["x3", "x4"] },
+    { "factor_id": "f5", "type": "linear-translation","kind": "odometry", "vars_id": ["x4", "x100"] },
+    { "factor_id": "f6", "type": "linear-translation","kind": "odometry", "vars_id": ["x100", "x5"] },
+    { "factor_id": "f7", "type": "linear-translation","kind": "odometry", "vars_id": ["x5", "x200"] }
+  ]
+}

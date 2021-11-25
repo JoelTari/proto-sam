@@ -97,7 +97,10 @@ public:
     void writeGraph(const Json::Value & graph)
     {
         std::lock_guard<std::mutex> lock(m_lock);
-        m_JsonRoot["graph"] = graph;
+        // m_JsonRoot["graph"] = graph;
+        m_JsonRoot["header"] = graph["header"];
+        m_JsonRoot["factors"] = graph["factors"];
+        m_JsonRoot["marginals"] = graph["marginals"];
     }
 };
 

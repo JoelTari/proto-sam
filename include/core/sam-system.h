@@ -10,7 +10,6 @@
 #include "utils/utils.h"
 
 #include <eigen3/Eigen/Sparse>
-#include <eigen3/Eigen/src/SparseCore/SparseMatrix.h>
 #include <unordered_set>
 #include <functional>
 #include <iterator>
@@ -226,6 +225,7 @@ namespace SAM
       Json::Value json_header;
       json_header["robot_id"] = "A"; // TODO:
       json_header["seq"] = 0; // TODO:
+      json_header["base_unit"] = 0.15;
       json_header["QRerror"] = sysinfo.residual_error;
       json_header["Rnnz"] = sysinfo.Rnnz;
       json_header["Hnnz"] = sysinfo.Hnnz;

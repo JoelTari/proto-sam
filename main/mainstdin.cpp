@@ -4,6 +4,8 @@
 #include "factor_impl/linear-translation.hpp"
 #include "utils/tuple_patterns.h"
 #include "core/marginal.h"
+#include <sstream>
+#include <stdexcept>
 
 
 template <typename... Ts>
@@ -65,40 +67,39 @@ int main(int argc, char* argv[])
   std::cout << "\n\n Declaring a sam system:\n";
 
   auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>();
+  int fcount = 0;
+  for (const auto & mesJson : rootJson)
+  {
+    // std::cout << mesJson << '\n';
+    if ( mesJson["type"] == "anchor")
+    {
+        Eigen::Vector2d z { mesJson["value"]["x"].asDouble(), mesJson["value"]["y"].asDouble()};
+        // Eigen::Matrix2d Sigma;
+        std::vector<double> cov_vect;
+        for (const auto & c : mesJson["covariance"])
+          cov_vect.push_back(c.asDouble());
+        Eigen::Map<Eigen::Matrix2d> Sigma(cov_vect.data());
+        std::stringstream fid; 
+        fid << "f" << fcount;
+        syst.register_new_factor<AnchorFactor>(fid.str(), z, Sigma, {mesJson["vars_id"][0].asCString()} );
+        fcount++;
+    }
+    else if (mesJson["type"] == "linear-translation")
+    {
 
-  AnchorFactor::measure_vect_t z {0, 0};
-  AnchorFactor::measure_cov_t      Sigma {{0.2, 0}, {0, 0.2}};
-
-  syst.register_new_factor<AnchorFactor>("f0", z, Sigma, {"x0"});
-  syst.register_new_factor<LinearTranslationFactor>(
-      "f1",
-      LinearTranslationFactor::measure_vect_t {-0.95, 0.1},
-      LinearTranslationFactor::measure_cov_t {{0.1, 0}, {0, 0.1}},
-      {"x0", "x1"});
-
-  syst.register_new_factor<LinearTranslationFactor>(
-      "f2",
-      LinearTranslationFactor::measure_vect_t {-0.01654, -1.21},
-      LinearTranslationFactor::measure_cov_t {{0.02, 0}, {0, 0.3}},
-      {"x1", "x2"});
-
-  syst.register_new_factor<LinearTranslationFactor>(
-      "f3",
-      LinearTranslationFactor::measure_vect_t {1.01654, -.11},
-      LinearTranslationFactor::measure_cov_t {{0.32, 0}, {0, 0.1}},
-      {"x2", "x3"});
-
-  // loop-closure
-  syst.register_new_factor<LinearTranslationFactor>(
-      "f4",
-      LinearTranslationFactor::measure_vect_t {0.01654, 1.181},
-      LinearTranslationFactor::measure_cov_t {{0.002, 0}, {0, 0.173}},
-      {"x3", "x0"});
-  syst.register_new_factor<LinearTranslationFactor>(
-      "f5",
-      LinearTranslationFactor::measure_vect_t {-1.01654, -0.8},
-      LinearTranslationFactor::measure_cov_t {{0.2, 0}, {0, 0.17}},
-      {"x0", "x2"});
+        Eigen::Vector2d z { mesJson["value"]["dx"].asDouble(), mesJson["value"]["dy"].asDouble()};
+        std::vector<double> cov_vect;
+        for (const auto & c : mesJson["covariance"])
+          cov_vect.push_back(c.asDouble());
+        Eigen::Map<Eigen::Matrix2d> Sigma(cov_vect.data());
+        std::stringstream fid; 
+        fid << "f" << fcount;
+        syst.register_new_factor<LinearTranslationFactor>(fid.str(), z, Sigma, {mesJson["vars_id"][0].asCString(),mesJson["vars_id"][1].asCString()} );
+        fcount++;
+    }
+    else 
+      throw std::runtime_error("measure type not supported");
+  }
 
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
