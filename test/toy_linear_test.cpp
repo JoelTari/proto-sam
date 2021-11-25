@@ -55,34 +55,13 @@ int main(int argc, char* argv[])
             << std::tuple_size<aggrkeymeta_t>::value << '\n';
   std::cout << "number of unique element in the tuple aggrkeymeta_t (exp. 1) : "
             << sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::size << '\n';
-            // << std::tuple_size<typename sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::type>::value << '\n';
 
   using uniq_keymeta_set_t = sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::type ;
 
   using marginals_t = MarginalsContainer<uniq_keymeta_set_t> ;
   
-  // std::cout << MetaKeyPosition_t::kKeyName << '\n';
-  // std::cout << __MetaKeyPosition::position << '\n';
 
-  // sam_tuples::tuple_type_cat<
-  //     std::tuple< KeyMeta<__MetaKeyPosition::position, 2, __MetaKeyPosition::x, __MetaKeyPosition::y> >,
-  //     sam_tuples::tuple_type_cat<
-  //                                std::tuple<KeyMeta<__MetaKeyPosition::position, 2, __MetaKeyPosition::x, __MetaKeyPosition::y>>,
-  //                                std::tuple<KeyMeta<__MetaKeyPosition::position, 2, __MetaKeyPosition::x, __MetaKeyPosition::y>>
-  //                               >
-  //   >::type A;
-
-      // sam_tuples::tuple_cat_t<
-      //                            std::tuple<KeyMeta<__MetaKeyPosition::position, 2, __MetaKeyPosition::x, __MetaKeyPosition::y>>,
-      //                            std::tuple<KeyMeta<__MetaKeyPosition::position, 2, __MetaKeyPosition::x, __MetaKeyPosition::y>>,
-      //                            std::tuple<KeyMeta<__MetaKeyPosition::position, 2, __MetaKeyPosition::x, __MetaKeyPosition::y>>,
-      //                            std::tuple<KeyMeta<__MetaKeyPosition::position, 2, __MetaKeyPosition::x, __MetaKeyPosition::y>>
-      //                           > AA;
-
-      // receive the measurement from stdin (as a string that can be converted in a
-      // C++ container)
-
-      AnchorFactor::measure_vect_t z {0, 0};
+  AnchorFactor::measure_vect_t z {0, 0};
   AnchorFactor::measure_cov_t      Sigma {{0.2, 0}, {0, 0.2}};
 
   syst.register_new_factor<AnchorFactor>("f0", z, Sigma, {"x0"});

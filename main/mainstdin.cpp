@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   // logger
   sam_utils::JSONLogger::Instance().beginSession(session_name.str());
   // scoped Timer
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); // TODO: remove those calls
 
   Json::Value rootJson;   // the desired 'container' (to be filled)
                           // initialized as null
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
   {
     // getting a filename as argument
     std::ifstream file(argv[1]);
-    Json::Reader  reader;   // the parser
+    Json::Reader  reader;   // the parser TODO: simpler
     reader.parse(file, rootJson);
   }
   else
@@ -74,23 +74,23 @@ int main(int argc, char* argv[])
   }
 
   // now we can read the data via:
-  std::cout << "all the data:  " << rootJson << '\n';
+  // std::cout << "all the data:  " << rootJson << '\n';
+#if ENABLE_DEBUG_TRACE
   std::cout << "\n\n Declaring a sam system:\n";
+#endif
 
   auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>();
   int fcount = 0;
-  for (const auto & mesJson : rootJson)
+  for (const auto & mesJson : rootJson) // TODO: template it
   {
-    // std::cout << mesJson << '\n';
     if ( mesJson["type"] == "anchor")
     {
         Eigen::Vector2d z { mesJson["value"]["x"].asDouble(), mesJson["value"]["y"].asDouble()};
-        // Eigen::Matrix2d Sigma;
         std::vector<double> cov_vect;
         for (const auto & c : mesJson["covariance"])
           cov_vect.push_back(c.asDouble());
         Eigen::Map<Eigen::Matrix2d> Sigma(cov_vect.data());
-        std::stringstream fid; 
+        std::stringstream fid;  // factor id
         fid << "f" << fcount;
         syst.register_new_factor<AnchorFactor>(fid.str(), z, Sigma, {mesJson["vars_id"][0].asCString()} );
         fcount++;
