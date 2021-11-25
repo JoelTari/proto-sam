@@ -40,7 +40,7 @@ struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
 int main(int argc, char* argv[])
 {
   // logger
-  sam_utils::JSONLogger::Instance().beginSession("sam-system-factor_test.cpp");
+  sam_utils::JSONLogger::Instance().beginSession("toy_linear_test.cpp");
   // scoped Timer
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 

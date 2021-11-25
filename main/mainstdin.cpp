@@ -41,8 +41,19 @@ struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
 //------------------------------------------------------------------//
 int main(int argc, char* argv[])
 {
+  std::string argId;
+  if (argc > 2 )
+  {
+     argId = argv[2];
+  }
+  else
+  {
+      argId="";
+  }
+  std::stringstream session_name;
+  session_name << "mainstdin.cpp_sam_"  << argId;  // TODO: get date, time
   // logger
-  sam_utils::JSONLogger::Instance().beginSession("sam-system-factor_test.cpp");
+  sam_utils::JSONLogger::Instance().beginSession(session_name.str());
   // scoped Timer
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
