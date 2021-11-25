@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 
   std::cout << "\n\n Declaring a sam system:\n";
 
-  auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>();
+  auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>("A");
   // test cat_tuple_in_depth
   using aggrkeymeta_t
       = cat_tuple_in_depth<AnchorFactor::KeysSet_t, LinearTranslationFactor::KeysSet_t>::type;
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 
   try
   {
-    syst.smooth_and_map();
+    syst.sam_optimize();
   }
   catch (const char* e)
   {

@@ -1,3 +1,4 @@
 .cache
 build
 results.json
+*_results_*.json

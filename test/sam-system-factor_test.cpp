@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 
 
   std::cout << "\n\n Declaring a sam system:\n";
-  auto samsyst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>();
+  auto samsyst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>("A");
 
   // samsyst.register_new_factor<AnchorFactor>("f0", m,cov , {"x0"});
   // samsyst.register_new_factor<LinearTranslationFactor>("f1",m2,cov2,{"x0","x1"});
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
       {"x1", "x2"});
 
     
-  samsyst.smooth_and_map();
+  samsyst.sam_optimize();
 
   std::cout << "\n NOTA: above result doesnt matter, point of this test is : compile, run/print \n";
 

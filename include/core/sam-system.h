@@ -35,7 +35,7 @@ namespace SAM
     // declare marginal container type of those keymetas
     using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
 
-    SamSystem() { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
+    SamSystem(const std::string & agent_id):agent_id(agent_id) { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
 
     std::tuple<Eigen::MatrixXd,double> compute_covariance(const Eigen::SparseMatrix<double> & A)
     {
@@ -68,7 +68,7 @@ namespace SAM
       place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
     }
 
-    void smooth_and_map()
+    void sam_optimize()
     // TODO: add a solverOpts variable: check rank or not, check success, write
     // TODO: bookkeeper, compute covariance etc..
     {
@@ -83,9 +83,9 @@ namespace SAM
       uint nnz = this->bookkeeper_.getSystemInfos().nnz;
 
       // the big steps: fill the system (sparse matrix A and rhs vector b)
-      auto [A, b] = fill_system(M, N, nnz);
+      auto [A, b] = assemble_system(M, N, nnz);
       // and solve the system
-      auto   [Xmap,qr_error,rnnz]                 = solve_system(A, b);
+      auto   [Xmap,qr_error,rnnz]                 = solveQR(A, b);
       this->bookkeeper_.set_syst_Rnnz(rnnz);
       this->bookkeeper_.set_syst_resolution_error(qr_error);
 
@@ -97,14 +97,17 @@ namespace SAM
 
 #if ENABLE_DEBUG_TRACE
       {
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-      std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n" << Eigen::MatrixXd(A) << "\n\n";
+      PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
+      std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n";
+      // only display if matrix not too big
+      if ( A.rows() < 15 ) std::cout << Eigen::MatrixXd(A) << "\n\n";
       // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
       // "\n\n";
-      std::cout << "#### Syst: b computed :\n" << b << "\n";
+      std::cout << "#### Syst: b computed :\n";
+      if ( b.rows() < 15 ) std::cout << b << "\n";
       std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
-      std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" 
-                    << SigmaCovariance << '\n';
+      std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
+                    if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
       }
 #endif
       
@@ -139,6 +142,7 @@ namespace SAM
             // there are several loops in the factor kcc, I consider thats ok, micro-optimizing it would make readability more difficult than it already is 
             for (auto& factor : vect_of_f)
             {
+              PROFILE_SCOPE( (factor.factor_id.c_str()) , sam_utils::JSONLogger::Instance() );
               // std::apply -> for each kcc of that factor, if unprocessed, update the marginal with xmap & cov 
               //               add the key_id in the process_keys set
               //------------------------------------------------------------------//
@@ -154,6 +158,7 @@ namespace SAM
                             auto search = already_processed_keys.find( kcc.key_id );
                             if (search == already_processed_keys.end())
                             {
+                                PROFILE_SCOPE(kcc.key_id.c_str(), sam_utils::JSONLogger::Instance() );
                                 // // fill the marginal
                                 using kcc_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(kcc)>>::KeyMeta_t;
                                 // std::cout << kcc_keymeta_t::kN << '\n';
@@ -182,6 +187,7 @@ namespace SAM
               std::apply(
                   [this, &Xmap, &accumulated_factor_error, &factor](auto... kcc) // TODO: remove Xmap process, replace by marginalcontainer element (by copy probably)
                   {
+                    PROFILE_SCOPE("compute error", sam_utils::JSONLogger::Instance() );
                     // get the global idx
                     // std::size_t globalIdxOfKey = ;
                     // now we know how extract a subcomponent of xmap
@@ -206,10 +212,12 @@ namespace SAM
               json_graph["factors"].append(json_factor);
             }
           });
-          this->bookkeeper_.set_syst_residual_error(accumulated_factor_error);
-      json_graph["header"] = write_header(this->bookkeeper_.getSystemInfos());
-
-      logger.writeGraph(json_graph);
+      {
+        PROFILE_SCOPE("join log results", sam_utils::JSONLogger::Instance() );
+        this->bookkeeper_.set_syst_residual_error(accumulated_factor_error);
+        json_graph["header"] = write_header(this->bookkeeper_.getSystemInfos());
+        logger.writeGraph(json_graph);
+      }
       // TODO: cout in std output (if enable debug trace flag is on)
     }
 
@@ -298,6 +306,7 @@ namespace SAM
      */
     Bookkeeper bookkeeper_;
 
+    std::string agent_id;
 
     marginals_t all_marginals_;
 
@@ -319,7 +328,7 @@ namespace SAM
      * @param b
      * @param line_counter
      */
-    template <std::size_t I = 0>
+    template <std::size_t I = 0>       // TODO: refactor, use std::apply, or my custom for_each_tuple
     void loop_over_factors(std::vector<Eigen::Triplet<double>>& triplets,
                            Eigen::VectorXd&                     b,
                            int                                  line_counter = 0)
@@ -334,6 +343,7 @@ namespace SAM
 #endif
         for (auto& factor : std::get<I>(this->all_factors_tuple_))   // may not be constant
         {
+          PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
           // update the factor's A and b matrices (new lin point)
           // if constexpr nonlinear factor  =>  set lin point (given by
           // bookkeeper)
@@ -406,7 +416,7 @@ namespace SAM
      * @return
      */
     std::tuple<Eigen::SparseMatrix<double>, Eigen::VectorXd>
-        fill_system(uint dim_mes, uint dim_keys, uint nnz)
+        assemble_system(uint dim_mes, uint dim_keys, uint nnz)
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       ;
@@ -529,28 +539,44 @@ namespace SAM
      *
      * @return
      */
-    std::tuple<Eigen::VectorXd,double,double> solve_system(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b)
+    std::tuple<Eigen::VectorXd,double,double> solveQR(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b)
     // TODO: add a solverOpts variable: check rank or not, check success
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-      ;
       // solver
       Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> solver;
       // MAP
-      solver.compute(A);
-
+      {
+        PROFILE_SCOPE("QR decomposition",sam_utils::JSONLogger::Instance());
+        solver.compute(A);
+      }
       // rank check: not considered a consistency check
-      if (solver.rank() < A.cols()) throw "RANK DEFICIENT PROBLEM";
-      Eigen::VectorXd map = solver.solve(b);
+      if (solver.rank() < A.cols())
+      {
+        throw std::runtime_error("RANK DEFICIENT PROBLEM");
+      }
+      auto back_substitution = [](auto & solver, auto & b)
+        {
+        PROFILE_SCOPE("Back-Substitution",sam_utils::JSONLogger::Instance());
+        Eigen::VectorXd map = solver.solve(b);
+        return map;
+      };
+      auto map = back_substitution(solver,b);
       // residual error
-#if ENABLE_DEBUG_TRACE
       auto residual_error = solver.matrixQ().transpose() * b;
-      std::cout << "### Syst solver : residual value: " << residual_error.norm() << "\n";
-      std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
-      std::cout << "### Syst solver :  nnz in square root : " << solver.matrixR().nonZeros()
-                << " (from " << A.nonZeros() << ") in Hessian."
-                << "\n";
-      std::cout << "### Syst solver : matrix R : \n" << Eigen::MatrixXd(solver.matrixR()) << '\n';
+#if ENABLE_DEBUG_TRACE
+      {
+        PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
+        std::cout << "### Syst solver : residual value: " << residual_error.norm() << "\n";
+        std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
+        std::cout << "### Syst solver :  nnz in square root : " << solver.matrixR().nonZeros()
+                  << " (from " << A.nonZeros() << ") in Hessian."
+                  << "\n";
+        if ( Eigen::MatrixXd(solver.matrixR()).rows() < 15 )
+        {
+          std::cout << "### Syst solver : matrix R : \n" << Eigen::MatrixXd(solver.matrixR()) << '\n';
+        }
+      }
 #endif
       return {map,std::pow(residual_error.norm(),2),solver.matrixR().nonZeros()};
     }

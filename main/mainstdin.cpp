@@ -4,8 +4,11 @@
 #include "factor_impl/linear-translation.hpp"
 #include "utils/tuple_patterns.h"
 #include "core/marginal.h"
+#include <exception>
 #include <sstream>
 #include <stdexcept>
+#include <string>
+#include <system_error>
 
 
 template <typename... Ts>
@@ -18,8 +21,9 @@ struct cat_tuple_in_depth<T>
 template <typename T, typename... Ts>
 struct cat_tuple_in_depth<T, Ts...>
 {
-  using type = sam_tuples::tuple_cat_t<std::tuple<typename T::KeyMeta_t>,
-                                          typename cat_tuple_in_depth<Ts...>::type>;
+  using type = sam_tuples::tuple_cat_t<std::tuple<typename T::KeyMeta_t>
+                                      ,typename cat_tuple_in_depth<Ts...>::type
+                                      >;
 };
 // extract tuple template argument specialisation
 template <typename... Ts>
@@ -27,7 +31,8 @@ struct cat_tuple_in_depth<std::tuple<Ts...>> : cat_tuple_in_depth<Ts...>
 {
 };
 template <typename... Ts, typename... Tss>
-struct cat_tuple_in_depth<std::tuple<Ts...>, std::tuple<Tss...>> : cat_tuple_in_depth<Ts..., Tss...>
+struct cat_tuple_in_depth<std::tuple<Ts...>, std::tuple<Tss...>> 
+  : cat_tuple_in_depth<Ts..., Tss...>
 {
 };
 template <typename T>
@@ -35,36 +40,38 @@ struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
 {
 };
 
-
 //------------------------------------------------------------------//
 //                               MAIN                               //
 //------------------------------------------------------------------//
 int main(int argc, char* argv[])
 {
   std::string argId;
-  if (argc > 2 )
+  if (argc > 1 )
   {
-     argId = argv[2];
+     argId = argv[1];
   }
   else
   {
-      argId="";
+      argId="unnamed";
   }
   std::stringstream session_name;
   session_name << "mainstdin.cpp_sam_"  << argId;  // TODO: get date, time
   // logger
-  sam_utils::JSONLogger::Instance().beginSession(session_name.str());
-  // scoped Timer
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); // TODO: remove those calls
+  std::string result_filename = sam_utils::currentDateTime() + "_results_" + argId + ".json"; // + to_string( ... )
+  sam_utils::JSONLogger::Instance().beginSession(session_name.str(),result_filename);
 
   Json::Value rootJson;   // the desired 'container' (to be filled)
                           // initialized as null
-  if (argc > 1)
+
+  // read measurements inputs
+  if (argc > 2)
   {
+    PROFILE_SCOPE("read file",sam_utils::JSONLogger::Instance());
     // getting a filename as argument
-    std::ifstream file(argv[1]);
-    Json::Reader  reader;   // the parser TODO: simpler
-    reader.parse(file, rootJson);
+    std::ifstream file(argv[2]);
+    file >> rootJson;
+    // Json::CharReaderBuilder rbuilder;
+    // std::unique_ptr<Json::CharReader> const reader(rbuilder.newCharReader());
   }
   else
   {
@@ -73,14 +80,16 @@ int main(int argc, char* argv[])
     std::cin >> rootJson;
   }
 
-  // now we can read the data via:
-  // std::cout << "all the data:  " << rootJson << '\n';
 #if ENABLE_DEBUG_TRACE
   std::cout << "\n\n Declaring a sam system:\n";
 #endif
 
-  auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>();
+  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); // TODO: remove those calls
+  auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>(argId);
   int fcount = 0;
+
+  {
+  PROFILE_SCOPE("integrates factors",sam_utils::JSONLogger::Instance());
   for (const auto & mesJson : rootJson) // TODO: template it
   {
     if ( mesJson["type"] == "anchor")
@@ -111,12 +120,13 @@ int main(int argc, char* argv[])
     else 
       throw std::runtime_error("measure type not supported");
   }
+  }
 
   // std::this_thread::sleep_for(std::chrono::seconds(1));
 
   try
   {
-    syst.smooth_and_map();
+    syst.sam_optimize();
   }
   catch (const char* e)
   {
@@ -124,6 +134,7 @@ int main(int argc, char* argv[])
     std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
 #endif
   }
-
   return 0;
 }
+
+
