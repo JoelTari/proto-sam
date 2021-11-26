@@ -215,23 +215,4 @@ struct ScopedTimer
 }
 
 
-//------------------------------------------------------------------//
-//                            TUPLE LOOP                            //
-//------------------------------------------------------------------//
-namespace detail
-{
-    template<typename T, typename F, std::size_t... Is>
-    void
-    for_each(T&& t, F f, std::index_sequence<Is...>)
-    {
-        auto l = { (f(std::get<Is>(t),Is), 0)... };
-    }
-} // namespace detail
-
-template<typename... Ts, typename F>
-void for_each_in_tuple(std::tuple<Ts...> const& t, F f)
-{
-    detail::for_each(t, f, std::make_index_sequence<sizeof...(Ts)>{});
-}
-
 #endif
