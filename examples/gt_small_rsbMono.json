@@ -1,0 +1,41 @@
+{
+  "header": { "robot_id": "Mono", "base_unit": 0.15, "seq": 0 },
+  "marginals": [
+    {
+      "var_id": "x0",
+      "mean": {
+        "x": 0,
+        "y": 0
+      },
+      "covariance": { "sigma": [1e-8,1e-8], "rot": 0.7853981633974483 }
+    },
+    {
+      "var_id": "x1",
+      "mean": {
+        "x": -1,
+        "y": 0.3333
+      },
+      "covariance": {
+        "sigma": [1e-8,1e-8],
+        "rot": 0.024479118789219278
+      }
+    },
+    {
+      "var_id": "x2",
+      "mean": {
+        "x": 1,
+        "y": 0.3333
+      },
+      "covariance": {
+        "sigma": [1e-8,1e-8],
+        "rot": 3.099351839645064
+      }
+    }
+  ],
+  "factors": [
+    { "factor_id": "f0", "type": "anchor", "vars_id": ["x0"] },
+    { "factor_id": "f00", "type": "anchor", "vars_id": ["x0"] },
+    { "factor_id": "f1", "type": "range-squared-bearing-translation", "vars_id": ["x0", "x1"] },
+    { "factor_id": "f2", "type": "range-squared-bearing-translation", "vars_id": ["x0", "x2"] }
+  ]
+}
