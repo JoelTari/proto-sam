@@ -11,35 +11,6 @@
 #include <system_error>
 
 
-template <typename... Ts>
-struct cat_tuple_in_depth;
-template <typename T>
-struct cat_tuple_in_depth<T>
-{
-  using type = std::tuple<typename T::KeyMeta_t>;   // WARNING: weakness here: use macro ?
-};
-template <typename T, typename... Ts>
-struct cat_tuple_in_depth<T, Ts...>
-{
-  using type = sam_tuples::tuple_cat_t<std::tuple<typename T::KeyMeta_t>
-                                      ,typename cat_tuple_in_depth<Ts...>::type
-                                      >;
-};
-// extract tuple template argument specialisation
-template <typename... Ts>
-struct cat_tuple_in_depth<std::tuple<Ts...>> : cat_tuple_in_depth<Ts...>
-{
-};
-template <typename... Ts, typename... Tss>
-struct cat_tuple_in_depth<std::tuple<Ts...>, std::tuple<Tss...>> 
-  : cat_tuple_in_depth<Ts..., Tss...>
-{
-};
-template <typename T>
-struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
-{
-};
-
 //------------------------------------------------------------------//
 //                               MAIN                               //
 //------------------------------------------------------------------//
