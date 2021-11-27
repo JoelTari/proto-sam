@@ -12,13 +12,15 @@
 #include <tuple>
 #include <utility>
 
+// TODO: rename KCC to KeyContextModel : model in the context of a factor
 
-template <typename DerivedKCC, typename KEYMETA, size_t DimMes, const char* ContextRole>
+template <typename DerivedKCC, typename KEYMETA,size_t DimMes, const char* ContextRole> // TODO: , bool Linear=false>
 struct KeyContextualConduct : KEYMETA
 {
   using KeyMeta_t = KEYMETA;
   static constexpr const char*       kRole {ContextRole};
   static constexpr const std::size_t kM {DimMes};   // TODO: really necessary ?
+  // TODO: NL  static constexpr bool isLinear = Linear;
   // non static but const
   const std::string key_id;
   // non static, not const
@@ -29,13 +31,19 @@ struct KeyContextualConduct : KEYMETA
   // measure_vect_t   b;
   const measure_cov_t& rho;
 
+    // TODO: process_matrix_t compute_part_A(bool isSystLinear)
   process_matrix_t compute_part_A()
   {
     // in linear it would just be a getter to  rho * H
     // in nonlinear, set_linearization_point must occur before
-    return static_cast<DerivedKCC*>(this)->compute_part_A_impl();
+      // TODO: if constexpr (Linear)
+      // TODO: return static_cast<DerivedKCC*>(this)->compute_part_A_impl(isSystLinear);
+      // TODO: else (the factor is NL -> the systeme is not linear)
+    return static_cast<DerivedKCC*>(this)->compute_part_A_impl(); 
   }
 
+    // NOTE: is used ?? h_part(part_x) doesnot make sense
+    // NOTE:          ( H_part * part_x does )
   measure_vect_t compute_part_h_of_part_x(const part_state_vect_t& x)
   {
     return static_cast<DerivedKCC*>(this)->compute_part_h_of_part_x_impl(x);
@@ -71,6 +79,7 @@ class Factor
   static constexpr size_t      kM      = MEASURE_META::kM;
   static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
   using state_vector_t                 = Eigen::Matrix<double, kN, 1>;
+  using process_matrix_t               = Eigen::Matrix<double, kM, kN>;
   // make a tuple of KeySet.  Michelin *** vaut le détour.
   using KeysSet_t = std::tuple<KeyConducts...>;
 
@@ -80,8 +89,13 @@ class Factor
   const measure_vect_t                         z;           // fill at ctor
   const measure_cov_t                          z_cov;       // fill at ctor
   const measure_cov_t                          rho;         // fill at ctor
+  const measure_vect_t                         rosie = rho*z;
   KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
                         // process matrix), fill at ctor, modifiable
+  // TODO: isLinear : factor is linear if all keys models in this context are linear
+  static constexpr bool isLinear = (KeyConducts::isLinear && ...);
+
+  
   double error = 0;
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
@@ -95,22 +109,32 @@ class Factor
     return result;
   }
 
-  // // DEPRECATED: replaced by tuple::reduce_variadically(    )
-  // // HACK: make_index_sequence <3  . This pattern allows the underlying function
-  // // to be defined with expansion syntax
-  // static KeysSet_t init_tuple_keys(const std::array<std::string, kNbKeys>& my_keys_id,
-  //                                  const measure_cov_t&                    rho)
-  // {
-  //   return init_tuple_keys_impl(my_keys_id, rho, std::make_index_sequence<kNbKeys> {});
-  // }
-  //
-  // template <std::size_t... I>
-  // static KeysSet_t init_tuple_keys_impl(const std::array<std::string, kNbKeys>& my_keys_id,
-  //                                       const measure_cov_t&                    rho,
-  //                                       std::index_sequence<I...>)
-  // {
-  //   return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
-  // }
+    // template <bool LinearSystem>
+    // measure_vect_t compute_b();
+
+    // TODO: call this one in sam system
+    template <bool LinearSystem>
+    measure_vect_t compute_b(bool isSystLinear)
+    {
+      if constexpr (LinearSystem)
+      {
+        // if the syst is linear, by implication, this factor is linear
+        // but let's check !
+        static_assert(isLinear);
+        return this->rosie;
+      }
+      else // systeme is not linear, but if factor is linear, some constant can be leverage to save a few instructions
+      {
+        if constexpr (isLinear)
+        {
+          return this->rosie - this->roach*X; // FIX: need x
+        }
+        else
+        {
+          return this->rosie - rho*compute_h_of_x(x ...);
+        }
+      }
+    }
 
   template <typename... PARTIAL_STATE_VECTORS_T>
   measure_vect_t compute_h_of_x(const PARTIAL_STATE_VECTORS_T&... x) const
@@ -120,8 +144,15 @@ class Factor
     // if linear, this is the  sum of the part_h_of_part_x (that are part_h \times part_x)
     // In some nonlinear cases, it may still be develop as  \sum part_h_of_x
     return compute_sum_of_part_h_of_part_x(x..., std::make_index_sequence<kNbKeys> {});
+      // TODO: NL
+      // if constexpr (isLinear)
+      //   return compute_sum_of_part_h_of_part_x(x..., std::make_index_sequence<kNbKeys> {});
+      // else
+      //   return compute_h_of_x_impl(x ...); // has to be defined for each NL factor
+      //   // e.g. for bearing, range-bearing
   }
 
+  // this for linear
   template <typename... PARTIAL_STATE_VECTORS_T>
   measure_vect_t compute_sum_of_part_h_of_part_x(const PARTIAL_STATE_VECTORS_T&... x) const
   {
@@ -155,7 +186,7 @@ class Factor
 
   // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
   measure_vect_t compute_rosie() const   // rho*z = rosie !
-  {                                      // TODO: move as a constant member
+  {                                      // TODO: remove as a constant member
     return rho * z;
   }
 
@@ -179,6 +210,7 @@ class Factor
 //------------------------------------------------------------------//
 //                      Helper print functions                      //
 //------------------------------------------------------------------//
+// TODO: use tuple_patterns rather
 // static traverse of the KeySet tuple
 template <typename TUP, size_t I = 0>
 constexpr void traverse_tup()

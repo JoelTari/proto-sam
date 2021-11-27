@@ -35,6 +35,9 @@ namespace SAM
     // declare marginal container type of those keymetas
     using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
 
+    // TODO: isSystFullyLinear (non type bool template parameter)
+    // static constexpr bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
+
     SamSystem(const std::string & agent_id):agent_id(agent_id) { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
 
     std::tuple<Eigen::MatrixXd,double> compute_covariance(const Eigen::SparseMatrix<double> & A)
@@ -328,7 +331,7 @@ namespace SAM
      * @param b
      * @param line_counter
      */
-    template <std::size_t I = 0>       // TODO: refactor, use std::apply, or my custom for_each_tuple
+    template <std::size_t I = 0>       // TODO: refactor, use std::apply, or my custom for_each_tuple. It will permits to
     void loop_over_factors(std::vector<Eigen::Triplet<double>>& triplets,
                            Eigen::VectorXd&                     b,
                            int                                  line_counter = 0)
@@ -341,14 +344,17 @@ namespace SAM
         std::cout << "### Looping over factors of type " << factor_type_in_tuple_t<I>::kFactorLabel
                   << "\n";
 #endif
-        for (auto& factor : std::get<I>(this->all_factors_tuple_))   // may not be constant
+        for (auto& factor : std::get<I>(this->all_factors_tuple_))
         {
           PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
           // update the factor's A and b matrices (new lin point)
           // if constexpr nonlinear factor  =>  set lin point (given by
           // bookkeeper)
           // auto [factorA, factorb] = factor.compute_A_b();
-          auto factorb = factor.compute_rosie();   // TODO: change for NL
+          auto factorb = factor.compute_rosie();   
+          // TODO: change for NL pb :  rosie - rho h(X^0), or rosie - roach*X^0   ;  for linear : b = rosie (constant)
+          // TODO: call it factorb = factor.compute_b<isSystFullLinear>(); 
+          // NOTE: the template argument isSysFullLinear should not matter if the factor is not linear
 #if ENABLE_DEBUG_TRACE
           std::cout << " b: \n" << factorb << "\n";
 #endif
@@ -388,7 +394,9 @@ namespace SAM
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       // compute partial A (partial = only a block of the A of the factor)
-      auto partA = keycc.compute_part_A();
+      auto partA = keycc.compute_part_A(); // TODO: change for NL pb: auto partA = keycc.compute_part_A<isSystFullyLinear>(); 
+      // TODO: NL -> rho*H (non const) , L in <false> -> roach (const), L in <true> -> roach (const)
+
       // get the col in systA (the big A of the system)
       int colInBigA = this->bookkeeper_.getKeyInfos(keycc.key_id).sysidx;
       // reshape the partA matrix, so that it is easier to loop. (column major)
@@ -469,6 +477,7 @@ namespace SAM
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id, FT::kN, FT::kM, {keys_id.begin(), keys_id.end()});
 
+          // TODO: initialize lin point
 
           std::get<I>(this->all_factors_tuple_)
               .emplace_back(factor_id, mes_vect, measure_cov, keys_id);

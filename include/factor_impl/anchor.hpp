@@ -15,7 +15,7 @@ struct UniqueKeyConduct
     : KeyContextualConduct<UniqueKeyConduct,
                            MetaKeyPosition_t,
                            MetaMeasureAbsolutePosition_t::kM,
-                           anchor_var>
+                          anchor_var> // TODO : add true (factor is linear)
 {
   inline static const process_matrix_t H {
       {1, 0},
@@ -35,7 +35,7 @@ struct UniqueKeyConduct
 
   UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho)
       : KeyContextualConduct(key_id, rho)
-      , partA(rho * H)
+      , partA(rho * H) // rho*H
   {
   }
 };
@@ -60,6 +60,21 @@ class AnchorFactor
     std::cout << "\t::  Factor " << factor_id << " created.\n";
 #endif
   }
+
+  // measure_vect_t compute_b()
+  // {
+  //
+  // }
+
+  // measure_vect_t compute_h_of_x(const state_vector_t & x)
+  // {
+  //   return roach*x;
+  // }
+
+    private:
+    // defined at ctor
+    const process_matrix_t partRoach = rho*process_matrix_t{{1,0},{0,1}};
+
 };
 
 }
