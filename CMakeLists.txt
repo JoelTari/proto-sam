@@ -32,6 +32,7 @@ target_compile_features(marginal_test PUBLIC cxx_std_17)
 target_compile_features(sam-system-factor_test PUBLIC cxx_std_17)
 target_compile_features(toy_linear_test PUBLIC cxx_std_17)
 target_compile_features(mainstdin PUBLIC cxx_std_17)
+target_compile_options(mainstdin PUBLIC "-O3" "-fopt-info")
 
 # NOTE: to manage some definitions
 # target_compile_definitions(toy_linear_test PUBLIC ENABLE_DEBUG_TRACE=1 ENABLE_TIMER=1)
