@@ -1,9 +1,10 @@
+#include "core/marginal.h"
 #include "core/sam-system.h"
 #include "factor_impl/anchor.hpp"
 #include "factor_impl/key-meta-position.h"
 #include "factor_impl/linear-translation.hpp"
 #include "utils/tuple_patterns.h"
-#include "core/marginal.h"
+
 #include <exception>
 #include <sstream>
 #include <stdexcept>
@@ -17,19 +18,17 @@
 int main(int argc, char* argv[])
 {
   std::string argId;
-  if (argc > 1 )
-  {
-     argId = argv[1];
-  }
+  if (argc > 1) { argId = argv[1]; }
   else
   {
-      argId="unnamed";
+    argId = "unnamed";
   }
   std::stringstream session_name;
-  session_name << "mainstdin.cpp_sam_"  << argId;  // TODO: get date, time
+  session_name << "mainstdin.cpp_sam_" << argId;   // TODO: get date, time
   // logger
-  std::string result_filename = sam_utils::currentDateTime() + "_results_" + argId + ".json"; // + to_string( ... )
-  sam_utils::JSONLogger::Instance().beginSession(session_name.str(),result_filename);
+  std::string result_filename
+      = sam_utils::currentDateTime() + "_results_" + argId + ".json";   // + to_string( ... )
+  sam_utils::JSONLogger::Instance().beginSession(session_name.str(), result_filename);
 
   Json::Value rootJson;   // the desired 'container' (to be filled)
                           // initialized as null
@@ -37,7 +36,7 @@ int main(int argc, char* argv[])
   // read measurements inputs
   if (argc > 2)
   {
-    PROFILE_SCOPE("read file",sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("read file", sam_utils::JSONLogger::Instance());
     // getting a filename as argument
     std::ifstream file(argv[2]);
     file >> rootJson;
@@ -55,42 +54,46 @@ int main(int argc, char* argv[])
   std::cout << "\n\n Declaring a sam system:\n";
 #endif
 
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); // TODO: remove those calls
-  auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>(argId);
-  int fcount = 0;
+  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());   // TODO: remove those calls
+  auto syst   = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>(argId);
+  int  fcount = 0;
 
   {
-  PROFILE_SCOPE("integrates factors",sam_utils::JSONLogger::Instance());
-  for (const auto & mesJson : rootJson) // TODO: template it
-  {
-    if ( mesJson["type"] == "anchor")
+    PROFILE_SCOPE("integrates factors", sam_utils::JSONLogger::Instance());
+    for (const auto& mesJson : rootJson)   // TODO: template it
     {
-        Eigen::Vector2d z { mesJson["value"]["x"].asDouble(), mesJson["value"]["y"].asDouble()};
+      if (mesJson["type"] == "anchor")
+      {
+        Eigen::Vector2d     z {mesJson["value"]["x"].asDouble(), mesJson["value"]["y"].asDouble()};
         std::vector<double> cov_vect;
-        for (const auto & c : mesJson["covariance"])
-          cov_vect.push_back(c.asDouble());
+        for (const auto& c : mesJson["covariance"]) cov_vect.push_back(c.asDouble());
         Eigen::Map<Eigen::Matrix2d> Sigma(cov_vect.data());
-        std::stringstream fid;  // factor id
+        std::stringstream           fid;   // factor id
         fid << "f" << fcount;
-        syst.register_new_factor<AnchorFactor>(fid.str(), z, Sigma, {mesJson["vars_id"][0].asCString()} );
+        syst.register_new_factor<AnchorFactor>(fid.str(),
+                                               z,
+                                               Sigma,
+                                               {mesJson["vars_id"][0].asCString()});
         fcount++;
-    }
-    else if (mesJson["type"] == "linear-translation")
-    {
-
-        Eigen::Vector2d z { mesJson["value"]["dx"].asDouble(), mesJson["value"]["dy"].asDouble()};
+      }
+      else if (mesJson["type"] == "linear-translation")
+      {
+        Eigen::Vector2d z {mesJson["value"]["dx"].asDouble(), mesJson["value"]["dy"].asDouble()};
         std::vector<double> cov_vect;
-        for (const auto & c : mesJson["covariance"])
-          cov_vect.push_back(c.asDouble());
+        for (const auto& c : mesJson["covariance"]) cov_vect.push_back(c.asDouble());
         Eigen::Map<Eigen::Matrix2d> Sigma(cov_vect.data());
-        std::stringstream fid; 
+        std::stringstream           fid;
         fid << "f" << fcount;
-        syst.register_new_factor<LinearTranslationFactor>(fid.str(), z, Sigma, {mesJson["vars_id"][0].asCString(),mesJson["vars_id"][1].asCString()} );
+        syst.register_new_factor<LinearTranslationFactor>(
+            fid.str(),
+            z,
+            Sigma,
+            {mesJson["vars_id"][0].asCString(), mesJson["vars_id"][1].asCString()});
         fcount++;
+      }
+      else
+        throw std::runtime_error("measure type not supported");
     }
-    else 
-      throw std::runtime_error("measure type not supported");
-  }
   }
 
   // std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -107,5 +110,3 @@ int main(int argc, char* argv[])
   }
   return 0;
 }
-
-
