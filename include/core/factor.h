@@ -14,12 +14,13 @@
 
 // TODO: rename KCC to KeyContextModel : model in the context of a factor
 
-template <typename DerivedKCC, typename KEYMETA,size_t DimMes, const char* ContextRole> // TODO: , bool Linear=false>
+template <typename DerivedKCC, typename KEYMETA,size_t DimMes, const char* ContextRole,bool LinearModel=false> // TODO: , bool Linear=false>
 struct KeyContextualConduct : KEYMETA
 {
   using KeyMeta_t = KEYMETA;
   static constexpr const char*       kRole {ContextRole};
   static constexpr const std::size_t kM {DimMes};   // TODO: really necessary ?
+  static constexpr const bool kLinear {LinearModel};
   // TODO: NL  static constexpr bool isLinear = Linear;
   // non static but const
   const std::string key_id;
@@ -93,8 +94,11 @@ class Factor
   KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
                         // process matrix), fill at ctor, modifiable
   // TODO: isLinear : factor is linear if all keys models in this context are linear
-  static constexpr bool isLinear = (KeyConducts::isLinear && ...);
+  static constexpr bool isLinear = (KeyConducts::kLinear && ...);
 
+  // roach, made from the partRoach of each keys
+    // TODO: better moved to the impl
+  // const process_matrix_t roach = (process_matrix_t << (KeyConducts::H, ...) ).finished();
   
   double error = 0;
 
@@ -111,45 +115,52 @@ class Factor
 
     // template <bool LinearSystem>
     // measure_vect_t compute_b();
+  // template <typename T>
+  // measure_vect_t compute_b(){return measure_vect_t{};}
+
 
     // TODO: call this one in sam system
-    template <bool LinearSystem>
-    measure_vect_t compute_b(bool isSystLinear)
+    // template <bool LinearSystem>
+  template <bool LinearSystem,typename... PARTIAL_STATE_VECTORS_T>
+  measure_vect_t compute_b(const PARTIAL_STATE_VECTORS_T&... x)
+  {
+    if constexpr (LinearSystem)
     {
-      if constexpr (LinearSystem)
-      {
-        // if the syst is linear, by implication, this factor is linear
-        // but let's check !
-        static_assert(isLinear);
-        return this->rosie;
-      }
-      else // systeme is not linear, but if factor is linear, some constant can be leverage to save a few instructions
-      {
-        if constexpr (isLinear)
-        {
-          return this->rosie - this->roach*X; // FIX: need x
-        }
-        else
-        {
-          return this->rosie - rho*compute_h_of_x(x ...);
-        }
-      }
+      // if the syst is linear, by implication, this factor is linear
+      // but let's check !
+      static_assert(isLinear);
+      // ensure no lin point is given
+      static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == 0); 
+      return this->rosie;
     }
+    else // systeme is not linear, but if factor is linear, some constant can be leverage to save a few instructions
+    {
+      static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
+      // if constexpr(isLinear)
+      //   return this->rosie - this->roach*state_vector_t{x...};
+      // else
+        return this->rosie - this->rho*this->compute_h_of_x(x ...);
+    }
+  }
 
+
+  // TODO: compute_sum_of_part_h_of_part_x unecessary (it seems better to transform is a matrix to enable SIMD)?
   template <typename... PARTIAL_STATE_VECTORS_T>
   measure_vect_t compute_h_of_x(const PARTIAL_STATE_VECTORS_T&... x) const
   {
     static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
     // this is implementation specific
-    // if linear, this is the  sum of the part_h_of_part_x (that are part_h \times part_x)
-    // In some nonlinear cases, it may still be develop as  \sum part_h_of_x
-    return compute_sum_of_part_h_of_part_x(x..., std::make_index_sequence<kNbKeys> {});
-      // TODO: NL
-      // if constexpr (isLinear)
-      //   return compute_sum_of_part_h_of_part_x(x..., std::make_index_sequence<kNbKeys> {});
-      // else
-      //   return compute_h_of_x_impl(x ...); // has to be defined for each NL factor
-      //   // e.g. for bearing, range-bearing
+      if constexpr (isLinear)
+      {
+          // if linear, this is the  sum of the part_h_of_part_x (that are part_h \times part_x)
+          // NOTE: In some nonlinear cases, it may still be develop as  \sum part_h_of_x
+          return compute_sum_of_part_h_of_part_x(x..., std::make_index_sequence<kNbKeys> {});
+      }
+      else
+      {
+          // NL case -> e.g. for bearing, range-bearing
+        return compute_h_of_x_impl(x ...); // has to be defined for each NL factor
+      }
   }
 
   // this for linear
@@ -184,19 +195,19 @@ class Factor
   {
   }
 
-  // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
-  measure_vect_t compute_rosie() const   // rho*z = rosie !
-  {                                      // TODO: remove as a constant member
-    return rho * z;
-  }
+  // // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
+  // measure_vect_t compute_rosie() const   // rho*z = rosie !
+  // {                                      // TODO: remove as a constant member
+  //   return rho * z;
+  // }
 
   // NOTE: no compute_b explicitely for now, until the mix NL Lin of a var is
   // understood
 
-  // \|Ax-b\|^2_2
-  double compute_error(const state_vector_t& x)
+  double compute_error(const state_vector_t& x) const
   {
-    return (rho * compute_h_of_x(x) - compute_rosie()).norm();
+    // TODO: small improvement possible for linear factor (and linear factor in NL syst ?)
+    return (this->rho * this->compute_h_of_x(x) - this->rosie).norm();
   }
 
   // for the nonlinears

@@ -36,7 +36,7 @@ namespace SAM
     using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
 
     // TODO: isSystFullyLinear (non type bool template parameter)
-    // static constexpr bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
+    static constexpr const bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
 
     SamSystem(const std::string & agent_id):agent_id(agent_id) { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
 
@@ -89,6 +89,7 @@ namespace SAM
       auto [A, b] = assemble_system(M, N, nnz);
       // and solve the system
       auto   [Xmap,qr_error,rnnz]                 = solveQR(A, b);
+      // TODO: in NL , add this to the linpoint
       this->bookkeeper_.set_syst_Rnnz(rnnz);
       this->bookkeeper_.set_syst_resolution_error(qr_error);
 
@@ -202,7 +203,7 @@ namespace SAM
                                                      decltype(kcc)::kN,
                                                      1))
                                        + ...)
-                                      - factor.compute_rosie();
+                                      - factor.rosie; // TODO: adapt for NL
                     factor.error = std::pow(innovation.norm(), 2);
                     // this factor norm2 squared is added to the total error
                     accumulated_factor_error += factor.error;
@@ -351,7 +352,7 @@ namespace SAM
           // if constexpr nonlinear factor  =>  set lin point (given by
           // bookkeeper)
           // auto [factorA, factorb] = factor.compute_A_b();
-          auto factorb = factor.compute_rosie();   
+          auto factorb = factor.template compute_b<isSystFullyLinear>();  // NOTE: weird syntax
           // TODO: change for NL pb :  rosie - rho h(X^0), or rosie - roach*X^0   ;  for linear : b = rosie (constant)
           // TODO: call it factorb = factor.compute_b<isSystFullLinear>(); 
           // NOTE: the template argument isSysFullLinear should not matter if the factor is not linear

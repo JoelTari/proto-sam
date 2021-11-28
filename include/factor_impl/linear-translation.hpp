@@ -17,9 +17,9 @@ struct ObserverKeyConduct
     : KeyContextualConduct<ObserverKeyConduct,
                            MetaKeyPosition_t,
                            MetaMeasureLinearTranslation_t::kM,
-                           observer_var>
+                           observer_var,true> // true for linear
 {
-  inline static const process_matrix_t H {{-1, 0}, {0, -1}};
+  inline static const process_matrix_t partH {{-1, 0}, {0, -1}};
   const process_matrix_t               partA;
 
   process_matrix_t compute_part_A_impl() const { return partA; }
@@ -27,12 +27,12 @@ struct ObserverKeyConduct
   measure_vect_t compute_part_h_of_part_x_impl(const part_state_vect_t & part_x)
   {
     // OPTIMIZE: this is the same for every linear KeyCC
-    return H*part_x;
+    return partH*part_x;
   }
 
   ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho)
       : KeyContextualConduct(key_id, rho)
-      , partA(rho * H)
+      , partA(rho * partH)
   {
   }
 };
@@ -45,16 +45,22 @@ struct ObserveeKeyConduct
     : KeyContextualConduct<ObserveeKeyConduct,
                            MetaKeyPosition_t,
                            MetaMeasureLinearTranslation_t::kM,
-                           observee_var>
+                           observee_var,true>
 {
-  const process_matrix_t H {{1, 0}, {0, 1}};
+  const process_matrix_t partH {{1, 0}, {0, 1}};
   const process_matrix_t partA;
 
   process_matrix_t compute_part_A_impl() const { return partA; }
 
+  measure_vect_t compute_part_h_of_part_x_impl(const part_state_vect_t & part_x)
+  {
+    // OPTIMIZE: this is the same for every linear KeyCC
+    return partH*part_x;
+  }
+
   ObserveeKeyConduct(const std::string key_id, const measure_cov_t& rho)
       : KeyContextualConduct(key_id, rho)
-      , partA(rho * H)
+      , partA(rho * partH)
   {
   }
 };
