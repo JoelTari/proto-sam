@@ -28,11 +28,11 @@ struct UniqueKeyConduct
     return partA;   // since it is linear, no need to do anything
   }
   
-  measure_vect_t compute_part_h_of_part_x_impl(const part_state_vect_t & part_x)
-  {
-    // OPTIMIZE: this is the same for every linear KeyCC
-    return partH*part_x;
-  }
+  // measure_vect_t compute_part_h_of_part_x_impl(const part_state_vect_t & part_x)
+  // {
+  //   // OPTIMIZE: this is the same for every linear KeyCC
+  //   return partH*part_x;
+  // }
 
   UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho)
       : KeyContextualConduct(key_id, rho)
@@ -72,9 +72,15 @@ class AnchorFactor
   //   return roach*x;
   // }
 
-    private:
-    // defined at ctor
-    const process_matrix_t roach = rho*process_matrix_t{{1,0},{0,1}};
+  private:
+  // defined at ctor
+  const process_matrix_t roach = rho*process_matrix_t{{1,0},{0,1}}; // TODO: defined w.r.t to the partH of keyset
+  
+  measure_vect_t compute_h_of_x_impl(const state_vector_t& x) const
+  {
+    return process_matrix_t{{1,0},{0,1}}*x;
+  }
+    
 
 };
 

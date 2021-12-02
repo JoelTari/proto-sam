@@ -24,11 +24,11 @@ struct ObserverKeyConduct
 
   process_matrix_t compute_part_A_impl() const { return partA; }
 
-  measure_vect_t compute_part_h_of_part_x_impl(const part_state_vect_t & part_x)
-  {
-    // OPTIMIZE: this is the same for every linear KeyCC
-    return partH*part_x;
-  }
+  // measure_vect_t compute_part_h_of_part_x_impl(const part_state_vect_t & part_x)
+  // {
+  //   // OPTIMIZE: this is the same for every linear KeyCC
+  //   return partH*part_x;
+  // }
 
   ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho)
       : KeyContextualConduct(key_id, rho)
@@ -52,11 +52,11 @@ struct ObserveeKeyConduct
 
   process_matrix_t compute_part_A_impl() const { return partA; }
 
-  measure_vect_t compute_part_h_of_part_x_impl(const part_state_vect_t & part_x)
-  {
-    // OPTIMIZE: this is the same for every linear KeyCC
-    return partH*part_x;
-  }
+  // measure_vect_t compute_part_h_of_part_x_impl(const part_state_vect_t & part_x)
+  // {
+  //   // OPTIMIZE: this is the same for every linear KeyCC
+  //   return partH*part_x;
+  // }
 
   ObserveeKeyConduct(const std::string key_id, const measure_cov_t& rho)
       : KeyContextualConduct(key_id, rho)
@@ -87,6 +87,14 @@ class LinearTranslationFactor
 #if ENABLE_DEBUG_TRACE
     std::cout << "\t::  Factor " << factor_id << " created.\n";
 #endif
+  }
+    private:
+    // defined at ctor
+  const process_matrix_t roach = rho*process_matrix_t{{1,0,-1,0},{0,1,0,-1}}; // TODO: defined w.r.t to the partH of keyset
+
+  measure_vect_t compute_h_of_x_impl(const state_vector_t& x) const
+  {
+    return process_matrix_t{{1,0,-1,0},{0,1,0,-1}}*x;
   }
 };
 

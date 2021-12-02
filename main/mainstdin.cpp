@@ -5,6 +5,7 @@
 #include "factor_impl/linear-translation.hpp"
 #include "utils/tuple_patterns.h"
 
+#include <eigen3/Eigen/src/Core/products/Parallelizer.h>
 #include <exception>
 #include <sstream>
 #include <stdexcept>
@@ -17,6 +18,7 @@
 //------------------------------------------------------------------//
 int main(int argc, char* argv[])
 {
+  std::cout << "nb of threads : " << Eigen::nbThreads() << '\n';
   std::string argId;
   if (argc > 1) { argId = argv[1]; }
   else

@@ -121,56 +121,77 @@ class Factor
 
     // TODO: call this one in sam system
     // template <bool LinearSystem>
-  template <bool LinearSystem,typename... PARTIAL_STATE_VECTORS_T>
-  measure_vect_t compute_b(const PARTIAL_STATE_VECTORS_T&... x)
+  template <typename... PARTIAL_STATE_VECTORS_T> // TODO: do a tuple here !
+  measure_vect_t compute_b(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup)
   {
-    if constexpr (LinearSystem)
-    {
-      // if the syst is linear, by implication, this factor is linear
-      // but let's check !
-      static_assert(isLinear);
-      // ensure no lin point is given
-      static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == 0); 
-      return this->rosie;
-    }
-    else // systeme is not linear, but if factor is linear, some constant can be leverage to save a few instructions
-    {
+    // if constexpr (LinearSystem)
+    // {
+    //   // if the syst is linear, by implication, this factor is linear
+    //   // but let's check !
+    //   static_assert(isLinear);
+    //   // ensure no lin point is given
+    //   static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == 0); 
+    //   return this->rosie;
+    // }
+    // else // systeme is not linear, but if factor is linear, some constant can be leverage to save a few instructions
+    // {
       static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
       // if constexpr(isLinear)
       //   return this->rosie - this->roach*state_vector_t{x...};
       // else
-        return this->rosie - this->rho*this->compute_h_of_x(x ...);
-    }
+      return this->rosie - this->rho*this->compute_h_of_x(x_tup);
+    // }
   }
 
 
   // TODO: compute_sum_of_part_h_of_part_x unecessary (it seems better to transform is a matrix to enable SIMD)?
   template <typename... PARTIAL_STATE_VECTORS_T>
-  measure_vect_t compute_h_of_x(const PARTIAL_STATE_VECTORS_T&... x) const
+  measure_vect_t compute_h_of_x(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
   {
     static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
+    measure_vect_t h_of_x=measure_vect_t::Zero();
+
+    state_vector_t x;
+    // block op for vectors
+      // void for_each_in_const_tuple(std::tuple<Ts...> const& t, F f)
+    sam_tuples::for_each_in_const_tuple(x_tup,[&x](auto&& partx)
+    {
+      x << partx;
+    });// TODO: check
+
+    // std::apply([&x](auto... partx)
+    // {
+    //     x << (partx, ...) ;         
+    // }, x_tup); // TODO: check
+    return compute_h_of_x(x);
     // this is implementation specific
-      if constexpr (isLinear)
-      {
-          // if linear, this is the  sum of the part_h_of_part_x (that are part_h \times part_x)
-          // NOTE: In some nonlinear cases, it may still be develop as  \sum part_h_of_x
-          return compute_sum_of_part_h_of_part_x(x..., std::make_index_sequence<kNbKeys> {});
-      }
-      else
-      {
+      // if constexpr (isLinear)
+      // {
+      //     // if linear, this is the  sum of the part_h_of_part_x (that are part_h \times part_x)
+      //     // NOTE: In some nonlinear cases, it may still be develop as  \sum part_h_of_x
+      //     return compute_sum_of_part_h_of_part_x(x_tup, std::make_index_sequence<kNbKeys> {});
+      // }
+      // else
+      // {
           // NL case -> e.g. for bearing, range-bearing
-        return compute_h_of_x_impl(x ...); // has to be defined for each NL factor
-      }
+        // return compute_h_of_x_impl(x_tup); // has to be defined for each NL factor
+      // }
   }
 
-  // this for linear
-  template <typename... PARTIAL_STATE_VECTORS_T>
-  measure_vect_t compute_sum_of_part_h_of_part_x(const PARTIAL_STATE_VECTORS_T&... x) const
+  measure_vect_t compute_h_of_x(const state_vector_t & x) const
   {
-    // WARNING:  proves the need of the start index for each key ??
-    std::make_index_sequence<kNbKeys> I {};
-    return (std::get<I>(keys_set).compute_part_h_of_part_x(x) + ...);
+    return compute_h_of_x_impl(x);
   }
+
+  // // this for linear
+  // template <typename... PARTIAL_STATE_VECTORS_T>
+  // measure_vect_t compute_sum_of_part_h_of_part_x(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
+  // {
+  //   // WARNING:  proves the need of the start index for each key ??
+  //   std::make_index_sequence<kNbKeys> I {};
+  //   return (std::get<I>(this->keys_set).compute_part_h_of_part_x(std::get<I>(x_tup)) + ...);
+  //     // HERE:
+  // }
 
   // the ctor
   Factor(const std::string&                      factor_id,

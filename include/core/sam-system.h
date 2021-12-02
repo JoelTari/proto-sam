@@ -352,10 +352,27 @@ namespace SAM
           // if constexpr nonlinear factor  =>  set lin point (given by
           // bookkeeper)
           // auto [factorA, factorb] = factor.compute_A_b();
-          auto factorb = factor.template compute_b<isSystFullyLinear>();  // NOTE: weird syntax
-          // TODO: change for NL pb :  rosie - rho h(X^0), or rosie - roach*X^0   ;  for linear : b = rosie (constant)
-          // TODO: call it factorb = factor.compute_b<isSystFullLinear>(); 
-          // NOTE: the template argument isSysFullLinear should not matter if the factor is not linear
+          typename factor_type_in_tuple_t<I>::measure_vect_t factorb;
+          if constexpr ( isSystFullyLinear )
+            // factorb = factor.template compute_b<isSystFullyLinear>();  // NOTE: weird syntax
+            factorb = factor.rosie;
+          else
+          {
+            // in nonlinear systems, must retrieve the linearization point for this factor
+            // CONTINUE: get marginals and put them in arguments
+            // for each keyccid of the factor, query marginal, and get the mean
+            // -> std::tuple<mean1,mean2>
+            std::tuple means_tup;
+            std::apply([&means_tup,this](auto... kcc)
+            {
+              // find the id
+              this->all_marginals_.find<decltype(kcc)>(kcc.key_id);
+              // CONTINUE: use not apply
+
+            },factor.keys_set);
+            factor = factor.compute_b(); // TODO: x... in 
+          }
+
 #if ENABLE_DEBUG_TRACE
           std::cout << " b: \n" << factorb << "\n";
 #endif
