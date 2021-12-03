@@ -113,34 +113,12 @@ class Factor
     return result;
   }
 
-    // template <bool LinearSystem>
-    // measure_vect_t compute_b();
-  // template <typename T>
-  // measure_vect_t compute_b(){return measure_vect_t{};}
 
-
-    // TODO: call this one in sam system
-    // template <bool LinearSystem>
   template <typename... PARTIAL_STATE_VECTORS_T> // TODO: do a tuple here !
   measure_vect_t compute_b(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup)
   {
-    // if constexpr (LinearSystem)
-    // {
-    //   // if the syst is linear, by implication, this factor is linear
-    //   // but let's check !
-    //   static_assert(isLinear);
-    //   // ensure no lin point is given
-    //   static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == 0); 
-    //   return this->rosie;
-    // }
-    // else // systeme is not linear, but if factor is linear, some constant can be leverage to save a few instructions
-    // {
       static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
-      // if constexpr(isLinear)
-      //   return this->rosie - this->roach*state_vector_t{x...};
-      // else
       return this->rosie - this->rho*this->compute_h_of_x(x_tup);
-    // }
   }
 
 
@@ -215,15 +193,6 @@ class Factor
       , keyIdToTupleIdx(map_keyid(keys_id))
   {
   }
-
-  // // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
-  // measure_vect_t compute_rosie() const   // rho*z = rosie !
-  // {                                      // TODO: remove as a constant member
-  //   return rho * z;
-  // }
-
-  // NOTE: no compute_b explicitely for now, until the mix NL Lin of a var is
-  // understood
 
   double compute_error(const state_vector_t& x) const
   {

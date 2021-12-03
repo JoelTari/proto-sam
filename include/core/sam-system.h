@@ -359,18 +359,25 @@ namespace SAM
           else
           {
             // in nonlinear systems, must retrieve the linearization point for this factor
-            // CONTINUE: get marginals and put them in arguments
-            // for each keyccid of the factor, query marginal, and get the mean
-            // -> std::tuple<mean1,mean2>
-            std::tuple means_tup;
-            std::apply([&means_tup,this](auto... kcc)
-            {
-              // find the id
-              this->all_marginals_.find<decltype(kcc)>(kcc.key_id);
-              // CONTINUE: use not apply
+            // std::tuple means_tup;
+            // sam_tuples::for_each_in_const_tuple(factor.keys_set, [&means_tup,this](const auto & kcc){
+            //   std::tuple_cat(means_tup,
+            //       std::tuple<typename decltype(kcc)::part_state_vect_t>(this->all_marginals_.template find<decltype(kcc)>(kcc.key_id).value().mean)
+            //   );
+            // });
+            // std::apply([&means_tup,this](auto ... kcm){
+            //   std::make_tuple( (this->all_marginals_.template find<typename decltype(kcm)::KeyMeta_t>(kcm.key_id).value().mean, ...) );
+            // }, factor.keys_set);
+            // CONTINUE: DEBUG: HERE:
+            auto mean_tup = sam_tuples::reduce_tuple_variadically(factor.keys_set, 
+              [this]<std::size_t... II>(auto tup_el, std::index_sequence<II...>)
+              {
+                  return std::make_tuple( 
+              (this->all_marginals_.template find<typename decltype(std::get<II>(tup_el))::KeyMeta_t>(std::get<II>(tup_el).key_id).value().mean, ...) );
+              }
 
-            },factor.keys_set);
-            factor = factor.compute_b(); // TODO: x... in 
+            );
+            // factorb = factor.compute_b(means_tup);
           }
 
 #if ENABLE_DEBUG_TRACE

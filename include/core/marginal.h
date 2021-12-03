@@ -62,7 +62,7 @@ namespace
 
     template <typename Q_KEYMETA_T>
     std::optional<Marginal<Q_KEYMETA_T>>
-        find(const std::string& key_id)   // OPTIMIZE: std::optional<Q_KEYMETA_T&>
+        find(const std::string& key_id) 
     {
       // static assert
       static_assert(std::is_same_v<Q_KEYMETA_T,
