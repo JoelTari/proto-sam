@@ -31,15 +31,20 @@ struct KeyContextualConduct : KEYMETA
   // measure_vect_t   b;
   const measure_cov_t& rho;
 
-    // TODO: process_matrix_t compute_part_A(bool isSystLinear)
+  // linearization_point
+  // NOTE: not used when the wider system is linear.
+  // NOTE: if this model is linear, but the wider system nonlinear, it is still used
+  part_state_vect_t linearization_point;
+
   process_matrix_t compute_part_A()
   {
-    // in linear it would just be a getter to  rho * H
-    // in nonlinear, set_linearization_point must occur before
-      // TODO: if constexpr (Linear)
-      // TODO: return static_cast<DerivedKCC*>(this)->compute_part_A_impl(isSystLinear);
-      // TODO: else (the factor is NL -> the systeme is not linear)
+    // NOTE: branch only for linear/nonlinear key MODEL
+    // NOTE: indeed, if the key model is linear, it does not matter whether or not the wider 
+    // NOTE: system is linear or nonlinear, the answer would still be rho*H
+   if constexpr (LinearModel)
     return static_cast<DerivedKCC*>(this)->compute_part_A_impl(); 
+   //else
+    // return static_cast<DerivedKCC*>(this)->compute_part_A_at_LIN_POINT_impl(); // WARNING: AT LIN POINT
   }
 
     // NOTE: is used ?? h_part(part_x) doesnot make sense
