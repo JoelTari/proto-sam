@@ -71,15 +71,14 @@ class AnchorFactor
   // {
   //   return roach*x;
   // }
-
-  private:
-  // defined at ctor
-  const process_matrix_t roach = rho*process_matrix_t{{1,0},{0,1}}; // TODO: defined w.r.t to the partH of keyset
-  
   measure_vect_t compute_h_of_x_impl(const state_vector_t& x) const
   {
     return process_matrix_t{{1,0},{0,1}}*x;
   }
+
+  private:
+  // defined at ctor
+  const process_matrix_t roach = rho*process_matrix_t{{1,0},{0,1}}; // TODO: defined w.r.t to the partH of keyset
     
 
 };

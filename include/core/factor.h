@@ -14,14 +14,13 @@
 
 // TODO: rename KCC to KeyContextModel : model in the context of a factor
 
-template <typename DerivedKCC, typename KEYMETA,size_t DimMes, const char* ContextRole,bool LinearModel=false> // TODO: , bool Linear=false>
+template <typename DerivedKCC, typename KEYMETA,size_t DimMes, const char* ContextRole,bool LinearModel=false> 
 struct KeyContextualConduct : KEYMETA
 {
   using KeyMeta_t = KEYMETA;
   static constexpr const char*       kRole {ContextRole};
-  static constexpr const std::size_t kM {DimMes};   // TODO: really necessary ?
+  static constexpr const std::size_t kM {DimMes};
   static constexpr const bool kLinear {LinearModel};
-  // TODO: NL  static constexpr bool isLinear = Linear;
   // non static but const
   const std::string key_id;
   // non static, not const
@@ -45,6 +44,7 @@ struct KeyContextualConduct : KEYMETA
 
     // NOTE: is used ?? h_part(part_x) doesnot make sense
     // NOTE:          ( H_part * part_x does )
+    // FIX: redundant: make sure its ok to remove
   measure_vect_t compute_part_h_of_part_x(const part_state_vect_t& x)
   {
     return static_cast<DerivedKCC*>(this)->compute_part_h_of_part_x_impl(x);
@@ -96,10 +96,6 @@ class Factor
   // TODO: isLinear : factor is linear if all keys models in this context are linear
   static constexpr bool isLinear = (KeyConducts::kLinear && ...);
 
-  // roach, made from the partRoach of each keys
-    // TODO: better moved to the impl
-  // const process_matrix_t roach = (process_matrix_t << (KeyConducts::H, ...) ).finished();
-  
   double error = 0;
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
@@ -115,14 +111,13 @@ class Factor
 
 
   template <typename... PARTIAL_STATE_VECTORS_T> // TODO: do a tuple here !
-  measure_vect_t compute_b(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup)
+  measure_vect_t compute_b(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
   {
+      static_assert(std::tuple_size_v<std::tuple<PARTIAL_STATE_VECTORS_T...>> == kNbKeys);
       static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
       return this->rosie - this->rho*this->compute_h_of_x(x_tup);
   }
 
-
-  // TODO: compute_sum_of_part_h_of_part_x unecessary (it seems better to transform is a matrix to enable SIMD)?
   template <typename... PARTIAL_STATE_VECTORS_T>
   measure_vect_t compute_h_of_x(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
   {
@@ -130,46 +125,20 @@ class Factor
     measure_vect_t h_of_x=measure_vect_t::Zero();
 
     state_vector_t x;
-    // block op for vectors
-      // void for_each_in_const_tuple(std::tuple<Ts...> const& t, F f)
-    sam_tuples::for_each_in_const_tuple(x_tup,[&x](auto&& partx)
-    {
-      x << partx;
-    });// TODO: check
 
-    // std::apply([&x](auto... partx)
-    // {
-    //     x << (partx, ...) ;         
-    // }, x_tup); // TODO: check
+    std::apply([&x](auto... partx)
+    {
+      ((x << partx ),  ...);
+        // x << (partx, ...) ;        
+    }, x_tup); // TODO: check, to good to be true ??
     return compute_h_of_x(x);
-    // this is implementation specific
-      // if constexpr (isLinear)
-      // {
-      //     // if linear, this is the  sum of the part_h_of_part_x (that are part_h \times part_x)
-      //     // NOTE: In some nonlinear cases, it may still be develop as  \sum part_h_of_x
-      //     return compute_sum_of_part_h_of_part_x(x_tup, std::make_index_sequence<kNbKeys> {});
-      // }
-      // else
-      // {
-          // NL case -> e.g. for bearing, range-bearing
-        // return compute_h_of_x_impl(x_tup); // has to be defined for each NL factor
-      // }
   }
 
   measure_vect_t compute_h_of_x(const state_vector_t & x) const
   {
-    return compute_h_of_x_impl(x);
+    // class instantiation dependent
+    return static_cast<const DerivedFactor*>(this)->compute_h_of_x_impl(x);
   }
-
-  // // this for linear
-  // template <typename... PARTIAL_STATE_VECTORS_T>
-  // measure_vect_t compute_sum_of_part_h_of_part_x(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
-  // {
-  //   // WARNING:  proves the need of the start index for each key ??
-  //   std::make_index_sequence<kNbKeys> I {};
-  //   return (std::get<I>(this->keys_set).compute_part_h_of_part_x(std::get<I>(x_tup)) + ...);
-  //     // HERE:
-  // }
 
   // the ctor
   Factor(const std::string&                      factor_id,

@@ -348,50 +348,31 @@ namespace SAM
         for (auto& factor : std::get<I>(this->all_factors_tuple_))
         {
           PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
-          // update the factor's A and b matrices (new lin point)
-          // if constexpr nonlinear factor  =>  set lin point (given by
-          // bookkeeper)
-          // auto [factorA, factorb] = factor.compute_A_b();
+          // compute vector b (depends if the system is fully linear)
           typename factor_type_in_tuple_t<I>::measure_vect_t factorb;
-          if constexpr ( !isSystFullyLinear )
-            // factorb = factor.template compute_b<isSystFullyLinear>();  // NOTE: weird syntax
+          if constexpr ( isSystFullyLinear )
             factorb = factor.rosie;
           else
           {
-            // in nonlinear systems, must retrieve the linearization point for this factor
-            // std::tuple means_tup;
-            // sam_tuples::for_each_in_const_tuple(factor.keys_set, [&means_tup,this](const auto & kcc){
-            //   std::tuple_cat(means_tup,
-            //       std::tuple<typename decltype(kcc)::part_state_vect_t>(this->all_marginals_.template find<decltype(kcc)>(kcc.key_id).value().mean)
-            //   );
-            // });
-            // std::apply([&means_tup,this](auto ... kcm){
-            //   std::make_tuple( (this->all_marginals_.template find<typename decltype(kcm)::KeyMeta_t>(kcm.key_id).value().mean, ...) );
-            // }, factor.keys_set);
             auto mean_tup = sam_tuples::reduce_tuple_variadically(factor.keys_set, 
               [this]<std::size_t... II>(const auto & tup_el, std::index_sequence<II...>)
               {
-                  // (using kcc_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t,...);
-                  
-                  return std::make_tuple( 
-              (
-                this->all_marginals_.template find<typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t>
-                (std::get<II>(tup_el).key_id).value().mean
-                , ...)
+                  auto returned_tup = std::make_tuple( 
+              this->all_marginals_.template find<typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t>
+              (std::get<II>(tup_el).key_id).value().mean
+               ...
               );
-              // (this->all_marginals_.template find<typename decltype(tup_el)::KeyMeta_t>(std::get<II>(tup_el).key_id).value().mean, ...) );
+              static_assert(sizeof...(II) == std::tuple_size_v<decltype(returned_tup)>);
+              return returned_tup;
               }
-
             );
-            // CONTINUE: DEBUG: HERE:
-            // factorb = factor.compute_b(mean_tup);
+            factorb = factor.compute_b(mean_tup);
           }
 
 #if ENABLE_DEBUG_TRACE
           std::cout << " b: \n" << factorb << "\n";
 #endif
-
-          // easy part : fill the rhs b from factor.b
+          // Fill the vector b of that factor in the system vector b
           constexpr int mesdim                = factor_type_in_tuple_t<I>::kM;
           b.block<mesdim, 1>(line_counter, 0) = factorb;
           // suckless method: consider the A matrix of the factor (not the
