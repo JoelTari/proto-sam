@@ -353,7 +353,7 @@ namespace SAM
           // bookkeeper)
           // auto [factorA, factorb] = factor.compute_A_b();
           typename factor_type_in_tuple_t<I>::measure_vect_t factorb;
-          if constexpr ( isSystFullyLinear )
+          if constexpr ( !isSystFullyLinear )
             // factorb = factor.template compute_b<isSystFullyLinear>();  // NOTE: weird syntax
             factorb = factor.rosie;
           else
@@ -368,16 +368,23 @@ namespace SAM
             // std::apply([&means_tup,this](auto ... kcm){
             //   std::make_tuple( (this->all_marginals_.template find<typename decltype(kcm)::KeyMeta_t>(kcm.key_id).value().mean, ...) );
             // }, factor.keys_set);
-            // CONTINUE: DEBUG: HERE:
             auto mean_tup = sam_tuples::reduce_tuple_variadically(factor.keys_set, 
-              [this]<std::size_t... II>(auto tup_el, std::index_sequence<II...>)
+              [this]<std::size_t... II>(const auto & tup_el, std::index_sequence<II...>)
               {
+                  // (using kcc_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t,...);
+                  
                   return std::make_tuple( 
-              (this->all_marginals_.template find<typename decltype(std::get<II>(tup_el))::KeyMeta_t>(std::get<II>(tup_el).key_id).value().mean, ...) );
+              (
+                this->all_marginals_.template find<typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t>
+                (std::get<II>(tup_el).key_id).value().mean
+                , ...)
+              );
+              // (this->all_marginals_.template find<typename decltype(tup_el)::KeyMeta_t>(std::get<II>(tup_el).key_id).value().mean, ...) );
               }
 
             );
-            // factorb = factor.compute_b(means_tup);
+            // CONTINUE: DEBUG: HERE:
+            // factorb = factor.compute_b(mean_tup);
           }
 
 #if ENABLE_DEBUG_TRACE
