@@ -158,12 +158,11 @@ class Factor
             keys_id,
             []<std::size_t... I>(const auto& my_keys_id,
                                  const auto& rho,
-                                 std::index_sequence<I...>) {
-              return std::make_tuple(KeyConducts(my_keys_id[I], rho)...);
+                                 std::index_sequence<I...>) -> decltype(keys_set) {
+              // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
+              return  { KeyConducts(my_keys_id[I], rho) ... } ;
             },
             rho))
-      // , keys_set(sam_tuples::reduce_variadically(keys_id,this->init_tuple_keys,rho))
-      // , keys_set(init_tuple_keys(keys_id, rho))
       , keyIdToTupleIdx(map_keyid(keys_id))
   {
   }
