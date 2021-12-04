@@ -160,6 +160,8 @@ class Factor
                                  const auto& rho,
                                  std::index_sequence<I...>) -> decltype(keys_set) {
               // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
+              // might be possible to use perfect forwarding, by declaring an empty tuple
+              // and next line expanding tuple_cat with an intermediary function that has perfect forwarding ( TODO:)
               return  { KeyConducts(my_keys_id[I], rho) ... } ;
             },
             rho))
