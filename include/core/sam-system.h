@@ -332,63 +332,116 @@ namespace SAM
      * @param b
      * @param line_counter
      */
-    template <std::size_t I = 0>       // TODO: refactor, use std::apply, or my custom for_each_tuple. It will permits to
+    // template <std::size_t I = 0>       // TODO: refactor, use std::apply, or my custom for_each_tuple. It will permits to
     void loop_over_factors(std::vector<Eigen::Triplet<double>>& triplets,
                            Eigen::VectorXd&                     b,
                            int                                  line_counter = 0)
     {
-      if constexpr (I == S_)
-        return;
-      else
-      {
-#if ENABLE_DEBUG_TRACE
-        std::cout << "### Looping over factors of type " << factor_type_in_tuple_t<I>::kFactorLabel
-                  << "\n";
-#endif
-        for (auto& factor : std::get<I>(this->all_factors_tuple_))
+      sam_tuples::for_each_in_tuple(
+        this->all_factors_tuple_,
+        [this,&triplets,&b,&line_counter](auto& vect_of_f, auto I) // NOTE: I unusable (not constexpr-able)
         {
-          PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
-          // compute vector b (depends if the system is fully linear)
-          typename factor_type_in_tuple_t<I>::measure_vect_t factorb;
-          if constexpr ( isSystFullyLinear )
-            factorb = factor.rosie;
-          else
-          {
-            auto mean_tup = sam_tuples::reduce_tuple_variadically(factor.keys_set, 
-              [this]<std::size_t... II>(const auto & tup_el, std::index_sequence<II...>)
-              {
-                  auto returned_tup = std::make_tuple( 
-              this->all_marginals_.template find<typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t>
-              (std::get<II>(tup_el).key_id).value().mean
-               ...
-              );
-              static_assert(sizeof...(II) == std::tuple_size_v<decltype(returned_tup)>);
-              return returned_tup;
-              }
-            );
-            factorb = factor.compute_b(mean_tup);
-          }
-
+          // constexpr int I = ; // can't :(
+          using factor_t =typename std::decay_t<decltype(vect_of_f)>::value_type;
 #if ENABLE_DEBUG_TRACE
-          std::cout << " b: \n" << factorb << "\n";
+          std::cout << "### Looping over factors of type " << factor_t::kFactorLabel
+                    << "\n";
 #endif
-          // Fill the vector b of that factor in the system vector b
-          constexpr int mesdim                = factor_type_in_tuple_t<I>::kM;
-          b.block<mesdim, 1>(line_counter, 0) = factorb;
-          // suckless method: consider the A matrix of the factor (not the
-          // system) iterate over the keycontext, compute A, and fill the
-          // triplet list
-          std::apply(
-              [this, &triplets, line_counter](auto&&... keycc)
-              { ((this->compute_partialA_and_fill_triplet(keycc, triplets, line_counter)), ...); },
-              factor.keys_set);
+          for(auto & factor : vect_of_f)
+          {
+            PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
+            typename factor_t::measure_vect_t factorb;
+            if constexpr ( isSystFullyLinear )
+              factorb = factor.rosie;
+            else
+            {
+              auto mean_tup = sam_tuples::reduce_tuple_variadically(factor.keys_set, 
+                [this]<std::size_t... II>(const auto & tup_el, std::index_sequence<II...>)
+                {
+                    auto returned_tup = std::make_tuple( 
+                this->all_marginals_.template find<typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t>
+                (std::get<II>(tup_el).key_id).value().mean
+                 ...
+                );
+                static_assert(sizeof...(II) == std::tuple_size_v<decltype(returned_tup)>);
+                return returned_tup;
+                }
+              );
+              factorb = factor.compute_b(mean_tup);
+            }
+#if ENABLE_DEBUG_TRACE
+            std::cout << " b: \n" << factorb << "\n";
+#endif
+            // Fill the vector b of that factor in the system vector b
+            constexpr int mesdim                = factor_t::kM;
+            b.block<mesdim, 1>(line_counter, 0) = factorb;
+            // suckless method: consider the A matrix of the factor (not the
+            // system) iterate over the keycontext, compute A, and fill the
+            // triplet list
+            std::apply(
+                [this, &triplets, line_counter](auto&&... keycc)
+                { ((this->compute_partialA_and_fill_triplet(keycc, triplets, line_counter)), ...); },
+                factor.keys_set);
 
-          // increment the line number by as many lines filled here
-          line_counter += mesdim;
+            // increment the line number by as many lines filled here
+            line_counter += mesdim;
+          }
         }
-        // compile-time recursion
-        loop_over_factors<I + 1>(triplets, b, line_counter);
-      }
+      );
+
+
+//       if constexpr (I == S_)
+//         return;
+//       else
+//       {
+// #if ENABLE_DEBUG_TRACE
+//         std::cout << "### Looping over factors of type " << factor_type_in_tuple_t<I>::kFactorLabel
+//                   << "\n";
+// #endif
+//         for (auto& factor : std::get<I>(this->all_factors_tuple_))
+//         {
+//           PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
+//           // compute vector b (depends if the system is fully linear)
+//           typename factor_type_in_tuple_t<I>::measure_vect_t factorb;
+//           if constexpr ( isSystFullyLinear )
+//             factorb = factor.rosie;
+//           else
+//           {
+//             auto mean_tup = sam_tuples::reduce_tuple_variadically(factor.keys_set, 
+//               [this]<std::size_t... II>(const auto & tup_el, std::index_sequence<II...>)
+//               {
+//                   auto returned_tup = std::make_tuple( 
+//               this->all_marginals_.template find<typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t>
+//               (std::get<II>(tup_el).key_id).value().mean
+//                ...
+//               );
+//               static_assert(sizeof...(II) == std::tuple_size_v<decltype(returned_tup)>);
+//               return returned_tup;
+//               }
+//             );
+//             factorb = factor.compute_b(mean_tup);
+//           }
+//
+// #if ENABLE_DEBUG_TRACE
+//           std::cout << " b: \n" << factorb << "\n";
+// #endif
+//           // Fill the vector b of that factor in the system vector b
+//           constexpr int mesdim                = factor_type_in_tuple_t<I>::kM;
+//           b.block<mesdim, 1>(line_counter, 0) = factorb;
+//           // suckless method: consider the A matrix of the factor (not the
+//           // system) iterate over the keycontext, compute A, and fill the
+//           // triplet list
+//           std::apply(
+//               [this, &triplets, line_counter](auto&&... keycc)
+//               { ((this->compute_partialA_and_fill_triplet(keycc, triplets, line_counter)), ...); },
+//               factor.keys_set);
+//
+//           // increment the line number by as many lines filled here
+//           line_counter += mesdim;
+//         }
+//         // compile-time recursion
+//         loop_over_factors<I + 1>(triplets, b, line_counter);
+//       }
     }
 
     /**

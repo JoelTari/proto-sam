@@ -112,6 +112,7 @@ namespace sam_tuples
     template <typename T, typename F, std::size_t... Is>
     void for_each(T&& t, F f, std::index_sequence<Is...>)
     {
+      // NOTE: unfortunately, Is, the second arg of f, wont be considered constexpr inside f
       auto l = {(f(std::get<Is>(t), Is), 0)...};
     }
   }   // namespace detail
