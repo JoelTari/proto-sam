@@ -6,6 +6,7 @@
 
 #include <array>
 #include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/src/Core/Matrix.h>
 #include <iostream>
 #include <map>
 #include <string_view>
@@ -34,7 +35,7 @@ struct KeyContextualConduct : KEYMETA
   // linearization_point
   // NOTE: not used when the wider system is linear.
   // NOTE: if this model is linear, but the wider system nonlinear, it is still used
-  part_state_vect_t linearization_point;
+  part_state_vect_t linearization_point = part_state_vect_t::Zero();
 
   process_matrix_t compute_part_A()
   {
@@ -115,14 +116,52 @@ class Factor
   }
 
 
-  template <typename... PARTIAL_STATE_VECTORS_T> // TODO: do a tuple here !
-  measure_vect_t compute_b(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
+  // // TODO: URGENT: , the lin point will be internal (remove argument)
+  // template <typename... PARTIAL_STATE_VECTORS_T> // TODO: do a tuple here !
+  // measure_vect_t compute_b(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
+  // {
+  //     static_assert(std::tuple_size_v<std::tuple<PARTIAL_STATE_VECTORS_T...>> == kNbKeys);
+  //     static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
+  //     return this->rosie - this->rho*this->compute_h_of_x(x_tup);
+  // }
+  // the refactored compute_b
+  measure_vect_t compute_b_nl() const
   {
-      static_assert(std::tuple_size_v<std::tuple<PARTIAL_STATE_VECTORS_T...>> == kNbKeys);
-      static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
-      return this->rosie - this->rho*this->compute_h_of_x(x_tup);
+      auto  tuple_means = this->get_tuple_of_linearization_points();
+      return this->rosie - this->rho*this->compute_h_of_x(tuple_means);
   }
 
+  //  func that gets the tup of lin points contained in kcm into state_vector_t
+  std::tuple<typename KeyConducts::part_state_vect_t ...> get_tuple_of_linearization_points() const
+  {
+    std::tuple<typename KeyConducts::part_state_vect_t ...> tup_mean;
+    std::apply([this,&tup_mean](const auto & ...kcc) //-> std::tuple<typename KeyConducts::state_vector_t ...>
+    {
+      tup_mean = {kcc.linearization_point ... };
+    }
+    ,this->keys_set);
+    return tup_mean;
+  }
+
+  //  func that transforms a tup of lin points contained in kcm into state_vector_t
+  template <typename... PARTIAL_STATE_VECTORS_T>
+  state_vector_t get_state_vector_from_tuple(const std::tuple<PARTIAL_STATE_VECTORS_T...> & x_tup) const
+  {
+    static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
+    state_vector_t x;
+
+    std::apply([&x](auto... partx)
+    {
+      ((x << partx ),  ...);
+        // x << (partx, ...) ;        
+    }, x_tup); // TODO: check, too good to be true ??
+
+    return x;
+  }
+
+
+  // TODO: deprecate this one (only keep the 'compute_h_of_x' that calls the Eigen::vector)
+  // DEPRECATED:
   template <typename... PARTIAL_STATE_VECTORS_T>
   measure_vect_t compute_h_of_x(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
   {
@@ -135,7 +174,7 @@ class Factor
     {
       ((x << partx ),  ...);
         // x << (partx, ...) ;        
-    }, x_tup); // TODO: check, to good to be true ??
+    }, x_tup); // TODO: check, too good to be true ??
     return compute_h_of_x(x);
   }
 
