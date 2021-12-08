@@ -22,7 +22,7 @@ int main (int argc, char *argv[])
 
     container.insert<MetaKeyPosition_t>("k",xmap_marg,cov);
 
-    auto opt = container.find<MetaKeyPosition_t>("k");
+    auto opt = container.findt<MetaKeyPosition_t>("k");
     std::cout << "has value? : " << opt.has_value();
     if (opt.has_value())
       std::cout << "  value (mean) of k is : " << opt.value().mean << '\n';

@@ -37,6 +37,17 @@ struct KeyContextualConduct : KEYMETA
   // NOTE: if this model is linear, but the wider system nonlinear, it is still used
   part_state_vect_t linearization_point = part_state_vect_t::Zero();
 
+  void update_linearization_point(const part_state_vect_t & incr_state)
+  {
+    // WARNING: override needed for manifold operations
+    linearization_point += incr_state;
+  }
+
+  void set_linearization_point(const part_state_vect_t & new_lin_point)
+  {
+    linearization_point = new_lin_point;
+  }
+
   process_matrix_t compute_part_A()
   {
     // NOTE: branch only for linear/nonlinear key MODEL

@@ -35,7 +35,6 @@ namespace SAM
     // declare marginal container type of those keymetas
     using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
 
-    // TODO: isSystFullyLinear (non type bool template parameter)
     static constexpr const bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
 
     SamSystem(const std::string & agent_id):agent_id(agent_id) { PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); }
@@ -46,7 +45,7 @@ namespace SAM
 
       auto At = Eigen::MatrixXd(A.transpose());
       auto H = At*A;
-      return {H.inverse(),H.nonZeros()};
+      return {H.inverse(),H.nonZeros()}; // inverse done through partial LU
     }
 
     template <typename FT>
@@ -144,6 +143,7 @@ namespace SAM
           [&Xmap,&json_graph, this, &SigmaCov,&already_processed_keys,&accumulated_factor_error](auto& vect_of_f, auto I)
           {
             // there are several loops in the factor kcc, I consider thats ok, micro-optimizing it would make readability more difficult than it already is 
+            // for each factor
             for (auto& factor : vect_of_f)
             {
               PROFILE_SCOPE( (factor.factor_id.c_str()) , sam_utils::JSONLogger::Instance() );
@@ -169,33 +169,47 @@ namespace SAM
               //   return returned_tup;
               //   }
          
-              sam_tuples::for_each_in_const_tuple(factor.keys_set,
-                                        [this,&Xmap,&SigmaCov, &already_processed_keys,&json_graph](const auto& kcc, auto kccIdx)
+              sam_tuples::for_each_in_tuple(factor.keys_set,
+                                        [this,&Xmap,&SigmaCov, &already_processed_keys,&json_graph](auto& kcm, auto kcmIdx)
                         {
+                            PROFILE_SCOPE(kcm.key_id.c_str(), sam_utils::JSONLogger::Instance() );
+                            using kcm_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(kcm)>>::KeyMeta_t;
+                            constexpr std::size_t kN = kcm_keymeta_t::kN;
                             // check if key_id already processed
-                            auto search = already_processed_keys.find( kcc.key_id );
-                            if (search == already_processed_keys.end())
+                            auto searched = already_processed_keys.find( kcm.key_id );
+                            if (searched == already_processed_keys.end())
                             {
-                                PROFILE_SCOPE(kcc.key_id.c_str(), sam_utils::JSONLogger::Instance() );
-                                // // fill the marginal
-                                using kcc_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(kcc)>>::KeyMeta_t;
-                                // std::cout << kcc_keymeta_t::kN << '\n';
-                                constexpr std::size_t kN = kcc_keymeta_t::kN;
-                                Eigen::Vector<double,kN> xmap_marg = Xmap.block<kN,1>(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx, 0);
+                                // pick this key marginal map from the big Xmap vector and the big Cov matrix
+                                Eigen::Vector<double,kN> xmap_marg = Xmap.block<kN,1>(this->bookkeeper_.getKeyInfos(kcm.key_id).sysidx, 0);
                                 Eigen::Matrix<double,kN,kN> cov_marg = SigmaCov.block<kN,kN>(
-                                            this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx
-                                          , this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx);
-                                // std::cout << std::tuple_element_t<kccIdx,typename decltype(factor)::KeysSet_t>::kN << '\n';
-                                // this->all_marginals_.insert<typename std::decay_t<decltype(kcc)>::KeyMeta_t>(kcc.key_id,xmap_marg,cov_marg);
+                                              this->bookkeeper_.getKeyInfos(kcm.key_id).sysidx
+                                            , this->bookkeeper_.getKeyInfos(kcm.key_id).sysidx);
 
-                                Marginal<kcc_keymeta_t> marg(xmap_marg,cov_marg); // OPTIMIZE: (carefully, marg is needed in the write)
-                                this->all_marginals_.insertt(kcc.key_id,marg);
+                                // update the marginal container
+                                Marginal<kcm_keymeta_t> marg(xmap_marg,cov_marg); // OPTIMIZE: perf fwd (carefully, marg is needed in the write)
+                                this->all_marginals_.insertt(kcm.key_id,marg);
+                                // update the linearization point .  NOTE: must also be done in the 'else' branch 
+                                if constexpr (this->isSystFullyLinear)
+                                  kcm.update_linearization_point(xmap_marg);
+                                else
+                                  kcm.set_linearization_point(xmap_marg);
+
                                 
                                 // save the marginal in the json graph
-                                Json::Value json_marginal = write_marginal(marg, kcc.key_id);
+                                Json::Value json_marginal = write_marginal(marg, kcm.key_id);
                                 json_graph["marginals"].append(json_marginal);
                                 // finally 
-                                already_processed_keys.insert(kcc.key_id);
+                                already_processed_keys.insert(kcm.key_id);
+                            }
+                            else
+                            {
+                                // update the linearization point
+                                Eigen::Vector<double,kN> xmap_marg = 
+                                  this->all_marginals_.template findt<kcm_keymeta_t>(kcm.key_id).value().mean;
+                                if constexpr (this->isSystFullyLinear)
+                                  kcm.update_linearization_point(xmap_marg);
+                                else
+                                  kcm.set_linearization_point(xmap_marg);
                             }
                         });
               //------------------------------------------------------------------//
@@ -206,11 +220,11 @@ namespace SAM
                   [this, &Xmap, &accumulated_factor_error, &factor](auto... kcc) // TODO: remove Xmap process, replace by marginalcontainer element (by copy probably)
                   {
                     PROFILE_SCOPE("compute error", sam_utils::JSONLogger::Instance() );
-                    // get the global idx
-                    // std::size_t globalIdxOfKey = ;
                     // now we know how extract a subcomponent of xmap
-            //
+                    // goal is to compute || rho*h(x) - b ||_2^2
+                    // if linear, this can be || Ax - b ||_2^2 where all terms are constant
                     // WARNING: may revisit for NL, or move that line in the factors jurisdiction
+            // FIX: URGENT: for NL, use rather compute_h_of_x
                     auto innovation = ((kcc.compute_part_A()
                                         * Xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx, // TODO: replace by a call to marginal container
                                                      0,
