@@ -297,20 +297,11 @@ namespace SAM
     constexpr static const size_t S_ = std::tuple_size<decltype(all_factors_tuple_)>::value;
 
 
-    /**
-     * @brief loop over factors and get the data to fill the system (sparse
-     * matrix A through list of triplets and rhs vector)
-     *
-     * @tparam I
-     * @param triplets
-     * @param b
-     * @param line_counter
-     */
-    // template <std::size_t I = 0>       // TODO: refactor, use std::apply, or my custom for_each_tuple. It will permits to
-    void loop_over_factors(std::vector<Eigen::Triplet<double>>& sparseA_triplets, // TODO: move as returned value
-                           Eigen::VectorXd&                     b, // TODO: move as returned value
-                           int                                  line_counter = 0)
+    std::tuple<std::vector<Eigen::Triplet<double>> , Eigen::VectorXd> construct_A_b_from_factors()
     {
+      std::vector<Eigen::Triplet<double>> sparseA_triplets;
+      Eigen::VectorXd b(this->bookkeeper_.getSystemInfos().aggr_dim_mes);
+      uint64_t line_counter = 0;
       // TODO: declare sparseA_triplets and b here
       sam_tuples::for_each_in_tuple(
         this->all_factors_tuple_,
@@ -364,6 +355,7 @@ namespace SAM
           }
         }
       );
+      return {sparseA_triplets,b};
     }
 
     /**
@@ -423,7 +415,6 @@ namespace SAM
       // declare matrix A and b
       Eigen::SparseMatrix<double> A(dim_mes,
                                     dim_keys);   // colum-major (default)
-      Eigen::VectorXd             b(dim_mes);
       // triplets to fill the matrix A
       std::vector<Eigen::Triplet<double>> triplets;
       triplets.reserve(nnz);
@@ -431,8 +422,8 @@ namespace SAM
       // fill in the triplets and the rhs
       // TODO: is there a way to use incdex_sequence rather than the if constexpr
       // recursive pattern, the goal is to handle return values more gracefully
-      this->loop_over_factors(triplets, b);
-      A.setFromTriplets(triplets.begin(), triplets.end());
+      auto [A_triplets, b] = this->construct_A_b_from_factors();
+      A.setFromTriplets(A_triplets.begin(), A_triplets.end());
       return {A, b};
     }
 
