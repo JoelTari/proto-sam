@@ -48,13 +48,13 @@ struct KeyContextualConduct : KEYMETA
     linearization_point = new_lin_point;
   }
 
-  process_matrix_t compute_part_A()
+  process_matrix_t compute_part_A() const
   {
     // NOTE: branch only for linear/nonlinear key MODEL
     // NOTE: indeed, if the key model is linear, it does not matter whether or not the wider 
     // NOTE: system is linear or nonlinear, the answer would still be rho*H
    if constexpr (LinearModel)
-    return static_cast<DerivedKCC*>(this)->compute_part_A_impl(); 
+    return static_cast<const DerivedKCC*>(this)->compute_part_A_impl(); 
    //else
     // return static_cast<DerivedKCC*>(this)->compute_part_A_at_LIN_POINT_impl(); // WARNING: AT LIN POINT
   }
@@ -113,7 +113,7 @@ class Factor
   // TODO: isLinear : factor is linear if all keys models in this context are linear
   static constexpr bool isLinear = (KeyConducts::kLinear && ...);
 
-  double error = 0;
+  double norm_at_lin_point = 0;
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
@@ -219,17 +219,31 @@ class Factor
   {
   }
 
-  double compute_error(const state_vector_t& x) const
+  // not used for now, TODO: do the same for x_tuple input
+  double compute_factor_norm(const state_vector_t& x) const
   {
-    // TODO: small improvement possible for linear factor (and linear factor in NL syst ?)
-    return (this->rho * this->compute_h_of_x(x) - this->rosie).norm();
+      return (this->rho * this->compute_h_of_x(x) - this->rosie).norm();
   }
 
-  // for the nonlinears
-  // void set_linearization_point(const state_vector_t & lin_point)
-  // {
-  //   linearization_point = lin_point;
-  // }
+  double compute_lin_point_factor_norm() const
+  {
+    if constexpr (isLinear)
+    {
+      measure_vect_t Ax = sam_tuples::reduce_array_variadically(this->keys_set,[this]<std::size_t...J>(const auto & kset,std::index_sequence<J...>)
+      {
+        // Ax = A1*x1 + A2*x2 + ...
+        return ( (std::get<J>(kset).compute_part_A()*std::get<J>(kset).linearization_point) + ...);
+      });
+      return (Ax - this->rosie).norm();
+    }
+    else
+    {
+      // build back the tup of stored lin point
+      auto lin_point_tup =  sam_tuples::reduce_tuple_variadically(this->keys_set,[this](const auto &...kcm)
+        {  return std::make_tuple( kcm.linearization_point ... ) ; });
+      return (this->rho * this->compute_h_of_x(lin_point_tup) - this->rosie).norm();
+    }
+  }
 };
 
 

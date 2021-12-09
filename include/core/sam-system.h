@@ -142,35 +142,12 @@ namespace SAM
           this->all_factors_tuple_,
           [&Xmap,&json_graph, this, &SigmaCov,&already_processed_keys,&accumulated_factor_error](auto& vect_of_f, auto I)
           {
-            // there are several loops in the factor kcc, I consider thats ok, micro-optimizing it would make readability more difficult than it already is 
-            // for each factor
             for (auto& factor : vect_of_f)
             {
               PROFILE_SCOPE( (factor.factor_id.c_str()) , sam_utils::JSONLogger::Instance() );
-              // std::apply -> for each kcc of that factor, if unprocessed, update the marginal with xmap & cov 
-              //               add the key_id in the process_keys set
-              //------------------------------------------------------------------//
-              //           From the MAP vector Xmap, and optionally the           //
-              //                          associated cov,                         //
-              //            Write the marginals, (amounts to dispatch             //
-              //           subcomponents of xmap/cov to our structure)            //
-              //------------------------------------------------------------------//
-
-              // TODO: URGENT: xmap -> marginalcontainer ok, but fill also the linearization in each factor.kcm
-              // auto mean_tup = sam_tuples::reduce_tuple_variadically(factor.keys_set, 
-              //   [this]<std::size_t... II>(const auto & tup_el, std::index_sequence<II...>)
-              //   {
-              //       auto returned_tup = std::make_tuple( 
-              //   this->all_marginals_.template find<typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t>
-              //   (std::get<II>(tup_el).key_id).value().mean
-              //    ...
-              //   );
-              //   static_assert(sizeof...(II) == std::tuple_size_v<decltype(returned_tup)>);
-              //   return returned_tup;
-              //   }
          
               sam_tuples::for_each_in_tuple(factor.keys_set,
-                                        [this,&Xmap,&SigmaCov, &already_processed_keys,&json_graph](auto& kcm, auto kcmIdx)
+                                        [this,&Xmap,&SigmaCov, &accumulated_factor_error, &already_processed_keys,&json_graph](auto& kcm, auto kcmIdx)
                         {
                             PROFILE_SCOPE(kcm.key_id.c_str(), sam_utils::JSONLogger::Instance() );
                             using kcm_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(kcm)>>::KeyMeta_t;
@@ -189,7 +166,7 @@ namespace SAM
                                 Marginal<kcm_keymeta_t> marg(xmap_marg,cov_marg); // OPTIMIZE: perf fwd (carefully, marg is needed in the write)
                                 this->all_marginals_.insertt(kcm.key_id,marg);
                                 // update the linearization point .  NOTE: must also be done in the 'else' branch 
-                                if constexpr (this->isSystFullyLinear)
+                                if constexpr (isSystFullyLinear)
                                   kcm.update_linearization_point(xmap_marg);
                                 else
                                   kcm.set_linearization_point(xmap_marg);
@@ -206,37 +183,15 @@ namespace SAM
                                 // update the linearization point
                                 Eigen::Vector<double,kN> xmap_marg = 
                                   this->all_marginals_.template findt<kcm_keymeta_t>(kcm.key_id).value().mean;
-                                if constexpr (this->isSystFullyLinear)
+                                if constexpr (isSystFullyLinear)
                                   kcm.update_linearization_point(xmap_marg);
                                 else
                                   kcm.set_linearization_point(xmap_marg);
                             }
                         });
-              //------------------------------------------------------------------//
-              //             compute factor error, accumulate errors              //
-              //------------------------------------------------------------------//
-              // loop the kcc of a factor
-              std::apply(
-                  [this, &Xmap, &accumulated_factor_error, &factor](auto... kcc) // TODO: remove Xmap process, replace by marginalcontainer element (by copy probably)
-                  {
-                    PROFILE_SCOPE("compute error", sam_utils::JSONLogger::Instance() );
-                    // now we know how extract a subcomponent of xmap
-                    // goal is to compute || rho*h(x) - b ||_2^2
-                    // if linear, this can be || Ax - b ||_2^2 where all terms are constant
-                    // WARNING: may revisit for NL, or move that line in the factors jurisdiction
-            // FIX: URGENT: for NL, use rather compute_h_of_x
-                    auto innovation = ((kcc.compute_part_A()
-                                        * Xmap.block(this->bookkeeper_.getKeyInfos(kcc.key_id).sysidx, // TODO: replace by a call to marginal container
-                                                     0,
-                                                     decltype(kcc)::kN,
-                                                     1))
-                                       + ...)
-                                      - factor.rosie; // TODO: adapt for NL
-                    factor.error = std::pow(innovation.norm(), 2);
-                    // this factor norm2 squared is added to the total error
-                    accumulated_factor_error += factor.error;
-                  },
-            factor.keys_set);
+              // compute factor error (uses the lin point)
+              factor.norm_at_lin_point =factor.compute_lin_point_factor_norm();
+              accumulated_factor_error += factor.norm_at_lin_point;
               //------------------------------------------------------------------//
               //                  Json graph: write  the factor                   //
               //------------------------------------------------------------------//
@@ -250,18 +205,10 @@ namespace SAM
         json_graph["header"] = write_header(this->bookkeeper_.getSystemInfos());
         logger.writeGraph(json_graph);
       }
-      // TODO: cout in std output (if enable debug trace flag is on)
     }
 
     Json::Value write_header(const SystemInfo & sysinfo)
     {
-      // "header": {
-      //   "robot_id": "A",
-      //   "base_unit": 0.15, // deprecated
-      //   "seq": 0,          // TODO:  rule on this one
-      //   "variable_order": ["x0", "x3", "x2", "x4", "l2", "x1", "l1"], // optional
-      //   "residual_error": 1654
-      // },
       Json::Value json_header;
       json_header["robot_id"] = "A"; // TODO:
       json_header["seq"] = 0; // TODO:
@@ -302,15 +249,14 @@ namespace SAM
     {
               Json::Value json_factor;
               json_factor["factor_id"] = factor.factor_id;
-              // json_factor["type"]      = std::decay_t<decltype(vect_of_f[0])>::kFactorLabel;
-              json_factor["type"]      = FT::kFactorLabel;   // NOTE: is good ?
+              json_factor["type"]      = FT::kFactorLabel;
               // write the vars_id
               Json::Value json_factor_vars_id;
               sam_tuples::for_each_in_const_tuple(factor.keys_set,
                                             [&json_factor_vars_id](const auto& keycc, auto I)
                                             { json_factor_vars_id.append(keycc.key_id); });
               json_factor["vars_id"] = json_factor_vars_id;
-              // json_factor["MAPerror"] = factor_type;
+              json_factor["MAPerror"] = factor.norm_at_lin_point;
               // json_factor["measurement"] = factor_type;
               // append in the json 'graph > factors'
               return json_factor;
@@ -410,55 +356,11 @@ namespace SAM
             b.block<mesdim, 1>(line_counter, 0) = b_i;
             // Append Ai_triplets in sparseA_triplets
             sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
-            // //------------------------------------------------------------------//
-            // //                      end refactoring notes                       //
-            // //------------------------------------------------------------------//
-            // //------------------------------------------------------------------//
-            // //                           compute b_i                            //
-            // //------------------------------------------------------------------//
-            // typename factor_t::measure_vect_t factorb;
-            // if constexpr ( isSystFullyLinear )
-            // {
-            //     factorb = factor.rosie;
-            // }
-            // else
-            // {
-            //   auto mean_tup = sam_tuples::reduce_tuple_variadically(factor.keys_set, 
-            //     [this]<std::size_t... II>(const auto & tup_el, std::index_sequence<II...>)
-            //     {
-            //         auto returned_tup = std::make_tuple( 
-            //     this->all_marginals_.template find<typename std::remove_const_t<std::decay_t<decltype(std::get<II>(tup_el))>>::KeyMeta_t>
-            //     (std::get<II>(tup_el).key_id).value().mean
-            //      ...
-            //     );
-            //     static_assert(sizeof...(II) == std::tuple_size_v<decltype(returned_tup)>);
-            //     return returned_tup;
-            //     }
-            //   );
-            //   factorb = factor.compute_b(mean_tup);
-            // }
+            // increment the line number by as many lines filled here
+            line_counter += mesdim; // NOTE: make sure it is at the end of the loop
 #if ENABLE_DEBUG_TRACE
             std::cout << " bi: \n" << b_i << "\n";
 #endif
-            // //------------------------------------------------------------------//
-            // //                      integrates b_i into b                       //
-            // //------------------------------------------------------------------//
-            // // Fill the vector b of that factor in the system vector b
-            // constexpr int mesdim                = factor_t::kM;
-            // b.block<mesdim, 1>(line_counter, 0) = factorb;
-            // //------------------------------------------------------------------//
-            // //                            compute Ai                            //
-            // //------------------------------------------------------------------//
-            // // suckless method: consider the A matrix of the factor (not the
-            // // system) iterate over the keycontext, compute A, and fill the
-            // // triplet list
-            // std::apply(
-            //     [this, &sparseA_triplets, line_counter](auto&&... keycc)
-            //     { ((this->compute_partialA_and_fill_triplet(keycc, sparseA_triplets, line_counter)), ...); },
-            //     factor.keys_set);
-
-            // increment the line number by as many lines filled here
-            line_counter += mesdim; // NOTE: make sure it is at the end of the loop
           }
         }
       );
