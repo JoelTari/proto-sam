@@ -374,11 +374,11 @@ namespace SAM
                                            std::vector<Eigen::Triplet<double>>& triplets,
                                            int                                  line_counter)
     {
-      // URGENT: check that it would work in NL
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-      // compute partial A (partial = only a block of the A of the factor)
-      auto partA = keycc.compute_part_A(); // TODO: change for NL pb: auto partA = keycc.compute_part_A<isSystFullyLinear>(); 
-      // TODO: NL -> rho*H (non const) , L in <false> -> roach (const), L in <true> -> roach (const)
+      // compute partial A (automatically deals with NL or linear case)
+      auto partA = keycc.compute_part_A();
+
+      // The following code index the partA matrix into the system's indexes
 
       // get the col in systA (the big A of the system)
       int colInBigA = this->bookkeeper_.getKeyInfos(keycc.key_id).sysidx;
