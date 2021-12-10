@@ -326,6 +326,8 @@ namespace SAM
             {
               b_i = factor.rosie;
               // Ai_triplets, TODO: do a returned value pattern for clarity
+              // compute \rho*\frac{\partial h}{\partial x} and fill the triplets with the correct
+              // indexes of the wider system
               std::apply(
                   [this, &Ai_triplets, line_counter](auto&&... keycc)
                   { (this->compute_partialA_and_fill_triplet(keycc, Ai_triplets, line_counter), ...); },
@@ -372,6 +374,7 @@ namespace SAM
                                            std::vector<Eigen::Triplet<double>>& triplets,
                                            int                                  line_counter)
     {
+      // URGENT: check that it would work in NL
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       // compute partial A (partial = only a block of the A of the factor)
       auto partA = keycc.compute_part_A(); // TODO: change for NL pb: auto partA = keycc.compute_part_A<isSystFullyLinear>(); 

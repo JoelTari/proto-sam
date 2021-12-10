@@ -59,13 +59,13 @@ struct KeyContextualConduct : KEYMETA
     // return static_cast<DerivedKCC*>(this)->compute_part_A_at_LIN_POINT_impl(); // WARNING: AT LIN POINT
   }
 
-    // NOTE: is used ?? h_part(part_x) doesnot make sense
-    // NOTE:          ( H_part * part_x does )
-    // FIX: redundant: make sure its ok to remove
-  measure_vect_t compute_part_h_of_part_x(const part_state_vect_t& x)
-  {
-    return static_cast<DerivedKCC*>(this)->compute_part_h_of_part_x_impl(x);
-  }
+  //   // NOTE: is used ?? h_part(part_x) doesnot make sense
+  //   // NOTE:          ( H_part * part_x does )
+  //   // FIX: redundant: make sure its ok to remove
+  // measure_vect_t compute_part_h_of_part_x(const part_state_vect_t& x)
+  // {
+  //   return static_cast<DerivedKCC*>(this)->compute_part_h_of_part_x_impl(x);
+  // }
 
   // prevent default constructor, copy constructor, copy assignemnt operator
   KeyContextualConduct() = delete;
@@ -126,16 +126,6 @@ class Factor
     return result;
   }
 
-
-  // // TODO: URGENT: , the lin point will be internal (remove argument)
-  // template <typename... PARTIAL_STATE_VECTORS_T> // TODO: do a tuple here !
-  // measure_vect_t compute_b(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
-  // {
-  //     static_assert(std::tuple_size_v<std::tuple<PARTIAL_STATE_VECTORS_T...>> == kNbKeys);
-  //     static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
-  //     return this->rosie - this->rho*this->compute_h_of_x(x_tup);
-  // }
-  // the refactored compute_b
   measure_vect_t compute_b_nl() const
   {
       auto  tuple_means = this->get_tuple_of_linearization_points();
@@ -171,23 +161,23 @@ class Factor
   }
 
 
-  // TODO: deprecate this one (only keep the 'compute_h_of_x' that calls the Eigen::vector)
-  // DEPRECATED:
-  template <typename... PARTIAL_STATE_VECTORS_T>
-  measure_vect_t compute_h_of_x(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
-  {
-    static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
-    measure_vect_t h_of_x=measure_vect_t::Zero();
-
-    state_vector_t x;
-
-    std::apply([&x](auto... partx)
-    {
-      ((x << partx ),  ...);
-        // x << (partx, ...) ;        
-    }, x_tup); // TODO: check, too good to be true ??
-    return compute_h_of_x(x);
-  }
+  // // TODO: deprecate this one (only keep the 'compute_h_of_x' that calls the Eigen::vector)
+  // // DEPRECATED:
+  // template <typename... PARTIAL_STATE_VECTORS_T>
+  // measure_vect_t compute_h_of_x(const std::tuple<PARTIAL_STATE_VECTORS_T...>& x_tup) const
+  // {
+  //   static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
+  //   measure_vect_t h_of_x=measure_vect_t::Zero();
+  //
+  //   state_vector_t x;
+  //
+  //   std::apply([&x](auto... partx)
+  //   {
+  //     ((x << partx ),  ...);
+  //       // x << (partx, ...) ;        
+  //   }, x_tup); // TODO: check, too good to be true ??
+  //   return compute_h_of_x(x);
+  // }
 
   measure_vect_t compute_h_of_x(const state_vector_t & x) const
   {
