@@ -71,9 +71,17 @@ namespace SAM
         // the ones in the tuple) to emplace back the factor FT
         place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
       }
-      else // give init point
+      else // give init point in a nonlinear system
       {
         // TODO: URGENT:
+        // 1. for each key, look up the marginal and use the mean as an init point
+        // 2. if a key is new: we must determine an init point
+        //    The way the init point of a new key is decided depends on the type of factor
+        //    Up to 2 dependencies: - from the measurement (always)
+        //                          - from another key or several other keys mean of that factor (keys that are not new)
+        // 3. an init point might be undefined for some new key for some factor type (eg bearing-only)
+        //    until another factor (or more) comes to 'triangulate' the init point
+        //    In that case the factor must be temporary placed in a 'purgatory environment'
         place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
       }
     }
