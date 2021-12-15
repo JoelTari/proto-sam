@@ -65,9 +65,17 @@ namespace SAM
         throw std::runtime_error("Factor id already exists");
 
 
-      // recursively find, at compile time, the corresponding container (amongst
-      // the ones in the tuple) to emplace back the factor FT
-      place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
+      if (isSystFullyLinear)  // do not give init point
+      {
+        // recursively find, at compile time, the corresponding container (amongst
+        // the ones in the tuple) to emplace back the factor FT
+        place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
+      }
+      else // give init point
+      {
+        // TODO: URGENT:
+        place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
+      }
     }
 
     void sam_optimize()

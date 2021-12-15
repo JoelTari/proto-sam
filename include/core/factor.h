@@ -65,6 +65,17 @@ struct KeyContextualConduct : KEYMETA
       : key_id(key_id)
       , rho(rho)
   {
+    // necessary (but not sufficient) condition for this ctor: the context model must be linear.
+    // sufficient condition would be that the wider system be linear (not verifiable at this level)
+    static_assert(kLinear);
+  }
+
+  KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho, const part_state_vect_t & init_point)
+      : key_id(key_id)
+      , rho(rho)
+      , linearization_point(init_point)
+  {
+    // note: this can be called even if the context model is not linear (one nl model in the wider system imposes that everything is nl)
   }
 };
 
@@ -84,7 +95,9 @@ class Factor
   static constexpr size_t      kN      = (KeyConducts::kN + ...);
   static constexpr size_t      kM      = MEASURE_META::kM;
   static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
-  using state_vector_t                 = Eigen::Matrix<double, kN, 1>;
+  using state_vector_t                 = Eigen::Matrix<double, kN, 1>; 
+  // NOTE: on state vector (or init point, or map) : no explicit state vect is kept at factor level:
+  // NOTE:  we do keep it at the keys level, and offer the get_state_vector_from_tuple() method to query it if necessary
   using process_matrix_t               = Eigen::Matrix<double, kM, kN>;
   // make a tuple of KeySet.  Michelin *** vaut le détour.
   using KeysSet_t = std::tuple<KeyConducts...>;
@@ -117,12 +130,12 @@ class Factor
   // this uses the internally stored linearization_point
   measure_vect_t compute_b_nl() const
   {
-    auto  tuple_means = this->get_tuple_of_linearization_points();
-    return this->rosie - this->rho*this->compute_h_of_x(tuple_means);
+    auto  tuple_of_means = this->get_key_points();
+    return this->rosie - this->rho*this->compute_h_of_x(tuple_of_means);
   }
 
   //  func that gets the tup of lin points contained in kcm into state_vector_t
-  std::tuple<typename KeyConducts::part_state_vect_t ...> get_tuple_of_linearization_points() const
+  std::tuple<typename KeyConducts::part_state_vect_t ...> get_key_points() const
   {
     std::tuple<typename KeyConducts::part_state_vect_t ...> tup_mean;
     std::apply([this,&tup_mean](const auto & ...kcc) //-> std::tuple<typename KeyConducts::state_vector_t ...>
@@ -133,11 +146,18 @@ class Factor
     return tup_mean;
   }
 
-  //  func that transforms a tup of lin points contained in kcm into state_vector_t
-  template <typename... PARTIAL_STATE_VECTORS_T>
-  state_vector_t get_state_vector_from_tuple(const std::tuple<PARTIAL_STATE_VECTORS_T...> & x_tup) const
+  // func that sets the tup of lin points
+  void set_key_points(const std::tuple<typename KeyConducts::part_state_vect_t ...>& xtup) const
   {
-    static_assert(sizeof...(PARTIAL_STATE_VECTORS_T) == kNbKeys);
+    // for each key context model, affects a partx vector for input tuple
+      std::apply([](auto & ... kcm ){ ( kcm.linearization_point = xtup, ...);  },this->keys_set);
+  }
+
+  //  func that transforms a tup of lin points contained in kcm into state_vector_t
+  // template <typename... PARTIAL_STATE_VECTORS_T>
+  state_vector_t get_state_vector_from_tuple(const std::tuple<typename KeyConducts::part_state_vect_t ...> & x_tup) const
+  {
+    static_assert(std::tuple_size_v<std::tuple<typename KeyConducts::part_state_vect_t ...>> == kNbKeys);
     state_vector_t x;
 
     std::apply([&x](auto... partx)
@@ -179,6 +199,33 @@ class Factor
       , keyIdToTupleIdx(map_keyid(keys_id))
   {
   }
+
+  // the overloaded ctor (used in NL with init points)
+  Factor(const std::string&                      factor_id,
+         const measure_vect_t&                   z,
+         const measure_cov_t&                    z_cov,
+         const std::array<std::string, kNbKeys>& keys_id,
+         const std::tuple<typename KeyConducts::part_state_vect_t ...> & init_points)
+      : z(z)
+      , z_cov(z_cov)
+      , factor_id(factor_id)
+      , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
+      , keys_set(sam_tuples::reduce_array_variadically(
+            keys_id,
+            []<std::size_t... I>(const auto& my_keys_id,
+                                 const auto& rho,
+                                 const auto& init_points,
+                                 std::index_sequence<I...>) -> decltype(keys_set) {
+              // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
+              // might be possible to use perfect forwarding, by declaring an empty tuple
+              // and next line expanding tuple_cat with an intermediary function that has perfect forwarding ( TODO:)
+              return  { KeyConducts(my_keys_id[I], rho,std::get<I>(init_points)) ... } ;
+            },
+            rho,init_points))
+      , keyIdToTupleIdx(map_keyid(keys_id))
+  {
+  }
+
 
   // not used for now, TODO: do the same for x_tuple input
   double compute_factor_norm(const state_vector_t& x) const
