@@ -150,7 +150,12 @@ class Factor
   void set_key_points(const std::tuple<typename KeyConducts::part_state_vect_t ...>& xtup) const
   {
     // for each key context model, affects a partx vector for input tuple
-      std::apply([](auto & ... kcm ){ ( kcm.linearization_point = xtup, ...);  },this->keys_set);
+    sam_tuples::for_each_in_tuple(this->keys_set,
+            [&xtup](auto & kcm, auto J)
+            {
+              kcm.linearization_point = std::get<J>(xtup);
+            }
+    );
   }
 
   //  func that transforms a tup of lin points contained in kcm into state_vector_t
