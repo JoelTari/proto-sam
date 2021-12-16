@@ -203,22 +203,6 @@ struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
 };
 
 
-// template <std::size_t IS_U_IN_T_V, class U, class...T>
-// struct tuple_type_uniq_cat;
-// // IS_U_IN_T_V   <-  (std::is_same_v<U,T> || ... ) 
-// // if type U already in 
-// template <class U, class ...T>
-// struct tuple_type_uniq_cat<0, std::tuple<U>,std::tuple<T...>>
-// {
-//     using type = std::tuple<T...,U>;
-// }; 
-// template <class U, class ...T>
-// struct tuple_type_uniq_cat<1, std::tuple<U>,std::tuple<T...>>
-// {
-//     using type = std::tuple<T...>;
-// }; 
-
-
 //------------------------------------------------------------------//
 //           filter out duplicate template argument types           //
 //         and output type a tuple of this filtered set of          //

@@ -74,7 +74,6 @@ namespace SAM
       else // give init point in a nonlinear system
       {
         // TODO: URGENT:
-        // 1. for each key, look up the marginal and use the mean as an init point
         // 2. if a key is new: we must determine an init point
         //    The way the init point of a new key is decided depends on the type of factor
         //    Up to 2 dependencies: - from the measurement (always)
@@ -82,6 +81,24 @@ namespace SAM
         // 3. an init point might be undefined for some new key for some factor type (eg bearing-only)
         //    until another factor (or more) comes to 'triangulate' the init point
         //    In that case the factor must be temporary placed in a 'purgatory environment'
+        
+        typename FT::state_tuple_t tuple_of_init_points;
+        std::tuple tuple_of_init_pointss;
+        for (const auto & key_id : keys_id)
+        {
+          // using kcm_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(kcm)>>::KeyMeta_t;
+          // // 1. for each key, look up the marginal and use the mean as an init point
+          // auto search_id = this->all_marginals_.template findt<kcm_keymeta_t>(key_id);
+          // if (search_id.has_value())
+          // {
+          //   // tuple_of_init_pointss = std::tuple_cat(tuple_of_init_pointss, search_id.value().mean);
+          // }
+          // else
+          // {
+          //
+          // }
+        }
+
         place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
       }
     }

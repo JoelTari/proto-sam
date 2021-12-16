@@ -96,6 +96,7 @@ class Factor
   static constexpr size_t      kM      = MEASURE_META::kM;
   static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
   using state_vector_t                 = Eigen::Matrix<double, kN, 1>; 
+  using state_tuple_t                  = std::tuple<typename KeyConducts::part_state_vect_t ...>;
   // NOTE: on state vector (or init point, or map) : no explicit state vect is kept at factor level:
   // NOTE:  we do keep it at the keys level, and offer the get_state_vector_from_tuple() method to query it if necessary
   using process_matrix_t               = Eigen::Matrix<double, kM, kN>;
