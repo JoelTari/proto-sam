@@ -26,9 +26,17 @@ namespace
 
     process_matrix_t compute_part_A_impl() const { return partA; }
 
-    ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho)
-        : KeyContextualConduct(key_id, rho)
+    // For linear systems
+    ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho, const part_state_vect_t & init_point)
+        : KeyContextualConduct(key_id, rho, init_point)
         , partA(rho * partH)
+    {
+    }
+    
+    // For NL cases
+    ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho)
+    : KeyContextualConduct(key_id, rho)
+    , partA(rho * partH)
     {
     }
   };
@@ -49,9 +57,17 @@ namespace
 
     process_matrix_t compute_part_A_impl() const { return partA; }
 
+    // For linear systems
     ObserveeKeyConduct(const std::string key_id, const measure_cov_t& rho)
         : KeyContextualConduct(key_id, rho)
         , partA(rho * partH)
+    {
+    }
+
+    // For NL cases
+    ObserveeKeyConduct(const std::string key_id, const measure_cov_t& rho, const part_state_vect_t & init_point)
+    : KeyContextualConduct(key_id, rho,init_point)
+    , partA(rho * partH)
     {
     }
   };
@@ -80,6 +96,18 @@ namespace
 #endif
     }
 
+    LinearTranslationFactor(
+        const std::string&                                               factor_id,
+        const measure_vect_t&                                            mes_vect,
+        const measure_cov_t&                                             measure_cov,
+        const std::array<std::string, LinearTranslationFactor::kNbKeys>& keys_id,
+        const std::tuple<typename ObserveeKeyConduct::part_state_vect_t,typename ObserverKeyConduct::part_state_vect_t> & init_points)
+        : Factor(factor_id, mes_vect, measure_cov, keys_id, init_points)
+    {
+#if ENABLE_DEBUG_TRACE
+      std::cout << "\t::  Factor " << factor_id << " created.\n";
+#endif
+    }
     static constexpr uint8_t kObserveeKeyConductIdx = 0;
     static constexpr uint8_t kObserverKeyConductIdx = 1;
 
@@ -88,7 +116,7 @@ namespace
     static
     std::optional<
         std::tuple<ObserveeKeyConduct::part_state_vect_t, ObserverKeyConduct::part_state_vect_t>>
-        guess_init_key_poinst_impl(
+        guess_init_key_points_impl(
             const std::tuple<std::optional<ObserveeKeyConduct::part_state_vect_t>,
                              std::optional<ObserverKeyConduct::part_state_vect_t>>&
                                   x_init_optional_tup,

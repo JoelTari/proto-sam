@@ -33,6 +33,13 @@ namespace
         , partA(rho * partH)   // rho*H
     {
     }
+
+    // for NL cases
+    UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho, const part_state_vect_t & init_point)
+        : KeyContextualConduct(key_id, rho, init_point)
+        , partA(rho * partH)   // rho*H
+    {
+    }
   };
 }   // namespace
 
@@ -48,6 +55,17 @@ namespace
                  const measure_cov_t&                                  measure_cov,
                  const std::array<std::string, AnchorFactor::kNbKeys>& keys_id)
         : Factor(factor_id, mes_vect, measure_cov, keys_id)
+    {
+#if ENABLE_DEBUG_TRACE
+      std::cout << "\t::  Factor " << factor_id << " created.\n";
+#endif
+    }
+    AnchorFactor(const std::string&                                    factor_id,
+                 const measure_vect_t&                                 mes_vect,
+                 const measure_cov_t&                                  measure_cov,
+                 const std::array<std::string, AnchorFactor::kNbKeys>& keys_id,
+                 const std::tuple<UniqueKeyConduct::part_state_vect_t> & init_points)
+        : Factor(factor_id, mes_vect, measure_cov, keys_id, init_points)
     {
 #if ENABLE_DEBUG_TRACE
       std::cout << "\t::  Factor " << factor_id << " created.\n";

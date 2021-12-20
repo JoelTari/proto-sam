@@ -64,50 +64,8 @@ namespace SAM
       if (this->bookkeeper_.factor_id_exists(factor_id))
         throw std::runtime_error("Factor id already exists");
 
-
-      if (isSystFullyLinear)  // do not give init point
-      {
-        // recursively find, at compile time, the corresponding container (amongst
-        // the ones in the tuple) to emplace back the factor FT
-        place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
-      }
-      else // give init point in a nonlinear system
-      {
-        // TODO: URGENT:
-        // 2. if a key is new: we must determine an init point
-        //    The way the init point of a new key is decided depends on the type of factor
-        //    Up to 2 dependencies: - from the measurement (always)
-        //                          - from another key or several other keys mean of that factor (keys that are not new)
-        // 3. an init point might be undefined for some new key for some factor type (eg bearing-only)
-        //    until another factor (or more) comes to 'triangulate' the init point
-        //    In that case the factor must be temporary placed in a 'purgatory environment'
-        
-        // typename FT::state_tuple_t tuple_of_init_points;
-        // std::tuple tuple_of_init_pointss;
-
-        auto tuple_of_opt_marginal = 
-        sam_tuples::reduce_array_variadically(keys_id,[this]<std::size_t...I>(const auto& keys_id, std::index_sequence<I...>) -> typename FT::opt_state_tuple_t
-        {
-          return { this->all_marginals_.template find_mean<typename std::tuple_element_t<I, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[I]) ... };
-        });
-
-        // for (const auto & key_id : keys_id)
-        // {
-        //   // using kcm_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(kcm)>>::KeyMeta_t;
-        //   // // 1. for each key, look up the marginal and use the mean as an init point
-        //   // auto search_id = this->all_marginals_.template findt<kcm_keymeta_t>(key_id);
-        //   // if (search_id.has_value())
-        //   // {
-        //   //   // tuple_of_init_pointss = std::tuple_cat(tuple_of_init_pointss, search_id.value().mean);
-        //   // }
-        //   // else
-        //   // {
-        //   //
-        //   // }
-        // }
-
-        place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
-      }
+      // emplace a factor in the correct container
+      place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
     }
 
     void sam_optimize()
@@ -501,11 +459,50 @@ namespace SAM
 
           // TODO: initialize lin point
 
+          if (isSystFullyLinear)
+          {
           std::get<I>(this->all_factors_tuple_)
               .emplace_back(factor_id, mes_vect, measure_cov, keys_id);
 #if ENABLE_DEBUG_TRACE
           std::cout << "\t\t:: Factor " << factor_id << " properly integrated in system.\n";
 #endif
+          }
+          else // nonlinear system (=> factor need an initial guess for each of its keys)
+          {
+            // recover the means (if available) for existing keys
+            auto tuple_of_opt_means 
+            = sam_tuples::reduce_array_variadically(
+                keys_id,[this]<std::size_t...J>(const auto& keys_id, std::index_sequence<J...>)
+                              -> typename FT::tuple_of_opt_part_state_t
+                {
+                  return 
+                  { 
+                    this->all_marginals_
+                    .template find_mean<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J])
+                  ... 
+                  };
+                }
+              );
+
+            // attempt to guess the full init point for this factor by using the measurement if necessary 
+            std::optional<typename FT::tuple_of_part_state_t> opt_tuple_of_init_point 
+              = FT::guess_init_key_points(tuple_of_opt_means,mes_vect);
+            if (opt_tuple_of_init_point.has_value())
+            {
+              std::get<I>(this->all_factors_tuple_)
+                  .emplace_back(factor_id, mes_vect, measure_cov, keys_id, opt_tuple_of_init_point.value());
+#if ENABLE_DEBUG_TRACE
+              std::cout << "\t\t:: Factor " << factor_id << " properly integrated in NL system.\n";
+#endif
+            }
+            else
+            {
+              // TODO: FEATURE: emplace factor in a staging container if 
+              // TODO: more detail (which key.s failed etc..)
+              throw std::runtime_error("Unable to determine all init points for this factor");
+            }
+              
+          }
 
 // Debug consistency check of everything
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS

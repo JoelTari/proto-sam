@@ -96,8 +96,8 @@ class Factor
   static constexpr size_t      kM      = MEASURE_META::kM;
   static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
   using state_vector_t                 = Eigen::Matrix<double, kN, 1>; 
-  using state_tuple_t                  = std::tuple<typename KeyConducts::part_state_vect_t ...>;
-  using opt_state_tuple_t              = std::tuple<std::optional<typename KeyConducts::part_state_vect_t> ...>;
+  using tuple_of_part_state_t          = std::tuple<typename KeyConducts::part_state_vect_t ...>;
+  using tuple_of_opt_part_state_t      = std::tuple<std::optional<typename KeyConducts::part_state_vect_t> ...>;
   // NOTE: on state vector (or init point, or map) : no explicit state vect is kept at factor level:
   // NOTE:  we do keep it at the keys level, and offer the get_state_vector_from_tuple() method to query it if necessary
   using process_matrix_t               = Eigen::Matrix<double, kM, kN>;
@@ -123,8 +123,8 @@ class Factor
   // NOTE: tuple of optional (input)  =>  optional of tuple (output)
   // No optional returned value indicates that the init point cannot be defined for all keys (e.g. bearing observation of a new landmark)
   static
-  std::optional< std::tuple<typename KeyConducts::part_state_vect_t ... > >
-  guess_init_key_points(const std::tuple< std::optional<typename KeyConducts::part_state_vect_t>...> & x_init_optional_tup, const measure_vect_t & z)
+  std::optional< tuple_of_part_state_t >
+  guess_init_key_points(const tuple_of_opt_part_state_t & x_init_optional_tup, const measure_vect_t & z)
   {
     return DerivedFactor::guess_init_key_points_impl(x_init_optional_tup, z);      
   }
