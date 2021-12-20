@@ -6,8 +6,8 @@ find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(jsoncpp 1.9.4 REQUIRED CONFIG)  # this sets 'jsoncpp_lib'
 find_package(OpenMP REQUIRED)
 
+set(CMAKE_CXX_STANDARD 17) # ISSUE: not reflected in compile_commands.json, which makes clangd still thinks its c++14 (default ?)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
-set(CMAKE_CXX_STANDARD 17) # this will be reflected in compile commands
 
 add_executable(factor_test test/factor_test.cpp)
 add_executable(marginal_test test/marginal_test.cpp)
@@ -38,7 +38,7 @@ target_compile_features(marginal_test PUBLIC cxx_std_17)
 target_compile_features(sam-system-factor_test PUBLIC cxx_std_17)
 target_compile_features(toy_linear_test PUBLIC cxx_std_17)
 target_compile_features(mainstdin PUBLIC cxx_std_17)
-target_compile_options(mainstdin PUBLIC "-O3") # "-fopt-info")
+target_compile_options(mainstdin PUBLIC "-O3" "-std=c++17") # "-fopt-info")
 
 # NOTE: to manage some definitions
 target_compile_definitions(mainstdin PUBLIC ENABLE_DEBUG_TRACE=0 ENABLE_TIMER=1)

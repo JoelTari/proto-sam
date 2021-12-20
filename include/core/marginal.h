@@ -2,11 +2,10 @@
 #define SAM_MARGINAL_H_
 
 #include "core/meta.h"
-#include "eigen3/Eigen/Dense"
 #include "utils/tuple_patterns.h"
 
 #include <cmath>
-// #include <iostream> 
+#include <eigen3/Eigen/Dense>
 #include <optional>
 #include <string>
 #include <tuple>
@@ -20,8 +19,9 @@ namespace
   {
     public:
     using KeyMeta_t = KEYMETA;
+    using Mean_t = Eigen::Vector<double, KEYMETA::kN>;
     // bool marked = false;
-    Eigen::Vector<double, KEYMETA::kN>              mean;
+    Mean_t              mean;
     Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN> covariance;
 
     std::tuple<std::array<double, 2>, double> get_visual_2d_covariance() const
@@ -75,6 +75,25 @@ namespace
       if (auto it {std::get<I>(this->data_map_tuple).find(key_id)};
           it != std::end(std::get<I>(this->data_map_tuple)))
       { return it->second; }
+      else
+        return std::nullopt;
+    }
+
+    template <typename Q_KEYMETA_T>
+    std::optional<typename Marginal<Q_KEYMETA_T>::Mean_t>
+        find_mean(const std::string& key_id) 
+    {
+      // static assert
+      static_assert(std::is_same_v<Q_KEYMETA_T,
+                                   KEYMETA_T> || (std::is_same_v<Q_KEYMETA_T, KEYMETA_Ts> || ...));
+
+      // get the correct tuple element
+      constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
+
+      // OPTIMIZE: pass a reference
+      if (auto it {std::get<I>(this->data_map_tuple).find(key_id)};
+          it != std::end(std::get<I>(this->data_map_tuple)))
+      { return it->second.mean; }
       else
         return std::nullopt;
     }

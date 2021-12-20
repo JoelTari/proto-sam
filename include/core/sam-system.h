@@ -82,22 +82,29 @@ namespace SAM
         //    until another factor (or more) comes to 'triangulate' the init point
         //    In that case the factor must be temporary placed in a 'purgatory environment'
         
-        typename FT::state_tuple_t tuple_of_init_points;
-        std::tuple tuple_of_init_pointss;
-        for (const auto & key_id : keys_id)
+        // typename FT::state_tuple_t tuple_of_init_points;
+        // std::tuple tuple_of_init_pointss;
+
+        auto tuple_of_opt_marginal = 
+        sam_tuples::reduce_array_variadically(keys_id,[this]<std::size_t...I>(const auto& keys_id, std::index_sequence<I...>) -> typename FT::opt_state_tuple_t
         {
-          // using kcm_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(kcm)>>::KeyMeta_t;
-          // // 1. for each key, look up the marginal and use the mean as an init point
-          // auto search_id = this->all_marginals_.template findt<kcm_keymeta_t>(key_id);
-          // if (search_id.has_value())
-          // {
-          //   // tuple_of_init_pointss = std::tuple_cat(tuple_of_init_pointss, search_id.value().mean);
-          // }
-          // else
-          // {
-          //
-          // }
-        }
+          return { this->all_marginals_.template find_mean<typename std::tuple_element_t<I, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[I]) ... };
+        });
+
+        // for (const auto & key_id : keys_id)
+        // {
+        //   // using kcm_keymeta_t = typename std::remove_const_t<std::decay_t<decltype(kcm)>>::KeyMeta_t;
+        //   // // 1. for each key, look up the marginal and use the mean as an init point
+        //   // auto search_id = this->all_marginals_.template findt<kcm_keymeta_t>(key_id);
+        //   // if (search_id.has_value())
+        //   // {
+        //   //   // tuple_of_init_pointss = std::tuple_cat(tuple_of_init_pointss, search_id.value().mean);
+        //   // }
+        //   // else
+        //   // {
+        //   //
+        //   // }
+        // }
 
         place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
       }

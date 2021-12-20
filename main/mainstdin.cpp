@@ -5,7 +5,6 @@
 #include "factor_impl/linear-translation.hpp"
 #include "utils/tuple_patterns.h"
 
-#include <eigen3/Eigen/src/Core/products/Parallelizer.h>
 #include <exception>
 #include <sstream>
 #include <stdexcept>
