@@ -40,7 +40,7 @@ namespace
     // using type = typename Marginal<KEYMETA>;
     // TODO: a flag ?
     Marginal(const Eigen::Vector<double, KEYMETA::kN>&              xmap_marg,
-             const Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>& cov_marg)
+             const Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>& cov_marg = Eigen::Matrix<double,KEYMETA::kN, KEYMETA::kN>::Zero() )
         : mean(xmap_marg)
         , covariance(cov_marg) {};
   };
@@ -101,24 +101,26 @@ namespace
     template <typename Q_MARG_T>
     void insertt(const std::string & key_id, const Q_MARG_T & marg) // TODO: why not by idx too
     {
+      // static_assert( std::is_invocable_v<Q_MARG_T,args...> )
       // static assert the size of vect/cov
       constexpr std::size_t I = get_correct_tuple_idx_by_marg<Q_MARG_T>();
       // std::cout << "correct margcont idx : " << I << '\n';
-      std::get<I>(this->data_map_tuple).insert({key_id,marg});
+      std::get<I>(this->data_map_tuple).insert_or_assign(key_id, marg);
     }
 
-    template <typename Q_KEYMETA_T>
-    void insert(const std::string&                            key_id,
-                const Eigen::Vector<double, Q_KEYMETA_T::kN>& xmap_marg,
-                const Eigen::Matrix<double, Q_KEYMETA_T::kN, Q_KEYMETA_T::kN>&
-                    sigmacov)   // TODO:  use perfect forwarding
-    {
-      Marginal<Q_KEYMETA_T> my_marg(xmap_marg, sigmacov);
-      // static assert the size of vect/cov
-      constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
-      // std::cout << "correct margcont idx : " << I << '\n';
-      std::get<I>(this->data_map_tuple).insert({key_id, my_marg});
-    }
+    // // overloads when a covariance is given
+    // template <typename Q_KEYMETA_T>
+    // void insert(const std::string&                            key_id,
+    //             const Eigen::Vector<double, Q_KEYMETA_T::kN>& xmap_marg,
+    //             const Eigen::Matrix<double, Q_KEYMETA_T::kN, Q_KEYMETA_T::kN>&
+    //                 sigmacov)   // TODO:  use perfect forwarding
+    // {
+    //   Marginal<Q_KEYMETA_T> my_marg(xmap_marg, sigmacov);
+    //   // static assert the size of vect/cov
+    //   constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
+    //   // std::cout << "correct margcont idx : " << I << '\n';
+    //   std::get<I>(this->data_map_tuple).insert_or_assign(key_id, my_marg);
+    // }
 
 
     marginals_containers_t data_map_tuple;

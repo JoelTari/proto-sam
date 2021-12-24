@@ -173,7 +173,7 @@ namespace SAM
                                 // save the marginal in the json graph
                                 Json::Value json_marginal = write_marginal(marg, kcm.key_id);
                                 json_graph["marginals"].append(json_marginal);
-                                // finally 
+                                // finally, save the fact that this key_id marginal has been processed 
                                 already_processed_keys.insert(kcm.key_id);
                             }
                             else
