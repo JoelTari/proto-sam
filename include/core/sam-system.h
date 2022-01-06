@@ -68,6 +68,39 @@ namespace SAM
       place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
     }
 
+    // URGENT:
+    void sam_optimize_v2()
+    {
+      // scoped timer
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+
+      // get some dimension constants of the system
+      SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
+      int        M            = system_infos.aggr_dim_mes;
+      int        N            = system_infos.aggr_dim_keys;
+
+      uint nnz = this->bookkeeper_.getSystemInfos().nnz;
+      
+      // declare iterations counters
+      int maxIter, nIter = 0;
+      if constexpr (isSystFullyLinear)
+        maxIter = 0;
+      else maxIter = 3;
+
+      // loop of the iterations
+      do
+      {
+        // scoped timer
+        std::string timer_name = "iter" + std::to_string(nIter);
+        PROFILE_SCOPE(timer_name.c_str(),sam_utils::JSONLogger::Instance());
+        // assemble the A matrix & b rhs vector.  WARNING: assumes the partA matrices and partb vectors are already set
+        
+
+      }while(nIter++ < maxIter);
+
+
+    }
+
     void sam_optimize()
     // TODO: add a solverOpts variable: check rank or not, check success, write
     // TODO: bookkeeper, compute covariance etc..
