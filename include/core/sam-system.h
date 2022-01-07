@@ -131,17 +131,17 @@ namespace SAM
 
 #if ENABLE_DEBUG_TRACE
       {
-      PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
-      std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n";
-      // only display if matrix not too big
-      if ( A.rows() < 15 ) std::cout << Eigen::MatrixXd(A) << "\n\n";
-      // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
-      // "\n\n";
-      std::cout << "#### Syst: b computed :\n";
-      if ( b.rows() < 15 ) std::cout << b << "\n";
-      std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
-      std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
-                    if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
+        PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
+        std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n";
+        // only display if matrix not too big
+        if ( A.rows() < 15 ) std::cout << Eigen::MatrixXd(A) << "\n\n";
+        // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
+        // "\n\n";
+        std::cout << "#### Syst: b computed :\n";
+        if ( b.rows() < 15 ) std::cout << b << "\n";
+        std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
+        std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
+        if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
       }
 #endif
       
@@ -198,9 +198,9 @@ namespace SAM
                                 this->all_marginals_.insertt(kcm.key_id,marg);
                                 // update the linearization point .  NOTE: must also be done in the 'else' branch 
                                 if constexpr (isSystFullyLinear)
-                                  kcm.update_linearization_point(xmap_marg);
+                                  kcm.update_key_mean(xmap_marg); // FIX:
                                 else
-                                  kcm.set_linearization_point(xmap_marg);
+                                  kcm.set_key_mean(xmap_marg); // FIX:
 
                                 
                                 // save the marginal in the json graph
@@ -215,9 +215,9 @@ namespace SAM
                                 Eigen::Vector<double,kN> xmap_marg = 
                                   this->all_marginals_.template findt<kcm_keymeta_t>(kcm.key_id).value().mean;
                                 if constexpr (isSystFullyLinear)
-                                  kcm.update_linearization_point(xmap_marg);
+                                  kcm.update_linearization_point(xmap_marg); // FIX: 
                                 else
-                                  kcm.set_linearization_point(xmap_marg);
+                                  kcm.set_linearization_point(xmap_marg); // FIX:
                             }
                         });
               // compute factor error (uses the lin point)
@@ -490,10 +490,16 @@ namespace SAM
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id, FT::kN, FT::kM, {keys_id.begin(), keys_id.end()});
 
-          // TODO: initialize lin point
 
           if (isSystFullyLinear)
           {
+            // create 0-mean (the value doesnot matter) entry for nonexisting keys in all_marginals_
+            // TODO: URGENT:
+
+            // fill the tuple of ptr to the means
+            // TODO: URGENT:
+            
+            // pass the tuple of ptr of the key means to the factor ctor 
           std::get<I>(this->all_factors_tuple_)
               .emplace_back(factor_id, mes_vect, measure_cov, keys_id);
 #if ENABLE_DEBUG_TRACE
@@ -502,7 +508,7 @@ namespace SAM
           }
           else // nonlinear system (=> factor need an initial guess for each of its keys)
           {
-            // recover the means (if available) for existing keys
+            // recover the means (if available)
             auto tuple_of_opt_means 
             = sam_tuples::reduce_array_variadically(
                 keys_id,[this]<std::size_t...J>(const auto& keys_id, std::index_sequence<J...>)
@@ -520,8 +526,20 @@ namespace SAM
             // attempt to guess the full init point for this factor by using the measurement if necessary 
             std::optional<typename FT::tuple_of_part_state_t> opt_tuple_of_init_point 
               = FT::guess_init_key_points(tuple_of_opt_means,mes_vect);
-            if (opt_tuple_of_init_point.has_value())
+
+            if (opt_tuple_of_init_point.has_value()) // we have all the mean for the key
             {
+              // TODO: put what's not been found in the all_marginals_ container 
+              // for each mean in the tuple_of_opt_means, those which do not have value()
+              // are the one we should create initiate
+            // TODO: URGENT:
+
+              // now create a tuple of pointers to those mean
+            // TODO: URGENT:
+
+
+            // pass the tuple of ptr of the key means to the factor ctor 
+            // TODO: URGENT:
               std::get<I>(this->all_factors_tuple_)
                   .emplace_back(factor_id, mes_vect, measure_cov, keys_id, opt_tuple_of_init_point.value());
 #if ENABLE_DEBUG_TRACE

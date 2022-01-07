@@ -32,20 +32,20 @@ struct KeyContextualConduct : KEYMETA
   // measure_vect_t   b;
   const measure_cov_t& rho;
 
-  // linearization_point
-  // NOTE: not used when the wider system is linear.
-  // NOTE: if this model is linear, but the wider system nonlinear, it is still used
-  part_state_vect_t linearization_point = part_state_vect_t::Zero();
+  // NOTE: view of an external entity that owns the mean associated with this key
+  volatile part_state_vect_t const * const key_mean_view = nullptr;
 
-  void update_linearization_point(const part_state_vect_t & incr_state)
+  // FIX: remove, should not have ownership
+  void update_key_mean(const part_state_vect_t & incr_state)
   {
     // WARNING: override needed for manifold operations
-    linearization_point += incr_state;
+    *key_mean_view += incr_state;
   }
 
-  void set_linearization_point(const part_state_vect_t & new_lin_point)
+  // FIX: remove, should not have ownership
+  void set_key_mean(const part_state_vect_t & new_lin_point)
   {
-    linearization_point = new_lin_point;
+    *key_mean_view = new_lin_point;
   }
 
   process_matrix_t compute_part_A() const
@@ -70,10 +70,10 @@ struct KeyContextualConduct : KEYMETA
     static_assert(kLinear);
   }
 
-  KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho, const part_state_vect_t & init_point)
+  KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho, part_state_vect_t * init_point_view)
       : key_id(key_id)
       , rho(rho)
-      , linearization_point(init_point)
+      , key_mean_view(init_point_view)
   {
     // note: this can be called even if the context model is not linear (one nl model in the wider system imposes that everything is nl)
   }
@@ -138,7 +138,7 @@ class Factor
     return result;
   }
 
-  // this uses the internally stored linearization_point
+  // this uses the internally stored key_mean
   measure_vect_t compute_b_nl() const
   {
     auto  tuple_of_means = this->get_key_points();
@@ -151,20 +151,22 @@ class Factor
     std::tuple<typename KeyConducts::part_state_vect_t ...> tup_mean;
     std::apply([this,&tup_mean](const auto & ...kcc) //-> std::tuple<typename KeyConducts::state_vector_t ...>
     {
-      tup_mean = {kcc.linearization_point ... };
+      // TODO: assert( *(kcc.key_mean_view) != nullptr && ... );
+      tup_mean = {*(kcc.key_mean_view) ... };
     }
     ,this->keys_set);
     return tup_mean;
   }
 
   // func that sets the tup of lin points
+  // FIX: remove, shouldnot set key points, doesn't have ownership 
   void set_key_points(const std::tuple<typename KeyConducts::part_state_vect_t ...>& xtup) const
   {
     // for each key context model, affects a partx vector for input tuple
     sam_tuples::for_each_in_tuple(this->keys_set,
             [&xtup](auto & kcm, auto J)
             {
-              kcm.linearization_point = std::get<J>(xtup);
+              *(kcm.key_mean_view) = std::get<J>(xtup);
             }
     );
   }
@@ -255,8 +257,9 @@ class Factor
     {
       measure_vect_t Ax = sam_tuples::reduce_array_variadically(this->keys_set,[this]<std::size_t...J>(const auto & kset,std::index_sequence<J...>)
       {
+        // TODO: assert( key_mean_view != nullptr && ... );
         // Ax = A1*x1 + A2*x2 + ...
-        return ( (std::get<J>(kset).compute_part_A()*std::get<J>(kset).linearization_point) + ...);
+        return ( (std::get<J>(kset).compute_part_A()* *(std::get<J>(kset).key_mean_view)) + ...);
       });
       return (Ax - this->rosie).norm();
     }
@@ -264,7 +267,10 @@ class Factor
     {
       // build back the tup of stored lin point
       auto lin_point_tup =  sam_tuples::reduce_tuple_variadically(this->keys_set,[this](const auto &...kcm)
-        {  return std::make_tuple( kcm.linearization_point ... ) ; });
+        {  
+            // TODO: assert (key_mean_view != nullptr && ...);
+            return std::make_tuple( *(kcm.key_mean_view) ... ) ;
+        });
       return (this->rho * this->compute_h_of_x(lin_point_tup) - this->rosie).norm();
     }
   }
