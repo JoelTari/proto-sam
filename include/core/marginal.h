@@ -5,6 +5,7 @@
 #include "utils/tuple_patterns.h"
 
 #include <cmath>
+#include <memory>
 #include <eigen3/Eigen/Dense>
 #include <optional>
 #include <string>
@@ -38,11 +39,16 @@ namespace
       return {sigma, rot};
     }
     // using type = typename Marginal<KEYMETA>;
-    // TODO: a flag ?
     Marginal(const Eigen::Vector<double, KEYMETA::kN>&              xmap_marg,
              const Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>& cov_marg = Eigen::Matrix<double,KEYMETA::kN, KEYMETA::kN>::Zero() )
         : mean(xmap_marg)
         , covariance(cov_marg) {};
+
+    // zero ctor
+    Marginal()
+        : mean(Eigen::Vector<double, KEYMETA::kN>::Zero())
+        , covariance( Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>::Zero() ) 
+    {};
   };
 
 
@@ -55,10 +61,10 @@ namespace
     using type = MarginalsContainer<KEYMETA_T, KEYMETA_Ts...>;
 
     using marginals_containers_t
-        = std::tuple<std::unordered_map<std::string, Marginal<KEYMETA_T>>,
-                     std::unordered_map<std::string, Marginal<KEYMETA_Ts>>...>;
-    static constexpr const std::size_t kNbMarginals {
-        std::tuple_size_v<marginals_containers_t>};   // sizeof...KEYMETA_Ts + 1
+        = std::tuple<std::unordered_map<std::string, std::unique_ptr<Marginal<KEYMETA_T>>>,
+                     std::unordered_map<std::string, std::unique_ptr<Marginal<KEYMETA_Ts>>...>>;
+
+    static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_containers_t>};
 
     template <typename Q_KEYMETA_T>
     std::optional<Marginal<Q_KEYMETA_T>>

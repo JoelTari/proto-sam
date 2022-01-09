@@ -215,9 +215,9 @@ namespace SAM
                                 Eigen::Vector<double,kN> xmap_marg = 
                                   this->all_marginals_.template findt<kcm_keymeta_t>(kcm.key_id).value().mean;
                                 if constexpr (isSystFullyLinear)
-                                  kcm.update_linearization_point(xmap_marg); // FIX: 
+                                  kcm.update_key_mean(xmap_marg); // FIX: 
                                 else
-                                  kcm.set_linearization_point(xmap_marg); // FIX:
+                                  kcm.set_key_mean(xmap_marg); // FIX:
                             }
                         });
               // compute factor error (uses the lin point)
@@ -490,13 +490,25 @@ namespace SAM
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id, FT::kN, FT::kM, {keys_id.begin(), keys_id.end()});
 
+          // recover the means (if available)
+          auto tuple_of_opt_means_ptr 
+          = sam_tuples::reduce_array_variadically(
+              keys_id,[this]<std::size_t...J>(const auto& keys_id, std::index_sequence<J...>)
+                            -> typename FT::tuple_of_opt_part_state_t
+              {
+                return 
+                { 
+                  this->all_marginals_
+                  .template find_mean<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J])
+                ... 
+                };
+              }
+            );
 
           if (isSystFullyLinear)
           {
-            // create 0-mean (the value doesnot matter) entry for nonexisting keys in all_marginals_
-            // TODO: URGENT:
-
-            // fill the tuple of ptr to the means
+            // for keys that have no values (non existing yet), create in the all_marginals_ container with Zeros
+            //
             // TODO: URGENT:
             
             // pass the tuple of ptr of the key means to the factor ctor 
@@ -508,24 +520,10 @@ namespace SAM
           }
           else // nonlinear system (=> factor need an initial guess for each of its keys)
           {
-            // recover the means (if available)
-            auto tuple_of_opt_means 
-            = sam_tuples::reduce_array_variadically(
-                keys_id,[this]<std::size_t...J>(const auto& keys_id, std::index_sequence<J...>)
-                              -> typename FT::tuple_of_opt_part_state_t
-                {
-                  return 
-                  { 
-                    this->all_marginals_
-                    .template find_mean<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J])
-                  ... 
-                  };
-                }
-              );
 
             // attempt to guess the full init point for this factor by using the measurement if necessary 
             std::optional<typename FT::tuple_of_part_state_t> opt_tuple_of_init_point 
-              = FT::guess_init_key_points(tuple_of_opt_means,mes_vect);
+              = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect);
 
             if (opt_tuple_of_init_point.has_value()) // we have all the mean for the key
             {
