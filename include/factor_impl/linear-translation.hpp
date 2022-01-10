@@ -27,8 +27,8 @@ namespace
     process_matrix_t compute_part_A_impl() const { return partA; }
 
     // For linear systems
-    ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho, const part_state_vect_t & init_point)
-        : KeyContextualConduct(key_id, rho, init_point)
+    ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho, std::shared_ptr<part_state_vect_t>  init_point_ptr)
+        : KeyContextualConduct(key_id, rho, init_point_ptr)
         , partA(rho * partH)
     {
     }
@@ -65,8 +65,8 @@ namespace
     }
 
     // For NL cases
-    ObserveeKeyConduct(const std::string key_id, const measure_cov_t& rho, const part_state_vect_t & init_point)
-    : KeyContextualConduct(key_id, rho,init_point)
+    ObserveeKeyConduct(const std::string key_id, const measure_cov_t& rho, std::shared_ptr<part_state_vect_t> init_point_ptr)
+    : KeyContextualConduct(key_id, rho,init_point_ptr)
     , partA(rho * partH)
     {
     }
@@ -84,25 +84,25 @@ namespace
                       ObserverKeyConduct>
   {
     public:
-    LinearTranslationFactor(
-        const std::string&                                               factor_id,
-        const measure_vect_t&                                            mes_vect,
-        const measure_cov_t&                                             measure_cov,
-        const std::array<std::string, LinearTranslationFactor::kNbKeys>& keys_id)
-        : Factor(factor_id, mes_vect, measure_cov, keys_id)
-    {
-#if ENABLE_DEBUG_TRACE
-      std::cout << "\t::  Factor " << factor_id << " created.\n";
-#endif
-    }
+//     LinearTranslationFactor(
+//         const std::string&                                               factor_id,
+//         const measure_vect_t&                                            mes_vect,
+//         const measure_cov_t&                                             measure_cov,
+//         const std::array<std::string, LinearTranslationFactor::kNbKeys>& keys_id)
+//         : Factor(factor_id, mes_vect, measure_cov, keys_id)
+//     {
+// #if ENABLE_DEBUG_TRACE
+//       std::cout << "\t::  Factor " << factor_id << " created.\n";
+// #endif
+//     }
 
     LinearTranslationFactor(
         const std::string&                                               factor_id,
         const measure_vect_t&                                            mes_vect,
         const measure_cov_t&                                             measure_cov,
         const std::array<std::string, LinearTranslationFactor::kNbKeys>& keys_id,
-        const std::tuple<typename ObserveeKeyConduct::part_state_vect_t,typename ObserverKeyConduct::part_state_vect_t> & init_points)
-        : Factor(factor_id, mes_vect, measure_cov, keys_id, init_points)
+        std::tuple< std::shared_ptr<ObserveeKeyConduct::part_state_vect_t>,std::shared_ptr<ObserverKeyConduct::part_state_vect_t> > init_points_ptr)
+        : Factor(factor_id, mes_vect, measure_cov, keys_id, init_points_ptr)
     {
 #if ENABLE_DEBUG_TRACE
       std::cout << "\t::  Factor " << factor_id << " created.\n";
@@ -115,44 +115,45 @@ namespace
     // (used in NL systems if an init point must be set)
     static
     std::optional<
-        std::tuple<ObserveeKeyConduct::part_state_vect_t, ObserverKeyConduct::part_state_vect_t>>
+        std::tuple< std::shared_ptr<ObserveeKeyConduct::part_state_vect_t>, std::shared_ptr<ObserverKeyConduct::part_state_vect_t>>>
         guess_init_key_points_impl(
-            const std::tuple<std::optional<ObserveeKeyConduct::part_state_vect_t>,
-                             std::optional<ObserverKeyConduct::part_state_vect_t>>&
-                                  x_init_optional_tup,
+            const std::tuple<std::optional<std::shared_ptr<ObserveeKeyConduct::part_state_vect_t>>,
+                             std::optional<std::shared_ptr<ObserverKeyConduct::part_state_vect_t>>>&
+                                  x_init_ptr_optional_tup,
             const measure_vect_t& z)
     {
       // if both values are given, just echo the means
-      if (std::get<kObserveeKeyConductIdx>(x_init_optional_tup).has_value()
-          && std::get<kObserverKeyConductIdx>(x_init_optional_tup).has_value())
+      if (std::get<kObserveeKeyConductIdx>(x_init_ptr_optional_tup).has_value()
+          && std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).has_value())
       {
-        return std::make_tuple(std::get<kObserveeKeyConductIdx>(x_init_optional_tup).value(),
-                               std::get<kObserverKeyConductIdx>(x_init_optional_tup).value());
+        return std::make_tuple(std::get<kObserveeKeyConductIdx>(x_init_ptr_optional_tup).value(),
+                               std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).value());
       }
       // if observee is given (eg x_{i-1}) but observer is not (eg x_{i}), use the measure to deduce
       // an init point for observer NOTE: this is the most likely scenario
-      else if (std::get<kObserveeKeyConductIdx>(x_init_optional_tup).has_value()
-               && !std::get<kObserverKeyConductIdx>(x_init_optional_tup).has_value())
+      else if (std::get<kObserveeKeyConductIdx>(x_init_ptr_optional_tup).has_value()
+               && !std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).has_value())
       {
-        ObserverKeyConduct::part_state_vect_t observer_init_point;
-        ObserveeKeyConduct::part_state_vect_t observee_init_point
-            = std::get<kObserveeKeyConductIdx>(x_init_optional_tup).value();
+        std::shared_ptr<ObserverKeyConduct::part_state_vect_t> observer_init_point_ptr;
+        std::shared_ptr<ObserveeKeyConduct::part_state_vect_t> observee_init_point_ptr
+            = std::get<kObserveeKeyConductIdx>(x_init_ptr_optional_tup).value();
 
-        observer_init_point = observee_init_point - z;
 
-        return std::make_tuple(observee_init_point, observer_init_point);
+        observer_init_point_ptr = std::make_shared<ObserverKeyConduct::part_state_vect_t>(*observee_init_point_ptr - z);
+
+        return std::make_tuple(observee_init_point_ptr, observer_init_point_ptr);
       }
       // if obverseR is given, and not the other one
-      else if (!std::get<kObserveeKeyConductIdx>(x_init_optional_tup).has_value()
-               && std::get<kObserverKeyConductIdx>(x_init_optional_tup).has_value())
+      else if (!std::get<kObserveeKeyConductIdx>(x_init_ptr_optional_tup).has_value()
+               && std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).has_value())
       {
-        ObserverKeyConduct::part_state_vect_t observer_init_point
-            = std::get<kObserverKeyConductIdx>(x_init_optional_tup).value();
-        ObserveeKeyConduct::part_state_vect_t observee_init_point;
+        std::shared_ptr<ObserverKeyConduct::part_state_vect_t> observer_init_point_ptr
+            = std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).value();
+        std::shared_ptr<ObserveeKeyConduct::part_state_vect_t> observee_init_point_ptr;
 
-        observee_init_point = z - observer_init_point;
+        observee_init_point_ptr = std::make_shared<ObserveeKeyConduct::part_state_vect_t>(z - *observer_init_point_ptr);
 
-        return std::make_tuple(observee_init_point, observer_init_point);
+        return std::make_tuple(observee_init_point_ptr, observer_init_point_ptr);
       }
       // if no init on either key is given,
       else

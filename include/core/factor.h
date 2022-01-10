@@ -33,7 +33,7 @@ struct KeyContextualConduct : KEYMETA
   const measure_cov_t& rho;
 
   // NOTE: view of an external entity that owns the mean associated with this key
-  volatile part_state_vect_t const * const key_mean_view = nullptr;
+  std::shared_ptr<part_state_vect_t> key_mean_view; // TODO: make it a const ?
 
   // FIX: remove, should not have ownership
   void update_key_mean(const part_state_vect_t & incr_state)
@@ -70,7 +70,7 @@ struct KeyContextualConduct : KEYMETA
     static_assert(kLinear);
   }
 
-  KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho, part_state_vect_t * init_point_view)
+  KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho, std::shared_ptr<part_state_vect_t> init_point_view)
       : key_id(key_id)
       , rho(rho)
       , key_mean_view(init_point_view)
@@ -97,7 +97,7 @@ class Factor
   static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
   using state_vector_t                 = Eigen::Matrix<double, kN, 1>; 
   using tuple_of_part_state_t          = std::tuple<typename KeyConducts::part_state_vect_t ...>;
-  using tuple_of_opt_part_state_t      = std::tuple<std::optional<typename KeyConducts::part_state_vect_t> ...>;
+  using tuple_of_opt_part_state_ptr_t      = std::tuple<std::optional<typename KeyConducts::part_state_vect_t*> ...>;
   // NOTE: on state vector (or init point, or map) : no explicit state vect is kept at factor level:
   // NOTE:  we do keep it at the keys level, and offer the get_state_vector_from_tuple() method to query it if necessary
   using process_matrix_t               = Eigen::Matrix<double, kM, kN>;
@@ -124,9 +124,9 @@ class Factor
   // No optional returned value indicates that the init point cannot be defined for all keys (e.g. bearing observation of a new landmark)
   static
   std::optional< tuple_of_part_state_t >
-  guess_init_key_points(const tuple_of_opt_part_state_t & x_init_optional_tup, const measure_vect_t & z)
+  guess_init_key_points(const tuple_of_opt_part_state_ptr_t & x_init_ptr_optional_tup, const measure_vect_t & z)
   {
-    return DerivedFactor::guess_init_key_points_impl(x_init_optional_tup, z);      
+    return DerivedFactor::guess_init_key_points_impl(x_init_ptr_optional_tup, z);      
   }
 
   // ctor helper
@@ -194,36 +194,37 @@ class Factor
     return static_cast<const DerivedFactor*>(this)->compute_h_of_x_impl(x);
   }
 
-  // the ctor
-  Factor(const std::string&                      factor_id,
-         const measure_vect_t&                   z,
-         const measure_cov_t&                    z_cov,
-         const std::array<std::string, kNbKeys>& keys_id)
-      : z(z)
-      , z_cov(z_cov)
-      , factor_id(factor_id)
-      , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
-      , keys_set(sam_tuples::reduce_array_variadically(
-            keys_id,
-            []<std::size_t... I>(const auto& my_keys_id,
-                                 const auto& rho,
-                                 std::index_sequence<I...>) -> decltype(keys_set) {
-              // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
-              // might be possible to use perfect forwarding, by declaring an empty tuple
-              // and next line expanding tuple_cat with an intermediary function that has perfect forwarding ( TODO:)
-              return  { KeyConducts(my_keys_id[I], rho) ... } ;
-            },
-            rho))
-      , keyIdToTupleIdx(map_keyid(keys_id))
-  {
-  }
+  // // the ctor
+  // // FIX: remove, only keep the one with the init points
+  // Factor(const std::string&                      factor_id,
+  //        const measure_vect_t&                   z,
+  //        const measure_cov_t&                    z_cov,
+  //        const std::array<std::string, kNbKeys>& keys_id)
+  //     : z(z)
+  //     , z_cov(z_cov)
+  //     , factor_id(factor_id)
+  //     , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
+  //     , keys_set(sam_tuples::reduce_array_variadically(
+  //           keys_id,
+  //           []<std::size_t... I>(const auto& my_keys_id,
+  //                                const auto& rho,
+  //                                std::index_sequence<I...>) -> decltype(keys_set) {
+  //             // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
+  //             // might be possible to use perfect forwarding, by declaring an empty tuple
+  //             // and next line expanding tuple_cat with an intermediary function that has perfect forwarding ( TODO:)
+  //             return  { KeyConducts(my_keys_id[I], rho) ... } ;
+  //           },
+  //           rho))
+  //     , keyIdToTupleIdx(map_keyid(keys_id))
+  // {
+  // }
 
   // the overloaded ctor (used in NL with init points)
   Factor(const std::string&                      factor_id,
          const measure_vect_t&                   z,
          const measure_cov_t&                    z_cov,
          const std::array<std::string, kNbKeys>& keys_id,
-         const std::tuple<typename KeyConducts::part_state_vect_t ...> & init_points)
+         const std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...> & tup_init_points_ptr)
       : z(z)
       , z_cov(z_cov)
       , factor_id(factor_id)
@@ -232,14 +233,14 @@ class Factor
             keys_id,
             []<std::size_t... I>(const auto& my_keys_id,
                                  const auto& rho,
-                                 const auto& init_points,
+                                 const auto& tup_init_points_ptr,
                                  std::index_sequence<I...>) -> decltype(keys_set) {
               // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
               // might be possible to use perfect forwarding, by declaring an empty tuple
               // and next line expanding tuple_cat with an intermediary function that has perfect forwarding ( TODO:)
-              return  { KeyConducts(my_keys_id[I], rho,std::get<I>(init_points)) ... } ;
+              return  { KeyConducts(my_keys_id[I], rho,std::get<I>(tup_init_points_ptr)) ... } ;
             },
-            rho,init_points))
+            rho,tup_init_points_ptr))
       , keyIdToTupleIdx(map_keyid(keys_id))
   {
   }

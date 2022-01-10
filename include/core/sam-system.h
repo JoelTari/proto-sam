@@ -490,7 +490,8 @@ namespace SAM
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id, FT::kN, FT::kM, {keys_id.begin(), keys_id.end()});
 
-          // recover the means (if available)
+          // recover the means (at least the ones available, some may not exist)
+          // TODO: make it a function
           auto tuple_of_opt_means_ptr 
           = sam_tuples::reduce_array_variadically(
               keys_id,[this]<std::size_t...J>(const auto& keys_id, std::index_sequence<J...>)
@@ -499,60 +500,55 @@ namespace SAM
                 return 
                 { 
                   this->all_marginals_
-                  .template find_mean<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J])
+                  .template find_mean_v<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J])
                 ... 
                 };
               }
             );
 
-          if (isSystFullyLinear)
-          {
-            // for keys that have no values (non existing yet), create in the all_marginals_ container with Zeros
-            //
-            // TODO: URGENT:
-            
-            // pass the tuple of ptr of the key means to the factor ctor 
-          std::get<I>(this->all_factors_tuple_)
-              .emplace_back(factor_id, mes_vect, measure_cov, keys_id);
-#if ENABLE_DEBUG_TRACE
-          std::cout << "\t\t:: Factor " << factor_id << " properly integrated in system.\n";
-#endif
-          }
-          else // nonlinear system (=> factor need an initial guess for each of its keys)
-          {
+          // It is probable that the above tuple contains std::nullopt.
+          // Attempt to guess the full init point for this factor by using the measurement if necessary.
+          // If we don't have enough data to fill in the blank, then `opt_tuple_of_init_point = std::nullopt`
+          std::optional<typename FT::tuple_of_part_state_t> opt_tuple_of_init_point 
+            = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect); // NOTE: heap allocation (make_shared)
 
-            // attempt to guess the full init point for this factor by using the measurement if necessary 
-            std::optional<typename FT::tuple_of_part_state_t> opt_tuple_of_init_point 
-              = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect);
-
-            if (opt_tuple_of_init_point.has_value()) // we have all the mean for the key
+          if (opt_tuple_of_init_point.has_value()) // we have all the means for the key
+          {
+            // Add new init point in marginal container
+            sam_tuples::for_each_in_const_tuple(tuple_of_opt_means_ptr,
+            [this,&keys_id](const auto & opt_mean_ptr, auto J)
             {
-              // TODO: put what's not been found in the all_marginals_ container 
-              // for each mean in the tuple_of_opt_means, those which do not have value()
-              // are the one we should create initiate
-            // TODO: URGENT:
-
-              // now create a tuple of pointers to those mean
-            // TODO: URGENT:
-
+              // if the mean was not found ante-previously, insert it using the guesser result
+              if (!opt_mean_ptr.has_value())
+              {
+                // isolate the shared ptr to the guessed init point
+                auto guessed_init_point_ptr = std::get<J>(opt_tuple_of_init_point.value());
+                // make a new marginal from the guessed init point
+                using marginal_type = typename  std::tuple_element<J,typename marginals_t::marginals_containers_t>::mapped_type::element_type; 
+                std::shared_ptr<marginal_type> new_marginal_ptr = std::make_shared<marginal_type>(guessed_init_point_ptr); // NOTE: HEAP allocation  (make_shared)
+                // insert the (shared ptr) marginal we just created in the system's marginal container
+                this->all_marginals_.
+                  template insert_in_marginal_container<marginal_type>
+                  (keys_id[J],new_marginal_ptr);
+                // TODO: update the bookkeeper ? I think its already done ( CHECK: )
+              }
+            });
 
             // pass the tuple of ptr of the key means to the factor ctor 
             // TODO: URGENT:
-              std::get<I>(this->all_factors_tuple_)
+            std::get<I>(this->all_factors_tuple_)
                   .emplace_back(factor_id, mes_vect, measure_cov, keys_id, opt_tuple_of_init_point.value());
 #if ENABLE_DEBUG_TRACE
-              std::cout << "\t\t:: Factor " << factor_id << " properly integrated in NL system.\n";
+            std::cout << "\t\t:: Factor " << factor_id << " properly integrated in NL system.\n";
 #endif
-            }
-            else
-            {
-              // TODO: FEATURE: emplace factor in a staging container if 
-              // TODO: more detail (which key.s failed etc..)
-              throw std::runtime_error("Unable to determine all init points for this factor");
-            }
-              
           }
-
+          else
+          {
+            // TODO: FEATURE: emplace factor in a staging container if 
+            // TODO: more detail (which key.s failed etc..)
+            throw std::runtime_error("Unable to determine all init points for this factor");
+          }
+              
 // Debug consistency check of everything
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
           // 1. checking if the bookkeeper is consistent with itself (systemInfo

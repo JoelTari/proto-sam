@@ -35,7 +35,7 @@ namespace
     }
 
     // for NL cases
-    UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho, const part_state_vect_t & init_point)
+    UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho,std::shared_ptr<part_state_vect_t> init_point)
         : KeyContextualConduct(key_id, rho, init_point)
         , partA(rho * partH)   // rho*H
     {
@@ -50,22 +50,23 @@ namespace
       : public Factor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>
   {
     public:
-    AnchorFactor(const std::string&                                    factor_id,
-                 const measure_vect_t&                                 mes_vect,
-                 const measure_cov_t&                                  measure_cov,
-                 const std::array<std::string, AnchorFactor::kNbKeys>& keys_id)
-        : Factor(factor_id, mes_vect, measure_cov, keys_id)
-    {
-#if ENABLE_DEBUG_TRACE
-      std::cout << "\t::  Factor " << factor_id << " created.\n";
-#endif
-    }
+//     // FIX: refactor the init point as ptr
+//     AnchorFactor(const std::string&                                    factor_id,
+//                  const measure_vect_t&                                 mes_vect,
+//                  const measure_cov_t&                                  measure_cov,
+//                  const std::array<std::string, AnchorFactor::kNbKeys>& keys_id)
+//         : Factor(factor_id, mes_vect, measure_cov, keys_id)
+//     {
+// #if ENABLE_DEBUG_TRACE
+//       std::cout << "\t::  Factor " << factor_id << " created.\n";
+// #endif
+//     }
     AnchorFactor(const std::string&                                    factor_id,
                  const measure_vect_t&                                 mes_vect,
                  const measure_cov_t&                                  measure_cov,
                  const std::array<std::string, AnchorFactor::kNbKeys>& keys_id,
-                 const std::tuple<UniqueKeyConduct::part_state_vect_t> & init_points)
-        : Factor(factor_id, mes_vect, measure_cov, keys_id, init_points)
+                 std::tuple<  std::shared_ptr<UniqueKeyConduct::part_state_vect_t>> tuple_of_init_point_ptrs)
+        : Factor(factor_id, mes_vect, measure_cov, keys_id, tuple_of_init_point_ptrs)
     {
 #if ENABLE_DEBUG_TRACE
       std::cout << "\t::  Factor " << factor_id << " created.\n";
@@ -73,17 +74,16 @@ namespace
     }
 
     // init point guesser
-    static std::optional<std::tuple<UniqueKeyConduct::part_state_vect_t>>
+    static std::optional<std::tuple< std::shared_ptr<UniqueKeyConduct::part_state_vect_t> >>
         guess_init_key_points_impl(
-            const std::tuple<std::optional<UniqueKeyConduct::part_state_vect_t>>&
-                                  x_init_optional_tup,
+            const std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct::part_state_vect_t> >>&
+                                  x_init_ptr_optional_tup,
             const measure_vect_t& z)
     {
-      // NOTE: easy for this factor, if the mean
-      if (std::get<0>(x_init_optional_tup).has_value())
+      if (std::get<0>(x_init_ptr_optional_tup).has_value())
         // if the optional mean value inside the tuple is given, we report this value as initial
         // guess
-        return std::make_tuple(std::get<0>(x_init_optional_tup).value());
+        return std::make_tuple(std::get<0>(x_init_ptr_optional_tup).value());
       else   // unable to determine an init point for the only key
         return std::nullopt;
     }

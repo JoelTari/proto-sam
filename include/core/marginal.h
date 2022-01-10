@@ -16,21 +16,30 @@
 namespace
 {
   template <typename KEYMETA>
-  class Marginal : KEYMETA
+  class Marginal : KEYMETA    // Rename as guassin
   {
     public:
     using KeyMeta_t = KEYMETA;
     using Mean_t = Eigen::Vector<double, KEYMETA::kN>;
+    using Mean_t_ptr = std::shared_ptr<Mean_t>;
+    using Covariance_t = Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>;
     // bool marked = false;
-    Mean_t              mean;
-    Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN> covariance;
+    Mean_t_ptr              mean_ptr;
+    Covariance_t covariance;
 
-    std::tuple<std::array<double, 2>, double> get_visual_2d_covariance() const
+    // ctor
+    Marginal(Mean_t_ptr mean_ptr,const Covariance_t& covariance = Covariance_t::Zero())
+        : mean_ptr(mean_ptr)
+        , covariance(covariance) 
+    {};
+
+    // visual covariance 
+    std::tuple<std::array<double, 2>, double> get_visual_2d_covariance() const // WARNING: works only for 2d
     {
       // true = compute the eigenvectors too (default is true anyway)
       // Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>>    es(covariance, true);   
       // std::cout << " The marginal cov:\n" << covariance << '\n';
-      Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>>    es(covariance);   
+      Eigen::SelfAdjointEigenSolver<Covariance_t>    es(covariance);   
       std::array<double, 2> sigma {sqrt(es.eigenvalues()[0]), sqrt(es.eigenvalues()[1])};
       auto                  R = es.eigenvectors();
 
@@ -38,22 +47,9 @@ namespace
 
       return {sigma, rot};
     }
-    // using type = typename Marginal<KEYMETA>;
-    Marginal(const Eigen::Vector<double, KEYMETA::kN>&              xmap_marg,
-             const Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>& cov_marg = Eigen::Matrix<double,KEYMETA::kN, KEYMETA::kN>::Zero() )
-        : mean(xmap_marg)
-        , covariance(cov_marg) {};
-
-    // zero ctor
-    Marginal()
-        : mean(Eigen::Vector<double, KEYMETA::kN>::Zero())
-        , covariance( Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>::Zero() ) 
-    {};
   };
 
 
-  // template<typename MARGINAL_T, typename ... MARGINAL_Ts>
-  // TODO: compile check against duplicate keymeta
   template <typename KEYMETA_T, typename... KEYMETA_Ts>
   class MarginalsContainer
   {
@@ -61,14 +57,14 @@ namespace
     using type = MarginalsContainer<KEYMETA_T, KEYMETA_Ts...>;
 
     using marginals_containers_t
-        = std::tuple<std::unordered_map<std::string, std::unique_ptr<Marginal<KEYMETA_T>>>,
-                     std::unordered_map<std::string, std::unique_ptr<Marginal<KEYMETA_Ts>>...>>;
+        = std::tuple<std::unordered_map<std::string, std::shared_ptr<Marginal<KEYMETA_T>>>,
+                     std::unordered_map<std::string, std::shared_ptr<Marginal<KEYMETA_Ts>>...>>;
 
     static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_containers_t>};
 
     template <typename Q_KEYMETA_T>
-    std::optional<Marginal<Q_KEYMETA_T>>
-        findt(const std::string& key_id) 
+    std::optional<std::shared_ptr<Marginal<Q_KEYMETA_T>>>
+        find_marginal_ptr(const std::string& key_id) 
     {
       // static assert
       static_assert(std::is_same_v<Q_KEYMETA_T,
@@ -77,7 +73,6 @@ namespace
       // get the correct tuple element
       constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
 
-      // OPTIMIZE: pass a reference
       if (auto it {std::get<I>(this->data_map_tuple).find(key_id)};
           it != std::end(std::get<I>(this->data_map_tuple)))
       { return it->second; }
@@ -87,7 +82,7 @@ namespace
 
     template <typename Q_KEYMETA_T>
     std::optional<typename Marginal<Q_KEYMETA_T>::Mean_t>
-        find_mean(const std::string& key_id) 
+        find_mean_ptr(const std::string& key_id) 
     {
       // static assert
       static_assert(std::is_same_v<Q_KEYMETA_T,
@@ -96,23 +91,29 @@ namespace
       // get the correct tuple element
       constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
 
-      // OPTIMIZE: pass a reference
       if (auto it {std::get<I>(this->data_map_tuple).find(key_id)};
           it != std::end(std::get<I>(this->data_map_tuple)))
-      { return it->second.mean; }
+      { return it->second->mean_ptr; }
       else
         return std::nullopt;
     }
 
     template <typename Q_MARG_T>
-    void insertt(const std::string & key_id, const Q_MARG_T & marg) // TODO: why not by idx too
+    void insert_in_marginal_container(const std::string & key_id, std::shared_ptr<Q_MARG_T> marg_ptr)
     {
-      // static_assert( std::is_invocable_v<Q_MARG_T,args...> )
-      // static assert the size of vect/cov
       constexpr std::size_t I = get_correct_tuple_idx_by_marg<Q_MARG_T>();
-      // std::cout << "correct margcont idx : " << I << '\n';
-      std::get<I>(this->data_map_tuple).insert_or_assign(key_id, marg);
+      std::get<I>(this->data_map_tuple).insert_or_assign(key_id, marg_ptr);
     }
+
+    // template <typename Q_MARG_T, typename ...Args>
+    // void insertt(const std::string & key_id, const Args &...args)
+    // {
+    //   // static_assert( std::is_invocable_v<Q_MARG_T,args...> )
+    //   // static assert the size of vect/cov
+    //   constexpr std::size_t I = get_correct_tuple_idx_by_marg<Q_MARG_T>();
+    //   // std::cout << "correct margcont idx : " << I << '\n';
+    //   std::get<I>(this->data_map_tuple).insert_or_assign(key_id, std::make_unique<Q_MARG_T>(args...));
+    // }
 
     // // overloads when a covariance is given
     // template <typename Q_KEYMETA_T>
@@ -130,6 +131,8 @@ namespace
 
 
     marginals_containers_t data_map_tuple;
+    // std::unordered_map<std::string,std::unique_ptr<double>> AAA;
+    // static_assert(std::is_same_v<std::unique_ptr<double>::element_type,double>);
 
     protected:
     /**
@@ -145,9 +148,9 @@ namespace
     {
       static_assert(I < kNbMarginals);
       constexpr std::size_t Res = 0;
-      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_containers_t>::
-                                       mapped_type::KeyMeta_t,
-                                   Q_KEYMETA_T>)   // maybe thats the keymeta that need compare
+      // template metaprogramming is still horrible (written in the times of cpp17)
+      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_containers_t>::mapped_type::element_type::KeyMeta_t,
+                                   Q_KEYMETA_T>)
       { return I; }
       else
       {
@@ -160,7 +163,7 @@ namespace
       static_assert(I < kNbMarginals);
       constexpr std::size_t Res = 0;
       if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_containers_t>::
-                                       mapped_type,
+                                       mapped_type::element_type,
                                    Q_MARG_T>)   // maybe thats the keymeta that need compare
       { return I; }
       else
@@ -168,6 +171,9 @@ namespace
         return get_correct_tuple_idx_by_marg<I + 1>();
       }
     }
+
+    // static assert that all KEYMETA are unique  TODO:
+    // static_assert( !std::is_same_v<> )
   };
 
   // specialization: if tuple of marginals is given, then extract whats inside the tuple and
