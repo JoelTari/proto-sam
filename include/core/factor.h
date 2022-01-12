@@ -32,7 +32,6 @@ struct KeyContextualConduct : KEYMETA
   // measure_vect_t   b;
   const measure_cov_t& rho;
 
-  // NOTE: view of an external entity that owns the mean associated with this key
   std::shared_ptr<part_state_vect_t> key_mean_view; // TODO: make it a const ?
 
   // FIX: remove, should not have ownership
@@ -50,7 +49,7 @@ struct KeyContextualConduct : KEYMETA
 
   process_matrix_t compute_part_A() const
   {
-    // NOTE: if NL, the compute_part_A_impl must compute rho*((d part_h/ dx)|_x0)
+    // NOTE: if NL, the compute_part_A_impl must compute rho*((d part_h/ dx)|_x0) (need the key linpoint part_x0 : key_mean_view)
     // NOTE: if Linear, it is just a constant returned value (rho*partH, where partH is static)
     return static_cast<const DerivedKCC*>(this)->compute_part_A_impl(); 
   }

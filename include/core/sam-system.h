@@ -76,28 +76,153 @@ namespace SAM
 
       // get some dimension constants of the system
       SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
+      uint nnz = system_infos.nnz;
       int        M            = system_infos.aggr_dim_mes;
       int        N            = system_infos.aggr_dim_keys;
 
-      uint nnz = this->bookkeeper_.getSystemInfos().nnz;
-      
+      // declare A & b
+      Eigen::SparseMatrix<double> A(M,N);
+      Eigen::VectorXd b(M);
+
+      std::vector<Eigen::Triplet<double>> sparseA_triplets;
+      sparseA_triplets.reserve(nnz); // expected number of nonzeros elements
+      uint64_t line_counter = 0;
+      //------------------------------------------------------------------//
+      //                fill triplets of A and vector of b                //
+      //------------------------------------------------------------------//
+      //  OPTIMIZE: the computation of {partAi...} & bi for each factor could be assumed to be already done (at factor ctor, or after the lin point is analysed)
+      //  OPTIMIZE: EXPECTED PERFORMANCE GAIN : low to medium 
+      sam_tuples::for_each_in_tuple(
+        this->all_factors_tuple_,
+        [this,&sparseA_triplets,&b,&line_counter](auto& vect_of_f, auto I) // NOTE: I unusable (not constexpr-able)
+        {
+          using factor_t =typename std::decay_t<decltype(vect_of_f)>::value_type;
+          // OPTIMIZE: parallel loop
+          // OPTIMIZE: race: sparseA_triplets, b ; potential race : vector of factors (check)
+          // https://stackoverflow.com/a/45773308
+          for(auto & factor : vect_of_f)
+          {
+            PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
+            //------------------------------------------------------------------//
+            //                        refactoring notes                         //
+            //------------------------------------------------------------------//
+            // declare Ai,bi
+            typename factor_t::measure_vect_t b_i;
+            std::vector<Eigen::Triplet<double>> Ai_triplets; 
+            Ai_triplets.reserve(factor_t::kN*factor_t::kM);
+            if constexpr (isSystFullyLinear)
+            {
+              b_i = factor.rosie;
+              std::apply(
+                  [this, &Ai_triplets, line_counter](auto&&... keycc)
+                  { (this->compute_partialA_and_fill_triplet(keycc, Ai_triplets, line_counter), ...); },
+                  factor.keys_set);
+            }
+            else
+            {
+              // NOTE: this assumes lin points already been set elsewhere
+              b_i = factor.compute_b_nl(); // or without mean_tup as factor is supposed to have it inside
+              // logic is done internally
+              std::apply(
+                  [this, &Ai_triplets, line_counter](auto&&... keycc)
+                  { (this->compute_partialA_and_fill_triplet(keycc, Ai_triplets, line_counter), ...); },
+                  factor.keys_set);
+            }
+
+            // Append b_i into b
+            b.block<factor_t::kM, 1>(line_counter, 0) = b_i;
+
+            // Append Ai_triplets in sparseA_triplets
+            sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
+
+            // increment the line number by as many lines filled here
+            line_counter += factor_t::kM;
+          }
+        }
+      );
+
+      // set A from triplets, clear the triplets
+      A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
+      sparseA_triplets.clear(); // doesnt alter the capacity, so the .reserve( N ) is still valid 
+
+      // TODO: declare the eigen SPQR solver here, and analyse the pattern (because A pattern will not change in the loop)
+
+
+      //------------------------------------------------------------------//
+      //                      PRE LOOP DECLARATIONS                       //
+      //------------------------------------------------------------------//
       // declare iterations counters
       int maxIter, nIter = 0;
-      if constexpr (isSystFullyLinear)
-        maxIter = 0;
-      else maxIter = 3;
+      if constexpr (isSystFullyLinear) maxIter = 1;
+      else maxIter = 3; // NOTE: start the tests with maxIter of 1
+      // TODO: urgent, declare the dummy jsons
 
+      //------------------------------------------------------------------//
+      //                            LOOP START                            //
+      //------------------------------------------------------------------//
       // loop of the iterations
-      do
+      while(nIter < maxIter)
       {
         // scoped timer
         std::string timer_name = "iter" + std::to_string(nIter);
         PROFILE_SCOPE(timer_name.c_str(),sam_utils::JSONLogger::Instance());
-        // assemble the A matrix & b rhs vector.  WARNING: assumes the partA matrices and partb vectors are already set
-        
 
-      }while(nIter++ < maxIter);
+        // set A from the triplets (alrea)
+        if(nIter > 0) A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
 
+        // give A and b to the solver
+        auto [Xmap,qr_error, rnnz] = solveQR(A, b); // TODO: split the compute() step with the analyse pattern (can be set before the loop)
+        this->bookkeeper_.set_syst_Rnnz(rnnz);
+        this->bookkeeper_.set_syst_resolution_error(qr_error);
+
+        // optionaly compute the covariance
+        auto [SigmaCovariance,Hnnz] = compute_covariance(A);
+        this->bookkeeper_.set_syst_Hnnz(Hnnz);
+
+        // update the Marginals here
+        sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,
+        [this, Xmap = std::ref(Xmap), SigmaCovariance = std::ref(SigmaCovariance) ](auto & map_to_marginal_ptr, auto margTypeIdx)
+        {
+          constexpr std::size_t kN = decltype(map_to_marginal_ptr)::mapped_type::element_type::kN;
+          for (auto & pair : map_to_marginal_ptr)
+          {
+            std::string key_id = pair.first;
+            auto marginal_ptr = pair.second;
+            auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
+            // writes the new mean and the new covariance in the marginal
+            *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0);
+            marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
+            // TODO: URGENT: fill/complete the dummy json
+          }
+        });
+        // and add in a dummy json (mean,cov)
+
+        // TODO: URGENT: post process here
+        // sparseA_triplets.clear(); 
+        // int line_number_b = 0;  // NOTE: the line counter makes the whole thing difficult to parallelize
+        // std::atomic<double> accumulated_error (0);
+        // for each in the factors tuple
+        //    for each factor in factors
+        //      accumulated_error += factor.error
+        //      add the factor.error in json
+        //      // now compute Ai,bi : first bi
+        //      bi = factor.rosie; // or bi = factor.compute_b_nl(); // in NL
+        //      //  append bi into b -> *** increment a line number
+        //      constexpr int mesdim                = factor_t::kM;
+        //      b.block<mesdim, 1>(line_counter, 0) = b_i;
+        //      line_counter += mesdim;
+        //      // next Ai
+        //      declare a triplet
+        //      for each kcm of this factor
+        //        partAi = kcm.compute_partAi() // use x0
+        //        emplace each element of partAi into triplets  (line_counter dependency)
+        //      sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets))
+
+        nIter++;
+      }
+      // TODO: URGENT:  json : header
+      
+      // TODO: URGENT: publish json
 
     }
 
