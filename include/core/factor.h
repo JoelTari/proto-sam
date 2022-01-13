@@ -51,6 +51,8 @@ struct KeyContextualConduct : KEYMETA
   {
     // NOTE: if NL, the compute_part_A_impl must compute rho*((d part_h/ dx)|_x0) (need the key linpoint part_x0 : key_mean_view)
     // NOTE: if Linear, it is just a constant returned value (rho*partH, where partH is static)
+
+    // OPTIMIZE: store in a member to save some cycles (RAM vs CPU), but less readability
     return static_cast<const DerivedKCC*>(this)->compute_part_A_impl(); 
   }
 
@@ -138,7 +140,7 @@ class Factor
   }
 
   // this uses the internally stored key_mean
-  measure_vect_t compute_b_nl() const
+  measure_vect_t compute_bi_nl() const
   {
     auto  tuple_of_means = this->get_key_points();
     return this->rosie - this->rho*this->compute_h_of_x(tuple_of_means);

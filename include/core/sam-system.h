@@ -123,7 +123,7 @@ namespace SAM
             else
             {
               // NOTE: this assumes lin points already been set elsewhere
-              b_i = factor.compute_b_nl(); // or without mean_tup as factor is supposed to have it inside
+              b_i = factor.compute_bi_nl(); // or without mean_tup as factor is supposed to have it inside
               // logic is done internally
               std::apply(
                   [this, &Ai_triplets, line_counter](auto&&... keycc)
@@ -172,7 +172,11 @@ namespace SAM
         PROFILE_SCOPE(timer_name.c_str(),sam_utils::JSONLogger::Instance());
 
         // set A from the triplets (alrea)
-        if(nIter > 0) A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
+        if(nIter > 0)
+        {
+          A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
+          sparseA_triplets.clear();
+        }
 
         // give A and b to the solver
         auto [Xmap,qr_error, rnnz] = solveQR(A, b); // TODO: split the compute() step with the analyse pattern (can be set before the loop)
@@ -183,8 +187,14 @@ namespace SAM
         auto [SigmaCovariance,Hnnz] = compute_covariance(A);
         this->bookkeeper_.set_syst_Hnnz(Hnnz);
 
-        // update the Marginals here
-        // update the marginal history
+        //------------------------------------------------------------------//
+        //                  POST SOLVER LOOP ON MARGINALS                   //
+        //        dispatch the Maximum A Posteriori subcomponents in        //
+        //                     the marginals container.                     //
+        //        Push the marginal result into a temporary history         //
+        //             structure that will end up in the json.              //
+        //            Do the same optionally for the covariance             //
+        //------------------------------------------------------------------//
         sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,
         [this, Xmap = std::ref(Xmap), SigmaCovariance = std::ref(SigmaCovariance),&nIter, &marginals_histories ](auto & map_to_marginal_ptr, auto margTypeIdx)
         {
@@ -213,10 +223,86 @@ namespace SAM
           }
         });
 
-        // TODO: URGENT: post process here
-        // sparseA_triplets.clear(); 
-        // int line_number_b = 0;  // NOTE: the line counter makes the whole thing difficult to parallelize
-        // std::atomic<double> accumulated_error (0);
+        //------------------------------------------------------------------//
+        //                    POST SOLVER LOOP ON FACTOR                    //
+        //          compute norm and accumulate norm, push norm in          //
+        //           history, fill the new b vector, fill the new           //
+        //                         sparseAtriplets                          //
+        //------------------------------------------------------------------//
+        sparseA_triplets.clear();
+        int line_counter = 0;  // NOTE: the line counter makes the whole thing difficult to parallelize
+        double accumulated_syst_norm (0); // TODO: atomic<double> (but atomic increment is supported only since c++20)
+        // for every factor list in the tuple
+        sam_tuples::for_each_in_tuple(this->all_factors_tuple_,[this,&line_counter, &accumulated_syst_norm,&b,&sparseA_triplets]
+        (auto & factors, auto factTypeIdx)
+        {
+          using factor_t = typename std::decay<decltype(factors)>::element_type;
+          // for every factor in the list
+          for (auto & factor : factors) // OPTIMIZE: make parallel for_each. Races: syst_norm, line_counter
+          {
+            // OPTIMIZE: these steps could (independently whether or not the loop is parallel)
+            // OPTIMIZE: 1st thread: norm computing and accumulation
+            // OPTIMIZE: 2nd thread: Ai bi compute and incorporation on 
+            // OPTIMIZE: medium gain, but improved readability
+            // norm of the factor: \|h(xmap)-z\|_R (no square)
+            //  at the current map
+            double norm_factor = factor.compute_lin_point_factor_norm();
+            accumulated_syst_norm += norm_factor; // WARNING: race condition if parallel policy
+
+            // compute Ai and bi 
+            // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
+            // first: compute bi
+            typename factor_t::measure_vect_t bi;
+            constexpr int mesdim = factor_t::kM;
+            if constexpr (isSystFullyLinear) bi = factor.rosie;
+            else bi = factor.compute_bi_nl();
+            // second: compute Ai
+            // declare a triplet for Ai (that will be push back into the wider A triplets)
+            std::vector<Eigen::Triplet<double>> Ai_triplets; 
+            Ai_triplets.reserve(factor_t::kN*factor_t::kM);
+            // 
+            sam_tuples::for_each_in_tuple(factor.keys_set,[this, &mesdim, &line_counter, &Ai_triplets]
+            (auto & key_context_model, auto keyTypeIdx)
+            {
+              constexpr int kcm_kN = std::decay<decltype(key_context_model)>::KeyMeta_t::kN;
+              auto partAi = key_context_model.compute_part_A(); // works in NL too.
+              // NOTE: 1/partAi is not stored internally in the factor, except for linear (because its const)
+              // NOTE: 2/the rest of this code is formation of Ai triplets, could be done in another loop-tuple (then this one has to return a tuple of partAi)
+              // get the col in systA (the big A of the system)
+              int colInBigA = this->bookkeeper_.getKeyInfos(key_context_model.key_id).sysidx;
+              // reshape the partA matrix in a one-dimensional, so that it is easier to loop. (column major)
+              auto partAi_1d = partAi.reshaped();
+              // now, loop and write
+              for (int i = 0; i < kcm_kN * mesdim; i++)
+              {
+                // row in big A is easier, just wrap the i index & add the line
+                // counter
+                int row = line_counter + (i % mesdim);  // WARNING: race condition if parallel policy
+                // col idx in big A : we know
+                int col = colInBigA + i / mesdim;
+                Ai_triplets.emplace_back(row, col, partAi_1d[i]);
+              }
+            });
+
+            // put Ai and bi into sparseA_triplets and b
+            // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
+            b.block<mesdim,1>(line_counter,0) = bi;
+            line_counter += mesdim;
+            // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
+            sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
+            
+            // TODO: URGENT: push factor norm into a history
+            // struct factorHistory
+            // {
+            //   factor_id, vector<double> error, type, 
+            //
+            // };
+            // if niter == 0   insert a map<factor_key, vector norm>
+            // else 
+
+          }
+
+        });
         // for each in the factors tuple
         //    for each factor in factors
         //      accumulated_error += factor.error
