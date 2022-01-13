@@ -34,6 +34,8 @@ namespace SAM
     using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
     // declare marginal container type of those keymetas
     using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
+    // declare marginal histories (over the span of iterative linearization) type
+    using marginals_histories_t = MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
 
     static constexpr const bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
 
@@ -155,7 +157,9 @@ namespace SAM
       int maxIter, nIter = 0;
       if constexpr (isSystFullyLinear) maxIter = 1;
       else maxIter = 3; // NOTE: start the tests with maxIter of 1
-      // TODO: urgent, declare the dummy jsons
+      // history OPTIMIZE: could be class member that would be reset here ? Expected gain almost none
+      marginals_histories_t marginals_histories;
+      
 
       //------------------------------------------------------------------//
       //                            LOOP START                            //
@@ -173,29 +177,41 @@ namespace SAM
         // give A and b to the solver
         auto [Xmap,qr_error, rnnz] = solveQR(A, b); // TODO: split the compute() step with the analyse pattern (can be set before the loop)
         this->bookkeeper_.set_syst_Rnnz(rnnz);
-        this->bookkeeper_.set_syst_resolution_error(qr_error);
+        this->bookkeeper_.set_syst_resolution_error(qr_error); // TODO: remove qr_error
 
         // optionaly compute the covariance
         auto [SigmaCovariance,Hnnz] = compute_covariance(A);
         this->bookkeeper_.set_syst_Hnnz(Hnnz);
 
         // update the Marginals here
+        // update the marginal history
         sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,
-        [this, Xmap = std::ref(Xmap), SigmaCovariance = std::ref(SigmaCovariance) ](auto & map_to_marginal_ptr, auto margTypeIdx)
+        [this, Xmap = std::ref(Xmap), SigmaCovariance = std::ref(SigmaCovariance),&nIter, &marginals_histories ](auto & map_to_marginal_ptr, auto margTypeIdx)
         {
-          constexpr std::size_t kN = decltype(map_to_marginal_ptr)::mapped_type::element_type::kN;
+          using marginal_t = typename std::decay<decltype(map_to_marginal_ptr)>::mapped_type::element_type;
+          using keymeta_t = typename marginal_t::KeyMeta_t;
+          constexpr std::size_t kN = marginal_t::kN;
+          // looping over the marginal collection and updating them with the MAP result
           for (auto & pair : map_to_marginal_ptr)
           {
             std::string key_id = pair.first;
             auto marginal_ptr = pair.second;
             auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
             // writes the new mean and the new covariance in the marginal
-            *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0);
+            *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0); // FIX: LIN SYST -> affect new mean, NL SYST -> additive
             marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
-            // TODO: URGENT: fill/complete the dummy json
+            // fill/complete the history
+            if (nIter == 0)
+            {
+              marginals_histories.template insert_new_marginal<keymeta_t>(key_id,marginal_ptr);
+            }
+            else
+            {
+              // push some new data in history
+              marginals_histories.template push_marginal_history<keymeta_t>(key_id,marginal_ptr);
+            }
           }
         });
-        // and add in a dummy json (mean,cov)
 
         // TODO: URGENT: post process here
         // sparseA_triplets.clear(); 
@@ -223,6 +239,8 @@ namespace SAM
       // TODO: URGENT:  json : header
       
       // TODO: URGENT: publish json
+      // merge marginal histories into a vector of json values
+      // merge factor histories into a vector of json values
 
     }
 
@@ -377,27 +395,28 @@ namespace SAM
       return json_header;
     }
 
-    // TODO: move this method as a friend of the factor base
+    // TODO: move this method as a friend of the marginal base
     template <typename MG>
-      Json::Value write_marginal(const MG& marginal,const std::string & var_id)
+      Json::Value write_marginal(const MG marginal_ptr,const std::string & var_id)
     {
       Json::Value json_marginal;
        json_marginal["var_id"] = var_id; 
-       json_marginal["category"] = MG::KeyMeta_t::kKeyName ;
+       json_marginal["category"] = MG::element_type::KeyMeta_t::kKeyName ;
        // json_marginal["kind"] = "2D" ;
-          Json::Value json_mean;
-        for (std::size_t i = 0; i< MG::KeyMeta_t::components.size(); i++)
-        {
-          json_mean[MG::KeyMeta_t::components[i]] = marginal.mean(i,0);
-        }
+       Json::Value json_mean;
+       for (std::size_t i = 0; i< MG::element_type::KeyMeta_t::components.size(); i++)
+       {
+         json_mean[MG::element_type::KeyMeta_t::components[i]] = *(marginal_ptr->mean_ptr)(i,0);
+       }
        json_marginal["mean"] = json_mean ; 
-        auto [sig,rot] = marginal.get_visual_2d_covariance();
+        auto [sig,rot] = marginal_ptr->get_visual_2d_covariance();
        json_marginal["covariance"]["sigma"].append(sig[0]); 
        json_marginal["covariance"]["sigma"].append(sig[1]);
        json_marginal["covariance"]["rot"] = rot;
 
        return json_marginal;
     }
+
 
     // TODO: move this method as a friend of the factor base
     template <typename FT>

@@ -23,9 +23,12 @@ namespace
     using Mean_t = Eigen::Vector<double, KEYMETA::kN>;
     using Mean_t_ptr = std::shared_ptr<Mean_t>;
     using Covariance_t = Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>;
+    using Sigmas_t = std::array<double, 2>;
+    using VisualCovariance_t = std::tuple<Sigmas_t, double>;
     // bool marked = false;
     Mean_t_ptr              mean_ptr;
     Covariance_t covariance;
+    
 
     // ctor
     Marginal(Mean_t_ptr mean_ptr,const Covariance_t& covariance = Covariance_t::Zero())
@@ -34,7 +37,7 @@ namespace
     {};
 
     // visual covariance 
-    std::tuple<std::array<double, 2>, double> get_visual_2d_covariance() const // WARNING: works only for 2d
+    VisualCovariance_t get_visual_2d_covariance() const // WARNING: works only for 2d
     {
       // true = compute the eigenvectors too (default is true anyway)
       // Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>>    es(covariance, true);   
@@ -49,6 +52,83 @@ namespace
     }
   };
 
+  template <typename MARGINAL_T>
+  struct MarginalHistory
+  {
+      using Marginal_t = MARGINAL_T;
+      std::string var_id;
+      std::vector<typename Marginal_t::Mean_t> iterative_means;
+      std::vector<typename Marginal_t::VisualCovariance_t> iterative_covariances;
+
+      MarginalHistory(  const std::string& var_id
+                      , const typename Marginal_t::Mean_t & mean
+                      , const typename Marginal_t::VisualCovariance_t & visual_covariance)
+      :
+        var_id(var_id),iterative_means({mean}),iterative_covariances({visual_covariance})
+      {}
+
+  };
+
+  template <typename KEYMETA_T, typename... KEYMETA_Ts>
+  struct MarginalsHistoriesContainer
+  {
+    using marginals_histories_t
+        = std::tuple<std::unordered_map<std::string, MarginalHistory<Marginal<KEYMETA_T>>>,
+                     std::unordered_map<std::string, MarginalHistory<Marginal<KEYMETA_Ts>>>...>; 
+    
+    marginals_histories_t marginal_history_tuple;
+
+    static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_histories_t>};
+
+    template <typename KM_T>
+    void insert_new_marginal(const std::string & key_id, const std::shared_ptr<Marginal<KM_T>> marginal_ptr)
+    {
+      static_assert(std::is_same_v<KM_T,KEYMETA_T> || (std::is_same_v<KM_T,KEYMETA_Ts> || ...)  );
+
+      constexpr std::size_t I = get_correct_tuple_idx_by_marg<KM_T>();
+
+      // Create object marginal history object
+      auto marginal_history = MarginalHistory<KM_T>(
+                                                    key_id
+                                                  , marginal_ptr->mean_ptr
+                                                  , marginal_ptr->get_visual_2d_covariance()
+                                                  );
+
+      std::get<I>(this->marginal_history_tuple).insert_or_assign(key_id, marginal_history ); // TODO: manage failure
+    }
+    
+    template <typename KM_T>
+    void push_marginal_history(const std::string & key_id, const std::shared_ptr<Marginal<KM_T>> marginal_ptr)
+    {
+      static_assert(std::is_same_v<KM_T,KEYMETA_T> || (std::is_same_v<KM_T,KEYMETA_Ts> || ...)  );
+
+      constexpr std::size_t I = get_correct_tuple_idx_by_marg<KM_T>();
+
+      // get marginal history ref
+      auto marginal_history_it = std::get<I>(this->marginal_history_tuple).find(key_id);
+      // TODO: assert(marginal_history_it != std::get<I>(this->marginal_history_tuple).end() );
+      // push new data
+      marginal_history_it->second.iterative_means.push_back( *(marginal_ptr->mean_ptr) );
+      marginal_history_it->second.iterative_covariances.push_back( marginal_ptr->get_visual_2d_covariance() );
+
+    }
+
+
+    template <typename KM_T, std::size_t I = 0>
+    static constexpr std::size_t get_correct_tuple_idx_by_marg()
+    {
+      static_assert(I < kNbMarginals);
+      constexpr std::size_t Res = 0;
+      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_histories_t>::
+                                       mapped_type::Marginal_t, KM_T>)   // maybe thats the keymeta that need compare
+      { return I; }
+      else
+      {
+        return get_correct_tuple_idx_by_marg<I + 1>();
+      }
+    }
+
+  };
 
   template <typename KEYMETA_T, typename... KEYMETA_Ts>
   class MarginalsContainer
@@ -58,7 +138,7 @@ namespace
 
     using marginals_containers_t
         = std::tuple<std::unordered_map<std::string, std::shared_ptr<Marginal<KEYMETA_T>>>,
-                     std::unordered_map<std::string, std::shared_ptr<Marginal<KEYMETA_Ts>>...>>;
+                     std::unordered_map<std::string, std::shared_ptr<Marginal<KEYMETA_Ts>>>...>;
 
     static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_containers_t>};
 

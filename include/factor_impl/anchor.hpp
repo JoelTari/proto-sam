@@ -84,8 +84,14 @@ namespace
         // if the optional mean value inside the tuple is given, we report this value as initial
         // guess
         return std::make_tuple(std::get<0>(x_init_ptr_optional_tup).value());
-      else   // unable to determine an init point for the only key
-        return std::nullopt;
+      else   // make a new state in the heap from the measurement
+      {
+        // measure_vect_t and part_state_vect_t are the same (for this specific factor)
+        static_assert(std::is_same_v<UniqueKeyConduct::part_state_vect_t, measure_vect_t>);
+        auto xinit_ptr = std::make_shared<UniqueKeyConduct::part_state_vect_t>(z);
+        return std::make_tuple(xinit_ptr);
+      }
+      // NOTE: never returns std::nullopt
     }
 
     measure_vect_t compute_h_of_x_impl(const state_vector_t& x) const
