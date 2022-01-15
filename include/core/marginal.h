@@ -118,7 +118,6 @@ namespace
     static constexpr std::size_t get_correct_tuple_idx_by_marg()
     {
       static_assert(I < kNbMarginals);
-      constexpr std::size_t Res = 0;
       if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_histories_t>::
                                        mapped_type::Marginal_t, KM_T>)   // maybe thats the keymeta that need compare
       { return I; }
@@ -227,7 +226,6 @@ namespace
     static constexpr std::size_t get_correct_tuple_idx()
     {
       static_assert(I < kNbMarginals);
-      constexpr std::size_t Res = 0;
       // template metaprogramming is still horrible (written in the times of cpp17)
       if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_containers_t>::mapped_type::element_type::KeyMeta_t,
                                    Q_KEYMETA_T>)
@@ -241,7 +239,6 @@ namespace
     static constexpr std::size_t get_correct_tuple_idx_by_marg()
     {
       static_assert(I < kNbMarginals);
-      constexpr std::size_t Res = 0;
       if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_containers_t>::
                                        mapped_type::element_type,
                                    Q_MARG_T>)   // maybe thats the keymeta that need compare

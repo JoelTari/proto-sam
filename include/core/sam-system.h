@@ -3,6 +3,7 @@
 
 #include "core/bookkeeper.h"
 #include "core/marginal.h"
+#include "core/factor.h"
 #include "core/config.h"
 // #include "factor_impl/anchor.hpp"
 // #include "factor_impl/key-meta-position.h"
@@ -36,6 +37,7 @@ namespace SAM
     using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
     // declare marginal histories (over the span of iterative linearization) type
     using marginals_histories_t = MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
+    using factors_histories_t = FactorsHistoriesContainer<FACTOR_T, FACTORS_Ts ...>;
 
     static constexpr const bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
 
@@ -159,6 +161,7 @@ namespace SAM
       else maxIter = 3; // NOTE: start the tests with maxIter of 1
       // history OPTIMIZE: could be class member that would be reset here ? Expected gain almost none
       marginals_histories_t marginals_histories;
+      factors_histories_t factors_histories;
       
 
       //------------------------------------------------------------------//
@@ -233,7 +236,7 @@ namespace SAM
         int line_counter = 0;  // NOTE: the line counter makes the whole thing difficult to parallelize
         double accumulated_syst_norm (0); // TODO: atomic<double> (but atomic increment is supported only since c++20)
         // for every factor list in the tuple
-        sam_tuples::for_each_in_tuple(this->all_factors_tuple_,[this,&line_counter, &accumulated_syst_norm,&b,&sparseA_triplets]
+        sam_tuples::for_each_in_tuple(this->all_factors_tuple_,[this,&line_counter, &accumulated_syst_norm,&b,&sparseA_triplets,&nIter,&factors_histories]
         (auto & factors, auto factTypeIdx)
         {
           using factor_t = typename std::decay<decltype(factors)>::element_type;
@@ -291,34 +294,13 @@ namespace SAM
             // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
             sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
             
-            // TODO: URGENT: push factor norm into a history
-            // struct factorHistory
-            // {
-            //   factor_id, vector<double> error, type, 
-            //
-            // };
-            // if niter == 0   insert a map<factor_key, vector norm>
-            // else 
-
+            // push factor norm into a history (create it if it is first iteration)
+            if (nIter == 0)
+              factors_histories.template insert_new_factor_history<factor_t>(factor.id, factor);
+            factors_histories.template push_data_in_factor_history<factor_t>(factor.id,norm_factor);
           }
 
         });
-        // for each in the factors tuple
-        //    for each factor in factors
-        //      accumulated_error += factor.error
-        //      add the factor.error in json
-        //      // now compute Ai,bi : first bi
-        //      bi = factor.rosie; // or bi = factor.compute_b_nl(); // in NL
-        //      //  append bi into b -> *** increment a line number
-        //      constexpr int mesdim                = factor_t::kM;
-        //      b.block<mesdim, 1>(line_counter, 0) = b_i;
-        //      line_counter += mesdim;
-        //      // next Ai
-        //      declare a triplet
-        //      for each kcm of this factor
-        //        partAi = kcm.compute_partAi() // use x0
-        //        emplace each element of partAi into triplets  (line_counter dependency)
-        //      sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets))
 
         nIter++;
       }
@@ -765,7 +747,6 @@ namespace SAM
             });
 
             // pass the tuple of ptr of the key means to the factor ctor 
-            // TODO: URGENT:
             std::get<I>(this->all_factors_tuple_)
                   .emplace_back(factor_id, mes_vect, measure_cov, keys_id, opt_tuple_of_init_point.value());
 #if ENABLE_DEBUG_TRACE
