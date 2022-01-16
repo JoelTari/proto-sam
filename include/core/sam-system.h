@@ -453,6 +453,22 @@ namespace SAM
       this->bookkeeper_.clear_quadratic_errors();
     }
 
+    Json::Value write_header(const SystemInfo & sysinfo)
+    {
+      Json::Value json_header;
+      json_header["robot_id"] = this->agent_id;
+      json_header["seq"] = 0; // TODO:
+      json_header["base_unit"] = 0.15;
+      Json::Value quadratic_errors;
+      for (auto qerr : sysinfo.quadratic_error)
+        quadratic_errors.append(qerr);
+      json_header["quadratic_errors"] = quadratic_errors;
+      json_header["Rnnz"] = sysinfo.Rnnz;
+      json_header["Hnnz"] = sysinfo.Hnnz;
+      // TODO: variable order  :  "variable_order"
+      return json_header;
+    }
+
 //     void sam_optimize()
 //     // TODO: add a solverOpts variable: check rank or not, check success, write
 //     // TODO: bookkeeper, compute covariance etc..
@@ -588,20 +604,6 @@ namespace SAM
     //     json_graph["header"] = write_header(this->bookkeeper_.getSystemInfos());
     //     logger.writeGraph(json_graph);
     //   }
-    // }
-
-    // Json::Value write_header(const SystemInfo & sysinfo)
-    // {
-    //   Json::Value json_header;
-    //   json_header["robot_id"] = "A"; // TODO:
-    //   json_header["seq"] = 0; // TODO:
-    //   json_header["base_unit"] = 0.15;
-    //   json_header["QRerror"] = sysinfo.residual_error;
-    //   json_header["Rnnz"] = sysinfo.Rnnz;
-    //   json_header["Hnnz"] = sysinfo.Hnnz;
-    //   json_header["residual_error"] = sysinfo.residual_error;
-    //   // TODO: variable order  :  "variable_order"
-    //   return json_header;
     // }
     //
     // // TODO: move this method as a friend of the marginal base
