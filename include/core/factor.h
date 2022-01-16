@@ -289,6 +289,7 @@ struct FactorHistory
   static constexpr const char* kFactorLabel {FT::kFactorLabel};
   static constexpr const char* kMeasureName {FT::kMeasureName};
   const std::array<std::string,FT::kNbKeys> vars_id;
+  // TODO: add measurement value with component name
 
   std::vector<double> norms;
 
@@ -318,7 +319,6 @@ class FactorsHistoriesContainer
   template <typename Q_FT>
   void insert_new_factor_history(const std::string & factor_id, const Q_FT & factor)
   {
-    // TODO: URGENT:
       static_assert(std::is_same_v<FT,Q_FT> || (std::is_same_v<FTs,Q_FT> || ...)  );
       constexpr std::size_t I = get_correct_tuple_idx_of_factor_type<Q_FT>();
 
@@ -339,7 +339,6 @@ class FactorsHistoriesContainer
   template <typename Q_FT>
   void push_data_in_factor_history(const std::string & factor_id, double factor_norm)
   {
-    // TODO: URGENT:
       static_assert(std::is_same_v<FT,Q_FT> || (std::is_same_v<FTs,Q_FT> || ...)  );
       constexpr std::size_t I = get_correct_tuple_idx_of_factor_type<Q_FT>();
       // get marginal history ref

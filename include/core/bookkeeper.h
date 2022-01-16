@@ -42,8 +42,7 @@ struct SystemInfo
   uint nnz = 0; // number of non zero (in the measurement matrix)
   uint Rnnz = 0;
   uint Hnnz = 0;
-  double residual_error = 0;
-  double resolution_error = 0;
+  std::vector<double> quadratic_error;
 };
 
 class Bookkeeper
@@ -115,8 +114,9 @@ class Bookkeeper
   SystemInfo getSystemInfos() const { return this->system_info_; }
   void set_syst_Rnnz(double rnnz){this->system_info_.Rnnz = rnnz;}
   void set_syst_Hnnz(double Hnnz){this->system_info_.Hnnz = Hnnz;}
-  void set_syst_residual_error(double res_err){this->system_info_.residual_error = res_err;}
-  void set_syst_resolution_error(double res_err){this->system_info_.resolution_error=res_err;}
+  void push_back_quadratic_error(double quad_err){this->system_info_.quadratic_error.push_back(quad_err);}
+  void clear_quadratic_errors(){this->system_info_.quadratic_error.clear();}
+  // void set_syst_quadratic_error(double res_err){this->system_info_.quadratic_error = res_err;}
 
   bool factor_id_exists(const std::string& factor_id) const
   {
