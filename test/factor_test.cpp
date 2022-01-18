@@ -13,8 +13,8 @@ int main(int argc, char* argv[])
   LinearTranslationFactor::measure_vect_t m2={-1,0.1};
   LinearTranslationFactor::measure_cov_t  cov2;
 
-  auto FA = AnchorFactor("f0", m, cov, {"x0"});
-  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"});
+  auto FA = AnchorFactor("f0", m, cov, {"x0"},{});
+  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"},{});
 
   std::cout << "Printing runtime infos of a factor : \n";
   factor_print(FA);

@@ -22,17 +22,17 @@ int main(int argc, char* argv[])
       {2.1, 0},
       {0, 0.008}};   // Matrix<2,2> can't haha
 
-  auto FA = AnchorFactor("f0", m, cov, {"x0"});
-  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"});
+  auto FA = AnchorFactor("f0", m, cov, {"x0"},{});
+  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"},{});
 
   std::cout << "Printing runtime infos of a factor : \n\n";
-  factor_print(FA);
-  factor_print(FB);
+  // factor_print(FA);
+  // factor_print(FB);
 
   std::cout << "\nPrinting infos of a factor type (only static infos since it "
                "is just a type) : \n\n";
-  factor_print<AnchorFactor>();
-  factor_print<LinearTranslationFactor>();
+  // factor_print<AnchorFactor>();
+  // factor_print<LinearTranslationFactor>();
 
 
   std::cout << "\n\n Declaring a sam system:\n";
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
       {"x1", "x2"});
 
     
-  samsyst.sam_optimize();
+  // samsyst.sam_optimize();
 
   std::cout << "\n NOTA: above result doesnt matter, point of this test is : compile, run/print \n";
 

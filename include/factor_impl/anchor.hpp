@@ -50,6 +50,7 @@ namespace
       : public Factor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>
   {
     public:
+    using parent_t = Factor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>;
 //     // FIX: refactor the init point as ptr
 //     AnchorFactor(const std::string&                                    factor_id,
 //                  const measure_vect_t&                                 mes_vect,
@@ -76,7 +77,7 @@ namespace
     // init point guesser
     static std::optional<std::tuple< std::shared_ptr<UniqueKeyConduct::part_state_vect_t> >>
         guess_init_key_points_impl(
-            const std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct::part_state_vect_t> >>&
+            std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct::part_state_vect_t> >>
                                   x_init_ptr_optional_tup,
             const measure_vect_t& z)
     {

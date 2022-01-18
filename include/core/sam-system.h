@@ -815,6 +815,19 @@ namespace SAM
 //       A.setFromTriplets(A_triplets.begin(), A_triplets.end());
 //       return {A, b};
 //     }
+    
+    // template <std::size_t TSIZE, typename MARGINALS, std::size_t I=0>
+    // void jean( )
+    // {
+    //   if constexpr(I == TSIZE)
+    //     return;
+    //   else
+    //   {
+    //     
+    //
+    //   }
+    //   jean<TSIZE,I+1>();
+    // }
 
     /**
      * @brief emplace back factor in the right container (recursive static)
@@ -850,12 +863,12 @@ namespace SAM
           auto tuple_of_opt_means_ptr 
           = sam_tuples::reduce_array_variadically(
               keys_id,[this]<std::size_t...J>(const auto& keys_id, std::index_sequence<J...>)
-                            -> typename FT::tuple_of_opt_part_state_t
+                            -> typename FT::tuple_of_opt_part_state_ptr_t
               {
                 return 
                 { 
                   this->all_marginals_
-                  .template find_mean_v<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J])
+                  .template find_mean_ptr<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J])
                 ... 
                 };
               }
@@ -864,37 +877,35 @@ namespace SAM
           // It is probable that the above tuple contains std::nullopt.
           // Attempt to guess the full init point for this factor by using the measurement if necessary.
           // If we don't have enough data to fill in the blank, then `opt_tuple_of_init_point = std::nullopt`
-          std::optional<typename FT::tuple_of_part_state_t> opt_tuple_of_init_point 
-            = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect); // NOTE: heap allocation (make_shared)
+          std::optional<typename FT::tuple_of_part_state_ptr_t> opt_tuple_of_init_point_ptr
+            = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect); // NOTE: heap allocation for the INIT POINT AS MEAN (make_shared)
 
-          if (opt_tuple_of_init_point.has_value()) // we have all the means for the key
+            // FIX: tmp
+          if (opt_tuple_of_init_point_ptr.has_value())
           {
-            // Add new init point in marginal container
-            sam_tuples::for_each_in_const_tuple(tuple_of_opt_means_ptr,
-            [this,&keys_id](const auto & opt_mean_ptr, auto J)
+            // iterations over several tuples
+            sam_tuples::constexpr_for<FT::kNbKeys>(
+            [&](auto idx)
             {
+              constexpr auto tuple_idx = idx.value;
               // if the mean was not found ante-previously, insert it using the guesser result
-              if (!opt_mean_ptr.has_value())
+              if ( !std::get<tuple_idx>(tuple_of_opt_means_ptr).has_value() )
               {
                 // isolate the shared ptr to the guessed init point
-                auto guessed_init_point_ptr = std::get<J>(opt_tuple_of_init_point.value());
+                auto guessed_init_point_ptr = std::get<tuple_idx>(opt_tuple_of_init_point_ptr.value());
                 // make a new marginal from the guessed init point
-                using marginal_type = typename  std::tuple_element<J,typename marginals_t::marginals_containers_t>::mapped_type::element_type; 
-                std::shared_ptr<marginal_type> new_marginal_ptr = std::make_shared<marginal_type>(guessed_init_point_ptr); // NOTE: HEAP allocation  (make_shared)
+                using marginal_t = Marginal<typename std::tuple_element_t<tuple_idx,typename FT::KeysSet_t>::KeyMeta_t>;
+                std::shared_ptr<marginal_t> new_marginal_ptr = std::make_shared<marginal_t>(guessed_init_point_ptr); // NOTE: HEAP allocation for the full MARGINAL OF THE KEY  (this is a nuance from previous heap allocation)
+                // TODO: intermediary step before updating the marginal: infer a covariance (difficulty ***)
                 // insert the (shared ptr) marginal we just created in the system's marginal container
                 this->all_marginals_.
-                  template insert_in_marginal_container<marginal_type>
-                  (keys_id[J],new_marginal_ptr);
+                  template insert_in_marginal_container<marginal_t>
+                  (keys_id[tuple_idx],new_marginal_ptr);
                 // TODO: update the bookkeeper ? I think its already done ( CHECK: )
               }
-            });
+            }
+            );
 
-            // pass the tuple of ptr of the key means to the factor ctor 
-            std::get<I>(this->all_factors_tuple_)
-                  .emplace_back(factor_id, mes_vect, measure_cov, keys_id, opt_tuple_of_init_point.value());
-#if ENABLE_DEBUG_TRACE
-            std::cout << "\t\t:: Factor " << factor_id << " properly integrated in NL system.\n";
-#endif
           }
           else
           {

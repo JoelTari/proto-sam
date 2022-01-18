@@ -123,7 +123,7 @@ namespace
       { return I; }
       else
       {
-        return get_correct_tuple_idx_by_marg<I + 1>();
+        return get_correct_tuple_idx_by_marg<KM_T,I + 1>();
       }
     }
 
@@ -160,7 +160,7 @@ namespace
     }
 
     template <typename Q_KEYMETA_T>
-    std::optional<typename Marginal<Q_KEYMETA_T>::Mean_t>
+    std::optional<std::shared_ptr<typename Marginal<Q_KEYMETA_T>::Mean_t>>
         find_mean_ptr(const std::string& key_id) 
     {
       // static assert
@@ -232,7 +232,7 @@ namespace
       { return I; }
       else
       {
-        return get_correct_tuple_idx<I + 1>();
+        return get_correct_tuple_idx<Q_KEYMETA_T,I + 1>();
       }
     }
     template <typename Q_MARG_T, std::size_t I = 0>
@@ -245,7 +245,7 @@ namespace
       { return I; }
       else
       {
-        return get_correct_tuple_idx_by_marg<I + 1>();
+        return get_correct_tuple_idx_by_marg<Q_MARG_T,I + 1>();
       }
     }
 

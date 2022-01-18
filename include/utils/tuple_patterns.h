@@ -118,7 +118,7 @@ namespace sam_tuples
   }   // namespace detail
 
   template <typename... Ts, typename F>
-  void for_each_in_tuple(std::tuple<Ts...> & t, F f)
+   void for_each_in_tuple(std::tuple<Ts...> & t, F f)
   {
     detail::for_each(t, f, std::make_index_sequence<sizeof...(Ts)> {});
   }
@@ -240,6 +240,48 @@ struct tuple_filter_duplicate<TNEW,Ts0,Ts...>
 // tuple argument specialisation (-> extract what's inside the tuple, and filter duplicate)
 template<typename ...Ts>
 struct tuple_filter_duplicate< std::tuple<Ts...> >: tuple_filter_duplicate<Ts...>{};
+
+
+
+
+
+
+
+//------------------------------------------------------------------//
+//                         constexpr index                          //
+//                                                                  //
+//                                                                  //
+//        Use this when manipulating looping several tuples         //
+//           (of the same size), all the others patterns            //
+//           (including std::apply) only loop one tuple.            //
+//        So instead, constexpr_for() just iterate the tuple        //
+//                  idx, allowing several usage of                  //
+//              std::get<idx>(a_tuple) at each level.               //
+//------------------------------------------------------------------//
+template <typename Integer, Integer ...I, typename F>
+constexpr void constexpr_for_each(std::integer_sequence<Integer, I...>, F &&func)
+{
+    (func(std::integral_constant<Integer, I>{}) , ...);
+}
+
+template <auto N, typename F>
+constexpr void constexpr_for(F &&func)
+{
+    if constexpr (N > 0)
+        constexpr_for_each(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
+}
+
+// usage:  input Cn,  tuple : pointers  (from https://stackoverflow.com/a/66661980 )
+//
+// constexpr_for<sizeof...(Cn)>([&](auto index)
+// {
+//     constexpr auto i = index.value;
+//     std::get<i>(pointers) = pChunk->memory + m_groups.componentOffsets[i];
+// });
+
+
+
+
 
 }   // namespace sam_tuples
 #endif
