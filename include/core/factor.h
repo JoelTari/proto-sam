@@ -57,7 +57,7 @@ struct KeyContextualConduct : KEYMETA
   }
 
   // prevent default constructor, copy constructor, copy assignemnt operator
-  KeyContextualConduct() = delete;
+  // KeyContextualConduct() = delete;
   // KeyContextualConduct(const KeyContextualConduct  &) = delete;
   // KeyContextualConduct& operator=(const KeyContextualConduct&) = delete;
  // ~KeyContextualConduct() = delete;
@@ -67,7 +67,7 @@ struct KeyContextualConduct : KEYMETA
       , rho(rho)
   {
     // necessary (but not sufficient) condition for this ctor: the context model must be linear.
-    // sufficient condition would be that the wider system be linear (not verifiable at this level)
+    // sufficient condition would be that the wider system be linear (enforceable at higher level)
     static_assert(kLinear);
   }
 
@@ -159,21 +159,23 @@ class Factor
     return tup_mean;
   }
 
-  // func that sets the tup of lin points
-  // FIX: remove, shouldnot set key points, doesn't have ownership 
-  void set_key_points(const std::tuple<typename KeyConducts::part_state_vect_t ...>& xtup) const
-  {
-    // for each key context model, affects a partx vector for input tuple
-    sam_tuples::for_each_in_tuple(this->keys_set,
-            [&xtup](auto & kcm, auto J)
-            {
-              *(kcm.key_mean_view) = std::get<J>(xtup);
-            }
-    );
-  }
+  // // func that sets the tup of lin points
+  // // FIX: remove, shouldnot set key points, doesn't have ownership 
+  // void set_key_points(const std::tuple<typename KeyConducts::part_state_vect_t ...>& xtup) const
+  // {
+  //   // for each key context model, affects a partx vector for input tuple
+  //   sam_tuples::for_each_in_tuple(this->keys_set,
+  //           [&xtup](auto & kcm, auto J)
+  //           {
+  //             *(kcm.key_mean_view) = std::get<J>(xtup);
+  //           }
+  //   );
+  // }
 
   //  func that transforms a tup of lin points contained in kcm into state_vector_t
   // template <typename... PARTIAL_STATE_VECTORS_T>
+    // TODO: consider it protected
+    // NOTE: not used currently ??
   state_vector_t get_state_vector_from_tuple(const std::tuple<typename KeyConducts::part_state_vect_t ...> & x_tup) const
   {
     static_assert(std::tuple_size_v<std::tuple<typename KeyConducts::part_state_vect_t ...>> == kNbKeys);
@@ -194,31 +196,6 @@ class Factor
     // class instantiation dependent
     return static_cast<const DerivedFactor*>(this)->compute_h_of_x_impl(x);
   }
-
-  // // the ctor
-  // // FIX: remove, only keep the one with the init points
-  // Factor(const std::string&                      factor_id,
-  //        const measure_vect_t&                   z,
-  //        const measure_cov_t&                    z_cov,
-  //        const std::array<std::string, kNbKeys>& keys_id)
-  //     : z(z)
-  //     , z_cov(z_cov)
-  //     , factor_id(factor_id)
-  //     , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
-  //     , keys_set(sam_tuples::reduce_array_variadically(
-  //           keys_id,
-  //           []<std::size_t... I>(const auto& my_keys_id,
-  //                                const auto& rho,
-  //                                std::index_sequence<I...>) -> decltype(keys_set) {
-  //             // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
-  //             // might be possible to use perfect forwarding, by declaring an empty tuple
-  //             // and next line expanding tuple_cat with an intermediary function that has perfect forwarding ( TODO:)
-  //             return  { KeyConducts(my_keys_id[I], rho) ... } ;
-  //           },
-  //           rho))
-  //     , keyIdToTupleIdx(map_keyid(keys_id))
-  // {
-  // }
 
   // the overloaded ctor (used in NL with init points)
   Factor(const std::string&                      factor_id,
@@ -246,6 +223,17 @@ class Factor
   {
   }
 
+  std::array<std::string, kNbKeys> get_array_keys_id() const
+  {
+    // NOTE: reduce_tuple_variadically didn't work
+    // TODO: move this logic at the factor level
+    return sam_tuples::reduce_array_variadically(this->keys_set,
+        [this]<std::size_t ...J>(const auto & keyset, std::index_sequence<J...>)
+        {
+          return std::array<std::string,kNbKeys>{std::get<J>(keyset).key_id ...};
+        });
+  }
+
 
   // not used for now, TODO: do the same for x_tuple input
   double compute_factor_norm(const state_vector_t& x) const
@@ -268,10 +256,10 @@ class Factor
     else
     {
       // build back the tup of stored lin point
-      auto lin_point_tup =  sam_tuples::reduce_tuple_variadically(this->keys_set,[this](const auto &...kcm)
+      auto lin_point_tup =  sam_tuples::reduce_tuple_variadically(this->keys_set,[this]<std::size_t...J>(const auto & kset, std::index_sequence<J...>)
         {  
             // TODO: assert (key_mean_view != nullptr && ...);
-            return std::make_tuple( *(kcm.key_mean_view) ... ) ;
+            return std::make_tuple( *(std::get<J>(kset).key_mean_view) ... ) ;
         });
       return (this->rho * this->compute_h_of_x(lin_point_tup) - this->rosie).norm();
     }
@@ -286,10 +274,10 @@ template <typename FT>
 struct FactorHistory
 {
   using Factor_t = FT;
-  const std::string factor_id;
+  const std::string factor_id = "NaS";
   static constexpr const char* kFactorLabel {FT::kFactorLabel};
   static constexpr const char* kMeasureName {FT::kMeasureName};
-  const std::array<std::string,FT::kNbKeys> vars_id;
+  const std::array<std::string,FT::kNbKeys> vars_id = {};
   // TODO: add measurement value with component name
 
   std::vector<double> norms;
@@ -303,7 +291,7 @@ struct FactorHistory
   //   : factor_id(other.factor_id),norms(other.norms),vars_id(other.vars_id)
   //   {}
 
-  FactorHistory& operator=(const FactorHistory & other)= default;
+  // FactorHistory& operator=(const FactorHistory & other)= default;
 
   void push_norm_value(double factor_norm)
   {
@@ -329,27 +317,20 @@ struct FactorsHistoriesContainer
       static_assert(std::is_same_v<FT,Q_FT> || (std::is_same_v<FTs,Q_FT> || ...)  );
       constexpr std::size_t I = get_correct_tuple_idx_of_factor_type<Q_FT>();
 
-      // get the list of keys id
-      std::get<0>(factor.keys_set).key_id;
-      typename Q_FT::KeysSet_t keysset = factor.keys_set;
-      static_assert(std::is_same_v<typename Q_FT::KeysSet_t, decltype(factor.keys_set)>);
-      // std::array<std::string,Q_FT::kNbKeys> vars_id ={};
-      // URGENT: FIX:  NOTE: maybe put that method in factor ?
-      std::array<std::string,Q_FT::kNbKeys> vars_id 
-        = sam_tuples::reduce_array_variadically(factor.keys_set,
-          [this]<std::size_t ...J>(const auto & keyset, std::index_sequence<J...>)
-          {
-            // static_assert( std::tuple_size_v(keyset) == Q_FT::kNbKeys);
-            // (*(kcm.key_mean_view) ,...);
-            // (kcm.key_id,...);
-            return std::array<std::string,Q_FT::kNbKeys>{std::get<J>(keyset).key_id ...};
-          });
-
-      // Create factor history object
-      auto factor_history = FactorHistory<Q_FT>( factor_id , vars_id);
-
-      std::get<I>(this->factors_histories_container).insert_or_assign(factor_id, factor_history ); // TODO: manage failure
+      // NOTE: insert_or_assign fails
+      // std::get<I>(this->factors_histories_container).insert_or_assign(factor_id, std::move(factor_history) ); 
+      auto [it, hasBeenPlaced] = std::get<I>(this->factors_histories_container)
+        .try_emplace(factor_id, factor_id, factor.get_array_keys_id());
+      assert(hasBeenPlaced); // TODO: consider this a consistency check
   }
+
+  // convenience overload
+  template <typename Q_FT>
+  void insert_new_factor_history(const Q_FT & factor)
+  {
+    this->insert_new_factor_history(factor.factor_id, factor);
+  }
+  
 
   template <typename Q_FT>
   void push_data_in_factor_history(const std::string & factor_id, double factor_norm)

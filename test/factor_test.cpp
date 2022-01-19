@@ -26,8 +26,10 @@ int main(int argc, char* argv[])
   factor_print<LinearTranslationFactor>();
 
   auto factors_histories_container = FactorsHistoriesContainer<AnchorFactor,LinearTranslationFactor>();
+  
 
   auto factor_FA_history = FactorHistory<decltype(FA)>(FA.factor_id, {"x0"} );
+  // auto cc_factor_FA_history = std::move(factor_FA_history); // OK
   factors_histories_container.insert_new_factor_history(FA.factor_id, FA);
 
   // std::cout << AnchorFactor::kN << '\n';
