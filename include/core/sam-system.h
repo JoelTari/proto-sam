@@ -36,7 +36,7 @@ namespace SAM
     // declare marginal container type of those keymetas
     using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
     // declare marginal histories (over the span of iterative linearization) type
-    using marginals_histories_t = MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
+    using marginals_histories_container_t = MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
     // declare factor histories (over the span of iterative linearization) type
     using factors_histories_t = FactorsHistoriesContainer<FACTOR_T, FACTORS_Ts ...>;
 
@@ -151,7 +151,7 @@ namespace SAM
             sam_tuples::for_each_in_tuple(factor.keys_set,[this, &mesdim, &line_counter, &Ai_triplets]
             (auto & key_context_model, auto keyTypeIdx)
             {
-              constexpr int kcm_kN = std::decay<decltype(key_context_model)>::KeyMeta_t::kN;
+              constexpr int kcm_kN = std::decay_t<decltype(key_context_model)>::KeyMeta_t::kN;
               auto partAi = key_context_model.compute_part_A(); // works in NL too.
               // NOTE: 1/partAi is not stored internally in the factor, except for linear (because its const)
               // NOTE: 2/the rest of this code is formation of Ai triplets, could be done in another loop-tuple (then this one has to return a tuple of partAi)
@@ -196,7 +196,7 @@ namespace SAM
       if constexpr (isSystFullyLinear) maxIter = 1;
       else maxIter = 3; // NOTE: start the tests with maxIter of 1
       // history OPTIMIZE: could be class member that would be reset here ? Expected gain almost none
-      marginals_histories_t marginals_histories;
+      marginals_histories_container_t marginals_histories_container;
       factors_histories_t factors_histories;
       
 
@@ -218,13 +218,19 @@ namespace SAM
         }
 
         // give A and b to the solver
-        auto [Xmap,qr_error, rnnz] = solveQR(A, b); // TODO: split the compute() step with the analyse pattern (can be set before the loop)
-        // TODO: remove qr_error
+        double rnnz; // number of nnz elements in R
+        Eigen::VectorXd Xmap; // maximum a posteriori
+        std::tie(Xmap,rnnz) = solveQR(A,b); // TODO: split the compute() step with the analyse pattern (can be set before the loop)
+        // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
         this->bookkeeper_.set_syst_Rnnz(rnnz);
 
-        // optionaly compute the covariance
-        auto [SigmaCovariance,Hnnz] = compute_covariance(A);
+        // optionaly compute the covariance matrix
+        Eigen::MatrixXd SigmaCovariance;
+        double Hnnz;
+        std::tie(SigmaCovariance,Hnnz) = compute_covariance(A);
+        // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
         this->bookkeeper_.set_syst_Hnnz(Hnnz);
+        // OPTIMIZE: easier (on memory? on cpu?) to compute each block covariance separately ? (and in parallel ?) 
 
 // #if ENABLE_DEBUG_TRACE
 //       {
@@ -250,12 +256,13 @@ namespace SAM
         //             structure that will end up in the json.              //
         //            Do the same optionally for the covariance             //
         //------------------------------------------------------------------//
+        static_assert( std::is_same_v<decltype(Xmap),typename Eigen::VectorXd>);
         sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,
-        [this, Xmap = std::ref(Xmap), SigmaCovariance = std::ref(SigmaCovariance),&nIter, &marginals_histories ](auto & map_to_marginal_ptr, auto margTypeIdx)
+        [this, &Xmap, &SigmaCovariance, &nIter, &marginals_histories_container ](auto & map_to_marginal_ptr, auto margTypeIdx)
         {
-          using marginal_t = typename std::decay<decltype(map_to_marginal_ptr)>::mapped_type::element_type;
+          using marginal_t = typename std::decay_t<decltype(map_to_marginal_ptr)>::mapped_type::element_type;
           using keymeta_t = typename marginal_t::KeyMeta_t;
-          constexpr std::size_t kN = marginal_t::kN;
+          constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
           PROFILE_SCOPE( keymeta_t::kKeyName ,sam_utils::JSONLogger::Instance());
           // looping over the marginal collection and updating them with the MAP result
           for (auto & pair : map_to_marginal_ptr)
@@ -264,17 +271,18 @@ namespace SAM
             auto marginal_ptr = pair.second;
             auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
             // writes the new mean and the new covariance in the marginal
+            // auto & Xmap = refXmap.get();
             *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0); // FIX: LIN SYST -> affect new mean, NL SYST -> additive
             marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
             // fill/complete the history
             if (nIter == 0)
             {
-              marginals_histories.template insert_new_marginal<keymeta_t>(key_id,marginal_ptr);
+              marginals_histories_container.template insert_new_marginal<marginal_t>(key_id,marginal_ptr);
             }
             else
             {
               // push some new data in history
-              marginals_histories.template push_marginal_history<keymeta_t>(key_id,marginal_ptr);
+              marginals_histories_container.template push_marginal_history<marginal_t>(key_id,marginal_ptr);
             }
           }
         });
@@ -292,7 +300,7 @@ namespace SAM
         sam_tuples::for_each_in_tuple(this->all_factors_tuple_,[this,&line_counter, &accumulated_syst_squared_norm,&b,&sparseA_triplets,&nIter,&factors_histories]
         (auto & factors, auto factTypeIdx)
         {
-          using factor_t = typename std::decay<decltype(factors)>::element_type;
+          using factor_t = typename std::remove_const_t<std::decay_t<decltype(factors)>>::value_type;
           PROFILE_SCOPE( factor_t::kFactorLabel ,sam_utils::JSONLogger::Instance());
           // for every factor in the list
           for (auto & factor : factors) // OPTIMIZE: make parallel for_each. Races: syst_norm, line_counter
@@ -322,7 +330,7 @@ namespace SAM
             sam_tuples::for_each_in_tuple(factor.keys_set,[this, &mesdim, &line_counter, &Ai_triplets]
             (auto & key_context_model, auto keyTypeIdx)
             {
-              constexpr int kcm_kN = std::decay<decltype(key_context_model)>::KeyMeta_t::kN;
+              constexpr int kcm_kN = std::decay_t<decltype(key_context_model)>::KeyMeta_t::kN;
               auto partAi = key_context_model.compute_part_A(); // works in NL too.
               // NOTE: 1/partAi is not stored internally in the factor, except for linear (because its const)
               // NOTE: 2/the rest of this code is formation of Ai triplets, could be done in another loop-tuple (then this one has to return a tuple of partAi)
@@ -351,8 +359,8 @@ namespace SAM
             
             // push factor norm into a history (create it if it is first iteration)
             if (nIter == 0)
-              factors_histories.template insert_new_factor_history<factor_t>(factor.id, factor);
-            factors_histories.template push_data_in_factor_history<factor_t>(factor.id,norm_factor);
+              factors_histories.template insert_new_factor_history<factor_t>(factor.factor_id, factor);
+            factors_histories.template push_data_in_factor_history<factor_t>(factor.factor_id,norm_factor);
           }
 
         });
@@ -371,12 +379,12 @@ namespace SAM
       Json::Value json_factors;
       sam_tuples::for_each_in_const_tuple(
       factors_histories.factors_histories_container, 
-      [this,&json_factors](const auto & map_factor_history)
+      [this,&json_factors](const auto & map_factor_history, auto NIET)
       {
         using factor_history_t = typename std::remove_const_t<std::decay_t<decltype(map_factor_history)>>::mapped_type;
         for (const auto & pair : map_factor_history)
         {
-          auto & factor = pair->second;
+          const auto & factor = pair.second;
           Json::Value json_factor;
           json_factor["factor_id"] = factor.factor_id;
           json_factor["type"]      = factor_history_t::kFactorLabel; // TODO: rename type to label
@@ -399,8 +407,8 @@ namespace SAM
       // TODO: future async
       Json::Value json_marginals;
       sam_tuples::for_each_in_const_tuple(
-      marginals_histories.marginal_history_tuple, 
-      [this,&json_marginals](const auto & map_marginal_histories)
+      marginals_histories_container.marginal_history_tuple, 
+      [this,&json_marginals](const auto & map_marginal_histories, auto NIET)
       {
         using marginal_history_t = typename std::remove_const_t<std::decay_t<decltype(map_marginal_histories)>>::mapped_type;
         using marginal_t = typename marginal_history_t::Marginal_t;
@@ -408,7 +416,7 @@ namespace SAM
         for (const auto & pair : map_marginal_histories)
         {
           Json::Value json_marginal;
-          auto marg_hist = pair->second;
+          auto marg_hist = pair.second;
           json_marginal["var_id"] = marg_hist.var_id;
           json_marginal["category"] = keymeta_t::kKeyName;
           Json::Value json_mean;
@@ -426,16 +434,16 @@ namespace SAM
           }
           json_marginal["iterative_means"] = iterative_means;
           // iterative covariance
-          json_marginal["covariance"]["sigma"].append(std::get<0>(marg_hist.iterative_covariance.back())[0]);
-          json_marginal["covariance"]["sigma"].append(std::get<0>(marg_hist.iterative_covariance.back())[1]);
-          json_marginal["covariance"]["rot"]= std::get<1>(marg_hist.iterative_covariance.back());
+          json_marginal["covariance"]["sigma"].append(std::get<0>(marg_hist.iterative_covariances.back())[0]);
+          json_marginal["covariance"]["sigma"].append(std::get<0>(marg_hist.iterative_covariances.back())[1]);
+          json_marginal["covariance"]["rot"]= std::get<1>(marg_hist.iterative_covariances.back());
           Json::Value iterative_covariances;
-          for (std::size_t j=0; j< marg_hist.iterative_covariance.size();j++)
+          for (std::size_t j=0; j< marg_hist.iterative_covariances.size();j++)
           {
             Json::Value covariance;
-            covariance["sigma"].append(std::get<0>(marg_hist.iterative_covariance[j])[0]);
-            covariance["sigma"].append(std::get<0>(marg_hist.iterative_covariance[j])[1]);
-            covariance["rot"] = std::get<1>(marg_hist.iterative_covariance[j]);
+            covariance["sigma"].append(std::get<0>(marg_hist.iterative_covariances[j])[0]);
+            covariance["sigma"].append(std::get<0>(marg_hist.iterative_covariances[j])[1]);
+            covariance["rot"] = std::get<1>(marg_hist.iterative_covariances[j]);
             iterative_covariances.append(covariance);
           }
           json_marginals["iterative_covariance"] = iterative_covariances;
@@ -978,8 +986,8 @@ namespace SAM
      *
      * @return
      */
-    std::tuple<Eigen::VectorXd,double,double> solveQR(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b)
-    // TODO: add a solverOpts variable: check rank or not, check success
+    std::tuple<Eigen::VectorXd,double> solveQR(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b)
+    // TODO: add a solverOpts variable: check rank or not, check success, count the nnz of R or not
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
       // solver
@@ -990,34 +998,39 @@ namespace SAM
         solver.compute(A);
       }
       // rank check: not considered a consistency check
-      if (solver.rank() < A.cols())
+      auto CheckRankTooLow = [](auto &solver,auto & A)
+        { 
+          PROFILE_SCOPE("Solver Rank Check",sam_utils::JSONLogger::Instance());
+          return solver.rank() < A.cols();
+        };
+
+      if ( CheckRankTooLow(solver,A) )
       {
         throw std::runtime_error("RANK DEFICIENT PROBLEM");
       }
       auto back_substitution = [](auto & solver, auto & b)
         {
-        PROFILE_SCOPE("Back-Substitution",sam_utils::JSONLogger::Instance());
-        Eigen::VectorXd map = solver.solve(b);
-        return map;
-      };
+          PROFILE_SCOPE("Back-Substitution",sam_utils::JSONLogger::Instance());
+          Eigen::VectorXd map = solver.solve(b);
+          return map;
+        };
       auto map = back_substitution(solver,b);
-      // residual error
-      auto residual_error = solver.matrixQ().transpose() * b;
 #if ENABLE_DEBUG_TRACE
       {
         PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
-        std::cout << "### Syst solver : residual value: " << residual_error.norm() << "\n";
         std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
-        std::cout << "### Syst solver :  nnz in square root : " << solver.matrixR().nonZeros()
-                  << " (from " << A.nonZeros() << ") in Hessian."
-                  << "\n";
-        if ( Eigen::MatrixXd(solver.matrixR()).rows() < 15 )
-        {
-          std::cout << "### Syst solver : matrix R : \n" << Eigen::MatrixXd(solver.matrixR()) << '\n';
-        }
+        std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
+        // std::cout << "### Syst solver :  nnz in square root : " << solver.matrixR().nonZeros()
+        //           << " (from " << A.nonZeros() << ") in Hessian."
+        //           << "\n";
+        // if ( Eigen::MatrixXd(solver.matrixR()).rows() < 15 )
+        // {
+        //   std::cout << "### Syst solver : matrix R : \n" << Eigen::MatrixXd(solver.matrixR()) << '\n';
+        // }
       }
 #endif
-      return {map,std::pow(residual_error.norm(),2),solver.matrixR().nonZeros()};
+      // return {map,solver.matrixR().nonZeros()};
+      return {map,0}; // R nnz number set at 0 (unused)
     }
 
     /**

@@ -235,7 +235,7 @@ class Factor
             []<std::size_t... I>(const auto& my_keys_id,
                                  const auto& rho,
                                  const auto& tup_init_points_ptr,
-                                 std::index_sequence<I...>) -> decltype(keys_set) {
+                                 std::index_sequence<I...>) -> KeysSet_t {
               // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
               // might be possible to use perfect forwarding, by declaring an empty tuple
               // and next line expanding tuple_cat with an intermediary function that has perfect forwarding ( TODO:)
@@ -285,6 +285,7 @@ class Factor
 template <typename FT>
 struct FactorHistory
 {
+  using Factor_t = FT;
   const std::string factor_id;
   static constexpr const char* kFactorLabel {FT::kFactorLabel};
   static constexpr const char* kMeasureName {FT::kMeasureName};
@@ -298,6 +299,12 @@ struct FactorHistory
     : factor_id(factor_id), vars_id(vars_id)
   {}
 
+  // FactorHistory(const FactorHistory& other )
+  //   : factor_id(other.factor_id),norms(other.norms),vars_id(other.vars_id)
+  //   {}
+
+  FactorHistory& operator=(const FactorHistory & other)= default;
+
   void push_norm_value(double factor_norm)
   {
     norms.push_back( factor_norm );
@@ -305,7 +312,7 @@ struct FactorHistory
 };
 
 template <typename FT,typename ... FTs>
-class FactorsHistoriesContainer
+struct FactorsHistoriesContainer
 {
     using factors_histories_t
         = std::tuple<std::unordered_map<std::string, FactorHistory<FT>>,
@@ -323,15 +330,23 @@ class FactorsHistoriesContainer
       constexpr std::size_t I = get_correct_tuple_idx_of_factor_type<Q_FT>();
 
       // get the list of keys id
-      std::array<std::string,FT::kNbKeys> vars_id 
-        = sam_tuples::reduce_tuple_variadically(factor.keys_set, 
-          [](const auto& ... kcm )
-          { 
-            return std::array<std::string,FT::kNbKeys>{kcm.key_id ...}; 
+      std::get<0>(factor.keys_set).key_id;
+      typename Q_FT::KeysSet_t keysset = factor.keys_set;
+      static_assert(std::is_same_v<typename Q_FT::KeysSet_t, decltype(factor.keys_set)>);
+      // std::array<std::string,Q_FT::kNbKeys> vars_id ={};
+      // URGENT: FIX:  NOTE: maybe put that method in factor ?
+      std::array<std::string,Q_FT::kNbKeys> vars_id 
+        = sam_tuples::reduce_array_variadically(factor.keys_set,
+          [this]<std::size_t ...J>(const auto & keyset, std::index_sequence<J...>)
+          {
+            // static_assert( std::tuple_size_v(keyset) == Q_FT::kNbKeys);
+            // (*(kcm.key_mean_view) ,...);
+            // (kcm.key_id,...);
+            return std::array<std::string,Q_FT::kNbKeys>{std::get<J>(keyset).key_id ...};
           });
 
       // Create factor history object
-      auto factor_history = FactorHistory<Q_FT>( factor_id , factor.vars_id);
+      auto factor_history = FactorHistory<Q_FT>( factor_id , vars_id);
 
       std::get<I>(this->factors_histories_container).insert_or_assign(factor_id, factor_history ); // TODO: manage failure
   }
@@ -342,7 +357,7 @@ class FactorsHistoriesContainer
       static_assert(std::is_same_v<FT,Q_FT> || (std::is_same_v<FTs,Q_FT> || ...)  );
       constexpr std::size_t I = get_correct_tuple_idx_of_factor_type<Q_FT>();
       // get marginal history ref
-      auto factor_history_it = std::get<I>(this->factor_history).find(factor_id);
+      auto factor_history_it = std::get<I>(this->factors_histories_container).find(factor_id);
       // TODO: assert(marginal_history_it != std::get<I>(this->marginal_history_tuple).end() );
       // push new norm
       factor_history_it->second.norms.push_back( factor_norm );
@@ -353,11 +368,11 @@ class FactorsHistoriesContainer
   static constexpr std::size_t get_correct_tuple_idx_of_factor_type()
   {
     static_assert(I < kNbFactorTypes);
-    if constexpr (std::is_same_v<typename std::tuple_element_t<I, factors_histories_t>::mapped_type, Q_FT>)
+    if constexpr (std::is_same_v<typename std::tuple_element_t<I, factors_histories_t>::mapped_type::Factor_t, Q_FT>)
     { return I; }
     else
     {
-      return get_correct_tuple_idx_of_factor_type<I + 1>();
+      return get_correct_tuple_idx_of_factor_type<Q_FT,I + 1>();
     }
   }
 

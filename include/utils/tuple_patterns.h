@@ -31,7 +31,7 @@ namespace sam_tuples
   //        Reduce a tuple with variadic logic (embedded in f)        //
   //------------------------------------------------------------------//
   template <typename FUNC, typename TUP>
-  auto reduce_tuple_variadically(const TUP& my_tuple, FUNC f)
+  auto reduce_tuple_variadically(TUP&& my_tuple, FUNC f)
   {
     // WOW !!!!
     if constexpr (std::is_invocable_v<FUNC, TUP>)   // HACK:

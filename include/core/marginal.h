@@ -80,26 +80,28 @@ namespace
 
     static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_histories_t>};
 
-    template <typename KM_T>
-    void insert_new_marginal(const std::string & key_id, const std::shared_ptr<Marginal<KM_T>> marginal_ptr)
+    template <typename Q_MARG_T>
+    void insert_new_marginal(const std::string & key_id, const std::shared_ptr<Q_MARG_T> marginal_ptr)
     {
+      using KM_T = typename Q_MARG_T::KeyMeta_t;
       static_assert(std::is_same_v<KM_T,KEYMETA_T> || (std::is_same_v<KM_T,KEYMETA_Ts> || ...)  );
 
       constexpr std::size_t I = get_correct_tuple_idx_by_marg<KM_T>();
 
       // Create object marginal history object
-      auto marginal_history = MarginalHistory<KM_T>(
-                                                    key_id
-                                                  , marginal_ptr->mean_ptr
-                                                  , marginal_ptr->get_visual_2d_covariance()
-                                                  );
+      auto marginal_history = MarginalHistory<Q_MARG_T>(
+                                                         key_id
+                                                       , *marginal_ptr->mean_ptr
+                                                       , marginal_ptr->get_visual_2d_covariance()
+                                                       );
 
       std::get<I>(this->marginal_history_tuple).insert_or_assign(key_id, marginal_history ); // TODO: manage failure
     }
     
-    template <typename KM_T>
-    void push_marginal_history(const std::string & key_id, const std::shared_ptr<Marginal<KM_T>> marginal_ptr)
+    template <typename Q_MARG_T>
+    void push_marginal_history(const std::string & key_id, const std::shared_ptr<Q_MARG_T> marginal_ptr)
     {
+      using KM_T = typename Q_MARG_T::KeyMeta_t;
       static_assert(std::is_same_v<KM_T,KEYMETA_T> || (std::is_same_v<KM_T,KEYMETA_Ts> || ...)  );
 
       constexpr std::size_t I = get_correct_tuple_idx_by_marg<KM_T>();
@@ -119,7 +121,7 @@ namespace
     {
       static_assert(I < kNbMarginals);
       if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_histories_t>::
-                                       mapped_type::Marginal_t, KM_T>)   // maybe thats the keymeta that need compare
+                                       mapped_type::Marginal_t::KeyMeta_t, KM_T>)   // maybe thats the keymeta that need compare
       { return I; }
       else
       {
@@ -262,6 +264,17 @@ namespace
   };
   template <typename KEYMETA_T>
   class MarginalsContainer<std::tuple<KEYMETA_T>> : public MarginalsContainer<KEYMETA_T>   // WOW !!
+  {
+  };
+  // specialization: if tuple of marginals is given, then extract whats inside the tuple and
+  // fallback to the struct above
+  template <typename KEYMETA_T, typename... KEYMETA_Ts>
+  class MarginalsHistoriesContainer<std::tuple<KEYMETA_T, KEYMETA_Ts...>>
+      : public MarginalsHistoriesContainer<KEYMETA_T, KEYMETA_Ts...>   // WOW !!
+  {
+  };
+  template <typename KEYMETA_T>
+  class MarginalsHistoriesContainer<std::tuple<KEYMETA_T>> : public MarginalsHistoriesContainer<KEYMETA_T>   // WOW !!
   {
   };
 
