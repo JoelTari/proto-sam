@@ -113,6 +113,14 @@ namespace SAM
       // reset vector of quadratic error TODO: maybe do it at end of function
       this->bookkeeper_.clear_quadratic_errors();
 
+#if ENABLE_DEBUG_TRACE
+      {
+        PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
+        std::cout << "### Syst: Starting an optimization \n";
+        std::cout << "### Syst: size " << M << " * " << N << '\n';
+      }
+#endif
+
       // declare A & b
       Eigen::SparseMatrix<double> A(M,N);
       Eigen::VectorXd b(M);
@@ -232,21 +240,21 @@ namespace SAM
         this->bookkeeper_.set_syst_Hnnz(Hnnz);
         // OPTIMIZE: easier (on memory? on cpu?) to compute each block covariance separately ? (and in parallel ?) 
 
-// #if ENABLE_DEBUG_TRACE
-//       {
-//         PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
-//         std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n";
-//         // only display if matrix not too big
-//         if ( A.rows() < 15 ) std::cout << Eigen::MatrixXd(A) << "\n\n";
-//         // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
-//         // "\n\n";
-//         std::cout << "#### Syst: b computed :\n";
-//         if ( b.rows() < 15 ) std::cout << b << "\n";
-//         std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
-//         std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
-//         if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
-//       }
-// #endif
+#if ENABLE_DEBUG_TRACE
+      {
+        PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
+        std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n";
+        // only display if matrix not too big
+        if ( A.rows() < 15 ) std::cout << Eigen::MatrixXd(A) << "\n\n";
+        // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
+        // "\n\n";
+        std::cout << "#### Syst: b computed :\n";
+        if ( b.rows() < 15 ) std::cout << b << "\n";
+        std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
+        std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
+        if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
+      }
+#endif
 
         //------------------------------------------------------------------//
         //                  POST SOLVER LOOP ON MARGINALS                   //
@@ -407,7 +415,7 @@ namespace SAM
       // TODO: future async
       Json::Value json_marginals;
       sam_tuples::for_each_in_const_tuple(
-      marginals_histories_container.marginal_history_tuple, 
+      marginals_histories_container.marginal_history_tuple,
       [this,&json_marginals](const auto & map_marginal_histories, auto NIET)
       {
         using marginal_history_t = typename std::remove_const_t<std::decay_t<decltype(map_marginal_histories)>>::mapped_type;
@@ -442,11 +450,11 @@ namespace SAM
           {
             Json::Value covariance;
             covariance["sigma"].append(std::get<0>(marg_hist.iterative_covariances[j])[0]);
-            covariance["sigma"].append(std::get<0>(marg_hist.iterative_covariances[j])[1]);
+            covariance["sigma"].append((std::get<0>(marg_hist.iterative_covariances[j])[1]));
             covariance["rot"] = std::get<1>(marg_hist.iterative_covariances[j]);
             iterative_covariances.append(covariance);
           }
-          json_marginals["iterative_covariance"] = iterative_covariances;
+          json_marginal["iterative_covariances"] = iterative_covariances;
           json_marginals.append(json_marginal);
         }
       });
@@ -888,7 +896,6 @@ namespace SAM
           std::optional<typename FT::tuple_of_part_state_ptr_t> opt_tuple_of_init_point_ptr
             = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect); // NOTE: heap allocation for the INIT POINT AS MEAN (make_shared)
 
-            // FIX: tmp
           if (opt_tuple_of_init_point_ptr.has_value())
           {
             // iterations over several tuples
@@ -921,6 +928,8 @@ namespace SAM
             // TODO: more detail (which key.s failed etc..)
             throw std::runtime_error("Unable to determine all init points for this factor");
           }
+          // FIX: URGENT: emplace back on factor list
+          std::get<I>(this->all_factors_tuple_).emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
               
 // Debug consistency check of everything
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
@@ -930,10 +939,14 @@ namespace SAM
           // 2. checking if the bookkeeper is consistent with the tuples of
           // vector holding the factors
           assert(this->is_system_consistent());
+          // TODO: assert that aggregate size of factor containers correspond to the bookkeeper nb of factors
 #endif
         }
-        // recursion :  compile time call
-        place_factor_in_container<I + 1, FT>(factor_id, mes_vect, measure_cov, keys_id);
+        else
+        {
+          // recursion :  compile time call
+          place_factor_in_container<I + 1, FT>(factor_id, mes_vect, measure_cov, keys_id);
+        }
       }
     }
 

@@ -43,4 +43,4 @@ target_compile_features(mainstdin PUBLIC cxx_std_17)
 target_compile_options(mainstdin PUBLIC "-O3" "-std=c++17") # "-fopt-info")
 
 # NOTE: to manage some definitions
-target_compile_definitions(mainstdin PUBLIC ENABLE_DEBUG_TRACE=0 ENABLE_TIMER=1)
+target_compile_definitions(mainstdin PUBLIC ENABLE_DEBUG_TRACE=1 ENABLE_TIMER=1)

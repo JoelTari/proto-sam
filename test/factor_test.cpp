@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
   
 
   auto factor_FA_history = FactorHistory<decltype(FA)>(FA.factor_id, {"x0"} );
+  FactorHistory<decltype(FA)> factor_FA_history_assignment_test = factor_FA_history;
   // auto cc_factor_FA_history = std::move(factor_FA_history); // OK
   factors_histories_container.insert_new_factor_history(FA.factor_id, FA);
 

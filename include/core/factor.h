@@ -34,18 +34,18 @@ struct KeyContextualConduct : KEYMETA
 
   std::shared_ptr<part_state_vect_t> key_mean_view; // TODO: make it a const ?
 
-  // FIX: remove, should not have ownership
-  void update_key_mean(const part_state_vect_t & incr_state)
-  {
-    // WARNING: override needed for manifold operations
-    *key_mean_view += incr_state;
-  }
-
-  // FIX: remove, should not have ownership
-  void set_key_mean(const part_state_vect_t & new_lin_point)
-  {
-    *key_mean_view = new_lin_point;
-  }
+  // // FIX: remove, should not have ownership
+  // void update_key_mean(const part_state_vect_t & incr_state)
+  // {
+  //   // WARNING: override needed for manifold operations
+  //   *key_mean_view += incr_state;
+  // }
+  //
+  // // FIX: remove, should not have ownership
+  // void set_key_mean(const part_state_vect_t & new_lin_point)
+  // {
+  //   *key_mean_view = new_lin_point;
+  // }
 
   process_matrix_t compute_part_A() const
   {
