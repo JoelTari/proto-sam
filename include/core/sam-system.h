@@ -5,18 +5,12 @@
 #include "core/marginal.h"
 #include "core/factor.h"
 #include "core/config.h"
-// #include "factor_impl/anchor.hpp"
-// #include "factor_impl/key-meta-position.h"
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"
 
 #include <eigen3/Eigen/Sparse>
-#include <unordered_set>
 #include <functional>
-#include <iterator>
 #include <stdexcept>
-#include <thread>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
