@@ -34,34 +34,17 @@ struct KeyContextualConduct : KEYMETA
 
   std::shared_ptr<part_state_vect_t> key_mean_view; // TODO: make it a const ?
 
-  // // FIX: remove, should not have ownership
-  // void update_key_mean(const part_state_vect_t & incr_state)
-  // {
-  //   // WARNING: override needed for manifold operations
-  //   *key_mean_view += incr_state;
-  // }
-  //
-  // // FIX: remove, should not have ownership
-  // void set_key_mean(const part_state_vect_t & new_lin_point)
-  // {
-  //   *key_mean_view = new_lin_point;
-  // }
-
   process_matrix_t compute_part_A() const
   {
-    // NOTE: if NL, the compute_part_A_impl must compute rho*((d part_h/ dx)|_x0) (need the key linpoint part_x0 : key_mean_view)
+    // NOTE: if NL, the compute_part_A_impl must compute rho*((d part_h/ dx)|_x0) 
+    // NOTE: (need the key linpoint part_x0 : key_mean_view)
     // NOTE: if Linear, it is just a constant returned value (rho*partH, where partH is static)
 
     // OPTIMIZE: store in a member to save some cycles (RAM vs CPU), but less readability
     return static_cast<const DerivedKCC*>(this)->compute_part_A_impl(); 
   }
 
-  // prevent default constructor, copy constructor, copy assignemnt operator
-  // KeyContextualConduct() = delete;
-  // KeyContextualConduct(const KeyContextualConduct  &) = delete;
-  // KeyContextualConduct& operator=(const KeyContextualConduct&) = delete;
- // ~KeyContextualConduct() = delete;
- // imposed constructor
+    // ctor for linear systems
   KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho)
       : key_id(key_id)
       , rho(rho)
@@ -71,12 +54,17 @@ struct KeyContextualConduct : KEYMETA
     static_assert(kLinear);
   }
 
-  KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho, std::shared_ptr<part_state_vect_t> init_point_view)
+    // ctor called for non linear systems
+  KeyContextualConduct
+    (const std::string& key_id
+    , const measure_cov_t& rho
+    , std::shared_ptr<part_state_vect_t> init_point_view)
       : key_id(key_id)
       , rho(rho)
       , key_mean_view(init_point_view)
   {
-    // note: this can be called even if the context model is not linear (one nl model in the wider system imposes that everything is nl)
+    // NOTE: this can be called even if the context model is not linear 
+    // NOTE: (one nl model in the wider system implies that everything is nl)
   }
 };
 
@@ -97,10 +85,13 @@ class Factor
   static constexpr size_t      kM      = MEASURE_META::kM;
   static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
   using state_vector_t                 = Eigen::Matrix<double, kN, 1>; 
-  using tuple_of_part_state_ptr_t          = std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...>;
-  using tuple_of_opt_part_state_ptr_t      = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::part_state_vect_t>> ...>;
-  // NOTE: on state vector (or init point, or map) : no explicit state vect is kept at factor level:
-  // NOTE:  we do keep it at the keys level, and offer the get_state_vector_from_tuple() method to query it if necessary
+  using tuple_of_part_state_ptr_t          
+    = std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...>;
+  using tuple_of_opt_part_state_ptr_t      
+    = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::part_state_vect_t>> ...>;
+  // NOTE: On state vector (or init point, or map) : no explicit state vect is kept at factor level:
+  // NOTE:  we do keep it at the keys level, and offer the get_state_vector_from_tuple() 
+  // NOTE:  method to query it if necessary
   using process_matrix_t               = Eigen::Matrix<double, kM, kN>;
   // make a tuple of KeySet.  Michelin *** vaut le détour.
   using KeysSet_t = std::tuple<KeyConducts...>;
@@ -122,7 +113,8 @@ class Factor
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
   // NOTE: tuple of optional (input)  =>  optional of tuple (output)
-  // No optional returned value indicates that the init point cannot be defined for all keys (e.g. bearing observation of a new landmark)
+  // nullopt returned value indicates that the init point cannot be 
+  // defined for all keys (e.g. bearing observation of a new landmark)
   static
   std::optional< tuple_of_part_state_ptr_t >
   guess_init_key_points(tuple_of_opt_part_state_ptr_t x_init_ptr_optional_tup, const measure_vect_t & z)
@@ -159,24 +151,12 @@ class Factor
     return tup_mean;
   }
 
-  // // func that sets the tup of lin points
-  // // FIX: remove, shouldnot set key points, doesn't have ownership 
-  // void set_key_points(const std::tuple<typename KeyConducts::part_state_vect_t ...>& xtup) const
-  // {
-  //   // for each key context model, affects a partx vector for input tuple
-  //   sam_tuples::for_each_in_tuple(this->keys_set,
-  //           [&xtup](auto & kcm, auto J)
-  //           {
-  //             *(kcm.key_mean_view) = std::get<J>(xtup);
-  //           }
-  //   );
-  // }
-
   //  func that transforms a tup of lin points contained in kcm into state_vector_t
   // template <typename... PARTIAL_STATE_VECTORS_T>
     // TODO: consider it protected
     // NOTE: not used currently ??
-  state_vector_t get_state_vector_from_tuple(const std::tuple<typename KeyConducts::part_state_vect_t ...> & x_tup) const
+  state_vector_t 
+    get_state_vector_from_tuple(const std::tuple<typename KeyConducts::part_state_vect_t ...> & x_tup) const
   {
     static_assert(std::tuple_size_v<std::tuple<typename KeyConducts::part_state_vect_t ...>> == kNbKeys);
     state_vector_t x;
@@ -245,7 +225,8 @@ class Factor
   {
     if constexpr (isLinear)
     {
-      measure_vect_t Ax = sam_tuples::reduce_array_variadically(this->keys_set,[this]<std::size_t...J>(const auto & kset,std::index_sequence<J...>)
+      measure_vect_t Ax = sam_tuples::reduce_array_variadically(this->keys_set,[this]<std::size_t...J>
+          (const auto & kset,std::index_sequence<J...>)
       {
         // TODO: assert( key_mean_view != nullptr && ... );
         // Ax = A1*x1 + A2*x2 + ...
@@ -256,7 +237,8 @@ class Factor
     else
     {
       // build back the tup of stored lin point
-      auto lin_point_tup =  sam_tuples::reduce_tuple_variadically(this->keys_set,[this]<std::size_t...J>(const auto & kset, std::index_sequence<J...>)
+      auto lin_point_tup =  sam_tuples::reduce_tuple_variadically(this->keys_set,[this]<std::size_t...J>
+          (const auto & kset, std::index_sequence<J...>)
         {  
             // TODO: assert (key_mean_view != nullptr && ...);
             return std::make_tuple( *(std::get<J>(kset).key_mean_view) ... ) ;
