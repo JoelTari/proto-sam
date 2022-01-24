@@ -40,7 +40,10 @@ struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
 int main(int argc, char* argv[])
 {
   // logger
-  sam_utils::JSONLogger::Instance().beginSession("toy_linear_test.cpp");
+  std::string result_filename
+      = sam_utils::currentDateTime() + "_results_toy_linear_test.json";
+  sam_utils::JSONLogger::Instance().beginSession("toy_linear_test.cpp", result_filename);
+
   // scoped Timer
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 

@@ -17,6 +17,7 @@
 //------------------------------------------------------------------//
 int main(int argc, char* argv[])
 {
+  // std::cout << "nb of threads : " << Eigen::nbThreads() << '\n';
   std::string argId;
   if (argc > 1) { argId = argv[1]; }
   else

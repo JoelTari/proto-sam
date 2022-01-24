@@ -31,7 +31,7 @@ namespace sam_tuples
   //        Reduce a tuple with variadic logic (embedded in f)        //
   //------------------------------------------------------------------//
   template <typename FUNC, typename TUP>
-  auto reduce_tuple_variadically(const TUP& my_tuple, FUNC f)
+  auto reduce_tuple_variadically(TUP&& my_tuple, FUNC f)
   {
     // WOW !!!!
     if constexpr (std::is_invocable_v<FUNC, TUP>)   // HACK:
@@ -112,12 +112,13 @@ namespace sam_tuples
     template <typename T, typename F, std::size_t... Is>
     void for_each(T&& t, F f, std::index_sequence<Is...>)
     {
+      // NOTE: unfortunately, Is, the second arg of f, wont be considered constexpr inside f
       auto l = {(f(std::get<Is>(t), Is), 0)...};
     }
   }   // namespace detail
 
   template <typename... Ts, typename F>
-  void for_each_in_tuple(std::tuple<Ts...> & t, F f)
+   void for_each_in_tuple(std::tuple<Ts...> & t, F f)
   {
     detail::for_each(t, f, std::make_index_sequence<sizeof...(Ts)> {});
   }
@@ -202,22 +203,6 @@ struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
 };
 
 
-// template <std::size_t IS_U_IN_T_V, class U, class...T>
-// struct tuple_type_uniq_cat;
-// // IS_U_IN_T_V   <-  (std::is_same_v<U,T> || ... ) 
-// // if type U already in 
-// template <class U, class ...T>
-// struct tuple_type_uniq_cat<0, std::tuple<U>,std::tuple<T...>>
-// {
-//     using type = std::tuple<T...,U>;
-// }; 
-// template <class U, class ...T>
-// struct tuple_type_uniq_cat<1, std::tuple<U>,std::tuple<T...>>
-// {
-//     using type = std::tuple<T...>;
-// }; 
-
-
 //------------------------------------------------------------------//
 //           filter out duplicate template argument types           //
 //         and output type a tuple of this filtered set of          //
@@ -255,6 +240,48 @@ struct tuple_filter_duplicate<TNEW,Ts0,Ts...>
 // tuple argument specialisation (-> extract what's inside the tuple, and filter duplicate)
 template<typename ...Ts>
 struct tuple_filter_duplicate< std::tuple<Ts...> >: tuple_filter_duplicate<Ts...>{};
+
+
+
+
+
+
+
+//------------------------------------------------------------------//
+//                         constexpr index                          //
+//                                                                  //
+//                                                                  //
+//        Use this when manipulating looping several tuples         //
+//           (of the same size), all the others patterns            //
+//           (including std::apply) only loop one tuple.            //
+//        So instead, constexpr_for() just iterate the tuple        //
+//                  idx, allowing several usage of                  //
+//              std::get<idx>(a_tuple) at each level.               //
+//------------------------------------------------------------------//
+template <typename Integer, Integer ...I, typename F>
+constexpr void constexpr_for_each(std::integer_sequence<Integer, I...>, F &&func)
+{
+    (func(std::integral_constant<Integer, I>{}) , ...);
+}
+
+template <auto N, typename F>
+constexpr void constexpr_for(F &&func)
+{
+    if constexpr (N > 0)
+        constexpr_for_each(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
+}
+
+// usage:  input Cn,  tuple : pointers  (from https://stackoverflow.com/a/66661980 )
+//
+// constexpr_for<sizeof...(Cn)>([&](auto index)
+// {
+//     constexpr auto i = index.value;
+//     std::get<i>(pointers) = pChunk->memory + m_groups.componentOffsets[i];
+// });
+
+
+
+
 
 }   // namespace sam_tuples
 #endif

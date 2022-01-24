@@ -1,0 +1,3457 @@
+{
+	"factors" : 
+	[
+		{
+			"factor_id" : "f0",
+			"type" : "anchor",
+			"vars_id" : 
+			[
+				"x0"
+			]
+		},
+		{
+			"factor_id" : "f1",
+			"type" : "anchor",
+			"vars_id" : 
+			[
+				"x0"
+			]
+		},
+		{
+			"factor_id" : "f2",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x0",
+				"x1"
+			]
+		},
+		{
+			"factor_id" : "f3",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x1",
+				"x2"
+			]
+		},
+		{
+			"factor_id" : "f4",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x2",
+				"x3"
+			]
+		},
+		{
+			"factor_id" : "f5",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x3",
+				"x4"
+			]
+		},
+		{
+			"factor_id" : "f6",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x4",
+				"x5"
+			]
+		},
+		{
+			"factor_id" : "f7",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x5",
+				"x6"
+			]
+		},
+		{
+			"factor_id" : "f8",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x6",
+				"x7"
+			]
+		},
+		{
+			"factor_id" : "f9",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x7",
+				"x8"
+			]
+		},
+		{
+			"factor_id" : "f10",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x8",
+				"x9"
+			]
+		},
+		{
+			"factor_id" : "f11",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x9",
+				"x10"
+			]
+		},
+		{
+			"factor_id" : "f12",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x10",
+				"x11"
+			]
+		},
+		{
+			"factor_id" : "f13",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x11",
+				"x12"
+			]
+		},
+		{
+			"factor_id" : "f14",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x12",
+				"x13"
+			]
+		},
+		{
+			"factor_id" : "f15",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x13",
+				"x14"
+			]
+		},
+		{
+			"factor_id" : "f16",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x14",
+				"x15"
+			]
+		},
+		{
+			"factor_id" : "f17",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x15",
+				"x16"
+			]
+		},
+		{
+			"factor_id" : "f18",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x16",
+				"x17"
+			]
+		},
+		{
+			"factor_id" : "f19",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x17",
+				"x0"
+			]
+		},
+		{
+			"factor_id" : "f20",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x9",
+				"x18"
+			]
+		},
+		{
+			"factor_id" : "f21",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x18",
+				"x19"
+			]
+		},
+		{
+			"factor_id" : "f22",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x19",
+				"x20"
+			]
+		},
+		{
+			"factor_id" : "f23",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x20",
+				"x21"
+			]
+		},
+		{
+			"factor_id" : "f24",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x21",
+				"x22"
+			]
+		},
+		{
+			"factor_id" : "f25",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x22",
+				"x23"
+			]
+		},
+		{
+			"factor_id" : "f26",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x23",
+				"x24"
+			]
+		},
+		{
+			"factor_id" : "f27",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x24",
+				"x25"
+			]
+		},
+		{
+			"factor_id" : "f28",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x25",
+				"x26"
+			]
+		},
+		{
+			"factor_id" : "f29",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x26",
+				"x27"
+			]
+		},
+		{
+			"factor_id" : "f30",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x27",
+				"x28"
+			]
+		},
+		{
+			"factor_id" : "f31",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x28",
+				"x29"
+			]
+		},
+		{
+			"factor_id" : "f32",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x29",
+				"x30"
+			]
+		},
+		{
+			"factor_id" : "f33",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x30",
+				"x31"
+			]
+		},
+		{
+			"factor_id" : "f34",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x31",
+				"x32"
+			]
+		},
+		{
+			"factor_id" : "f35",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x32",
+				"x33"
+			]
+		},
+		{
+			"factor_id" : "f36",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x33",
+				"x34"
+			]
+		},
+		{
+			"factor_id" : "f37",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x34",
+				"x9"
+			]
+		}
+	],
+	"header" : 
+	{
+		"Hnnz" : 4900,
+		"QRerror" : 4.5449658081814404,
+		"Rnnz" : 685,
+		"base_unit" : 0.14999999999999999,
+		"residual_error" : 4.5449658081814404,
+		"robot_id" : "A",
+		"seq" : 0
+	},
+	"marginals" : 
+	[
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.021213203435596427,
+					0.10606601717798217
+				]
+			},
+			"mean" : 
+			{
+				"x" : -0.022507266403957112,
+				"y" : 0.048026022032459433
+			},
+			"var_id" : "x0"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.025313759985517492,
+					0.25816358136656081
+				]
+			},
+			"mean" : 
+			{
+				"x" : 0.21843645571780573,
+				"y" : -1.1363405253190757
+			},
+			"var_id" : "x1"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.059622693759453095,
+					0.31210776795914286
+				]
+			},
+			"mean" : 
+			{
+				"x" : 0.80111543603756707,
+				"y" : -2.0169801560141933
+			},
+			"var_id" : "x2"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.12275569263039122,
+					0.33205132750432581
+				]
+			},
+			"mean" : 
+			{
+				"x" : 1.8712676912853987,
+				"y" : -3.0946481760524676
+			},
+			"var_id" : "x3"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.18388801968868135,
+					0.33794060718670499
+				]
+			},
+			"mean" : 
+			{
+				"x" : 3.1727204119607335,
+				"y" : -3.5548028513993706
+			},
+			"var_id" : "x4"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.23078906376702904,
+					0.33878593575503418
+				]
+			},
+			"mean" : 
+			{
+				"x" : 4.492118257220989,
+				"y" : -3.5071344155577959
+			},
+			"var_id" : "x5"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.2597834634665962,
+					0.3389341557773074
+				]
+			},
+			"mean" : 
+			{
+				"x" : 5.7197696004186485,
+				"y" : -3.051293895496991
+			},
+			"var_id" : "x6"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.27314819353839609,
+					0.34105680577621716
+				]
+			},
+			"mean" : 
+			{
+				"x" : 6.677650098216307,
+				"y" : -2.2276583755858272
+			},
+			"var_id" : "x7"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.27613303659813937,
+					0.34476978290521881
+				]
+			},
+			"mean" : 
+			{
+				"x" : 7.4595476085409045,
+				"y" : -1.2733409792190999
+			},
+			"var_id" : "x8"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.27632345859307383,
+					0.34669576623724335
+				]
+			},
+			"mean" : 
+			{
+				"x" : 7.7031662340075506,
+				"y" : 0.052968953369964343
+			},
+			"var_id" : "x9"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.28340550284956245,
+					0.3447697829052187
+				]
+			},
+			"mean" : 
+			{
+				"x" : 7.5000795676588945,
+				"y" : 1.6060533093695775
+			},
+			"var_id" : "x10"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.30216592725657465,
+					0.34105680577621711
+				]
+			},
+			"mean" : 
+			{
+				"x" : 7.1307232131228906,
+				"y" : 2.6696531744624217
+			},
+			"var_id" : "x11"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.32369924616714851,
+					0.33893415577730718
+				]
+			},
+			"mean" : 
+			{
+				"x" : 6.0210491004846824,
+				"y" : 3.5871105196357416
+			},
+			"var_id" : "x12"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.32991177928324233,
+					0.33878593575503396
+				]
+			},
+			"mean" : 
+			{
+				"x" : 4.9482985649964197,
+				"y" : 4.0881059505078978
+			},
+			"var_id" : "x13"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.30634143548843779,
+					0.33794060718670477
+				]
+			},
+			"mean" : 
+			{
+				"x" : 3.4968403575048757,
+				"y" : 4.1174734159603128
+			},
+			"var_id" : "x14"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.25027526588473253,
+					0.33205132750432564
+				]
+			},
+			"mean" : 
+			{
+				"x" : 2.0807077898925672,
+				"y" : 3.7836725788299308
+			},
+			"var_id" : "x15"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.1715166598935442,
+					0.3121077679591428
+				]
+			},
+			"mean" : 
+			{
+				"x" : 1.1960510810935152,
+				"y" : 3.0535232403380399
+			},
+			"var_id" : "x16"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.088040643118357118,
+					0.25816358136656103
+				]
+			},
+			"mean" : 
+			{
+				"x" : 0.30445083621865715,
+				"y" : 1.482117110596646
+			},
+			"var_id" : "x17"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.27666846624334074,
+					0.41904222826684023
+				]
+			},
+			"mean" : 
+			{
+				"x" : 7.9363717311122084,
+				"y" : -1.3700552256936478
+			},
+			"var_id" : "x18"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.2818856494750514,
+					0.45426777691937165
+				]
+			},
+			"mean" : 
+			{
+				"x" : 8.5873655388908343,
+				"y" : -3.0360016611983864
+			},
+			"var_id" : "x19"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.30161832477819434,
+					0.46819444510183472
+				]
+			},
+			"mean" : 
+			{
+				"x" : 9.5843059339860073,
+				"y" : -4.1875873040457234
+			},
+			"var_id" : "x20"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.33123927537938525,
+					0.47238946676714605
+				]
+			},
+			"mean" : 
+			{
+				"x" : 10.876875708893381,
+				"y" : -4.8459822596179629
+			},
+			"var_id" : "x21"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.3593998410173469,
+					0.4729945714194233
+				]
+			},
+			"mean" : 
+			{
+				"x" : 12.23786731390647,
+				"y" : -4.8189435742653259
+			},
+			"var_id" : "x22"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.37867149570508968,
+					0.47310074643706274
+				]
+			},
+			"mean" : 
+			{
+				"x" : 13.387732335494594,
+				"y" : -4.3902669480889287
+			},
+			"var_id" : "x23"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.38796209789374581,
+					0.47462374476326613
+				]
+			},
+			"mean" : 
+			{
+				"x" : 14.406649117636627,
+				"y" : -3.6402867680131545
+			},
+			"var_id" : "x24"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.39006936263918002,
+					0.47729881367057797
+				]
+			},
+			"mean" : 
+			{
+				"x" : 15.127488657306046,
+				"y" : -2.4253029893671627
+			},
+			"var_id" : "x25"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.39020418698120723,
+					0.47869187234969668
+				]
+			},
+			"mean" : 
+			{
+				"x" : 15.348330299870931,
+				"y" : -0.94975596501671333
+			},
+			"var_id" : "x26"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.3952509744633661,
+					0.47729881367057719
+				]
+			},
+			"mean" : 
+			{
+				"x" : 15.15582125166198,
+				"y" : 0.54324341449276137
+			},
+			"var_id" : "x27"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.40891185035855077,
+					0.47462374476326485
+				]
+			},
+			"mean" : 
+			{
+				"x" : 14.471752958980577,
+				"y" : 1.754804242571637
+			},
+			"var_id" : "x28"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.42507158895650804,
+					0.47310074643706113
+				]
+			},
+			"mean" : 
+			{
+				"x" : 13.355668025663135,
+				"y" : 2.8090816695958569
+			},
+			"var_id" : "x29"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.42982139997755769,
+					0.47299457141942175
+				]
+			},
+			"mean" : 
+			{
+				"x" : 11.827342970737877,
+				"y" : 3.2587521315413515
+			},
+			"var_id" : "x30"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.41200695244856211,
+					0.47238946676714449
+				]
+			},
+			"mean" : 
+			{
+				"x" : 10.582085287889793,
+				"y" : 3.1848500479714481
+			},
+			"var_id" : "x31"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.37221279193830814,
+					0.46819444510183322
+				]
+			},
+			"mean" : 
+			{
+				"x" : 9.1711463695662871,
+				"y" : 2.7028962888819192
+			},
+			"var_id" : "x32"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.32453446410185061,
+					0.45426777691937048
+				]
+			},
+			"mean" : 
+			{
+				"x" : 8.6934206892292654,
+				"y" : 1.9728817020540983
+			},
+			"var_id" : "x33"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.2892331388508792,
+					0.41904222826683946
+				]
+			},
+			"mean" : 
+			{
+				"x" : 7.9521509951359004,
+				"y" : 1.0643943547639654
+			},
+			"var_id" : "x34"
+		}
+	],
+	"traceEvents" : 
+	[
+		{
+			"cat" : "function",
+			"dur" : "17988",
+			"name" : "main",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745657856"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "SamSystem",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745657870"
+		},
+		{
+			"cat" : "function",
+			"dur" : "2168",
+			"name" : "integrates factors",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745657880"
+		},
+		{
+			"cat" : "function",
+			"dur" : "66",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745657899"
+		},
+		{
+			"cat" : "function",
+			"dur" : "35",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745657980"
+		},
+		{
+			"cat" : "function",
+			"dur" : "45",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658029"
+		},
+		{
+			"cat" : "function",
+			"dur" : "51",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658088"
+		},
+		{
+			"cat" : "function",
+			"dur" : "45",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658152"
+		},
+		{
+			"cat" : "function",
+			"dur" : "40",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658210"
+		},
+		{
+			"cat" : "function",
+			"dur" : "51",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658263"
+		},
+		{
+			"cat" : "function",
+			"dur" : "42",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658327"
+		},
+		{
+			"cat" : "function",
+			"dur" : "38",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658382"
+		},
+		{
+			"cat" : "function",
+			"dur" : "38",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658431"
+		},
+		{
+			"cat" : "function",
+			"dur" : "58",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658481"
+		},
+		{
+			"cat" : "function",
+			"dur" : "37",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658550"
+		},
+		{
+			"cat" : "function",
+			"dur" : "38",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658599"
+		},
+		{
+			"cat" : "function",
+			"dur" : "39",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658649"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658700"
+		},
+		{
+			"cat" : "function",
+			"dur" : "42",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658754"
+		},
+		{
+			"cat" : "function",
+			"dur" : "42",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658809"
+		},
+		{
+			"cat" : "function",
+			"dur" : "34",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658862"
+		},
+		{
+			"cat" : "function",
+			"dur" : "76",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658906"
+		},
+		{
+			"cat" : "function",
+			"dur" : "33",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745658993"
+		},
+		{
+			"cat" : "function",
+			"dur" : "39",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659039"
+		},
+		{
+			"cat" : "function",
+			"dur" : "35",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659091"
+		},
+		{
+			"cat" : "function",
+			"dur" : "37",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659139"
+		},
+		{
+			"cat" : "function",
+			"dur" : "40",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659190"
+		},
+		{
+			"cat" : "function",
+			"dur" : "43",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659244"
+		},
+		{
+			"cat" : "function",
+			"dur" : "39",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659300"
+		},
+		{
+			"cat" : "function",
+			"dur" : "39",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659352"
+		},
+		{
+			"cat" : "function",
+			"dur" : "34",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659405"
+		},
+		{
+			"cat" : "function",
+			"dur" : "35",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659453"
+		},
+		{
+			"cat" : "function",
+			"dur" : "43",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659501"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659559"
+		},
+		{
+			"cat" : "function",
+			"dur" : "42",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659613"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659668"
+		},
+		{
+			"cat" : "function",
+			"dur" : "42",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659721"
+		},
+		{
+			"cat" : "function",
+			"dur" : "108",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659775"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659897"
+		},
+		{
+			"cat" : "function",
+			"dur" : "42",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745659951"
+		},
+		{
+			"cat" : "function",
+			"dur" : "37",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660005"
+		},
+		{
+			"cat" : "function",
+			"dur" : "15757",
+			"name" : "sam_optimize",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660052"
+		},
+		{
+			"cat" : "function",
+			"dur" : "1421",
+			"name" : "assemble_system",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660058"
+		},
+		{
+			"cat" : "function",
+			"dur" : "53",
+			"name" : "f0",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660076"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660113"
+		},
+		{
+			"cat" : "function",
+			"dur" : "35",
+			"name" : "f1",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660133"
+		},
+		{
+			"cat" : "function",
+			"dur" : "9",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660155"
+		},
+		{
+			"cat" : "function",
+			"dur" : "42",
+			"name" : "f2",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660174"
+		},
+		{
+			"cat" : "function",
+			"dur" : "7",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660195"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660205"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f3",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660218"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660233"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660241"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "f4",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660251"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660268"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660276"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f5",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660285"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660300"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660308"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f6",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660318"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660333"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660340"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f7",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660350"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660366"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660373"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f8",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660383"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660398"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660405"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f9",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660414"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660428"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660437"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "f10",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660447"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660461"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660470"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "f11",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660480"
+		},
+		{
+			"cat" : "function",
+			"dur" : "7",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660495"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660505"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f12",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660515"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660528"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660537"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f13",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660547"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660561"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660568"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f14",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660580"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660593"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660601"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f15",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660612"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660626"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660633"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f16",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660644"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660658"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660665"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f17",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660676"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660689"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660697"
+		},
+		{
+			"cat" : "function",
+			"dur" : "28",
+			"name" : "f18",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660708"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660721"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660728"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "f19",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660738"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660752"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660760"
+		},
+		{
+			"cat" : "function",
+			"dur" : "49",
+			"name" : "f20",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660770"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660804"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660812"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f21",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660821"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660836"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660844"
+		},
+		{
+			"cat" : "function",
+			"dur" : "28",
+			"name" : "f22",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660853"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660867"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660874"
+		},
+		{
+			"cat" : "function",
+			"dur" : "28",
+			"name" : "f23",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660884"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660898"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660905"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f24",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660914"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660927"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660936"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "f25",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660945"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660960"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660969"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f26",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660978"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745660991"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661000"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f27",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661009"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661022"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661031"
+		},
+		{
+			"cat" : "function",
+			"dur" : "28",
+			"name" : "f28",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661041"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661054"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661061"
+		},
+		{
+			"cat" : "function",
+			"dur" : "28",
+			"name" : "f29",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661072"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661085"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661092"
+		},
+		{
+			"cat" : "function",
+			"dur" : "28",
+			"name" : "f30",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661103"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661115"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661122"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f31",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661133"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661147"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661154"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f32",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661165"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661178"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661185"
+		},
+		{
+			"cat" : "function",
+			"dur" : "27",
+			"name" : "f33",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661196"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661209"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661216"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f34",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661225"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661239"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661247"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "f35",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661256"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661273"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661280"
+		},
+		{
+			"cat" : "function",
+			"dur" : "29",
+			"name" : "f36",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661290"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661305"
+		},
+		{
+			"cat" : "function",
+			"dur" : "4",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661312"
+		},
+		{
+			"cat" : "function",
+			"dur" : "28",
+			"name" : "f37",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661321"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661335"
+		},
+		{
+			"cat" : "function",
+			"dur" : "5",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661342"
+		},
+		{
+			"cat" : "function",
+			"dur" : "2712",
+			"name" : "solveQR",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661483"
+		},
+		{
+			"cat" : "function",
+			"dur" : "1905",
+			"name" : "QR decomposition",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745661488"
+		},
+		{
+			"cat" : "function",
+			"dur" : "349",
+			"name" : "Back-Substitution",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745663398"
+		},
+		{
+			"cat" : "function",
+			"dur" : "250",
+			"name" : "print console",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745663755"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8948",
+			"name" : "compute_covariance",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745664206"
+		},
+		{
+			"cat" : "function",
+			"dur" : "162",
+			"name" : "print console",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673174"
+		},
+		{
+			"cat" : "function",
+			"dur" : "2465",
+			"name" : "post_process_loop",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673340"
+		},
+		{
+			"cat" : "function",
+			"dur" : "76",
+			"name" : "f0",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673352"
+		},
+		{
+			"cat" : "function",
+			"dur" : "48",
+			"name" : "x0",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673355"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673409"
+		},
+		{
+			"cat" : "function",
+			"dur" : "19",
+			"name" : "f1",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673431"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673437"
+		},
+		{
+			"cat" : "function",
+			"dur" : "63",
+			"name" : "f2",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673453"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x1",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673459"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673496"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f3",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673519"
+		},
+		{
+			"cat" : "function",
+			"dur" : "33",
+			"name" : "x2",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673524"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673562"
+		},
+		{
+			"cat" : "function",
+			"dur" : "59",
+			"name" : "f4",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673584"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x3",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673589"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673625"
+		},
+		{
+			"cat" : "function",
+			"dur" : "58",
+			"name" : "f5",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673646"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "x4",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673651"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673686"
+		},
+		{
+			"cat" : "function",
+			"dur" : "73",
+			"name" : "f6",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673707"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x5",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673725"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673762"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f7",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673783"
+		},
+		{
+			"cat" : "function",
+			"dur" : "33",
+			"name" : "x6",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673788"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673826"
+		},
+		{
+			"cat" : "function",
+			"dur" : "61",
+			"name" : "f8",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673848"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x7",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673854"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673890"
+		},
+		{
+			"cat" : "function",
+			"dur" : "61",
+			"name" : "f9",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673912"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x8",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673918"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673955"
+		},
+		{
+			"cat" : "function",
+			"dur" : "61",
+			"name" : "f10",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673976"
+		},
+		{
+			"cat" : "function",
+			"dur" : "33",
+			"name" : "x9",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745673981"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674019"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f11",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674041"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x10",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674046"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674082"
+		},
+		{
+			"cat" : "function",
+			"dur" : "64",
+			"name" : "f12",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674104"
+		},
+		{
+			"cat" : "function",
+			"dur" : "35",
+			"name" : "x11",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674110"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674150"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f13",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674171"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x12",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674177"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674213"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f14",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674234"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x13",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674240"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674276"
+		},
+		{
+			"cat" : "function",
+			"dur" : "59",
+			"name" : "f15",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674298"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x14",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674303"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674339"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f16",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674360"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x15",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674365"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674402"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f17",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674423"
+		},
+		{
+			"cat" : "function",
+			"dur" : "33",
+			"name" : "x16",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674429"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674467"
+		},
+		{
+			"cat" : "function",
+			"dur" : "59",
+			"name" : "f18",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674489"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x17",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674494"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674530"
+		},
+		{
+			"cat" : "function",
+			"dur" : "20",
+			"name" : "f19",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674552"
+		},
+		{
+			"cat" : "function",
+			"dur" : "9",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674557"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f20",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674575"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x18",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674580"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674617"
+		},
+		{
+			"cat" : "function",
+			"dur" : "59",
+			"name" : "f21",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674638"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x19",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674643"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674679"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f22",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674700"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x20",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674706"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674742"
+		},
+		{
+			"cat" : "function",
+			"dur" : "58",
+			"name" : "f23",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674776"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x21",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674781"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674817"
+		},
+		{
+			"cat" : "function",
+			"dur" : "58",
+			"name" : "f24",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674837"
+		},
+		{
+			"cat" : "function",
+			"dur" : "31",
+			"name" : "x22",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674842"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674878"
+		},
+		{
+			"cat" : "function",
+			"dur" : "58",
+			"name" : "f25",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674898"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "x23",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674904"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674939"
+		},
+		{
+			"cat" : "function",
+			"dur" : "61",
+			"name" : "f26",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674959"
+		},
+		{
+			"cat" : "function",
+			"dur" : "33",
+			"name" : "x24",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745674964"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675002"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f27",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675024"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x25",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675029"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675066"
+		},
+		{
+			"cat" : "function",
+			"dur" : "64",
+			"name" : "f28",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675089"
+		},
+		{
+			"cat" : "function",
+			"dur" : "36",
+			"name" : "x26",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675094"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675135"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f29",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675156"
+		},
+		{
+			"cat" : "function",
+			"dur" : "33",
+			"name" : "x27",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675161"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675199"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f30",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675222"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x28",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675227"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675264"
+		},
+		{
+			"cat" : "function",
+			"dur" : "61",
+			"name" : "f31",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675285"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x29",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675292"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675329"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f32",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675350"
+		},
+		{
+			"cat" : "function",
+			"dur" : "33",
+			"name" : "x30",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675355"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675393"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f33",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675416"
+		},
+		{
+			"cat" : "function",
+			"dur" : "32",
+			"name" : "x31",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675421"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675458"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f34",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675480"
+		},
+		{
+			"cat" : "function",
+			"dur" : "33",
+			"name" : "x32",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675485"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675522"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f35",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675545"
+		},
+		{
+			"cat" : "function",
+			"dur" : "34",
+			"name" : "x33",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675550"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675589"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f36",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675610"
+		},
+		{
+			"cat" : "function",
+			"dur" : "30",
+			"name" : "x34",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675617"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675652"
+		},
+		{
+			"cat" : "function",
+			"dur" : "23",
+			"name" : "f37",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675675"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675681"
+		},
+		{
+			"cat" : "function",
+			"dur" : "74",
+			"name" : "join log results",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linEight",
+			"tid" : 2850328247,
+			"ts" : "48745675701"
+		}
+	]
+}

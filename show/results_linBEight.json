@@ -1,0 +1,1838 @@
+{
+	"factors" : 
+	[
+		{
+			"factor_id" : "f0",
+			"type" : "anchor",
+			"vars_id" : 
+			[
+				"x0"
+			]
+		},
+		{
+			"factor_id" : "f1",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x9",
+				"x10"
+			]
+		},
+		{
+			"factor_id" : "f2",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x10",
+				"x11"
+			]
+		},
+		{
+			"factor_id" : "f3",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x11",
+				"x12"
+			]
+		},
+		{
+			"factor_id" : "f4",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x12",
+				"x13"
+			]
+		},
+		{
+			"factor_id" : "f5",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x13",
+				"x14"
+			]
+		},
+		{
+			"factor_id" : "f6",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x14",
+				"x15"
+			]
+		},
+		{
+			"factor_id" : "f7",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x15",
+				"x16"
+			]
+		},
+		{
+			"factor_id" : "f8",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x16",
+				"x17"
+			]
+		},
+		{
+			"factor_id" : "f9",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x17",
+				"x0"
+			]
+		},
+		{
+			"factor_id" : "f10",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x26",
+				"x27"
+			]
+		},
+		{
+			"factor_id" : "f11",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x27",
+				"x28"
+			]
+		},
+		{
+			"factor_id" : "f12",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x28",
+				"x29"
+			]
+		},
+		{
+			"factor_id" : "f13",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x29",
+				"x30"
+			]
+		},
+		{
+			"factor_id" : "f14",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x30",
+				"x31"
+			]
+		},
+		{
+			"factor_id" : "f15",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x31",
+				"x32"
+			]
+		},
+		{
+			"factor_id" : "f16",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x32",
+				"x33"
+			]
+		},
+		{
+			"factor_id" : "f17",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x33",
+				"x34"
+			]
+		},
+		{
+			"factor_id" : "f18",
+			"type" : "linear translation",
+			"vars_id" : 
+			[
+				"x34",
+				"x9"
+			]
+		}
+	],
+	"header" : 
+	{
+		"Hnnz" : 1444,
+		"QRerror" : 1.2070359675599357e-27,
+		"Rnnz" : 513,
+		"base_unit" : 0.14999999999999999,
+		"residual_error" : 1.2070359675599357e-27,
+		"robot_id" : "A",
+		"seq" : 0
+	},
+	"marginals" : 
+	[
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.029999999999999995,
+					0.15000000000000097
+				]
+			},
+			"mean" : 
+			{
+				"x" : -0.025849256388990712,
+				"y" : -0.083366172167962202
+			},
+			"var_id" : "x0"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.49030185463006604,
+					0.58206177391549752
+				]
+			},
+			"mean" : 
+			{
+				"x" : 8.1235578300834685,
+				"y" : 0.45412345190640496
+			},
+			"var_id" : "x9"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.46508613934908477,
+					0.57564585736826801
+				]
+			},
+			"mean" : 
+			{
+				"x" : 7.8806853728194453,
+				"y" : 1.75621145897914
+			},
+			"var_id" : "x10"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.44641368731332326,
+					0.55461151645696649
+				]
+			},
+			"mean" : 
+			{
+				"x" : 7.040202994944444,
+				"y" : 2.7252089717324237
+			},
+			"var_id" : "x11"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.43845046161410339,
+					0.5134691764286754
+				]
+			},
+			"mean" : 
+			{
+				"x" : 5.8816355920259413,
+				"y" : 3.6014625101399442
+			},
+			"var_id" : "x12"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.43793426391135704,
+					0.45080761029946792
+				]
+			},
+			"mean" : 
+			{
+				"x" : 4.3530133988719957,
+				"y" : 4.0998001306500518
+			},
+			"var_id" : "x13"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.369416306014961,
+					0.43507059140739623
+				]
+			},
+			"mean" : 
+			{
+				"x" : 2.9403677140996209,
+				"y" : 4.1408967007471302
+			},
+			"var_id" : "x14"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.27576314748586978,
+					0.41782789497376532
+				]
+			},
+			"mean" : 
+			{
+				"x" : 1.5798670969840989,
+				"y" : 3.7658417966251823
+			},
+			"var_id" : "x15"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.17917023878691388,
+					0.37516028787092753
+				]
+			},
+			"mean" : 
+			{
+				"x" : 0.81773896201020591,
+				"y" : 2.7412392183576273
+			},
+			"var_id" : "x16"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 0.0,
+				"sigma" : 
+				[
+					0.091256537017396819,
+					0.29602906755609093
+				]
+			},
+			"mean" : 
+			{
+				"x" : 0.27344358346991088,
+				"y" : 1.6954151602970791
+			},
+			"var_id" : "x17"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.67697253807474489,
+					0.82261279913900287
+				]
+			},
+			"mean" : 
+			{
+				"x" : 15.943525963522918,
+				"y" : 0.217126187269333
+			},
+			"var_id" : "x26"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.65893931865409128,
+					0.81808560784241757
+				]
+			},
+			"mean" : 
+			{
+				"x" : 15.623670867251041,
+				"y" : 1.5720592756359817
+			},
+			"var_id" : "x27"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.64589557118342367,
+					0.80342382516349731
+				]
+			},
+			"mean" : 
+			{
+				"x" : 14.908466531243338,
+				"y" : 2.8918729934706668
+			},
+			"var_id" : "x28"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.64041761058180191,
+					0.77559429071905428
+				]
+			},
+			"mean" : 
+			{
+				"x" : 13.691109796446803,
+				"y" : 3.6206148132349565
+			},
+			"var_id" : "x29"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.64006431564434696,
+					0.73561090948786834
+				]
+			},
+			"mean" : 
+			{
+				"x" : 12.641970590913795,
+				"y" : 4.1240858892478149
+			},
+			"var_id" : "x30"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.63810839844125677,
+					0.68874110941876598
+				]
+			},
+			"mean" : 
+			{
+				"x" : 11.074559250737703,
+				"y" : 4.1235438942232454
+			},
+			"var_id" : "x31"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.62647909659612155,
+					0.64338264055301353
+				]
+			},
+			"mean" : 
+			{
+				"x" : 10.07443331704232,
+				"y" : 3.6545592118424346
+			},
+			"var_id" : "x32"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.59886655462555494,
+					0.60827451296319746
+				]
+			},
+			"mean" : 
+			{
+				"x" : 9.1894349151795023,
+				"y" : 2.6597525569078773
+			},
+			"var_id" : "x33"
+		},
+		{
+			"category" : "position",
+			"covariance" : 
+			{
+				"rot" : 1.5707963267948966,
+				"sigma" : 
+				[
+					0.55274688374681402,
+					0.58840773635470101
+				]
+			},
+			"mean" : 
+			{
+				"x" : 8.3200134322662844,
+				"y" : 1.6429366374770582
+			},
+			"var_id" : "x34"
+		}
+	],
+	"traceEvents" : 
+	[
+		{
+			"cat" : "function",
+			"dur" : "11311",
+			"name" : "main",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703661847"
+		},
+		{
+			"cat" : "function",
+			"dur" : "6",
+			"name" : "SamSystem",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703661870"
+		},
+		{
+			"cat" : "function",
+			"dur" : "2581",
+			"name" : "integrates factors",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703661888"
+		},
+		{
+			"cat" : "function",
+			"dur" : "119",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703661912"
+		},
+		{
+			"cat" : "function",
+			"dur" : "968",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703662055"
+		},
+		{
+			"cat" : "function",
+			"dur" : "100",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663062"
+		},
+		{
+			"cat" : "function",
+			"dur" : "72",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663184"
+		},
+		{
+			"cat" : "function",
+			"dur" : "65",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663277"
+		},
+		{
+			"cat" : "function",
+			"dur" : "87",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663362"
+		},
+		{
+			"cat" : "function",
+			"dur" : "46",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663464"
+		},
+		{
+			"cat" : "function",
+			"dur" : "52",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663541"
+		},
+		{
+			"cat" : "function",
+			"dur" : "52",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663610"
+		},
+		{
+			"cat" : "function",
+			"dur" : "66",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663681"
+		},
+		{
+			"cat" : "function",
+			"dur" : "51",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663764"
+		},
+		{
+			"cat" : "function",
+			"dur" : "49",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663832"
+		},
+		{
+			"cat" : "function",
+			"dur" : "56",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663898"
+		},
+		{
+			"cat" : "function",
+			"dur" : "50",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703663973"
+		},
+		{
+			"cat" : "function",
+			"dur" : "59",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664041"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664120"
+		},
+		{
+			"cat" : "function",
+			"dur" : "65",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664201"
+		},
+		{
+			"cat" : "function",
+			"dur" : "106",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664285"
+		},
+		{
+			"cat" : "function",
+			"dur" : "48",
+			"name" : "register_new_factor",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664413"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8657",
+			"name" : "sam_optimize",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664475"
+		},
+		{
+			"cat" : "function",
+			"dur" : "1637",
+			"name" : "assemble_system",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664484"
+		},
+		{
+			"cat" : "function",
+			"dur" : "104",
+			"name" : "f0",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664509"
+		},
+		{
+			"cat" : "function",
+			"dur" : "18",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664589"
+		},
+		{
+			"cat" : "function",
+			"dur" : "78",
+			"name" : "f1",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664620"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664656"
+		},
+		{
+			"cat" : "function",
+			"dur" : "17",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664674"
+		},
+		{
+			"cat" : "function",
+			"dur" : "64",
+			"name" : "f2",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664703"
+		},
+		{
+			"cat" : "function",
+			"dur" : "10",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664732"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664748"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f3",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664772"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664798"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664812"
+		},
+		{
+			"cat" : "function",
+			"dur" : "72",
+			"name" : "f4",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664838"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664869"
+		},
+		{
+			"cat" : "function",
+			"dur" : "17",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664886"
+		},
+		{
+			"cat" : "function",
+			"dur" : "73",
+			"name" : "f5",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664916"
+		},
+		{
+			"cat" : "function",
+			"dur" : "14",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664950"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664971"
+		},
+		{
+			"cat" : "function",
+			"dur" : "64",
+			"name" : "f6",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703664996"
+		},
+		{
+			"cat" : "function",
+			"dur" : "10",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665032"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665047"
+		},
+		{
+			"cat" : "function",
+			"dur" : "53",
+			"name" : "f7",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665064"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665091"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665104"
+		},
+		{
+			"cat" : "function",
+			"dur" : "52",
+			"name" : "f8",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665124"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665150"
+		},
+		{
+			"cat" : "function",
+			"dur" : "8",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665163"
+		},
+		{
+			"cat" : "function",
+			"dur" : "60",
+			"name" : "f9",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665180"
+		},
+		{
+			"cat" : "function",
+			"dur" : "9",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665205"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665220"
+		},
+		{
+			"cat" : "function",
+			"dur" : "103",
+			"name" : "f10",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665245"
+		},
+		{
+			"cat" : "function",
+			"dur" : "16",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665303"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665327"
+		},
+		{
+			"cat" : "function",
+			"dur" : "87",
+			"name" : "f11",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665355"
+		},
+		{
+			"cat" : "function",
+			"dur" : "15",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665399"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665422"
+		},
+		{
+			"cat" : "function",
+			"dur" : "84",
+			"name" : "f12",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665449"
+		},
+		{
+			"cat" : "function",
+			"dur" : "17",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665487"
+		},
+		{
+			"cat" : "function",
+			"dur" : "14",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665512"
+		},
+		{
+			"cat" : "function",
+			"dur" : "86",
+			"name" : "f13",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665540"
+		},
+		{
+			"cat" : "function",
+			"dur" : "18",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665580"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665606"
+		},
+		{
+			"cat" : "function",
+			"dur" : "83",
+			"name" : "f14",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665633"
+		},
+		{
+			"cat" : "function",
+			"dur" : "14",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665680"
+		},
+		{
+			"cat" : "function",
+			"dur" : "10",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665700"
+		},
+		{
+			"cat" : "function",
+			"dur" : "63",
+			"name" : "f15",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665720"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665749"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665767"
+		},
+		{
+			"cat" : "function",
+			"dur" : "61",
+			"name" : "f16",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665788"
+		},
+		{
+			"cat" : "function",
+			"dur" : "10",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665816"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665831"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f17",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665854"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665882"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665898"
+		},
+		{
+			"cat" : "function",
+			"dur" : "62",
+			"name" : "f18",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665921"
+		},
+		{
+			"cat" : "function",
+			"dur" : "10",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665949"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute_partialA_and_fill_triplet",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703665964"
+		},
+		{
+			"cat" : "function",
+			"dur" : "2998",
+			"name" : "solveQR",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703666130"
+		},
+		{
+			"cat" : "function",
+			"dur" : "2402",
+			"name" : "QR decomposition",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703666141"
+		},
+		{
+			"cat" : "function",
+			"dur" : "261",
+			"name" : "Back-Substitution",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703668563"
+		},
+		{
+			"cat" : "function",
+			"dur" : "160",
+			"name" : "print console",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703668830"
+		},
+		{
+			"cat" : "function",
+			"dur" : "2296",
+			"name" : "compute_covariance",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703669133"
+		},
+		{
+			"cat" : "function",
+			"dur" : "151",
+			"name" : "print console",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671438"
+		},
+		{
+			"cat" : "function",
+			"dur" : "1536",
+			"name" : "post_process_loop",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671592"
+		},
+		{
+			"cat" : "function",
+			"dur" : "88",
+			"name" : "f0",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671602"
+		},
+		{
+			"cat" : "function",
+			"dur" : "58",
+			"name" : "x0",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671606"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671671"
+		},
+		{
+			"cat" : "function",
+			"dur" : "128",
+			"name" : "f1",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671693"
+		},
+		{
+			"cat" : "function",
+			"dur" : "46",
+			"name" : "x9",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671698"
+		},
+		{
+			"cat" : "function",
+			"dur" : "44",
+			"name" : "x10",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671750"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671801"
+		},
+		{
+			"cat" : "function",
+			"dur" : "70",
+			"name" : "f2",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671824"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "x11",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671829"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671876"
+		},
+		{
+			"cat" : "function",
+			"dur" : "69",
+			"name" : "f3",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671897"
+		},
+		{
+			"cat" : "function",
+			"dur" : "40",
+			"name" : "x12",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671902"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671948"
+		},
+		{
+			"cat" : "function",
+			"dur" : "69",
+			"name" : "f4",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671969"
+		},
+		{
+			"cat" : "function",
+			"dur" : "40",
+			"name" : "x13",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703671973"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672020"
+		},
+		{
+			"cat" : "function",
+			"dur" : "70",
+			"name" : "f5",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672041"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "x14",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672045"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672093"
+		},
+		{
+			"cat" : "function",
+			"dur" : "67",
+			"name" : "f6",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672114"
+		},
+		{
+			"cat" : "function",
+			"dur" : "39",
+			"name" : "x15",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672118"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672163"
+		},
+		{
+			"cat" : "function",
+			"dur" : "74",
+			"name" : "f7",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672184"
+		},
+		{
+			"cat" : "function",
+			"dur" : "42",
+			"name" : "x16",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672191"
+		},
+		{
+			"cat" : "function",
+			"dur" : "12",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672239"
+		},
+		{
+			"cat" : "function",
+			"dur" : "72",
+			"name" : "f8",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672261"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "x17",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672265"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672312"
+		},
+		{
+			"cat" : "function",
+			"dur" : "21",
+			"name" : "f9",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672336"
+		},
+		{
+			"cat" : "function",
+			"dur" : "9",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672341"
+		},
+		{
+			"cat" : "function",
+			"dur" : "122",
+			"name" : "f10",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672360"
+		},
+		{
+			"cat" : "function",
+			"dur" : "43",
+			"name" : "x26",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672365"
+		},
+		{
+			"cat" : "function",
+			"dur" : "40",
+			"name" : "x27",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672414"
+		},
+		{
+			"cat" : "function",
+			"dur" : "14",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672461"
+		},
+		{
+			"cat" : "function",
+			"dur" : "84",
+			"name" : "f11",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672485"
+		},
+		{
+			"cat" : "function",
+			"dur" : "43",
+			"name" : "x28",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672489"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672552"
+		},
+		{
+			"cat" : "function",
+			"dur" : "73",
+			"name" : "f12",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672572"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "x29",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672580"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672628"
+		},
+		{
+			"cat" : "function",
+			"dur" : "71",
+			"name" : "f13",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672648"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "x30",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672652"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672699"
+		},
+		{
+			"cat" : "function",
+			"dur" : "74",
+			"name" : "f14",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672722"
+		},
+		{
+			"cat" : "function",
+			"dur" : "46",
+			"name" : "x31",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672726"
+		},
+		{
+			"cat" : "function",
+			"dur" : "11",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672778"
+		},
+		{
+			"cat" : "function",
+			"dur" : "74",
+			"name" : "f15",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672799"
+		},
+		{
+			"cat" : "function",
+			"dur" : "43",
+			"name" : "x32",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672803"
+		},
+		{
+			"cat" : "function",
+			"dur" : "13",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672853"
+		},
+		{
+			"cat" : "function",
+			"dur" : "68",
+			"name" : "f16",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672876"
+		},
+		{
+			"cat" : "function",
+			"dur" : "40",
+			"name" : "x33",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672880"
+		},
+		{
+			"cat" : "function",
+			"dur" : "10",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672927"
+		},
+		{
+			"cat" : "function",
+			"dur" : "71",
+			"name" : "f17",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672947"
+		},
+		{
+			"cat" : "function",
+			"dur" : "41",
+			"name" : "x34",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703672953"
+		},
+		{
+			"cat" : "function",
+			"dur" : "10",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703673001"
+		},
+		{
+			"cat" : "function",
+			"dur" : "27",
+			"name" : "f18",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703673021"
+		},
+		{
+			"cat" : "function",
+			"dur" : "15",
+			"name" : "compute error",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703673026"
+		},
+		{
+			"cat" : "function",
+			"dur" : "55",
+			"name" : "join log results",
+			"ph" : "X",
+			"pid" : "mainstdin.cpp_sam_linBEight",
+			"tid" : 2850328247,
+			"ts" : "48703673051"
+		}
+	]
+}
