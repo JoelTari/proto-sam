@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(proto-sam)
 
-add_definitions("-Wfatal-errors")
+# add_definitions("-Wfatal-errors")
 
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(jsoncpp 1.9.4 REQUIRED CONFIG)  # this sets 'jsoncpp_lib'
