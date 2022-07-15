@@ -274,7 +274,11 @@ namespace SAM
             auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
             // writes the new mean and the new covariance in the marginal
             // auto & Xmap = refXmap.get();
-            *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0); // FIX: LIN SYST -> affect new mean, NL SYST -> additive
+            if constexpr (isSystFullyLinear) 
+              *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0); // URGENT: TEST
+            else
+              *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0); // URGENT: TEST
+
             marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
             // fill/complete the history
             if (nIter == 0)
