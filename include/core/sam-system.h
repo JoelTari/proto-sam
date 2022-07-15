@@ -272,12 +272,13 @@ namespace SAM
             std::string key_id = pair.first;
             auto marginal_ptr = pair.second;
             auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
-            // writes the new mean and the new covariance in the marginal
-            // auto & Xmap = refXmap.get();
+            // writes the new mean (or increment in NL systems) and the new covariance in the marginal
             if constexpr (isSystFullyLinear) 
-              *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0); // URGENT: TEST
+              // replace the eman
+              *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0);
             else
-              *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0); // URGENT: TEST
+              // increment the mean
+              *(marginal_ptr->mean_ptr) += Xmap.block<kN,1>(sysidx, 0); // URGENT: TEST
 
             marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
             // fill/complete the history

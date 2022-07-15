@@ -50,8 +50,25 @@ namespace
 
       return {sigma, rot};
     }
+
+    // FIX: add method, or the DerivedMarginal doesnot work, so maybe overide the '+' operator
+    // FIX: overloading the + operator must be done at implementation level
+    // FIX: OR, one must declare a derivation such as class SE2Marginal : Marginal { /* overload '+' here */ }
+    // FIX: We will also have to assume that a SEn marginal mean's is represented as vector in its Lie Algebra
+    // void add (const Mean_t & increment)
+    // {
+    //   static_cast<DerivedMarginal*>(this)->add(increment);
+    // }
   };
 
+  /**
+   * @brief Structure to hold Historical moments (means & covariance) of a marginal
+   *
+   * @tparam MARGINAL_T marginal type
+   * @param var_id identifier key of the marginal
+   * @param mean historical means value of the marginal
+   * @param visual_covariance (2d) historical value visual covariances matrix of the marginal
+   */
   template <typename MARGINAL_T>
   struct MarginalHistory
   {
@@ -69,59 +86,96 @@ namespace
 
   };
 
+  /**
+   * @brief Container of a set of marginals, of their histories
+   *
+   * @tparam KEYMETA_T key meta of first marginal type (there must be at least 1 type)
+   * @tparam KEYMETA_Ts expansion of key metas of the rest of the marginal types
+   * @param key_id identifier key of the marginal
+   * @param marginal_ptr pointer to the marginal
+   */
   template <typename KEYMETA_T, typename... KEYMETA_Ts>
   struct MarginalsHistoriesContainer
   {
+    // type define a tuple of map of MarginalHistory types of each type of marginal
     using marginals_histories_t
         = std::tuple<std::unordered_map<std::string, MarginalHistory<Marginal<KEYMETA_T>>>,
                      std::unordered_map<std::string, MarginalHistory<Marginal<KEYMETA_Ts>>>...>; 
     
+    // maps (one for each marginal type) of marginal identifier (string) to its history (MarginalHistory<Marginal_T>)
     marginals_histories_t marginal_history_tuple;
 
+    // number of types of marginals
     static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_histories_t>};
 
+    /**
+     * @brief Insert a new marginal into the container
+     *
+     * @tparam Q_MARG_T marginal type
+     * @param key_id identifier key of the marginal
+     * @param marginal_ptr pointer to the marginal value
+     */
     template <typename Q_MARG_T>
     void insert_new_marginal(const std::string & key_id, const std::shared_ptr<Q_MARG_T> marginal_ptr)
     {
       using KM_T = typename Q_MARG_T::KeyMeta_t;
+      // assert the inserted marginal type corresponds to existing marginal type in the container
       static_assert(std::is_same_v<KM_T,KEYMETA_T> || (std::is_same_v<KM_T,KEYMETA_Ts> || ...)  );
 
+      // template programming magic to get the tuple index
       constexpr std::size_t I = get_correct_tuple_idx_by_marg<KM_T>();
 
       // Create object marginal history object
+      // The first item is of the history is its current value (mean and cov)
       auto marginal_history = MarginalHistory<Q_MARG_T>(
                                                          key_id
                                                        , *marginal_ptr->mean_ptr
                                                        , marginal_ptr->get_visual_2d_covariance()
                                                        );
 
+      // select the correct map structure, and insert/assign the marginal history
       std::get<I>(this->marginal_history_tuple).insert_or_assign(key_id, marginal_history ); // TODO: manage failure
     }
     
+    /**
+     * @brief Push the moments (mean & cov) of the a marginal whose identifier key already exists 
+     *
+     * @tparam Q_MARG_T marginal type
+     * @param key_id identifier key of the marginal
+     * @param marginal_ptr point to the marginal value
+     */
     template <typename Q_MARG_T>
     void push_marginal_history(const std::string & key_id, const std::shared_ptr<Q_MARG_T> marginal_ptr)
     {
       using KM_T = typename Q_MARG_T::KeyMeta_t;
+      // check that we are inserting an existing type
       static_assert(std::is_same_v<KM_T,KEYMETA_T> || (std::is_same_v<KM_T,KEYMETA_Ts> || ...)  );
 
+      // template programming magic to get the tuple index
       constexpr std::size_t I = get_correct_tuple_idx_by_marg<KM_T>();
 
       // get marginal history ref
       auto marginal_history_it = std::get<I>(this->marginal_history_tuple).find(key_id);
+      // TODO: assert (run time) that the marginal key exists in the map
       // TODO: assert(marginal_history_it != std::get<I>(this->marginal_history_tuple).end() );
       // push new data
       marginal_history_it->second.iterative_means.push_back( *(marginal_ptr->mean_ptr) );
       marginal_history_it->second.iterative_covariances.push_back( marginal_ptr->get_visual_2d_covariance() );
-
     }
 
 
+    /**
+     * @brief static function to find the correct index of a marginal meta type in a tuple of various marginals
+     *
+     * @tparam KM_T keymeta type
+     * @return index in tuple
+     */
     template <typename KM_T, std::size_t I = 0>
     static constexpr std::size_t get_correct_tuple_idx_by_marg()
     {
       static_assert(I < kNbMarginals);
       if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_histories_t>::
-                                       mapped_type::Marginal_t::KeyMeta_t, KM_T>)   // maybe thats the keymeta that need compare
+                                       mapped_type::Marginal_t::KeyMeta_t, KM_T>)
       { return I; }
       else
       {
@@ -131,6 +185,16 @@ namespace
 
   };
 
+  //------------------------------------------------------------------//
+  //                       MARGINALS CONTAINER                        //
+  //------------------------------------------------------------------//
+  /**
+   * @brief System level structure to hold the marginals
+   *
+   * @tparam KEYMETA_T first type of marginal (there has to be at least one type of marginal in the system)
+   * @tparam KEYMETA_Ts expansion on the other types of marginals
+   * @param key_id marginal key identifier
+   */
   template <typename KEYMETA_T, typename... KEYMETA_Ts>
   class MarginalsContainer
   {
@@ -143,6 +207,14 @@ namespace
 
     static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_containers_t>};
 
+    /**
+     * @brief find a marginal ptr in this container.
+     *        WARNING: not used yet, be sure to test
+     *
+     * @tparam Q_KEYMETA_T type of the queried marginal
+     * @param key_id key identifier of the marginal (e.g. "x0")
+     * @return optional marginal shared pointer
+     */
     template <typename Q_KEYMETA_T>
     std::optional<std::shared_ptr<Marginal<Q_KEYMETA_T>>>
         find_marginal_ptr(const std::string& key_id) 
@@ -161,6 +233,13 @@ namespace
         return std::nullopt;
     }
 
+    /**
+     * @brief find, by id, a marginal 's mean ptr in this container
+     *
+     * @tparam Q_KEYMETA_T type of the keymeta of the marginal
+     * @param key_id key identifier of the amrginal (e.g. "x0")
+     * @return optional mean shared pointer
+     */
     template <typename Q_KEYMETA_T>
     std::optional<std::shared_ptr<typename Marginal<Q_KEYMETA_T>::Mean_t>>
         find_mean_ptr(const std::string& key_id) 
@@ -179,45 +258,29 @@ namespace
         return std::nullopt;
     }
 
+    /**
+     * @brief insert marginal pointer in this container. The key id might
+     * already exists, in this situation, the new marginal ptr value is
+     * assigned
+     *
+     * @tparam Q_MARG_T type of the marginal
+     * @param key_id key identifier of the marginal (e.g. "x0")
+     * @param marg_ptr marginal pointer
+     */
     template <typename Q_MARG_T>
     void insert_in_marginal_container(const std::string & key_id, std::shared_ptr<Q_MARG_T> marg_ptr)
     {
       constexpr std::size_t I = get_correct_tuple_idx_by_marg<Q_MARG_T>();
       std::get<I>(this->data_map_tuple).insert_or_assign(key_id, marg_ptr);
+      // TODO: run time assertion: verify that the key_id does not exist in other marginal type (e.g. having "x0" as a pose and "x0" as something else in another part of the tuple)
     }
 
-    // template <typename Q_MARG_T, typename ...Args>
-    // void insertt(const std::string & key_id, const Args &...args)
-    // {
-    //   // static_assert( std::is_invocable_v<Q_MARG_T,args...> )
-    //   // static assert the size of vect/cov
-    //   constexpr std::size_t I = get_correct_tuple_idx_by_marg<Q_MARG_T>();
-    //   // std::cout << "correct margcont idx : " << I << '\n';
-    //   std::get<I>(this->data_map_tuple).insert_or_assign(key_id, std::make_unique<Q_MARG_T>(args...));
-    // }
-
-    // // overloads when a covariance is given
-    // template <typename Q_KEYMETA_T>
-    // void insert(const std::string&                            key_id,
-    //             const Eigen::Vector<double, Q_KEYMETA_T::kN>& xmap_marg,
-    //             const Eigen::Matrix<double, Q_KEYMETA_T::kN, Q_KEYMETA_T::kN>&
-    //                 sigmacov)   // TODO:  use perfect forwarding
-    // {
-    //   Marginal<Q_KEYMETA_T> my_marg(xmap_marg, sigmacov);
-    //   // static assert the size of vect/cov
-    //   constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
-    //   // std::cout << "correct margcont idx : " << I << '\n';
-    //   std::get<I>(this->data_map_tuple).insert_or_assign(key_id, my_marg);
-    // }
-
-
+    // main structure
     marginals_containers_t data_map_tuple;
-    // std::unordered_map<std::string,std::unique_ptr<double>> AAA;
-    // static_assert(std::is_same_v<std::unique_ptr<double>::element_type,double>);
 
     protected:
     /**
-     * @brief get an idx in a tuple statically (recursive until the meta matches)
+     * @brief get an idx in a tuple statically using the key meta type  (recursive until the meta matches)
      *
      * @tparam Q_MARGINAL_T
      * @tparam I
@@ -237,6 +300,14 @@ namespace
         return get_correct_tuple_idx<Q_KEYMETA_T,I + 1>();
       }
     }
+    /**
+     * @brief get an idx in a tuple statically using the marginal type  (recursive until the meta matches)
+     *
+     * @tparam Q_MARGINAL_T
+     * @tparam I
+     *
+     * @return
+     */
     template <typename Q_MARG_T, std::size_t I = 0>
     static constexpr std::size_t get_correct_tuple_idx_by_marg()
     {
@@ -255,6 +326,9 @@ namespace
     // static_assert( !std::is_same_v<> )
   };
 
+  //------------------------------------------------------------------//
+  //                     METAPROGRAMING UTILITIES                     //
+  //------------------------------------------------------------------//
   // specialization: if tuple of marginals is given, then extract whats inside the tuple and
   // fallback to the struct above
   template <typename KEYMETA_T, typename... KEYMETA_Ts>
