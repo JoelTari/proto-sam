@@ -219,10 +219,12 @@ namespace SAM
           sparseA_triplets.clear();
         }
 
+        // number of nnz elements in R
+        double rnnz;
+       // maximum a posteriori, may represent a \hat X or \delta \hat X (NL)
+        Eigen::VectorXd MaP; 
         // give A and b to the solver
-        double rnnz; // number of nnz elements in R
-        Eigen::VectorXd Xmap; // maximum a posteriori
-        std::tie(Xmap,rnnz) = solveQR(A,b); // TODO: split the compute() step with the analyse pattern (can be set before the loop)
+        std::tie(MaP,rnnz) = solveQR(A,b); // TODO: split the compute() step with the analyse pattern (can be set before the loop)
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
         this->bookkeeper_.set_syst_Rnnz(rnnz);
 
@@ -244,7 +246,7 @@ namespace SAM
         // "\n\n";
         std::cout << "#### Syst: b computed :\n";
         if ( b.rows() < 15 ) std::cout << b << "\n";
-        std::cout << "#### Syst: MAP computed :\n" << Xmap << '\n';
+        std::cout << "#### Syst: MAP computed :\n" << MaP << '\n';
         std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
         if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
       }
@@ -258,9 +260,9 @@ namespace SAM
         //             structure that will end up in the json.              //
         //            Do the same optionally for the covariance             //
         //------------------------------------------------------------------//
-        static_assert( std::is_same_v<decltype(Xmap),typename Eigen::VectorXd>);
+        static_assert( std::is_same_v<decltype(MaP),typename Eigen::VectorXd>);
         sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,
-        [this, &Xmap, &SigmaCovariance, &nIter, &marginals_histories_container ](auto & map_to_marginal_ptr, auto margTypeIdx)
+        [this, &MaP, &SigmaCovariance, &nIter, &marginals_histories_container ](auto & map_to_marginal_ptr, auto margTypeIdx)
         {
           using marginal_t = typename std::decay_t<decltype(map_to_marginal_ptr)>::mapped_type::element_type;
           using keymeta_t = typename marginal_t::KeyMeta_t;
@@ -275,10 +277,10 @@ namespace SAM
             // writes the new mean (or increment in NL systems) and the new covariance in the marginal
             if constexpr (isSystFullyLinear) 
               // replace the eman
-              *(marginal_ptr->mean_ptr) =  Xmap.block<kN,1>(sysidx, 0);
+              *(marginal_ptr->mean_ptr) =  MaP.block<kN,1>(sysidx, 0);
             else
               // increment the mean
-              *(marginal_ptr->mean_ptr) += Xmap.block<kN,1>(sysidx, 0); // URGENT: TEST
+              *(marginal_ptr->mean_ptr) += MaP.block<kN,1>(sysidx, 0); // URGENT: TEST
 
             marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
             // fill/complete the history
