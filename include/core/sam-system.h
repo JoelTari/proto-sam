@@ -277,10 +277,10 @@ namespace SAM
             // writes the new mean (or increment in NL systems) and the new covariance in the marginal
             if constexpr (isSystFullyLinear) 
               // replace the eman
-              *(marginal_ptr->mean_ptr) =  MaP.block<kN,1>(sysidx, 0);
+              *(marginal_ptr->mean_ptr) =  MaP.block<kN,1>(sysidx, 0); // ACTION : use mean distribution, not vector (although there is no example where this subtlety matters)
             else
               // increment the mean
-              *(marginal_ptr->mean_ptr) += MaP.block<kN,1>(sysidx, 0); // URGENT: TEST
+              *(marginal_ptr->mean_ptr) += MaP.block<kN,1>(sysidx, 0); // URGENT: TEST // ACTION: use mean distribution not vector
 
             marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
             // fill/complete the history
@@ -430,7 +430,7 @@ namespace SAM
           json_marginal["category"] = keymeta_t::kKeyName;
           Json::Value json_mean;
           for (std::size_t i =0; i< keymeta_t::components.size();i++)
-            json_mean[keymeta_t::components[i]] = marg_hist.iterative_means.back()(i,0);
+            json_mean[keymeta_t::components[i]] = marg_hist.iterative_means.back()(i,0); // FIX: ACTION: doesnt work when it's non euclidian manifold. Iterative means may not be a vector, therefore , I need to define some get component way.
           json_marginal["mean"] = json_mean;
           // iterative means
           Json::Value iterative_means;
@@ -438,7 +438,7 @@ namespace SAM
           {
             Json::Value ith_json_mean;
             for (std::size_t i =0; i< keymeta_t::components.size();i++)
-              ith_json_mean[keymeta_t::components[i]] = marg_hist.iterative_means[j](i,0);
+              ith_json_mean[keymeta_t::components[i]] = marg_hist.iterative_means[j](i,0); // FIX: ACTION: doesnt work when it's non euclidian manifold
             iterative_means.append(ith_json_mean);
           }
           json_marginal["iterative_means"] = iterative_means;
@@ -604,7 +604,6 @@ namespace SAM
             // TODO: more detail (which key.s failed etc..)
             throw std::runtime_error("Unable to determine all init points for this factor");
           }
-          // FIX: URGENT: emplace back on factor list
           std::get<I>(this->all_factors_tuple_).emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
               
 // Debug consistency check of everything

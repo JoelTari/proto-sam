@@ -13,8 +13,6 @@
 #include <tuple>
 #include <utility>
 
-// TODO: rename KCC to KeyContextModel : model in the context of a factor
-
 template <typename DerivedKCC, typename KEYMETA,size_t DimMes, const char* ContextRole,bool LinearModel=false> 
 struct KeyContextualConduct : KEYMETA
 {
@@ -32,6 +30,7 @@ struct KeyContextualConduct : KEYMETA
   // measure_vect_t   b;
   const measure_cov_t& rho;
 
+  // FIX: ACTION: key mean view should be mean distribution
   std::shared_ptr<part_state_vect_t> key_mean_view; // TODO: make it a const ?
 
   process_matrix_t compute_part_A() const
@@ -145,6 +144,7 @@ class Factor
     std::apply([this,&tup_mean](const auto & ...kcc) //-> std::tuple<typename KeyConducts::state_vector_t ...>
     {
       // TODO: assert( *(kcc.key_mean_view) != nullptr && ... );
+      // FIX: ACTION: needs mean distribution ? I think yes !
       tup_mean = {*(kcc.key_mean_view) ... };
     }
     ,this->keys_set);
@@ -155,6 +155,7 @@ class Factor
   // template <typename... PARTIAL_STATE_VECTORS_T>
     // TODO: consider it protected
     // NOTE: not used currently ??
+    // FIX: ACTION: when used, think carefully whether or not part_state_(vect)_t should be a vector or a lie manif element
   state_vector_t 
     get_state_vector_from_tuple(const std::tuple<typename KeyConducts::part_state_vect_t ...> & x_tup) const
   {
@@ -230,6 +231,7 @@ class Factor
       {
         // TODO: assert( key_mean_view != nullptr && ... );
         // Ax = A1*x1 + A2*x2 + ...
+        // FIX: ACTION: mean distribution here
         return ( (std::get<J>(kset).compute_part_A()* *(std::get<J>(kset).key_mean_view)) + ...);
       });
       return (Ax - this->rosie).norm();
@@ -241,6 +243,7 @@ class Factor
           (const auto & kset, std::index_sequence<J...>)
         {  
             // TODO: assert (key_mean_view != nullptr && ...);
+            // FIX: ACTION: mean distribution here
             return std::make_tuple( *(std::get<J>(kset).key_mean_view) ... ) ;
         });
       return (this->rho * this->compute_h_of_x(lin_point_tup) - this->rosie).norm();

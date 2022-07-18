@@ -20,18 +20,21 @@ namespace
   {
     public:
     using KeyMeta_t = KEYMETA;
+    // URGENT: decouple type mean of dX (a vector) and the type of the mean of the distribution (not necessarily a vector, e.g. an element of SE(n) ...)
     using Mean_t = Eigen::Vector<double, KEYMETA::kN>;
+    using Mean_Distribution_t = Mean_t; // Distribution mean : by default same as Mean_t, but it's the implementer job's to override it
+    using Mean_Distribution_t_ptr = std::shared_ptr<Mean_Distribution_t>; // Distribution mean : by default same as Mean_t, but it's the implementer job's to override it
     using Mean_t_ptr = std::shared_ptr<Mean_t>;
     using Covariance_t = Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>;
     using Sigmas_t = std::array<double, 2>;
     using VisualCovariance_t = std::tuple<Sigmas_t, double>;
     // bool marked = false;
-    Mean_t_ptr              mean_ptr;
+    Mean_t_ptr              mean_ptr; // TODO: ACTION: mean distribution here ??
     Covariance_t covariance;
     
 
     // ctor
-    Marginal(Mean_t_ptr mean_ptr,const Covariance_t& covariance = Covariance_t::Zero())
+    Marginal(Mean_t_ptr mean_ptr,const Covariance_t& covariance = Covariance_t::Zero()) // TODO: ACTION: use distribution mean
         : mean_ptr(mean_ptr)
         , covariance(covariance) 
     {};
@@ -74,7 +77,7 @@ namespace
   {
       using Marginal_t = MARGINAL_T;
       std::string var_id;
-      std::vector<typename Marginal_t::Mean_t> iterative_means;
+      std::vector<typename Marginal_t::Mean_t> iterative_means;  // TODO: ACTION maybe it's mean distribution here ??
       std::vector<typename Marginal_t::VisualCovariance_t> iterative_covariances;
 
       MarginalHistory(  const std::string& var_id
@@ -129,7 +132,7 @@ namespace
       // The first item is of the history is its current value (mean and cov)
       auto marginal_history = MarginalHistory<Q_MARG_T>(
                                                          key_id
-                                                       , *marginal_ptr->mean_ptr
+                                                       , *marginal_ptr->mean_ptr // TODO: action : maybe it's mean_distribution type here
                                                        , marginal_ptr->get_visual_2d_covariance()
                                                        );
 
@@ -159,7 +162,7 @@ namespace
       // TODO: assert (run time) that the marginal key exists in the map
       // TODO: assert(marginal_history_it != std::get<I>(this->marginal_history_tuple).end() );
       // push new data
-      marginal_history_it->second.iterative_means.push_back( *(marginal_ptr->mean_ptr) );
+      marginal_history_it->second.iterative_means.push_back( *(marginal_ptr->mean_ptr) ); // TODO: ACTION: might be mean_distribution here
       marginal_history_it->second.iterative_covariances.push_back( marginal_ptr->get_visual_2d_covariance() );
     }
 
@@ -241,7 +244,7 @@ namespace
      * @return optional mean shared pointer
      */
     template <typename Q_KEYMETA_T>
-    std::optional<std::shared_ptr<typename Marginal<Q_KEYMETA_T>::Mean_t>>
+    std::optional<std::shared_ptr<typename Marginal<Q_KEYMETA_T>::Mean_t>>  // TODO: ACTION: use the distribution mean type ??
         find_mean_ptr(const std::string& key_id) 
     {
       // static assert
@@ -253,7 +256,7 @@ namespace
 
       if (auto it {std::get<I>(this->data_map_tuple).find(key_id)};
           it != std::end(std::get<I>(this->data_map_tuple)))
-      { return it->second->mean_ptr; }
+      { return it->second->mean_ptr; } // TODO: ACTION: use the distribution mean
       else
         return std::nullopt;
     }
