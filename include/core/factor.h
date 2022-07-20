@@ -219,6 +219,11 @@ class Factor
             rho,tup_init_points_ptr))
       , keyIdToTupleIdx(map_keyid(keys_id))
   {
+    std::cout << "rho : " << this->rho
+      << '\n';
+    std::cout << "rosie : " << this->rosie
+      << '\n';
+    
   }
 
   std::array<std::string, kNbKeys> get_array_keys_id() const
@@ -241,18 +246,22 @@ class Factor
   }
 
   // FIX: ACTION: only for euclidians. Maybe this one doesnt exists
+  // compute the norm
   double compute_lin_point_factor_norm() const
   {
     if constexpr (isLinear)
     {
-      criterion_t Ax = sam_tuples::reduce_array_variadically(this->keys_set,[this]<std::size_t...J>
-          (const auto & kset,std::index_sequence<J...>)
-      {
-        // TODO: assert( key_mean_view != nullptr && ... );
-        // Ax = A1*x1 + A2*x2 + ...
-        // FIX: ACTION: mean distribution here
-        return ( (std::get<J>(kset).compute_part_A()* *(std::get<J>(kset).key_mean_view)) + ...);
-      });
+      // Ax := A_1 \mu_1 + A_2 \mu_2 + ... ;
+      criterion_t Ax = criterion_t::Zero(); // init to 0
+      sam_tuples::for_each_in_const_tuple(
+          this->keys_set, [&Ax](const auto & kset,auto NIET)
+          {
+            // FIX: ACTION: mean distribution here
+            Ax += kset.compute_part_A() * *(kset.key_mean_view);
+          }
+      );
+      std::cout << "Ax : \n" << Ax
+        << '\n';
       return (Ax - this->rosie).norm(); // FIX: ACTION:
     }
     else
@@ -307,22 +316,40 @@ struct FactorsHistoriesContainer
         = std::tuple<std::unordered_map<std::string, FactorHistory<FT>>,
                      std::unordered_map<std::string, FactorHistory<FTs>>...>; 
 
+  // the data : maps of 
+  // Its wrapped in a tuple because the 
   factors_histories_t factors_histories_container;
 
   static constexpr const std::size_t kNbFactorTypes { std::tuple_size_v<factors_histories_t>};
 
 
   template <typename Q_FT>
-  void insert_new_factor_history(const std::string & factor_id, const Q_FT & factor)
+  void insert_new_factor_history(const std::string & factor_id, const Q_FT & factor, double factor_norm)
+  {
+      // static_assert(std::is_same_v<FT,Q_FT> || (std::is_same_v<FTs,Q_FT> || ...)  );
+      // constexpr std::size_t I = get_correct_tuple_idx_of_factor_type<Q_FT>();
+      //
+      // auto [it, hasBeenPlaced] = std::get<I>(this->factors_histories_container)
+      //   .try_emplace(factor_id, factor_id, factor.get_array_keys_id(),factor.z);
+      // assert(hasBeenPlaced); // TODO: consider this a consistency check
+      auto it = insert_new_factor_history<Q_FT>(factor_id,factor);
+
+      // push the norm
+      it->second.push_norm_value(factor_norm);
+  }
+
+  // overloard where 
+  // TODO: no overload have the one with 3 args call the one with 2 args
+  template <typename Q_FT>
+  auto insert_new_factor_history(const std::string & factor_id, const Q_FT & factor)
   {
       static_assert(std::is_same_v<FT,Q_FT> || (std::is_same_v<FTs,Q_FT> || ...)  );
       constexpr std::size_t I = get_correct_tuple_idx_of_factor_type<Q_FT>();
 
-      // NOTE: insert_or_assign fails
-      // std::get<I>(this->factors_histories_container).insert_or_assign(factor_id, std::move(factor_history) ); 
       auto [it, hasBeenPlaced] = std::get<I>(this->factors_histories_container)
         .try_emplace(factor_id, factor_id, factor.get_array_keys_id(),factor.z);
       assert(hasBeenPlaced); // TODO: consider this a consistency check
+      return it;
   }
 
   // convenience overload
@@ -342,7 +369,7 @@ struct FactorsHistoriesContainer
       auto factor_history_it = std::get<I>(this->factors_histories_container).find(factor_id);
       // TODO: assert(marginal_history_it != std::get<I>(this->marginal_history_tuple).end() );
       // push new norm
-      factor_history_it->second.norms.push_back( factor_norm );
+      factor_history_it->second.push_norm_value( factor_norm );
   }
 
 

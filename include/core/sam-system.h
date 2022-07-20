@@ -321,7 +321,10 @@ namespace SAM
             // OPTIMIZE: medium gain, but improved readability
             // norm of the factor: \|h(xmap)-z\|_R (no square)
             //  at the current map
+            // std::cout << "keymeanview :" << *(std::get<0>(factor.keys_set).key_mean_view) // OK: proper
+            //   << '\n';
             double norm_factor = factor.compute_lin_point_factor_norm();
+            std::cout << "norm factor : " << norm_factor << '\n';
             accumulated_syst_squared_norm += norm_factor*norm_factor; // WARNING: race condition if parallel policy
 
             // compute Ai and bi 
@@ -368,8 +371,9 @@ namespace SAM
             
             // push factor norm into a history (create it if it is first iteration)
             if (nIter == 0)
-              factors_histories.template insert_new_factor_history<factor_t>(factor.factor_id, factor);
-            factors_histories.template push_data_in_factor_history<factor_t>(factor.factor_id,norm_factor);
+              factors_histories.template insert_new_factor_history<factor_t>(factor.factor_id, factor,norm_factor);
+            else
+              factors_histories.template push_data_in_factor_history<factor_t>(factor.factor_id,norm_factor);
           }
 
         });
