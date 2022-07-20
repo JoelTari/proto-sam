@@ -329,6 +329,20 @@ namespace SAM
 
             // compute Ai and bi 
             // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
+            // if euclidian factor: bi = factor.rosie OR bi = compute_bi_nl()
+            //                      for each k, Aik = kcm.compute_part_A()
+            //                      So put this under  [bi, tuple(Ai1 ,Ai2 ...) ] = factor.compute_Ai_bi();
+            // else if LieGroup factor:
+            //                      Put it all under one function
+            //                      declare elementary Jacobians Je
+            //                      bi =  -rho * r(X_0) with Js computed on the fly when computing r(X_0)
+            //                      for each k, Aik = rho * some_function ( Je  )
+            //                              (indeed  Aik := \rho . \frac{ \partial r(X) }{ \partial X } | _X_0 which depends on the elementary Jacobians )
+            //                      return tuple(bi, tuple(Ai1, Ai2 ...))
+            //                     So put this under [bi , tuple (Ai1, Ai2 ...)] = factor.compute_Ai_bi();
+            //
+            //  the main task is to decouple the usage from the affectation in bigger matrices A & b below
+            //
             // first: compute bi
             typename factor_t::criterion_t bi;
             constexpr int mesdim = factor_t::kM;
@@ -339,6 +353,21 @@ namespace SAM
             std::vector<Eigen::Triplet<double>> Ai_triplets; 
             Ai_triplets.reserve(factor_t::kN*factor_t::kM);
             // 
+            // Assuming I got the tuple of {\forll k, Aik} at this point, the procedure would be
+            //  sam_tuples::for_each_cont_in_tuple( tupleAik,
+            //  [this, &mesdim, &line_counter, &Ai_triplets](auto & Aik, auto NIET)
+            //  {
+            //      N = colsize(Aik);
+            //      int colIdxInBigA = this->bookkeeper_.getKeyInfos(key_id).sysidx;   // F*CK, I don't have key_id
+            //      spaghetti_Aik = Aik.reshaped(); // make it one dimension
+            //      for i=0:N*mesdim
+            //      {
+            //        int row = line_counter + (i%mesdim);
+            //        int col = colInBigA + i /mesdim;
+            //        Ai_triplets.emplace_back(row,col,partAi_1d[i]);
+            //      }
+            //  });
+             
             sam_tuples::for_each_in_tuple(factor.keys_set,[this, &mesdim, &line_counter, &Ai_triplets]
             (auto & key_context_model, auto keyTypeIdx)
             {

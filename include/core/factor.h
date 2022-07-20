@@ -121,6 +121,8 @@ class Factor
 
   static constexpr bool isLinear = (KeyConducts::kLinear && ...);
 
+  // TODO: ACTION: static constexpr bool isEuclidianFactor ; // -> false if the factor has at least 1 non-euclidian key 
+
   double norm_at_lin_point = 0;
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
@@ -143,6 +145,41 @@ class Factor
     for (int i = 0; i < keys_id.size(); i++) result[keys_id[i]] = i;
     return result;
   }
+
+  // WARNING: this is the new method !!
+  // tech lock : type tuple_of_Aik_t
+  // template <isSystLinear>  // the client slam system imposes whether or not the optimized quantity is X (L syst) or dX (NL syst)
+  //                          //, no matter the intrinsic linearity of this factor
+  // std::tuple<criterion_t, tuple_of_Aik_t > compute_Ai_bi()
+  // {
+  //    // dep : isLinear, isFactorEuclidian
+  //    if constexpr (isEuclidianFactor)
+  //    {
+  //      criterion_t bi;
+  //      if constexpr (isSystFullyLinear)
+  //      {
+  //          bi = factor.rosie
+  //      }
+  //      else
+  //      {
+  //         bi = compute_bi_nl()
+  //      }
+  //      tuple_of_Aik_t all_Aik =  [for each kcm: Aik = kcm.compute_part_A()]
+  //      return make_tuple (bi, all_Aik)
+  //
+  //    }
+  //    else // Lie groups 
+  //    {
+  //      // WARNING: I assume that no nonEuclidian factor is Linear, Im not sure, but couldn't find a counter example
+  //      // WARNING: nontheless, let's have a static assertion here, in case Im wrong
+  //      static_assert( !(isLinear && !isEuclidanFactor ))
+  //      // there we can't go more in details in class template because we want to take advantage of the fact
+  //      // that the manif library computes some elementary Jacobians that participate in computing of Aik
+  //      return static_cast<derived*>(this)->compute_Ai_bi_simultaneous_impl();
+  //
+  //    }
+  // }
+  
 
   // this uses the internally stored key_mean
   // FIX: ACTION: euclidian only
