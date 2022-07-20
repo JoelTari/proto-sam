@@ -3,13 +3,44 @@
 
 #include "core/meta.h"
 
+#include <eigen3/Eigen/Dense>
+#include <stdexcept>
+#include <string_view>
+
 namespace __MetaKeyPosition
 {
   inline static constexpr const char position[] = "position";
   inline static constexpr const char x[]        = "x";
   inline static constexpr const char y[]        = "y";
-  using MetaKeyPosition_t                = KeyMeta<position, 2, x, y>;
-}   // namespace __MetaKeyPosition
-using MetaKeyPosition_t                = __MetaKeyPosition::MetaKeyPosition_t;
-#endif
+  using KeyPosition_t                           = Eigen::Vector<double, 2>;
+  // using MetaKeyPosition_t                = KeyMeta<position, 2, x, y>;
+  struct MetaKeyPosition_t : KeyMeta<MetaKeyPosition_t, KeyPosition_t, position, 2, x, y>
+  {
+    template <const char* COMPONENT>
+    static double get_component_impl(const KeyPosition_t& key_position_element)
+    {
+      if constexpr (std::string_view(COMPONENT) == x)
+        return key_position_element(0, 0);
+      else
+      {
+        if constexpr (std::string_view(COMPONENT) == y)
+          return key_position_element(1, 0);
+        else
+          return -1;   // FIX: create failure here
+      }
+    }
 
+    static double get_component_impl(const char*          component,
+                                     const KeyPosition_t& key_position_element)
+    {
+      if (std::string_view(component) == x)
+        return key_position_element(0, 0);
+      else if (std::string_view(component) == y)
+        return key_position_element(1, 0);
+      else
+        throw std::runtime_error("component requested doesnt exist in key position meta");
+    }
+  };
+}   // namespace __MetaKeyPosition
+using MetaKeyPosition_t = __MetaKeyPosition::MetaKeyPosition_t;
+#endif

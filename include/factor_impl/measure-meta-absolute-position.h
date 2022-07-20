@@ -3,6 +3,7 @@
 
 #include "core/meta.h"
 
+#include <eigen3/Eigen/Dense>
 
 // meta absolute position measure
 namespace MetaMeasureAbsolutePosition
@@ -12,8 +13,40 @@ namespace MetaMeasureAbsolutePosition
   inline static constexpr const char absolute_position[] = "absolute_position";
   inline static constexpr const char x[]                 = "x";
   inline static constexpr const char y[]                 = "y";
-  using MetaMeasureAbsolutePosition_t = MeasureMeta<absolute_position, 2, x, y>;
-}   // namespace
+  // the measure type
+  using MeasureAbsolutePosition_t = Eigen::Vector<double, 2>;
+
+  struct MetaMeasureAbsolutePosition_t : MeasureMeta<MetaMeasureAbsolutePosition_t, MeasureAbsolutePosition_t, absolute_position, 2, x, y>
+  {
+    template <const char* COMPONENT>
+    static double get_component_impl(const MeasureAbsolutePosition_t & measure)
+    {
+      if constexpr (std::string_view(COMPONENT) == x)
+        return measure(0,0);
+      else
+      {
+        if constexpr (std::string_view(COMPONENT) == y)
+          return measure(1,0);
+        else
+          return -1; // FIX: create static failure here
+      }
+    }
+
+    // method where the component name is given dynamic
+    static double get_component_impl(const char*                       component,
+                                     const MeasureAbsolutePosition_t & measure)
+    {
+      if (std::string_view(component) == x)
+        return measure(0, 0);
+      else if (std::string_view(component) == y)
+        return measure(1, 0);
+      else
+        throw std::runtime_error("component requested doesnt exist in measure absolute position meta");
+    }
+  };
+  // using MetaMeasureAbsolutePosition_t
+  //     = MeasureMeta<MeasureAbsolutePosition_t, absolute_position, 2, x, y>;
+}   // namespace MetaMeasureAbsolutePosition
 using MetaMeasureAbsolutePosition_t = MetaMeasureAbsolutePosition::MetaMeasureAbsolutePosition_t;
 
 #endif

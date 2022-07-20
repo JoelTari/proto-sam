@@ -24,7 +24,7 @@ struct KeyContextualConduct : KEYMETA
   const std::string key_id;
   // non static, not const
   using process_matrix_t  = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
-  using measure_vect_t    = Eigen::Matrix<double, DimMes, 1>;
+  // using measure_vect_t    = Eigen::Matrix<double, DimMes, 1>;
   using measure_cov_t     = Eigen::Matrix<double, DimMes, DimMes>;
   using part_state_vect_t = Eigen::Matrix<double, KEYMETA::kN, 1>;
   // measure_vect_t   b;
@@ -70,6 +70,18 @@ struct KeyContextualConduct : KEYMETA
 //------------------------------------------------------------------//
 //                         Factor Template                          //
 //------------------------------------------------------------------//
+
+// TODO: ACTION: EuclidianFactor
+
+// template <typename DerivedFactor,
+//           const char* FactorLabel,
+//           typename MEASURE_META,
+//           typename... KeyConducts>
+// class LieFactor
+// {
+//   public:
+// }
+
 template <typename DerivedFactor,
           const char* FactorLabel,
           typename MEASURE_META,
@@ -77,7 +89,9 @@ template <typename DerivedFactor,
 class Factor
 {
   public:
-  using measure_vect_t = Eigen::Matrix<double, MEASURE_META::kM, 1>;
+  using measure_meta_t = MEASURE_META;
+  using measure_t = typename measure_meta_t::measure_t;
+  using criterion_t = Eigen::Matrix<double, MEASURE_META::kM, 1>; // FIX: ACTION: ban all measure_vect_t
   using measure_cov_t  = Eigen::Matrix<double, MEASURE_META::kM, MEASURE_META::kM>;
   static constexpr const char* kFactorLabel {FactorLabel};
   static constexpr size_t      kN      = (KeyConducts::kN + ...);
@@ -98,10 +112,10 @@ class Factor
   static constexpr const char*                 kMeasureName {MEASURE_META::kMeasureName};
   static constexpr std::array<const char*, kM> kMeasureComponentsName = MEASURE_META::components;
   const std::string                            factor_id;   // fill at ctor
-  const measure_vect_t                         z;           // fill at ctor
+  const measure_t                                z;           // fill at ctor
   const measure_cov_t                          z_cov;       // fill at ctor
   const measure_cov_t                          rho;         // fill at ctor
-  const measure_vect_t                         rosie = rho*z;
+  const criterion_t                         rosie = rho*z; // FIX: ACTION: euclidian only
   KeysSet_t keys_set;   // a tuple of the structures of each keys (dim, id,
                         // process matrix), fill at ctor, modifiable
 
@@ -116,7 +130,7 @@ class Factor
   // defined for all keys (e.g. bearing observation of a new landmark)
   static
   std::optional< tuple_of_part_state_ptr_t >
-  guess_init_key_points(tuple_of_opt_part_state_ptr_t x_init_ptr_optional_tup, const measure_vect_t & z)
+  guess_init_key_points(tuple_of_opt_part_state_ptr_t x_init_ptr_optional_tup, const criterion_t & z)
   {
     return DerivedFactor::guess_init_key_points_impl(x_init_ptr_optional_tup, z);      
   }
@@ -131,15 +145,17 @@ class Factor
   }
 
   // this uses the internally stored key_mean
-  measure_vect_t compute_bi_nl() const
+  // FIX: ACTION: euclidian only
+  criterion_t compute_bi_nl() const
   {
     auto  tuple_of_means = this->get_key_points();
     return this->rosie - this->rho*this->compute_h_of_x(tuple_of_means);
   }
 
   //  func that gets the tup of lin points contained in kcm into state_vector_t
-  std::tuple<typename KeyConducts::part_state_vect_t ...> get_key_points() const
+  std::tuple<typename KeyConducts::part_state_vect_t ...> get_key_points() const // FIX: ACTION: part_state_vect is not necessarily a vect ?
   {
+    // FIX: ACTION: I think I just need to remove the _vect (in KCC also)
     std::tuple<typename KeyConducts::part_state_vect_t ...> tup_mean;
     std::apply([this,&tup_mean](const auto & ...kcc) //-> std::tuple<typename KeyConducts::state_vector_t ...>
     {
@@ -172,7 +188,8 @@ class Factor
   }
 
 
-  measure_vect_t compute_h_of_x(const state_vector_t & x) const
+  // FIX: ACTION: only for euclidian
+  criterion_t compute_h_of_x(const state_vector_t & x) const
   {
     // class instantiation dependent
     return static_cast<const DerivedFactor*>(this)->compute_h_of_x_impl(x);
@@ -180,7 +197,7 @@ class Factor
 
   // the overloaded ctor (used in NL with init points)
   Factor(const std::string&                      factor_id,
-         const measure_vect_t&                   z,
+         const criterion_t&                   z,
          const measure_cov_t&                    z_cov,
          const std::array<std::string, kNbKeys>& keys_id,
          const std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...> & tup_init_points_ptr)
@@ -217,16 +234,18 @@ class Factor
 
 
   // not used for now, TODO: do the same for x_tuple input
+  // FIX: ACTION: only for euclidian
   double compute_factor_norm(const state_vector_t& x) const
   {
       return (this->rho * this->compute_h_of_x(x) - this->rosie).norm();
   }
 
+  // FIX: ACTION: only for euclidians. Maybe this one doesnt exists
   double compute_lin_point_factor_norm() const
   {
     if constexpr (isLinear)
     {
-      measure_vect_t Ax = sam_tuples::reduce_array_variadically(this->keys_set,[this]<std::size_t...J>
+      criterion_t Ax = sam_tuples::reduce_array_variadically(this->keys_set,[this]<std::size_t...J>
           (const auto & kset,std::index_sequence<J...>)
       {
         // TODO: assert( key_mean_view != nullptr && ... );
@@ -234,7 +253,7 @@ class Factor
         // FIX: ACTION: mean distribution here
         return ( (std::get<J>(kset).compute_part_A()* *(std::get<J>(kset).key_mean_view)) + ...);
       });
-      return (Ax - this->rosie).norm();
+      return (Ax - this->rosie).norm(); // FIX: ACTION:
     }
     else
     {
@@ -246,7 +265,7 @@ class Factor
             // FIX: ACTION: mean distribution here
             return std::make_tuple( *(std::get<J>(kset).key_mean_view) ... ) ;
         });
-      return (this->rho * this->compute_h_of_x(lin_point_tup) - this->rosie).norm();
+      return (this->rho * this->compute_h_of_x(lin_point_tup) - this->rosie).norm(); // FIX: ACTION:
     }
   }
 };
@@ -259,24 +278,21 @@ template <typename FT>
 struct FactorHistory
 {
   using Factor_t = FT;
+  using measure_t = typename FT::measure_t;
   const std::string factor_id = "NaS";
   static constexpr const char* kFactorLabel {FT::kFactorLabel};
   static constexpr const char* kMeasureName {FT::kMeasureName};
   const std::array<std::string,FT::kNbKeys> vars_id = {};
-  // TODO: add measurement value with component name
-
   std::vector<double> norms;
+  const measure_t z;
 
   // ctor
-  FactorHistory(const std::string & factor_id, const std::array<std::string, FT::kNbKeys> & vars_id)
-    : factor_id(factor_id), vars_id(vars_id)
+  FactorHistory(const std::string & factor_id, const std::array<std::string, FT::kNbKeys> & vars_id, const measure_t & z)
+    : factor_id(factor_id), vars_id(vars_id), z(z)
   {}
 
-  // FactorHistory(const FactorHistory& other )
-  //   : factor_id(other.factor_id),norms(other.norms),vars_id(other.vars_id)
-  //   {}
-
-  // FactorHistory& operator=(const FactorHistory & other)= default;
+  // using measure_t = Factor_t::measure_t;
+  // const measure_t z;
 
   void push_norm_value(double factor_norm)
   {
@@ -305,7 +321,7 @@ struct FactorsHistoriesContainer
       // NOTE: insert_or_assign fails
       // std::get<I>(this->factors_histories_container).insert_or_assign(factor_id, std::move(factor_history) ); 
       auto [it, hasBeenPlaced] = std::get<I>(this->factors_histories_container)
-        .try_emplace(factor_id, factor_id, factor.get_array_keys_id());
+        .try_emplace(factor_id, factor_id, factor.get_array_keys_id(),factor.z);
       assert(hasBeenPlaced); // TODO: consider this a consistency check
   }
 

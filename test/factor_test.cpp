@@ -1,5 +1,5 @@
-#include "factor_impl/linear-translation.hpp"
 #include "factor_impl/anchor.hpp"
+#include "factor_impl/linear-translation.hpp"
 
 
 //------------------------------------------------------------------//
@@ -8,13 +8,13 @@
 int main(int argc, char* argv[])
 {
   // AnchorFactor A;
-  AnchorFactor::measure_vect_t            m={0,0};
+  AnchorFactor::criterion_t            m = {2.0, -1};
   AnchorFactor::measure_cov_t             cov;
-  LinearTranslationFactor::measure_vect_t m2={-1,0.1};
+  LinearTranslationFactor::criterion_t m2 = {-1, 0.1};
   LinearTranslationFactor::measure_cov_t  cov2;
 
-  auto FA = AnchorFactor("f0", m, cov, {"x0"},{});
-  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"},{});
+  auto FA = AnchorFactor("f0", m, cov, {"x0"}, {});
+  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"}, {});
 
   std::cout << "Printing runtime infos of a factor : \n";
   factor_print(FA);
@@ -25,10 +25,20 @@ int main(int argc, char* argv[])
   factor_print<AnchorFactor>();
   factor_print<LinearTranslationFactor>();
 
-  auto factors_histories_container = FactorsHistoriesContainer<AnchorFactor,LinearTranslationFactor>();
-  
+  auto factors_histories_container
+      = FactorsHistoriesContainer<AnchorFactor, LinearTranslationFactor>();
 
-  auto factor_FA_history = FactorHistory<decltype(FA)>(FA.factor_id, {"x0"} );
+  std::cout << "\nAccess the 2nd component of the measurement embedded in the factor \n -> measure "
+            << AnchorFactor::kMeasureComponentsName[1] << " = "
+            << AnchorFactor::measure_meta_t::get_component<AnchorFactor::kMeasureComponentsName[0]>(
+                   m)
+            << "\n";
+
+  // this also works
+  static constexpr const char ycomp[]  ("y");
+  std::cout << AnchorFactor::measure_meta_t::get_component<ycomp>(m);
+
+  auto                        factor_FA_history = FactorHistory<decltype(FA)>(FA.factor_id, {"x0"},FA.z);
   FactorHistory<decltype(FA)> factor_FA_history_assignment_test = factor_FA_history;
   // auto cc_factor_FA_history = std::move(factor_FA_history); // OK
   factors_histories_container.insert_new_factor_history(FA.factor_id, FA);

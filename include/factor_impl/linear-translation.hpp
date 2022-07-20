@@ -98,7 +98,7 @@ namespace
 
     LinearTranslationFactor(
         const std::string&                                               factor_id,
-        const measure_vect_t&                                            mes_vect,
+        const criterion_t&                                            mes_vect,
         const measure_cov_t&                                             measure_cov,
         const std::array<std::string, LinearTranslationFactor::kNbKeys>& keys_id,
         std::tuple< std::shared_ptr<ObserveeKeyConduct::part_state_vect_t>,std::shared_ptr<ObserverKeyConduct::part_state_vect_t> > init_points_ptr)
@@ -120,7 +120,7 @@ namespace
             const std::tuple<std::optional<std::shared_ptr<ObserveeKeyConduct::part_state_vect_t>>,
                              std::optional<std::shared_ptr<ObserverKeyConduct::part_state_vect_t>>>&
                                   x_init_ptr_optional_tup,
-            const measure_vect_t& z)
+            const criterion_t& z)
     {
       // if both values are given, just echo the means
       if (std::get<kObserveeKeyConductIdx>(x_init_ptr_optional_tup).has_value()
@@ -162,7 +162,7 @@ namespace
       }
     }
 
-    measure_vect_t compute_h_of_x_impl(const state_vector_t& x) const
+    criterion_t compute_h_of_x_impl(const state_vector_t& x) const
     {
       return process_matrix_t {{1, 0, -1, 0}, {0, 1, 0, -1}} * x;
     }

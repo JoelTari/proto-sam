@@ -50,20 +50,11 @@ namespace
       : public Factor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>
   {
     public:
+      // TODO: remove parent_t
     using parent_t = Factor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>;
-//     // FIX: refactor the init point as ptr
-//     AnchorFactor(const std::string&                                    factor_id,
-//                  const measure_vect_t&                                 mes_vect,
-//                  const measure_cov_t&                                  measure_cov,
-//                  const std::array<std::string, AnchorFactor::kNbKeys>& keys_id)
-//         : Factor(factor_id, mes_vect, measure_cov, keys_id)
-//     {
-// #if ENABLE_DEBUG_TRACE
-//       std::cout << "\t::  Factor " << factor_id << " created.\n";
-// #endif
-//     }
+
     AnchorFactor(const std::string&                                    factor_id,
-                 const measure_vect_t&                                 mes_vect,
+                 const criterion_t&                                 mes_vect,
                  const measure_cov_t&                                  measure_cov,
                  const std::array<std::string, AnchorFactor::kNbKeys>& keys_id,
                  std::tuple<  std::shared_ptr<UniqueKeyConduct::part_state_vect_t>> tuple_of_init_point_ptrs)
@@ -79,7 +70,7 @@ namespace
         guess_init_key_points_impl(
             std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct::part_state_vect_t> >>
                                   x_init_ptr_optional_tup,
-            const measure_vect_t& z)
+            const criterion_t& z)
     {
       if (std::get<0>(x_init_ptr_optional_tup).has_value())
         // if the optional mean value inside the tuple is given, we report this value as initial
@@ -88,14 +79,14 @@ namespace
       else   // make a new state in the heap from the measurement
       {
         // measure_vect_t and part_state_vect_t are the same (for this specific factor)
-        static_assert(std::is_same_v<UniqueKeyConduct::part_state_vect_t, measure_vect_t>);
+        static_assert(std::is_same_v<UniqueKeyConduct::part_state_vect_t, criterion_t>);
         auto xinit_ptr = std::make_shared<UniqueKeyConduct::part_state_vect_t>(z);
         return std::make_tuple(xinit_ptr);
       }
       // NOTE: never returns std::nullopt
     }
 
-    measure_vect_t compute_h_of_x_impl(const state_vector_t& x) const
+    criterion_t compute_h_of_x_impl(const state_vector_t& x) const
     {
       return process_matrix_t {{1, 0}, {0, 1}} * x;
     }

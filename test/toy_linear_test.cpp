@@ -64,37 +64,37 @@ int main(int argc, char* argv[])
   using marginals_t = MarginalsContainer<uniq_keymeta_set_t> ;
   
 
-  AnchorFactor::measure_vect_t z {0, 0};
+  AnchorFactor::criterion_t z {0, 0};
   AnchorFactor::measure_cov_t      Sigma {{0.2, 0}, {0, 0.2}};
 
   syst.register_new_factor<AnchorFactor>("f0", z, Sigma, {"x0"});
   syst.register_new_factor<LinearTranslationFactor>(
       "f1",
-      LinearTranslationFactor::measure_vect_t {-0.95, 0.1},
+      LinearTranslationFactor::criterion_t {-0.95, 0.1},
       LinearTranslationFactor::measure_cov_t {{0.1, 0}, {0, 0.1}},
       {"x0", "x1"});
 
   syst.register_new_factor<LinearTranslationFactor>(
       "f2",
-      LinearTranslationFactor::measure_vect_t {-0.01654, -1.21},
+      LinearTranslationFactor::criterion_t {-0.01654, -1.21},
       LinearTranslationFactor::measure_cov_t {{0.02, 0}, {0, 0.3}},
       {"x1", "x2"});
 
   syst.register_new_factor<LinearTranslationFactor>(
       "f3",
-      LinearTranslationFactor::measure_vect_t {1.01654, -.11},
+      LinearTranslationFactor::criterion_t {1.01654, -.11},
       LinearTranslationFactor::measure_cov_t {{0.32, 0}, {0, 0.1}},
       {"x2", "x3"});
 
   // loop-closure
   syst.register_new_factor<LinearTranslationFactor>(
       "f4",
-      LinearTranslationFactor::measure_vect_t {0.01654, 1.181},
+      LinearTranslationFactor::criterion_t {0.01654, 1.181},
       LinearTranslationFactor::measure_cov_t {{0.002, 0}, {0, 0.173}},
       {"x3", "x0"});
   syst.register_new_factor<LinearTranslationFactor>(
       "f5",
-      LinearTranslationFactor::measure_vect_t {-1.01654, -0.8},
+      LinearTranslationFactor::criterion_t {-1.01654, -0.8},
       LinearTranslationFactor::measure_cov_t {{0.2, 0}, {0, 0.17}},
       {"x0", "x2"});
 

@@ -70,7 +70,7 @@ namespace SAM
     */
     template <typename FT>
     void register_new_factor(const std::string&                          factor_id,
-                             const typename FT::measure_vect_t&          mes_vect,
+                             const typename FT::criterion_t&          mes_vect,
                              const typename FT::measure_cov_t&           measure_cov,
                              const std::array<std::string, FT::kNbKeys>& keys_id)
     {
@@ -141,7 +141,7 @@ namespace SAM
             // compute Ai and bi 
             // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
             // first: compute bi
-            typename factor_t::measure_vect_t bi;
+            typename factor_t::criterion_t bi;
             constexpr int mesdim = factor_t::kM;
             if constexpr (isSystFullyLinear) bi = factor.rosie;
             else bi = factor.compute_bi_nl();
@@ -327,7 +327,7 @@ namespace SAM
             // compute Ai and bi 
             // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
             // first: compute bi
-            typename factor_t::measure_vect_t bi;
+            typename factor_t::criterion_t bi;
             constexpr int mesdim = factor_t::kM;
             if constexpr (isSystFullyLinear) bi = factor.rosie;
             else bi = factor.compute_bi_nl();
@@ -391,22 +391,31 @@ namespace SAM
       [this,&json_factors](const auto & map_factor_history, auto NIET)
       {
         using factor_history_t = typename std::remove_const_t<std::decay_t<decltype(map_factor_history)>>::mapped_type;
+        using factor_t = typename factor_history_t::Factor_t;
+        
         for (const auto & pair : map_factor_history)
         {
-          const auto & factor = pair.second;
+          const auto & factor_h = pair.second;
           Json::Value json_factor;
-          json_factor["factor_id"] = factor.factor_id;
+          json_factor["factor_id"] = factor_h.factor_id;
           json_factor["type"]      = factor_history_t::kFactorLabel; // TODO: rename type to label
           json_factor["measure"]   = factor_history_t::kMeasureName;
           // vars_id
           Json::Value json_vars_id;
-          for (const auto & key_id : factor.vars_id) json_vars_id.append(key_id);
+          for (const auto & key_id : factor_h.vars_id) json_vars_id.append(key_id);
           json_factor["vars_id"] = json_vars_id;
-          json_factor["MAPerror"] = factor.norms.back();           // TODO: rename norm
+          json_factor["MAPerror"] = factor_h.norms.back();           // TODO: rename norm
           Json::Value json_norms;
-          for (const auto & norm: factor.norms) json_norms.append(norm);
+          for (const auto & norm: factor_h.norms) json_norms.append(norm);
           json_factor["norms"]= json_norms;
-          // TODO: add the measure value with components names ( accessible in the constexpr kMeasureComponentsName)
+          // report the measurement value, component by component
+          Json::Value json_measure; // TODO: component name could be given statically so that the string comparaison would occur at compile time (micro opt)
+          for (std::size_t i=0;i< factor_t::kMeasureComponentsName.size(); i++ )
+          {
+            json_measure[factor_t::kMeasureComponentsName[i]] 
+              = factor_t::measure_meta_t::get_component(factor_t::kMeasureComponentsName[i],factor_h.z);
+          }
+          json_factor["measure"] = json_measure;
           // Append at the json list of factors
           json_factors.append(json_factor);
         }
@@ -430,7 +439,11 @@ namespace SAM
           json_marginal["category"] = keymeta_t::kKeyName;
           Json::Value json_mean;
           for (std::size_t i =0; i< keymeta_t::components.size();i++)
-            json_mean[keymeta_t::components[i]] = marg_hist.iterative_means.back()(i,0); // FIX: ACTION: doesnt work when it's non euclidian manifold. Iterative means may not be a vector, therefore , I need to define some get component way.
+          {
+            // TODO: component name could be given statically so that the string comparaison would occur at compile time (micro opt)
+            json_mean[keymeta_t::components[i]]  
+              = keymeta_t::get_component(keymeta_t::components[i],marg_hist.iterative_means.back());
+          }
           json_marginal["mean"] = json_mean;
           // iterative means
           Json::Value iterative_means;
@@ -438,7 +451,10 @@ namespace SAM
           {
             Json::Value ith_json_mean;
             for (std::size_t i =0; i< keymeta_t::components.size();i++)
-              ith_json_mean[keymeta_t::components[i]] = marg_hist.iterative_means[j](i,0); // FIX: ACTION: doesnt work when it's non euclidian manifold
+            {
+              ith_json_mean[keymeta_t::components[i]] 
+                = keymeta_t::get_component(keymeta_t::components[i],marg_hist.iterative_means[j]);
+            }
             iterative_means.append(ith_json_mean);
           }
           json_marginal["iterative_means"] = iterative_means;
@@ -533,7 +549,7 @@ namespace SAM
      */
     template <std::size_t I = 0, typename FT>
     void place_factor_in_container(const std::string&                          factor_id,
-                                   const typename FT::measure_vect_t&          mes_vect,
+                                   const typename FT::criterion_t&          mes_vect,
                                    const typename FT::measure_cov_t&           measure_cov,
                                    const std::array<std::string, FT::kNbKeys>& keys_id)
     {
