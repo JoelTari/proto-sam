@@ -323,7 +323,7 @@ namespace SAM
             //  at the current map
             // std::cout << "keymeanview :" << *(std::get<0>(factor.keys_set).key_mean_view) // OK: proper
             //   << '\n';
-            double norm_factor = factor.compute_lin_point_factor_norm();
+            double norm_factor = factor.compute_factor_norm_at_lin_point();
             std::cout << "norm factor : " << norm_factor << '\n';
             accumulated_syst_squared_norm += norm_factor*norm_factor; // WARNING: race condition if parallel policy
 

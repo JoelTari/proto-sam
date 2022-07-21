@@ -17,6 +17,7 @@ template <typename DerivedKCC, typename KEYMETA,size_t DimMes, const char* Conte
 struct KeyContextualConduct : KEYMETA
 {
   using KeyMeta_t = KEYMETA;
+  using Key_t = typename KeyMeta_t::key_t;
   static constexpr const char*       kRole {ContextRole};
   static constexpr const std::size_t kM {DimMes};
   static constexpr const bool kLinear {LinearModel};
@@ -71,16 +72,32 @@ struct KeyContextualConduct : KEYMETA
 //                         Factor Template                          //
 //------------------------------------------------------------------//
 
-// TODO: ACTION: EuclidianFactor
+template <typename DerivedFactor,
+          const char* FactorLabel,
+          typename MEASURE_META,
+          typename... KeyConducts>
+class BaseFactor
+{
+  public:
 
-// template <typename DerivedFactor,
-//           const char* FactorLabel,
-//           typename MEASURE_META,
-//           typename... KeyConducts>
-// class LieFactor
-// {
-//   public:
-// }
+  using measure_meta_t = MEASURE_META;
+  using measure_t = typename measure_meta_t::measure_t;
+  static constexpr size_t      kN      = (KeyConducts::kN + ...);
+  static constexpr size_t      kM      = MEASURE_META::kM;
+  static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
+  using criterion_t = Eigen::Vector<double, kM>;
+  using measure_cov_t = Eigen::Matrix<double,kM,kM>;
+  using state_vector_t                 = Eigen::Matrix<double, kN, 1>;  // { dXk , ... }
+  using tuple_of_part_state_ptr_t          
+    = std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...>;
+  using tuple_of_opt_part_state_ptr_t      
+    = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::part_state_vect_t>> ...>;
+  using composite_state_t = std::tuple<std::shared_ptr<typename KeyConducts::Key_t> ...>; // {Xk ...}
+  using matrix_Ai_t = Eigen::Matrix<double, kM, kN>;
+  using matrices_Aik_t = std::tuple<typename KeyConducts::process_matrix_t...>;
+
+
+};
 
 template <typename DerivedFactor,
           const char* FactorLabel,
@@ -91,7 +108,7 @@ class Factor
   public:
   using measure_meta_t = MEASURE_META;
   using measure_t = typename measure_meta_t::measure_t;
-  using criterion_t = Eigen::Matrix<double, MEASURE_META::kM, 1>; // FIX: ACTION: ban all measure_vect_t
+  using criterion_t = Eigen::Matrix<double, MEASURE_META::kM, 1>;
   using measure_cov_t  = Eigen::Matrix<double, MEASURE_META::kM, MEASURE_META::kM>;
   static constexpr const char* kFactorLabel {FactorLabel};
   static constexpr size_t      kN      = (KeyConducts::kN + ...);
@@ -108,6 +125,7 @@ class Factor
   using process_matrix_t               = Eigen::Matrix<double, kM, kN>;
   // make a tuple of KeySet.  Michelin *** vaut le détour.
   using KeysSet_t = std::tuple<KeyConducts...>;
+  using matrices_Aik_t = std::tuple<typename KeyConducts::process_matrix_t...>;
 
   static constexpr const char*                 kMeasureName {MEASURE_META::kMeasureName};
   static constexpr std::array<const char*, kM> kMeasureComponentsName = MEASURE_META::components;
@@ -146,40 +164,39 @@ class Factor
     return result;
   }
 
+  static constexpr bool isEuclidianFactor = true;  // TODO: ACTION:
+  
   // WARNING: this is the new method !!
-  // tech lock : type tuple_of_Aik_t
-  // template <isSystLinear>  // the client slam system imposes whether or not the optimized quantity is X (L syst) or dX (NL syst)
-  //                          //, no matter the intrinsic linearity of this factor
-  // std::tuple<criterion_t, tuple_of_Aik_t > compute_Ai_bi()
-  // {
-  //    // dep : isLinear, isFactorEuclidian
-  //    if constexpr (isEuclidianFactor)
-  //    {
-  //      criterion_t bi;
-  //      if constexpr (isSystFullyLinear)
-  //      {
-  //          bi = factor.rosie
-  //      }
-  //      else
-  //      {
-  //         bi = compute_bi_nl()
-  //      }
-  //      tuple_of_Aik_t all_Aik =  [for each kcm: Aik = kcm.compute_part_A()]
-  //      return make_tuple (bi, all_Aik)
-  //
-  //    }
-  //    else // Lie groups 
-  //    {
+  template <bool isSystFullyLinear>
+  std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi() const // TODO: pass the lin point in argument ? probably not
+  {
+    if constexpr (isEuclidianFactor)
+    {
+      criterion_t bi;
+      if constexpr (isSystFullyLinear) {
+        bi= this->rosie;
+      }
+      else{
+        bi = this->compute_bi_nl();
+      }
+      matrices_Aik_t all_Aik = 
+        sam_tuples::reduce_array_variadically(this->keys_set,
+            [this]<std::size_t ...J>(const auto & keyset, std::index_sequence<J...>)
+            {
+              return std::make_tuple<matrices_Aik_t> (std::get<J>(keyset).compute_part_A() ... ) ;
+              // return std::array<std::string,kNbKeys>{std::get<J>(keyset).key_id ...};
+            });
+    }
+    else // factor involves non trivial lie group
+    {
   //      // WARNING: I assume that no nonEuclidian factor is Linear, Im not sure, but couldn't find a counter example
   //      // WARNING: nontheless, let's have a static assertion here, in case Im wrong
-  //      static_assert( !(isLinear && !isEuclidanFactor ))
-  //      // there we can't go more in details in class template because we want to take advantage of the fact
-  //      // that the manif library computes some elementary Jacobians that participate in computing of Aik
-  //      return static_cast<derived*>(this)->compute_Ai_bi_simultaneous_impl();
-  //
-  //    }
-  // }
-  
+       static_assert( !(isLinear && !isEuclidianFactor ));
+       // there we can't go more in details in class template because we want to take advantage of the fact
+       // that the manif library computes some elementary Jacobians that participate in computing of Aik
+       return static_cast<DerivedFactor*>(this)->compute_Ai_bi_simultaneous_impl();
+    }
+  }
 
   // this uses the internally stored key_mean
   // FIX: ACTION: euclidian only
@@ -284,7 +301,7 @@ class Factor
 
   // FIX: ACTION: only for euclidians. Maybe this one doesnt exists
   // compute the norm
-  double compute_lin_point_factor_norm() const
+  double compute_factor_norm_at_lin_point() const
   {
     if constexpr (isLinear)
     {
