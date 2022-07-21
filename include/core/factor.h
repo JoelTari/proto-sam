@@ -188,9 +188,18 @@ class BaseFactor
 //           const char* FactorLabel,
 //           typename MEASURE_META,
 //           typename... KeyConducts>
-// class EuclidianFactor : public BaseFactor<EuclidianFactor, FactorLabel, MEASURE_META, KeyConducts>
+// class EuclidianFactor 
+//   : template BaseFactor
+//     <
+//     template EuclidianFactor<typename DerivedEuclidianFactor,
+//           FactorLabel,
+//            MEASURE_META,
+//           ... KeyConducts>,
+//     const char* FactorLabel,
+//     typename MEASURE_META,
+//     typename... KeyConducts>
+//     >
 // {
-//
 // };
 
 template <typename DerivedFactor,
