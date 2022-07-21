@@ -618,6 +618,7 @@ namespace SAM
           // It is probable that the above tuple contains std::nullopt.
           // Attempt to guess the full init point for this factor by using the measurement if necessary.
           // If we don't have enough data to fill in the blank, then `opt_tuple_of_init_point = std::nullopt`
+          // TODO: ACTION : replace tuple_of _part_state by composite_state_ptr_t
           std::optional<typename FT::tuple_of_part_state_ptr_t> opt_tuple_of_init_point_ptr
             = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect); // NOTE: heap allocation for the INIT POINT AS MEAN (make_shared)
 

@@ -88,16 +88,110 @@ class BaseFactor
   using criterion_t = Eigen::Vector<double, kM>;
   using measure_cov_t = Eigen::Matrix<double,kM,kM>;
   using state_vector_t                 = Eigen::Matrix<double, kN, 1>;  // { dXk , ... }
+  // the next 2 are probably unnecessary at Base
   using tuple_of_part_state_ptr_t          
     = std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...>;
   using tuple_of_opt_part_state_ptr_t      
     = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::part_state_vect_t>> ...>;
-  using composite_state_t = std::tuple<std::shared_ptr<typename KeyConducts::Key_t> ...>; // {Xk ...}
+  // remove the last two
+  using composite_state_ptr_t = std::tuple<std::shared_ptr<typename KeyConducts::Key_t> ...>; // {*Xk ...}
+  using composite_of_opt_state_ptr_t = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::Key_t>>...>;
+                                                              //  NOTE: Xk same type as dXk in euclidian factors
   using matrix_Ai_t = Eigen::Matrix<double, kM, kN>;
   using matrices_Aik_t = std::tuple<typename KeyConducts::process_matrix_t...>;
+  using KeysSet_t = std::tuple<KeyConducts...>;
 
+  static constexpr const char*                 kMeasureName {MEASURE_META::kMeasureName};
+  static constexpr std::array<const char*, kM> kMeasureComponentsName = MEASURE_META::components;
+  const std::string                            factor_id;   // fill at ctor
+  const measure_t                                z;           // fill at ctor
+  const measure_cov_t                          z_cov;       // fill at ctor
+  const measure_cov_t                          rho;         // fill at ctor
+  KeysSet_t keys_set; // fill at ctor, mutable
 
+  // methods
+  static constexpr bool isLinear = (KeyConducts::kLinear && ...);
+
+  // double norm_at_lin_point = 0; // NOT used
+
+  std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
+
+  // init helper
+  static
+  std::optional< composite_state_ptr_t >
+  guess_init_key_points(composite_of_opt_state_ptr_t x_init_ptr_optional_tup, const criterion_t & z)
+  {
+    return DerivedFactor::guess_init_key_points_impl(x_init_ptr_optional_tup, z);      
+  }
+
+  std::array<std::string, kNbKeys> get_array_keys_id() const
+  {
+    return sam_tuples::reduce_array_variadically(this->keys_set,
+        [this]<std::size_t ...J>(const auto & keyset, std::index_sequence<J...>)
+        {
+          return std::array<std::string,kNbKeys>{std::get<J>(keyset).key_id ...};
+        });
+  }
+
+  template <bool isSystFullyLinear>
+  std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi() const 
+  // TODO: pass the lin point in argument ? there could be a use case
+  {
+    return static_cast<const DerivedFactor*>(this)->compute_Ai_bi_impl();
+  }
+
+  criterion_t compute_r_of_x_at(const composite_state_ptr_t & X ) const
+  {
+    return static_cast<const DerivedFactor*>(this)->compute_r_of_x_at_impl(X);
+  }
+
+  criterion_t compute_r_of_x_at_current_lin_point() const
+  {
+      // build back the tup of stored lin point
+      auto lin_point_tup =  sam_tuples::reduce_tuple_variadically(this->keys_set,[this]<std::size_t...J>
+          (const auto & kset, std::index_sequence<J...>)
+        {  
+            // TODO: assert (key_mean_view != nullptr && ...);
+            return std::make_tuple( *(std::get<J>(kset).key_mean_view) ... ) ;
+        });
+      // TODO: check if ok
+      return compute_r_of_x_at(lin_point_tup);
+  }
+
+  private:
+
+  // ctor helper
+  std::map<std::string, std::size_t>
+      map_keyid(const std::array<std::string, kNbKeys>& keys_id) const
+  {
+    std::map<std::string, std::size_t> result;
+    for (int i = 0; i < keys_id.size(); i++) result[keys_id[i]] = i;
+    return result;
+  }
+
+  //  func that gets the tup of lin points contained in kcm into a tuple of Key_t
+  std::tuple<typename KeyConducts::Key_t ...> get_key_points() const
+  {
+    std::tuple<typename KeyConducts::Key_t ...> tup_mean;
+    std::apply([this,&tup_mean](const auto & ...kcc)
+    {
+      // TODO: assert( *(kcc.key_mean_view) != nullptr && ... );
+      tup_mean = {*(kcc.key_mean_view) ... };
+    }
+    ,this->keys_set);
+    return tup_mean;
+  }
+  
 };
+
+// template <typename DerivedEuclidianFactor,
+//           const char* FactorLabel,
+//           typename MEASURE_META,
+//           typename... KeyConducts>
+// class EuclidianFactor : public BaseFactor<EuclidianFactor, FactorLabel, MEASURE_META, KeyConducts>
+// {
+//
+// };
 
 template <typename DerivedFactor,
           const char* FactorLabel,
