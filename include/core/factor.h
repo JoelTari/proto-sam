@@ -137,7 +137,7 @@ class BaseFactor
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi() const 
   // TODO: pass the lin point in argument ? there could be a use case
   {
-    return static_cast<const DerivedFactor*>(this)->compute_Ai_bi_impl();
+    return static_cast<const DerivedFactor*>(this)->template compute_Ai_bi_impl<isSystFullyLinear>();
   }
 
   criterion_t compute_r_of_x_at(const composite_state_ptr_t & X ) const
@@ -156,6 +156,16 @@ class BaseFactor
         });
       // TODO: check if ok
       return compute_r_of_x_at(lin_point_tup);
+  }
+
+  double factor_norm_at(const composite_state_ptr_t & X) const
+  {
+    return compute_r_of_x_at(X).norm();
+  }
+
+  double factor_norm_at_current_lin_point() const
+  {
+    return compute_r_of_x_at_current_lin_point().norm();
   }
 
   private:
@@ -184,23 +194,72 @@ class BaseFactor
   
 };
 
-// template <typename DerivedEuclidianFactor,
-//           const char* FactorLabel,
-//           typename MEASURE_META,
-//           typename... KeyConducts>
-// class EuclidianFactor 
-//   : template BaseFactor
-//     <
-//     template EuclidianFactor<typename DerivedEuclidianFactor,
-//           FactorLabel,
-//            MEASURE_META,
-//           ... KeyConducts>,
-//     const char* FactorLabel,
-//     typename MEASURE_META,
-//     typename... KeyConducts>
-//     >
-// {
-// };
+template <typename DerivedEuclidianFactor,
+          const char* FactorLabel,
+          typename MEASURE_META,
+          typename... KeyConducts>
+class EuclidianFactor 
+  : BaseFactor
+    < 
+      EuclidianFactor<DerivedEuclidianFactor, FactorLabel, MEASURE_META, KeyConducts...>,
+      FactorLabel,
+      MEASURE_META,
+      KeyConducts...
+    >
+{
+  public:
+  using BaseFactor_t = BaseFactor
+                        < 
+                          EuclidianFactor
+                            <
+                              DerivedEuclidianFactor, 
+                              FactorLabel, 
+                              MEASURE_META, 
+                            KeyConducts...
+                          >,
+                          FactorLabel,
+                          MEASURE_META,
+                          KeyConducts...
+                        >;
+  // passing some type definitions for convenience
+  using criterion_t = typename BaseFactor_t::criterion_t;
+  using matrices_Aik_t = typename  BaseFactor_t::matrices_Aik_t;
+  using composite_state_ptr_t = typename BaseFactor_t::composite_state_ptr_t;
+  
+  criterion_t compute_h_of_x(const composite_state_ptr_t & X) const // FIX: Was composite_state_ptr_t previously, so fix it in calls of compute_h_of_x_impl
+  {
+    // class instantiation dependent
+    return static_cast<const DerivedEuclidianFactor*>(this)->compute_h_of_x_impl(X);
+  }
+
+  private:
+  template <bool isSystFullyLinear>
+  std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_impl()
+  {
+      criterion_t bi;
+      if constexpr (isSystFullyLinear) {
+        bi= this->rosie;
+      }
+      else{
+        bi = this->compute_bi_nl();
+      }
+      matrices_Aik_t all_Aik = 
+        sam_tuples::reduce_array_variadically(this->keys_set,
+            [this]<std::size_t ...J>(const auto & keyset, std::index_sequence<J...>)
+            {
+              return std::make_tuple<matrices_Aik_t> (std::get<J>(keyset).compute_part_A() ... ) ;
+              // return std::array<std::string,kNbKeys>{std::get<J>(keyset).key_id ...};
+            });
+  }
+
+
+  criterion_t compute_r_of_x_at_impl(const composite_state_ptr_t & X ) const
+  {
+    return this->rho * this->compute_h_of_x(X) - this->rosie;
+  }
+
+
+};
 
 template <typename DerivedFactor,
           const char* FactorLabel,
