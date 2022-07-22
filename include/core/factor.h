@@ -104,15 +104,40 @@ class BaseFactor
   static constexpr const char*                 kMeasureName {MEASURE_META::kMeasureName};
   static constexpr std::array<const char*, kM> kMeasureComponentsName = MEASURE_META::components;
   const std::string                            factor_id;   // fill at ctor
-  const measure_t                                z;           // fill at ctor
+  const measure_t                                z;         // fill at ctor
   const measure_cov_t                          z_cov;       // fill at ctor
   const measure_cov_t                          rho;         // fill at ctor
+  const std::array<std::string, kNbKeys>       keys_id;     // fill at ctor
   KeysSet_t keys_set; // fill at ctor, mutable
 
   // methods
   static constexpr bool isLinear = (KeyConducts::kLinear && ...);
 
-  // double norm_at_lin_point = 0; // NOT used
+  BaseFactor(const std::string&                      factor_id,
+             const measure_t&                   z,
+             const measure_cov_t&                    z_cov,
+             const std::array<std::string, kNbKeys>& keys_id,
+             const std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...> & tup_init_points_ptr)
+      : z(z)
+      , z_cov(z_cov)
+      , factor_id(factor_id)
+      , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
+      , keys_id(keys_id)
+      , keys_set(sam_tuples::reduce_array_variadically(
+            keys_id,
+            []<std::size_t... I>(const auto& my_keys_id,
+                                 const auto& rho,
+                                 const auto& tup_init_points_ptr,
+                                 std::index_sequence<I...>) -> KeysSet_t {
+              // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
+              // might be possible to use perfect forwarding, by declaring an empty tuple
+              // and next line expanding tuple_cat with an intermediary function that has perfect forwarding ( TODO:)
+              return  { KeyConducts(my_keys_id[I], rho,std::get<I>(tup_init_points_ptr)) ... } ;
+            },
+            rho,tup_init_points_ptr))
+      , keyIdToTupleIdx(map_keyid(keys_id))
+  {
+  }
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
@@ -194,6 +219,9 @@ class BaseFactor
   
 };
 
+//------------------------------------------------------------------//
+//                 Euclidian Factor class template                  //
+//------------------------------------------------------------------//
 template <typename DerivedEuclidianFactor,
           const char* FactorLabel,
           typename MEASURE_META,
@@ -225,11 +253,23 @@ class EuclidianFactor
   using criterion_t = typename BaseFactor_t::criterion_t;
   using matrices_Aik_t = typename  BaseFactor_t::matrices_Aik_t;
   using composite_state_ptr_t = typename BaseFactor_t::composite_state_ptr_t;
+
+  const criterion_t                         rosie = rho*z; 
+                                                          
+  EuclidianFactor(const std::string&                      factor_id,
+                 const measure_t&                   z,
+                 const measure_cov_t&                    z_cov,
+                 const std::array<std::string, kNbKeys>& keys_id,
+                 const std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...> & tup_init_points_ptr)
+      : BaseFactor(factor_id,z,z_cov,keys_id,tup_init_points_ptr)
+  {
+  }
   
-  criterion_t compute_h_of_x(const composite_state_ptr_t & X) const // FIX: Was composite_state_ptr_t previously, so fix it in calls of compute_h_of_x_impl
+  criterion_t compute_h_of_x(const composite_state_ptr_t & X) const
   {
     // class instantiation dependent
     return static_cast<const DerivedEuclidianFactor*>(this)->compute_h_of_x_impl(X);
+    // FIX: Was state_vector_t previously, so fix it in calls of compute_h_of_x_impl
   }
 
   private:

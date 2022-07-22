@@ -323,9 +323,11 @@ namespace SAM
             //  at the current map
             // std::cout << "keymeanview :" << *(std::get<0>(factor.keys_set).key_mean_view) // OK: proper
             //   << '\n';
-            double norm_factor = factor.compute_factor_norm_at_lin_point();
+            double norm_factor = factor.factor_norm_at_current_lin_point();
             std::cout << "norm factor : " << norm_factor << '\n';
             accumulated_syst_squared_norm += norm_factor*norm_factor; // WARNING: race condition if parallel policy
+
+            constexpr int mesdim= factor_t::kM;
 
             // compute Ai and bi 
             // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
@@ -342,32 +344,34 @@ namespace SAM
             //                     So put this under [bi , tuple (Ai1, Ai2 ...)] = factor.compute_Ai_bi();
             //
             //  the main task is to decouple the usage from the affectation in bigger matrices A & b below
-            //
-            // first: compute bi
-            typename factor_t::criterion_t bi;
-            constexpr int mesdim = factor_t::kM;
-            if constexpr (isSystFullyLinear) bi = factor.rosie;
-            else bi = factor.compute_bi_nl();
-            // second: compute Ai
-            // declare a triplet for Ai (that will be push back into the wider A triplets)
+
+            // bi is factor_t::criterion_t, matrices_Aik is tuple( Ai1, Ai2 ,... ) i.e. submatrices of row length = factor_t::kM and sum of their columns is factor_t::kN
+            auto [bi, matrices_Aik] = factor.template compute_Ai_bi<isSystFullyLinear>();
+
+            // declaring a triplets for matrices_Aik values to be associated with their
+            // row/col indexes in view of its future integration into the system matrix A
             std::vector<Eigen::Triplet<double>> Ai_triplets; 
             Ai_triplets.reserve(factor_t::kN*factor_t::kM);
-            // 
-            // Assuming I got the tuple of {\forll k, Aik} at this point, the procedure would be
-            //  sam_tuples::for_each_cont_in_tuple( tupleAik,
-            //  [this, &mesdim, &line_counter, &Ai_triplets](auto & Aik, auto NIET)
-            //  {
-            //      N = colsize(Aik);
-            //      int colIdxInBigA = this->bookkeeper_.getKeyInfos(key_id).sysidx;   // F*CK, I don't have key_id
-            //      spaghetti_Aik = Aik.reshaped(); // make it one dimension
-            //      for i=0:N*mesdim
-            //      {
-            //        int row = line_counter + (i%mesdim);
-            //        int col = colInBigA + i /mesdim;
-            //        Ai_triplets.emplace_back(row,col,partAi_1d[i]);
-            //      }
-            //  });
+            
+            // placing those matrices in Ai_triplets
+            int k = 0; // tuple idx
+            sam_tuples::for_each_in_const_tuple( matrices_Aik,
+            [this, &mesdim, &line_counter, &Ai_triplets, &k](auto & Aik, auto NIET)
+            {
+                int Nk = Aik.cols();
+                auto key_id = factor.keys_id[k] ; k++; // WARNING: race condition if parallel policy
+                int colIdxInSystemA = this->bookkeeper_.getKeyInfos(key_id).sysidx;   // FIX: get key_id
+                auto spaghetti_Aik = Aik.reshaped(); // make it one dimension
+                for (int i=0; i< Nk*mesdim; i++)
+                {
+                  int row = line_counter + (i%mesdim);
+                  int col = colIdxInSystemA + i /mesdim;
+                  Ai_triplets.emplace_back(row,col,spaghetti_Aik[i]);
+                }
+            });
+
              
+            // old
             sam_tuples::for_each_in_tuple(factor.keys_set,[this, &mesdim, &line_counter, &Ai_triplets]
             (auto & key_context_model, auto keyTypeIdx)
             {
