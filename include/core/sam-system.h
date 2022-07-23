@@ -356,7 +356,7 @@ namespace SAM
             // placing those matrices in Ai_triplets
             int k = 0; // tuple idx
             sam_tuples::for_each_in_const_tuple( matrices_Aik,
-            [this, &mesdim, &line_counter, &Ai_triplets, &k](auto & Aik, auto NIET)
+            [this, &mesdim, &line_counter, &Ai_triplets, &k, &factor](auto & Aik, auto NIET)
             {
                 int Nk = Aik.cols();
                 auto key_id = factor.keys_id[k] ; k++; // WARNING: race condition if parallel policy

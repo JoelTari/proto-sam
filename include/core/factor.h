@@ -251,17 +251,19 @@ class EuclidianFactor
                         >;
   // passing some type definitions for convenience
   using criterion_t = typename BaseFactor_t::criterion_t;
+  using measure_t = typename BaseFactor_t::measure_t;
+  using measure_cov_t = typename BaseFactor_t::measure_cov_t;
   using matrices_Aik_t = typename  BaseFactor_t::matrices_Aik_t;
   using composite_state_ptr_t = typename BaseFactor_t::composite_state_ptr_t;
 
-  const criterion_t                         rosie = rho*z; 
+  const criterion_t                         rosie = this->rho*this->z; 
                                                           
   EuclidianFactor(const std::string&                      factor_id,
                  const measure_t&                   z,
                  const measure_cov_t&                    z_cov,
-                 const std::array<std::string, kNbKeys>& keys_id,
+                 const std::array<std::string, BaseFactor_t::kNbKeys>& keys_id,
                  const std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...> & tup_init_points_ptr)
-      : BaseFactor(factor_id,z,z_cov,keys_id,tup_init_points_ptr)
+      : BaseFactor_t(factor_id,z,z_cov,keys_id,tup_init_points_ptr)
   {
   }
   
