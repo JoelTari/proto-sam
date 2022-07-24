@@ -21,22 +21,22 @@ namespace
                              observer_var,
                              true>   // true for linear
   {
-    inline static const key_process_matrix_t partH {{-1, 0}, {0, -1}};
-    const key_process_matrix_t               partA;
+    inline static const key_process_matrix_t Hik {{-1, 0}, {0, -1}};
+    const key_process_matrix_t               Aik;
 
-    key_process_matrix_t compute_part_A_impl() const { return partA; }
+    key_process_matrix_t compute_Aik_impl() const { return Aik; }
 
     // For linear systems
     ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho, std::shared_ptr<Key_t>  init_point_ptr)
         : KeyContextualConduct(key_id, rho, init_point_ptr)
-        , partA(rho * partH)
+        , Aik(rho * Hik)
     {
     }
     
     // For NL cases
     ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho)
     : KeyContextualConduct(key_id, rho)
-    , partA(rho * partH)
+    , Aik(rho * Hik)
     {
     }
 
@@ -53,22 +53,22 @@ namespace
                              sighted_var,
                              true>
   {
-    inline static const key_process_matrix_t partH {{1, 0}, {0, 1}}; // OPTIMIZE: make it static
-    const key_process_matrix_t partA;
+    inline static const key_process_matrix_t Hik {{1, 0}, {0, 1}}; // OPTIMIZE: make it static
+    const key_process_matrix_t Aik;
 
-    key_process_matrix_t compute_part_A_impl() const { return partA; }
+    key_process_matrix_t compute_Aik_impl() const { return Aik; }
 
     // For linear systems
     SightedKeyConduct(const std::string key_id, const measure_cov_t& rho)
         : KeyContextualConduct(key_id, rho)
-        , partA(rho * partH)
+        , Aik(rho * Hik)
     {
     }
 
     // For NL cases
     SightedKeyConduct(const std::string key_id, const measure_cov_t& rho, std::shared_ptr<Key_t> init_point_ptr)
     : KeyContextualConduct(key_id, rho,init_point_ptr)
-    , partA(rho * partH)
+    , Aik(rho * Hik)
     {
     }
 
@@ -93,7 +93,7 @@ namespace
                       MetaMeasureLinearTranslation_t,
                       SightedKeyConduct,
                       ObserverKeyConduct>;
-
+    friend BaseFactor_t;
     using SightedKey_process_matrix = typename SightedKeyConduct::key_process_matrix_t;
     using ObserverKey_process_matrix = typename ObserverKeyConduct::key_process_matrix_t;
     // passing some type definitions for convenience
@@ -178,16 +178,16 @@ namespace
 
     private:
     
-    // making a friend so that we the next implementation method can stay private
-    friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;
+    // // making a friend so that we the next implementation method can stay private
+    // friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;
 
-    criterion_t compute_h_of_x_trivial_impl(const composite_state_ptr_t & Xptr) const
+    criterion_t compute_h_of_x_impl(const composite_state_ptr_t & Xptr) const
     {
       // TODO: HACK: seems that there is a generic form for linear euclidian factor
       return
-        std::get<0>(this->keys_set).partA* *std::get<0>(Xptr)
+        std::get<0>(this->keys_set).Aik* *std::get<0>(Xptr).get()
           +
-          std::get<1>(this->keys_set).partA* *std::get<1>(Xptr);
+          std::get<1>(this->keys_set).Aik* *std::get<1>(Xptr).get();
       // return criterion_t();
     }
 

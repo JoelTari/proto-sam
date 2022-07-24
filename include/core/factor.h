@@ -38,14 +38,14 @@ struct KeyContextualConduct : KEYMETA
   // FIX: ACTION: key mean view should be mean distribution : Key_t
   const std::shared_ptr<part_state_vect_t> key_mean_view; // TODO: make it a const ?
 
-  key_process_matrix_t compute_part_A() const
+  key_process_matrix_t compute_Aik() const
   {
-    // NOTE: if NL, the compute_part_A_impl must compute rho*((d part_h/ dx)|_x0) 
+    // NOTE: if NL, the compute_Aik_impl must compute rho*((d part_h/ dx)|_x0) 
     // NOTE: (need the key linpoint part_x0 : key_mean_view)
     // NOTE: if Linear, it is just a constant returned value (rho*partH, where partH is static)
 
     // OPTIMIZE: store in a member to save some cycles (RAM vs CPU), but less readability
-    return static_cast<const DerivedKCC*>(this)->compute_part_A_impl(); 
+    return static_cast<const DerivedKCC*>(this)->compute_Aik_impl(); 
   }
 
     // ctor for linear systems
@@ -83,7 +83,7 @@ template <typename DerivedFactor,
 class BaseFactor
 {
   public:
-
+  friend DerivedFactor;
   using measure_meta_t = MEASURE_META;
   using measure_t = typename measure_meta_t::measure_t;
   static constexpr const char* kFactorLabel {FactorLabel};
@@ -242,6 +242,7 @@ class EuclidianFactor
       KeyConducts...
     >
 {
+  friend DerivedEuclidianFactor;
   public:
   using BaseFactor_t = BaseFactor
                         < 
@@ -256,6 +257,9 @@ class EuclidianFactor
                           MEASURE_META,
                           KeyConducts...
                         >;
+  // declares friendlies so that they get to protected impl methods of this class
+  friend DerivedEuclidianFactor;
+  friend BaseFactor_t;
   // passing some type definitions for convenience
   using criterion_t = typename BaseFactor_t::criterion_t;
   using measure_t = typename BaseFactor_t::measure_t;
@@ -285,10 +289,7 @@ class EuclidianFactor
     return DerivedEuclidianFactor::guess_init_key_points_impl(x_init_ptr_optional_tup,z);
   }
 
-  criterion_t compute_h_of_x(const composite_state_ptr_t & X) const
-  {
-    return static_cast<const DerivedEuclidianFactor*>(this)->compute_h_of_x_impl(X);
-  }
+  protected:
 
   template <bool isSystFullyLinear>
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_impl() const
@@ -301,6 +302,12 @@ class EuclidianFactor
   {
     return this->rho * this->compute_h_of_x(X) - this->rosie;
   }
+
+  criterion_t compute_h_of_x(const composite_state_ptr_t & X) const
+  {
+    return static_cast<const DerivedEuclidianFactor*>(this)->compute_h_of_x_impl(X);
+  }
+
 
 };
 
@@ -335,6 +342,9 @@ class TrivialEuclidianFactor  // the measure is euclidian and the keys are expre
                           MEASURE_META,
                           KeyConducts...
                         >;
+  // declares friendlies so that they get to protected impl methods of this class
+  friend DerivedTrivialEuclidianFactor;
+  friend BaseEuclidianFactor_t;
   // passing some type definitions for convenience
   using criterion_t = typename BaseEuclidianFactor_t::criterion_t;
   using measure_t = typename BaseEuclidianFactor_t::measure_t;
@@ -363,13 +373,13 @@ class TrivialEuclidianFactor  // the measure is euclidian and the keys are expre
       return DerivedTrivialEuclidianFactor::guess_init_key_points_impl(x_init_ptr_optional_tup,z);
     }
     
+  protected:
     // chores: passing static polymorphism to derived
     criterion_t compute_h_of_x_impl(const composite_state_ptr_t & X) const
     {
-      return static_cast<const DerivedTrivialEuclidianFactor*>(this)->compute_h_of_x_trivial_impl(X);
+      return static_cast<const DerivedTrivialEuclidianFactor*>(this)->compute_h_of_x_impl(X);
     }
 
-  // protected:
     // the interesting part of the trivial euclidian factor: the compute Ai bi part can be defined generically
     template <bool isSystFullyLinear>
     std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_impl() const
@@ -385,7 +395,7 @@ class TrivialEuclidianFactor  // the measure is euclidian and the keys are expre
           sam_tuples::reduce_array_variadically(this->keys_set,
               [this]<std::size_t ...J>(const auto & keyset, std::index_sequence<J...>)
               {
-                return std::make_tuple<matrices_Aik_t> (std::get<J>(keyset).compute_part_A() ... ) ;
+                return std::make_tuple<matrices_Aik_t> (std::get<J>(keyset).compute_Aik() ... ) ;
                 // return std::array<std::string,kNbKeys>{std::get<J>(keyset).key_id ...};
               });
     }

@@ -18,26 +18,26 @@ namespace
                              anchor_var,
                              true>
   {
-    inline static const key_process_matrix_t partH {
+    inline static const key_process_matrix_t Hik {
         {1, 0},
         {0, 1}};   // cant make it constexpr, but it's probably still compile time
-    const key_process_matrix_t partA;
+    const key_process_matrix_t Aik;
 
-    key_process_matrix_t compute_part_A_impl() const
+    key_process_matrix_t compute_Aik_impl() const
     {
-      return partA;   // since it is linear, no need to do anything
+      return Aik;   // since it is linear, no need to do anything
     }
 
     UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho)
         : KeyContextualConduct(key_id, rho)
-        , partA(rho * partH)   // rho*H
+        , Aik(rho * Hik)   // rho*H
     {
     }
 
     // for NL cases
     UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho,std::shared_ptr<Key_t> init_point)
         : KeyContextualConduct(key_id, rho, init_point)
-        , partA(rho * partH)   // rho*H
+        , Aik(rho * Hik)   // rho*H
     {
     }
   };
@@ -51,6 +51,7 @@ namespace
   {
     public:
     using BaseFactor_t = TrivialEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>;
+    friend BaseFactor_t;
     // using key_process_matrix_t = typename UniqueKeyConduct::key_process_matrix_t;
     // using factor_process_matrix_t = typename parent_t::factor_process_matrix_t;
     // using criterion_t = typename BaseFactor_t::criterion_t;
@@ -97,10 +98,10 @@ namespace
 
     private:
 
-    // making a friend so that we the next implementation method can stay private
-    friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;
+    // // making a friend so that we the next implementation method can stay private
+    // friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;
 
-    criterion_t compute_h_of_x_trivial_impl(const composite_state_ptr_t  Xptr) const
+    criterion_t compute_h_of_x_impl(const composite_state_ptr_t &  Xptr) const
     {
       // Xptr is a single tuple 
       return factor_process_matrix_t {{1, 0}, {0, 1}} * *std::get<0>(Xptr);
@@ -109,7 +110,7 @@ namespace
     // private:
     // // defined at ctor
     // const process_matrix_t roach
-    //     = rho * process_matrix_t {{1, 0}, {0, 1}};   // TODO: defined w.r.t to the partH of keyset
+    //     = rho * process_matrix_t {{1, 0}, {0, 1}};   // TODO: defined w.r.t to the Hik of keyset
   };
 
 }   // namespace
