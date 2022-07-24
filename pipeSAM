@@ -1,10 +1,17 @@
 #!/bin/sh
 
-# TODO: take first argument, search the corresponding mes_{}.json (ex: linMono)
-# TODO: difficulty arrise in the last argument : *_results_$r.json, unfortunately
-# TODO: the last argument must be chosen (because the last file is actually the more recent )
+# echo $1
+# echo $2
 
+pb_id=$1 
 
-pb_id=$1
+if [ $# -gt 1 ]
+then
+  if [[ "$2" = "--debug" ]]; then
+    flag_db="lldb"
+  fi
+else
+  flag_db=""
+fi
 
-cat examples/mes_"$pb_id".json | build/mainstdin $pb_id && ./graph_publish.py *_results_"$pb_id".json
+cat examples/mes_"$pb_id".json | $flag_db build/mainstdin $pb_id && ./graph_publish.py *_results_"$pb_id".json
