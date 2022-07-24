@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 
   // this also works
   static constexpr const char ycomp[]  ("y");
-  std::cout << AnchorFactor::measure_meta_t::get_component<ycomp>(m) << ; 
+  std::cout << AnchorFactor::measure_meta_t::get_component<ycomp>(m) << '\n' ; 
 
   //------------------------------------------------------------------//
   //                     TEST history management                      //

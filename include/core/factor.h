@@ -13,6 +13,19 @@
 #include <tuple>
 #include <utility>
 
+/**
+ * @brief KeyContextualConduct  -- The class describes how a key (associated with a key meta)
+ * behaves in a certain context (in a factor). It stores dimension informations name and most importantly
+ * Jacobian matrices to be used when differentiating the factor wrt the decision keys.
+ * As a factor can have several keys, therefore, the KeyContextualConduct class only manages a subset of the columns of the 
+ * factor 's process matrix (normed Jacobian).
+ *
+ * @tparam DerivedKCC Derived user class. Static polymorhism pattern.
+ * @tparam KEYMETA Meta of the key (dimensions, type, components name of the key)
+ * @tparam ContextRole -- (text) role of the key in the context
+ * @tparam linearModel -- true if the key is linear in its context (e.g.  h(X)-z = H.X - z ), this information entails
+ * simplifications on the differenciation
+ */
 template <typename DerivedKCC, typename KEYMETA,size_t DimMes, const char* ContextRole,bool LinearModel=false> 
 struct KeyContextualConduct : KEYMETA
 {
@@ -25,29 +38,35 @@ struct KeyContextualConduct : KEYMETA
   const std::string key_id;
   // non static, not const
   using key_process_matrix_t  = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
-  // using measure_vect_t    = Eigen::Matrix<double, DimMes, 1>;
   using measure_cov_t     = Eigen::Matrix<double, DimMes, DimMes>;
   using tangent_space_vect_t = Eigen::Matrix<double, KEYMETA::kN, 1>;
   // measure_vect_t   b;
   const measure_cov_t& rho;
 
   // euclidian space is a trivial manifold (same as its tangent space)
-  static constexpr  bool kIsTrivialManifold  = std::is_same_v<Key_t, Eigen::Vector<double,KEYMETA::kN>>;
+  static constexpr  bool kIsTrivialManifold  = std::is_same_v<Key_t, tangent_space_vect_t>;
 
-  // FIX: ACTION: key mean view should be mean distribution : Key_t
-  const std::shared_ptr<Key_t> key_mean_view; // TODO: make it a const ?
+  const std::shared_ptr<Key_t> key_mean_view = nullptr;
 
+  /**
+   * @brief compute Aik, the normed jacobian matrix, a.k.a. the partial derivative of the factor criterion premultiply by the root of the measure precision
+   * Aik = \rho * \partial r_i(X) / \partial X_k 
+   * Index i refers to the usual iterator on factor, k to the kth key of factor \phi_i
+   * @return the process matrix associated with this key. Note that it only a subset of the columns of the full process matrix of factor \phi_i as there may
+   * be other keys k in the factor with their own sub process-matrix Aik. 
+   */
   key_process_matrix_t compute_Aik() const
   {
-    // NOTE: if NL, the compute_Aik_impl must compute rho*((d part_h/ dx)|_x0) 
-    // NOTE: (need the key linpoint part_x0 : key_mean_view)
-    // NOTE: if Linear, it is just a constant returned value (rho*partH, where partH is static)
-
     // OPTIMIZE: store in a member to save some cycles (RAM vs CPU), but less readability
     return static_cast<const DerivedKCC*>(this)->compute_Aik_impl(); 
   }
 
-    // ctor for linear systems
+  /**
+   * @brief Constructor , no pointer to the value of the key is required. This one is therefore by fully linear SLAM problems.
+   *
+   * @param key_id identifier of the key
+   * @param rho root of the inverse of the measure covariance matrix:   \rho = chol( \Sigma_i )^T
+   */
   KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho)
       : key_id(key_id)
       , rho(rho)
@@ -57,7 +76,16 @@ struct KeyContextualConduct : KEYMETA
     static_assert(kLinear);
   }
 
-    // ctor called for non linear systems
+  /**
+   * @brief Constructor. In nonlinear systems, it required to provide a ptr to a value of the key: typically this value is the linearization point.
+   *        Note that a Key can be linear in the context of one factor, but nonlinear with respect to another. This is why a slam system that has 
+   *        at least one type of nonlinear factor alters the potential linearity behavior of other factors in the same system.
+   *        To summarize, even if this key behaves linearly in this context, the nonlinear aspects may still be enforced by the user 
+   *
+   * @param key_id identifier of the key
+   * @param rho root of the inverse of the measure covariance matrix: \rho = chol( \Sigma_i ) ^T
+   * @param init_point_view shared pointer to a value of the key
+   */
   KeyContextualConduct
     (const std::string& key_id
     , const measure_cov_t& rho
@@ -66,8 +94,6 @@ struct KeyContextualConduct : KEYMETA
       , rho(rho)
       , key_mean_view(init_point_view)
   {
-    // NOTE: this can be called even if the context model is not linear 
-    // NOTE: (one nl model in the wider system implies that everything is nl)
   }
 };
 
