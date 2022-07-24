@@ -21,14 +21,13 @@ struct KeyContextualConduct : KEYMETA
   static constexpr const char*       kRole {ContextRole};
   static constexpr const std::size_t kM {DimMes};
   static constexpr const bool kLinear {LinearModel};
-  // static constexpr const bool kIsTrivialManifold {KeyMeta_t::kIsTrivialManifold};
   // non static but const
   const std::string key_id;
   // non static, not const
   using key_process_matrix_t  = Eigen::Matrix<double, DimMes, KEYMETA::kN>;
   // using measure_vect_t    = Eigen::Matrix<double, DimMes, 1>;
   using measure_cov_t     = Eigen::Matrix<double, DimMes, DimMes>;
-  using part_state_vect_t = Eigen::Matrix<double, KEYMETA::kN, 1>;  // WARNING: naming, renamed should be tangent space (will break factor classes)
+  using tangent_space_vect_t = Eigen::Matrix<double, KEYMETA::kN, 1>;
   // measure_vect_t   b;
   const measure_cov_t& rho;
 
@@ -36,7 +35,7 @@ struct KeyContextualConduct : KEYMETA
   static constexpr  bool kIsTrivialManifold  = std::is_same_v<Key_t, Eigen::Vector<double,KEYMETA::kN>>;
 
   // FIX: ACTION: key mean view should be mean distribution : Key_t
-  const std::shared_ptr<part_state_vect_t> key_mean_view; // TODO: make it a const ?
+  const std::shared_ptr<Key_t> key_mean_view; // TODO: make it a const ?
 
   key_process_matrix_t compute_Aik() const
   {
@@ -62,7 +61,7 @@ struct KeyContextualConduct : KEYMETA
   KeyContextualConduct
     (const std::string& key_id
     , const measure_cov_t& rho
-    , std::shared_ptr<part_state_vect_t> init_point_view)
+    , std::shared_ptr<Key_t> init_point_view)
       : key_id(key_id)
       , rho(rho)
       , key_mean_view(init_point_view)
@@ -94,11 +93,11 @@ class BaseFactor
   using measure_cov_t = Eigen::Matrix<double,kM,kM>;
   using factor_process_matrix_t        = Eigen::Matrix<double, kM, kN>;
   using state_vector_t                 = Eigen::Matrix<double, kN, 1>;  // { dXk , ... }
-  // the next 2 are probably unnecessary at Base
-  using tuple_of_part_state_ptr_t          
-    = std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...>;
-  using tuple_of_opt_part_state_ptr_t      
-    = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::part_state_vect_t>> ...>;
+  // // the next 2 are probably unnecessary at Base
+  // using tuple_of_part_state_ptr_t          
+  //   = std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...>;
+  // using tuple_of_opt_part_state_ptr_t      
+  //   = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::part_state_vect_t>> ...>;
   // remove the last two
   using composite_state_ptr_t = std::tuple<std::shared_ptr<typename KeyConducts::Key_t> ...>; // {*Xk ...}
   using composite_of_opt_state_ptr_t = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::Key_t>>...>;
@@ -163,6 +162,11 @@ class BaseFactor
           return std::array<std::string,kNbKeys>{std::get<J>(keyset).key_id ...};
         });
   }
+
+  // composite_state_ptr_t make_composite( std::shared_ptr<typename KeyConducts::Key_t> Key_ptrs ...)
+  // {
+  //   return { Key_ptrs , ... };
+  // }
 
   template <bool isSystFullyLinear>
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi() const 

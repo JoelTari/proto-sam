@@ -51,7 +51,7 @@ namespace
                              MetaKeyPosition_t,
                              MetaMeasureLinearTranslation_t::kM,
                              sighted_var,
-                             true>
+                             true> // true for linear
   {
     inline static const key_process_matrix_t Hik {{1, 0}, {0, 1}};
     const key_process_matrix_t Aik;
@@ -73,7 +73,7 @@ namespace
     }
 
     // euclidian space
-    static_assert(std::is_same_v<SightedKeyConduct::Key_t, SightedKeyConduct::part_state_vect_t>);
+    static_assert(std::is_same_v<SightedKeyConduct::Key_t, SightedKeyConduct::tangent_space_vect_t>);
   };
 
 }   // namespace
@@ -96,15 +96,6 @@ namespace
     friend BaseFactor_t;
     using SightedKey_process_matrix = typename SightedKeyConduct::key_process_matrix_t;
     using ObserverKey_process_matrix = typename ObserverKeyConduct::key_process_matrix_t;
-    // passing some type definitions for convenience
-    // using criterion_t = typename BaseFactor_t::criterion_t;
-    // using measure_t = typename BaseFactor_t::measure_t;
-    // using measure_cov_t = typename BaseFactor_t::measure_cov_t;
-    // using matrices_Aik_t = typename  BaseFactor_t::matrices_Aik_t;
-    // using composite_state_ptr_t = typename BaseFactor_t::composite_state_ptr_t;
-    // using composite_of_opt_state_ptr_t = typename BaseFactor_t::composite_of_opt_state_ptr_t;
-
-    // static_assert(std::is_same_v<SightedKey_process_matrix,)
 
     public:
 
@@ -127,8 +118,9 @@ namespace
     // guess a potentially missing init key point from another by relying on the measurement
     // (used in NL systems if an init point must be set)
     static
-    std::optional<
-        std::tuple< std::shared_ptr<SightedKeyConduct::part_state_vect_t>, std::shared_ptr<ObserverKeyConduct::part_state_vect_t>>>
+    // std::optional<
+    //     std::tuple< std::shared_ptr<SightedKeyConduct::part_state_vect_t>, std::shared_ptr<ObserverKeyConduct::part_state_vect_t>>>
+    std::optional<composite_state_ptr_t>
         guess_init_key_points_impl(
             // const std::tuple<std::optional<std::shared_ptr<SightedKeyConduct::part_state_vect_t>>,
             //                  std::optional<std::shared_ptr<ObserverKeyConduct::part_state_vect_t>>>&

@@ -62,7 +62,6 @@ namespace
     // using composite_of_opt_state_ptr_t = typename BaseFactor_t::composite_of_opt_state_ptr_t;
     //
     static_assert(std::is_same_v<UniqueKeyConduct::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
-    // static_assert(std::is_same_v<state_vector_t, UniqueKeyConduct::part_state_vect_t>  ); // because only 1 key
     static_assert(std::is_same_v<UniqueKeyConduct::Key_t, criterion_t>); // because linear factor &&  size M = size N
 
     AnchorFactor(const std::string&                                    factor_id,
