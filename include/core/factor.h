@@ -119,7 +119,7 @@ class BaseFactor
 
   // methods
   BaseFactor(const std::string&                      factor_id,
-             const measure_t&                   z,
+             const measure_t&                    z,
              const measure_cov_t&                    z_cov,
              const std::array<std::string, kNbKeys>& keys_id,
              const composite_state_ptr_t & tup_init_points_ptr)
@@ -142,6 +142,7 @@ class BaseFactor
             rho,tup_init_points_ptr))
       , keyIdToTupleIdx(map_keyid(keys_id))
   {
+    // TODO: throw if cov is not a POS matrix (consistency check enabled ?)
   }
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
@@ -163,10 +164,10 @@ class BaseFactor
         });
   }
 
-  // composite_state_ptr_t make_composite( std::shared_ptr<typename KeyConducts::Key_t> Key_ptrs ...)
-  // {
-  //   return { Key_ptrs , ... };
-  // }
+  static composite_state_ptr_t make_composite(typename KeyConducts::Key_t ...keys )
+  {
+    return {  std::make_shared<typename KeyConducts::Key_t>(keys)  ...  };
+  }
 
   template <bool isSystFullyLinear>
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi() const 
@@ -790,7 +791,7 @@ void traverse_tup(const TUP& tup)
 template <typename KC>
 void print_KeyContextConduct(const KC& kcc)
 {
-  std::cout << "\t\t+ Key Nattupelemure: " << KC::kKeyName << ".  Role: " << KC::kRole
+  std::cout << "\t\t+ Key Name: " << KC::kKeyName << ".  Role: " << KC::kRole
             << ". Id: " << kcc.key_id << '\n';
 }
 
@@ -802,14 +803,13 @@ constexpr void factor_print()
   std::cout << FT::kFactorLabel << '\n';
   std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n' << "\tKeys (in order):\n";
 
-  // traverse statically the ttupelemuple of keys data
+  // traverse statically the tuple of keys data
   traverse_tup<typename FT::KeysSet_t>();
 
   std::cout << "\t Measure: " << FT::kMeasureName;
   std::cout << " { ";
   for (const auto& comp : FT::kMeasureComponentsName) std::cout << comp << " ";
-  std::cout << "{\n";
-
+  std::cout << "}\n";
 
   std::cout << "\t----- \n";
 }
