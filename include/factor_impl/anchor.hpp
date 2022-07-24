@@ -104,7 +104,7 @@ namespace
     criterion_t compute_h_of_x_impl(const composite_state_ptr_t &  Xptr) const
     {
       // Xptr is a single tuple 
-      return factor_process_matrix_t {{1, 0}, {0, 1}} * *std::get<0>(Xptr);
+      return std::get<0>(this->keys_set).compute_Aik() * *std::get<0>(Xptr);
     }
 
     // private:

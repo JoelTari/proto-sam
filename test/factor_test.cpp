@@ -10,9 +10,9 @@ int main(int argc, char* argv[])
 {
   // AnchorFactor A;
   AnchorFactor::criterion_t            m = {2.0, -1};
-  AnchorFactor::measure_cov_t             cov;
+  AnchorFactor::measure_cov_t             cov = AnchorFactor::measure_cov_t::Identity();
   LinearTranslationFactor::criterion_t m2 = {-1, 0.1};
-  LinearTranslationFactor::measure_cov_t  cov2;
+  LinearTranslationFactor::measure_cov_t  cov2 = LinearTranslationFactor::measure_cov_t::Identity();
 
   auto FA = AnchorFactor("f0", m, cov, {"x0"}, {});
   auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"}, {});
@@ -23,9 +23,10 @@ int main(int argc, char* argv[])
     = { std::make_shared<MetaKeyPosition_t::key_t>(MetaKeyPosition_t::key_t{0,0}), std::make_shared<MetaKeyPosition_t::key_t>(MetaKeyPosition_t::key_t{-1,3})};
 
   // this tests the methods : compute_h_at_x compute_r_at_x
-  double norm_FA =FA.factor_norm_at(proposalFA);
-  // std::cout << 
+  double norm_FA =FA.factor_norm_at(proposalFA); // expected sqrt( (2-1)^2 + (-1-0)^2 ) = 1.41
+  std::cout << "norm of FA at proposal {1, 0} : " << norm_FA << '\n';
   double norm_FB = FB.factor_norm_at(proposalFB);
+  std::cout << "norm of FB at proposal ( {1, 0}, {-1, 3} ) : " << norm_FB << '\n';
 
   std::cout << "Printing runtime infos of a factor : \n";
   factor_print(FA);
