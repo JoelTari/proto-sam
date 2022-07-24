@@ -14,13 +14,16 @@ template <typename DerivedKeyMeta, typename KEY_T,const char* NAME, std::size_t 
 struct KeyMeta
 {
   inline static constexpr const char* kKeyName = NAME;
-  static constexpr const std::size_t  kN {DIM};
+  static constexpr const std::size_t  kN {DIM}; // DoF (or dim of the tangent space)
 
   // maps the idx to the component name. e.g. component[0] returns "x" etc..
   static constexpr const std::array<const char*, sizeof...(ORDERRED_COMPONENT_NAMEs)> components {
       ORDERRED_COMPONENT_NAMEs...};
 
   using key_t= KEY_T; // might be a vector, SE2 SO3 etc..
+  // check if this key describe a trivial manifold
+  // NOTE: leads to a dependency on Eigen, too bloated at this level, so this will be moved higher at key conduct level
+  // static constexpr  bool kIsTrivialManifold  = std::is_same_v<key_t, Eigen::Vector<double,1>;
 
   // type enunciation to play well with type_trait convention
   using type = KeyMeta<DerivedKeyMeta, KEY_T, NAME, DIM, ORDERRED_COMPONENT_NAMEs...>;
@@ -39,7 +42,7 @@ struct KeyMeta
     return DerivedKeyMeta::get_component_impl(component,keyvalue);
   }
 
-  // TODO: add some meta about the covariance of the key when feature visibility is improved
+  // TODO: add some meta about the covariance of the key once feature visibility is improved
 };
 
 

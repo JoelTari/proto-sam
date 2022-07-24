@@ -18,12 +18,12 @@ namespace
                              anchor_var,
                              true>
   {
-    inline static const process_matrix_t partH {
+    inline static const key_process_matrix_t partH {
         {1, 0},
         {0, 1}};   // cant make it constexpr, but it's probably still compile time
-    const process_matrix_t partA;
+    const key_process_matrix_t partA;
 
-    process_matrix_t compute_part_A_impl() const
+    key_process_matrix_t compute_part_A_impl() const
     {
       return partA;   // since it is linear, no need to do anything
     }
@@ -35,7 +35,7 @@ namespace
     }
 
     // for NL cases
-    UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho,std::shared_ptr<part_state_vect_t> init_point)
+    UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho,std::shared_ptr<Key_t> init_point)
         : KeyContextualConduct(key_id, rho, init_point)
         , partA(rho * partH)   // rho*H
     {
@@ -47,18 +47,29 @@ namespace
 {
   inline static constexpr const char anchorLabel[] = "anchor";
   class AnchorFactor
-      : public Factor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>
+      : public TrivialEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>
   {
     public:
-      // TODO: remove parent_t
-    using parent_t = Factor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>;
+    using BaseFactor_t = TrivialEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>;
+    // using key_process_matrix_t = typename UniqueKeyConduct::key_process_matrix_t;
+    // using factor_process_matrix_t = typename parent_t::factor_process_matrix_t;
+    // using criterion_t = typename BaseFactor_t::criterion_t;
+    // using measure_t = typename BaseFactor_t::measure_t;
+    // using measure_cov_t = typename BaseFactor_t::measure_cov_t;
+    // using matrices_Aik_t = typename  BaseFactor_t::matrices_Aik_t;
+    // using composite_state_ptr_t = typename BaseFactor_t::composite_state_ptr_t;
+    // using composite_of_opt_state_ptr_t = typename BaseFactor_t::composite_of_opt_state_ptr_t;
+    //
+    static_assert(std::is_same_v<UniqueKeyConduct::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
+    // static_assert(std::is_same_v<state_vector_t, UniqueKeyConduct::part_state_vect_t>  ); // because only 1 key
+    static_assert(std::is_same_v<UniqueKeyConduct::Key_t, criterion_t>); // because linear factor &&  size M = size N
 
     AnchorFactor(const std::string&                                    factor_id,
                  const criterion_t&                                 mes_vect,
                  const measure_cov_t&                                  measure_cov,
-                 const std::array<std::string, AnchorFactor::kNbKeys>& keys_id,
-                 std::tuple<  std::shared_ptr<UniqueKeyConduct::part_state_vect_t>> tuple_of_init_point_ptrs)
-        : Factor(factor_id, mes_vect, measure_cov, keys_id, tuple_of_init_point_ptrs)
+                 const std::array<std::string, kNbKeys>& keys_id,
+                 const composite_state_ptr_t & tuple_of_init_point_ptrs)
+        : BaseFactor_t(factor_id, mes_vect, measure_cov, keys_id, tuple_of_init_point_ptrs)
     {
 #if ENABLE_DEBUG_TRACE
       std::cout << "\t::  Factor " << factor_id << " created.\n";
@@ -66,9 +77,9 @@ namespace
     }
 
     // init point guesser
-    static std::optional<std::tuple< std::shared_ptr<UniqueKeyConduct::part_state_vect_t> >>
-        guess_init_key_points_impl(
-            std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct::part_state_vect_t> >>
+    static std::optional<std::tuple< std::shared_ptr<UniqueKeyConduct::Key_t> >>
+        guess_init_key_points_impl( const composite_of_opt_state_ptr_t &
+            // std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct::Key_t> >>
                                   x_init_ptr_optional_tup,
             const criterion_t& z)
     {
@@ -78,23 +89,27 @@ namespace
         return std::make_tuple(std::get<0>(x_init_ptr_optional_tup).value());
       else   // make a new state in the heap from the measurement
       {
-        // measure_vect_t and part_state_vect_t are the same (for this specific factor)
-        static_assert(std::is_same_v<UniqueKeyConduct::part_state_vect_t, criterion_t>);
-        auto xinit_ptr = std::make_shared<UniqueKeyConduct::part_state_vect_t>(z);
+        auto xinit_ptr = std::make_shared<UniqueKeyConduct::Key_t>(z);
         return std::make_tuple(xinit_ptr);
       }
-      // NOTE: never returns std::nullopt
-    }
-
-    criterion_t compute_h_of_x_impl(const state_vector_t& x) const
-    {
-      return process_matrix_t {{1, 0}, {0, 1}} * x;
+      // NOTE: it never returns std::nullopt, that's normal in this situation
     }
 
     private:
-    // defined at ctor
-    const process_matrix_t roach
-        = rho * process_matrix_t {{1, 0}, {0, 1}};   // TODO: defined w.r.t to the partH of keyset
+
+    // making a friend so that we the next implementation method can stay private
+    friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;
+
+    criterion_t compute_h_of_x_trivial_impl(const composite_state_ptr_t  Xptr) const
+    {
+      // Xptr is a single tuple 
+      return factor_process_matrix_t {{1, 0}, {0, 1}} * *std::get<0>(Xptr);
+    }
+
+    // private:
+    // // defined at ctor
+    // const process_matrix_t roach
+    //     = rho * process_matrix_t {{1, 0}, {0, 1}};   // TODO: defined w.r.t to the partH of keyset
   };
 
 }   // namespace
