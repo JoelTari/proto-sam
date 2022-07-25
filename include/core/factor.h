@@ -315,14 +315,7 @@ class BaseFactor
   criterion_t compute_r_of_x_at_current_lin_point() const
   {
     // build back the tup of stored lin point
-    auto lin_point_tup = sam_tuples::reduce_tuple_variadically(
-        this->keys_set,
-        [this]<std::size_t... J>(const auto& kset, std::index_sequence<J...>) {
-          // TODO: assert (key_mean_view != nullptr && ...);
-          //       or throw rather ?
-          return std::make_tuple(*(std::get<J>(kset).key_mean_view)...);
-        });
-    // TODO: check if ok
+    auto lin_point_tup = this->get_key_points();
     return compute_r_of_x_at(lin_point_tup);
   }
 
@@ -369,21 +362,31 @@ class BaseFactor
   }
 
   /**
-   * @brief method that gets the tuple of currently hold linearization points
+   * @brief method that gets the tuple of pointers to the active
+   * linearization points
    *
    * @return tuple of key values \bar Xk (one for each key in the factor)
    */
-  std::tuple<typename KeyConducts::Key_t...> get_key_points() const
+  composite_state_ptr_t get_key_points() const
   {
-    std::tuple<typename KeyConducts::Key_t...> tup_mean;
-    std::apply(
-        [this, &tup_mean](const auto&... kcc)
+    // REFACTOR: why not make it a const member, at worst it would mean that the 
+    // class holds 2 times the same shared_ptr for each key (one in keys_set.key_mean_view
+    // , the other in that new tuple member)
+    // const composite_state_ptr_t lin_points_view; 
+    composite_state_ptr_t current_lin_points_ptr;
+    std::apply([this, &current_lin_points_ptr](const auto& ... kcc)
         {
-          // TODO: assert( *(kcc.key_mean_view) != nullptr && ... );
-          tup_mean = {*(kcc.key_mean_view)...};
-        },
-        this->keys_set);
-    return tup_mean;
+          current_lin_points_ptr = { kcc.key_mean_view ...};
+        }
+        , this->keys_set
+        );
+    return current_lin_points_ptr;
+  }
+
+  criterion_t compute_bi_nl() const
+  {
+    auto tuple_of_means = this->get_key_points();
+    return - this->rho * compute_r_of_x_at(tuple_of_means);
   }
 };
 
@@ -721,13 +724,28 @@ class TrivialEuclidianFactor   // the measure is euclidian and the keys are expr
   {
     criterion_t bi;
     if constexpr (isSystFullyLinear) { bi = this->rosie; }
-    else { bi = this->compute_bi_nl(); }
-    matrices_Aik_t all_Aik = sam_tuples::reduce_array_variadically(
-        this->keys_set,
-        [this]<std::size_t... J>(const auto& keyset, std::index_sequence<J...>) {
-          return std::make_tuple<matrices_Aik_t>(std::get<J>(keyset).compute_Aik()...);
-          // return std::array<std::string,kNbKeys>{std::get<J>(keyset).key_id ...};
-        });
+    else { 
+      bi = this->compute_bi_nl(); 
+    }
+    matrices_Aik_t all_Aik 
+      // = sam_tuples::reduce_array_variadically(
+      //   this->keys_set,
+      //   [this]<std::size_t... J>(const auto& keyset, std::index_sequence<J...>) 
+      //   -> matrices_Aik_t
+      //   {
+      //     return std::make_tuple<matrices_Aik_t>(std::get<J>(keyset).compute_Aik() ...);
+      //     //         return {KeyConducts(my_keys_id[I], rho, std::get<I>(tup_init_points_ptr))...};
+      //     // return std::array<std::string,kNbKeys>{std::get<J>(keyset).key_id ...};
+      //   });
+      ;
+    std::apply([this,&all_Aik](const auto& ... kcc)
+        {
+          all_Aik = { kcc.compute_Aik() ... };
+        }
+        ,this->keys_set
+        );
+
+    return { bi, all_Aik };
   }
 };
 
