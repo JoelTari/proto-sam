@@ -139,40 +139,76 @@ namespace SAM
           {
             PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
             // compute Ai and bi 
-            // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
-            // first: compute bi
-            typename factor_t::criterion_t bi;
-            constexpr int mesdim = factor_t::kM;
-            if constexpr (isSystFullyLinear) bi = factor.rosie;
-            else bi = factor.compute_bi_nl();
-            // second: compute Ai
-            // declare a triplet for Ai (that will be push back into the wider A triplets)
+            // // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
+            // // first: compute bi
+            // typename factor_t::criterion_t bi;
+            // constexpr int mesdim = factor_t::kM;
+            // if constexpr (isSystFullyLinear) bi = factor.rosie;
+            // else bi = factor.compute_bi_nl();
+            // // second: compute Ai
+            // // declare a triplet for Ai (that will be push back into the wider A triplets)
+            // std::vector<Eigen::Triplet<double>> Ai_triplets; 
+            // Ai_triplets.reserve(factor_t::kN*factor_t::kM);
+            // // 
+            // sam_tuples::for_each_in_tuple(factor.keys_set,[this, &mesdim, &line_counter, &Ai_triplets]
+            // (auto & key_context_model, auto keyTypeIdx)
+            // {
+            //   constexpr int kcm_kN = std::decay_t<decltype(key_context_model)>::KeyMeta_t::kN;
+            //   auto partAi = key_context_model.compute_part_A(); // works in NL too.
+            //   // NOTE: 1/partAi is not stored internally in the factor, except for linear (because its const)
+            //   // NOTE: 2/the rest of this code is formation of Ai triplets, could be done in another loop-tuple (then this one has to return a tuple of partAi)
+            //   // get the col in systA (the big A of the system)
+            //   int colInBigA = this->bookkeeper_.getKeyInfos(key_context_model.key_id).sysidx;
+            //   // reshape the partA matrix in a one-dimensional, so that it is easier to loop. (column major)
+            //   auto partAi_1d = partAi.reshaped();
+            //   // now, loop and write
+            //   for (int i = 0; i < kcm_kN * mesdim; i++)
+            //   {
+            //     // row in big A is easier, just wrap the i index & add the line
+            //     // counter
+            //     int row = line_counter + (i % mesdim);  // WARNING: race condition if parallel policy
+            //     // col idx in big A : we know
+            //     int col = colInBigA + i / mesdim;
+            //     Ai_triplets.emplace_back(row, col, partAi_1d[i]);
+            //   }
+            // });
+            //
+            // // put Ai and bi into sparseA_triplets and b
+            // // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
+            // b.block<mesdim,1>(line_counter,0) = bi;
+            // line_counter += mesdim;
+            // // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
+            // sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
+            //
+            // bi is factor_t::criterion_t, 
+            // matrices_Aik is tuple( Ai1, Ai2 ,... ) 
+            //   i.e. submatrices of row length = factor_t::kM and sum of their columns is factor_t::kN
+            auto [bi, matrices_Aik] = factor.template compute_Ai_bi<isSystFullyLinear>();
+
+            // declaring a triplets for matrices_Aik values to be associated with their
+            // row/col indexes in view of its future integration into the system matrix A
             std::vector<Eigen::Triplet<double>> Ai_triplets; 
             Ai_triplets.reserve(factor_t::kN*factor_t::kM);
-            // 
-            sam_tuples::for_each_in_tuple(factor.keys_set,[this, &mesdim, &line_counter, &Ai_triplets]
-            (auto & key_context_model, auto keyTypeIdx)
+            constexpr int mesdim = factor_t::kM;
+            
+            // placing those matrices in Ai_triplets
+            int k = 0; // tuple idx
+            sam_tuples::for_each_in_const_tuple( matrices_Aik,
+            [this, &mesdim, &line_counter, &Ai_triplets, &k, &factor](auto & Aik, auto NIET)
             {
-              constexpr int kcm_kN = std::decay_t<decltype(key_context_model)>::KeyMeta_t::kN;
-              auto partAi = key_context_model.compute_part_A(); // works in NL too.
-              // NOTE: 1/partAi is not stored internally in the factor, except for linear (because its const)
-              // NOTE: 2/the rest of this code is formation of Ai triplets, could be done in another loop-tuple (then this one has to return a tuple of partAi)
-              // get the col in systA (the big A of the system)
-              int colInBigA = this->bookkeeper_.getKeyInfos(key_context_model.key_id).sysidx;
-              // reshape the partA matrix in a one-dimensional, so that it is easier to loop. (column major)
-              auto partAi_1d = partAi.reshaped();
-              // now, loop and write
-              for (int i = 0; i < kcm_kN * mesdim; i++)
-              {
-                // row in big A is easier, just wrap the i index & add the line
-                // counter
-                int row = line_counter + (i % mesdim);  // WARNING: race condition if parallel policy
-                // col idx in big A : we know
-                int col = colInBigA + i / mesdim;
-                Ai_triplets.emplace_back(row, col, partAi_1d[i]);
-              }
+                int Nk = Aik.cols();
+                auto key_id = factor.keys_id[k] ; k++; // WARNING: race condition if parallel policy
+                int colIdxInSystemA = this->bookkeeper_.getKeyInfos(key_id).sysidx;
+                auto spaghetti_Aik = Aik.reshaped(); // make it one dimension
+                for (int i=0; i< Nk*mesdim; i++)
+                {
+                  int row = line_counter + (i%mesdim);
+                  int col = colIdxInSystemA + i /mesdim;
+                  Ai_triplets.emplace_back(row,col,spaghetti_Aik[i]);
+                }
             });
 
+             
             // put Ai and bi into sparseA_triplets and b
             // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
             b.block<mesdim,1>(line_counter,0) = bi;
@@ -360,7 +396,7 @@ namespace SAM
             {
                 int Nk = Aik.cols();
                 auto key_id = factor.keys_id[k] ; k++; // WARNING: race condition if parallel policy
-                int colIdxInSystemA = this->bookkeeper_.getKeyInfos(key_id).sysidx;   // FIX: get key_id
+                int colIdxInSystemA = this->bookkeeper_.getKeyInfos(key_id).sysidx;
                 auto spaghetti_Aik = Aik.reshaped(); // make it one dimension
                 for (int i=0; i< Nk*mesdim; i++)
                 {
@@ -368,31 +404,6 @@ namespace SAM
                   int col = colIdxInSystemA + i /mesdim;
                   Ai_triplets.emplace_back(row,col,spaghetti_Aik[i]);
                 }
-            });
-
-             
-            // old
-            sam_tuples::for_each_in_tuple(factor.keys_set,[this, &mesdim, &line_counter, &Ai_triplets]
-            (auto & key_context_model, auto keyTypeIdx)
-            {
-              constexpr int kcm_kN = std::decay_t<decltype(key_context_model)>::KeyMeta_t::kN;
-              auto partAi = key_context_model.compute_part_A(); // works in NL too.
-              // NOTE: 1/partAi is not stored internally in the factor, except for linear (because its const)
-              // NOTE: 2/the rest of this code is formation of Ai triplets, could be done in another loop-tuple (then this one has to return a tuple of partAi)
-              // get the col in systA (the big A of the system)
-              int colInBigA = this->bookkeeper_.getKeyInfos(key_context_model.key_id).sysidx;
-              // reshape the partA matrix in a one-dimensional, so that it is easier to loop. (column major)
-              auto partAi_1d = partAi.reshaped();
-              // now, loop and write
-              for (int i = 0; i < kcm_kN * mesdim; i++)
-              {
-                // row in big A is easier, just wrap the i index & add the line
-                // counter
-                int row = line_counter + (i % mesdim);  // WARNING: race condition if parallel policy
-                // col idx in big A : we know
-                int col = colInBigA + i / mesdim;
-                Ai_triplets.emplace_back(row, col, partAi_1d[i]);
-              }
             });
 
             // put Ai and bi into sparseA_triplets and b

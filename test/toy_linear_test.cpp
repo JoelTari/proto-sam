@@ -6,32 +6,32 @@
 #include "core/marginal.h"
 
 
-template <typename... Ts>
-struct cat_tuple_in_depth;
-template <typename T>
-struct cat_tuple_in_depth<T>
-{
-  using type = std::tuple<typename T::KeyMeta_t>;   // WARNING: weakness here: use macro ?
-};
-template <typename T, typename... Ts>
-struct cat_tuple_in_depth<T, Ts...>
-{
-  using type = sam_tuples::tuple_cat_t<std::tuple<typename T::KeyMeta_t>,
-                                          typename cat_tuple_in_depth<Ts...>::type>;
-};
-// extract tuple template argument specialisation
-template <typename... Ts>
-struct cat_tuple_in_depth<std::tuple<Ts...>> : cat_tuple_in_depth<Ts...>
-{
-};
-template <typename... Ts, typename... Tss>
-struct cat_tuple_in_depth<std::tuple<Ts...>, std::tuple<Tss...>> : cat_tuple_in_depth<Ts..., Tss...>
-{
-};
-template <typename T>
-struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
-{
-};
+// template <typename... Ts>
+// struct cat_tuple_in_depth;
+// template <typename T>
+// struct cat_tuple_in_depth<T>
+// {
+//   using type = std::tuple<typename T::KeyMeta_t>;   // WARNING: weakness here: use macro ?
+// };
+// template <typename T, typename... Ts>
+// struct cat_tuple_in_depth<T, Ts...>
+// {
+//   using type = sam_tuples::tuple_cat_t<std::tuple<typename T::KeyMeta_t>,
+//                                           typename cat_tuple_in_depth<Ts...>::type>;
+// };
+// // extract tuple template argument specialisation
+// template <typename... Ts>
+// struct cat_tuple_in_depth<std::tuple<Ts...>> : cat_tuple_in_depth<Ts...>
+// {
+// };
+// template <typename... Ts, typename... Tss>
+// struct cat_tuple_in_depth<std::tuple<Ts...>, std::tuple<Tss...>> : cat_tuple_in_depth<Ts..., Tss...>
+// {
+// };
+// template <typename T>
+// struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
+// {
+// };
 
 
 //------------------------------------------------------------------//
@@ -51,17 +51,17 @@ int main(int argc, char* argv[])
 
   auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>("A");
   // test cat_tuple_in_depth
-  using aggrkeymeta_t
-      = cat_tuple_in_depth<AnchorFactor::KeysSet_t, LinearTranslationFactor::KeysSet_t>::type;
+  // using aggrkeymeta_t
+  //     = cat_tuple_in_depth<AnchorFactor::KeysSet_t, LinearTranslationFactor::KeysSet_t>::type;
 
-  std::cout << "number of element in the tuple aggrkeymeta_t (exp. 3) : "
-            << std::tuple_size<aggrkeymeta_t>::value << '\n';
-  std::cout << "number of unique element in the tuple aggrkeymeta_t (exp. 1) : "
-            << sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::size << '\n';
-
-  using uniq_keymeta_set_t = sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::type ;
-
-  using marginals_t = MarginalsContainer<uniq_keymeta_set_t> ;
+  // std::cout << "number of element in the tuple aggrkeymeta_t (exp. 3) : "
+  //           << std::tuple_size<aggrkeymeta_t>::value << '\n';
+  // std::cout << "number of unique element in the tuple aggrkeymeta_t (exp. 1) : "
+  //           << sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::size << '\n';
+  //
+  // using uniq_keymeta_set_t = sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::type ;
+  //
+  // using marginals_t = MarginalsContainer<uniq_keymeta_set_t> ;
   
 
   AnchorFactor::criterion_t z {0, 0};

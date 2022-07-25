@@ -37,6 +37,14 @@ int main(int argc, char* argv[])
   // TODO: test the other factors
   
   
+  //------------------------------------------------------------------//
+  //                       TEST compute Ai & bi                       //
+  //------------------------------------------------------------------//
+  FA.compute_Ai_bi<true>();
+  FA.compute_Ai_bi<false>();
+  FB.compute_Ai_bi<true>();
+  FB.compute_Ai_bi<false>();
+  
 
   //------------------------------------------------------------------//
   //         TEST query the factor at their current lin point         //
