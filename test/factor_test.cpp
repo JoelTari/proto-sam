@@ -35,12 +35,15 @@ int main(int argc, char* argv[])
   double norm_FB = FB.factor_norm_at(proposalFB);   // expected 0
   std::cout << "norm of FB at proposal (  {-3, -1}, {-2, -2} ) : " << norm_FB << '\n';
   // TODO: test the other factors
+  
+  
 
   //------------------------------------------------------------------//
   //         TEST query the factor at their current lin point         //
   //                       (stored internally)                        //
   //------------------------------------------------------------------//
-  // TODO: see what happens for linear FA / FB
+  // TODO: - see what happens for linear FA / FB
+  // TODO: - test the Factor::get_key_points() method
 
 
   //------------------------------------------------------------------//
@@ -51,6 +54,8 @@ int main(int argc, char* argv[])
   //------------------------------------------------------------------//
   //                       TEST OF PRETTY PRINT                       //
   //------------------------------------------------------------------//
+  FB.get_array_keys_id();
+
   std::cout << "Printing runtime infos of a factor : \n";
   factor_print(FA);
   factor_print(FB);
