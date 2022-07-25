@@ -97,10 +97,37 @@ struct KeyContextualConduct : KEYMETA
   }
 };
 
-//------------------------------------------------------------------//
-//                         Factor Template                          //
-//------------------------------------------------------------------//
 
+//------------------------------------------------------------------//
+//                    Base Factor class template                    //
+//------------------------------------------------------------------//
+/**
+ * @brief Class template that holds:
+ * - a gaussian pdf of a measurement Z given its set of -hidden- variables \mathcal X. 
+ * - the model that links the measurement it to its set of hidden variables \cal X := { X_k }, also called keys.
+ *
+ * A factor is a representation of the pdf likelihood p(Z = z | \cal X) .
+ * It is assumed that p( Z = z | \mathcal X ) \propto \exp^ { - r(X;Z)^T r(X;Z) }
+ * This block is class template because:
+ * - the meta type, the number of keys varies factor to factor
+ * - the measurement meta type varies factor to factor
+ * - the model r(X;Z) varies factor to factor, which in turns implies that the Jacobian derivatives
+ *   of this function wrt X do vary too.
+ *
+ * The API exposes the computation of Ai and bi to be used by modern SLAM systems and the negative log likelyhood norm at a given point.
+ *
+ *   A factor implementation must 'statically' inherits from this template or its refined derivatives
+ *
+ * @tparam DerivedFactor derived class that implements all of or part of the API specific to a factor type
+ * @tparam FactorLabel labelization of the factor type
+ * @tparam MEASURE_META meta data of the measurement (dimensions, components name ...)
+ * @tparam KeyConducts Contextual Conduct of a Key inside this factor type. See KeyContextualConduct class template.
+ * @param factor_id identifier (string) of the factor (e.g. 'f0')
+ * @param z measurement Z
+ * @param z_cov measurement covariance 
+ * @param keys_id identifiers of the keys (e.g. "x0" , "x1")
+ * @param tup_init_points_ptr init point of each key (for NL solvers)
+ */
 template <typename DerivedFactor,
           const char* FactorLabel,
           typename MEASURE_META,
@@ -143,7 +170,16 @@ class BaseFactor
 
   static constexpr bool isLinear = (KeyConducts::kLinear && ...);
 
-  // methods
+  /**
+   * @brief Constructor
+   *
+   * @param factor_id
+   * @param factor_id identifier (string) of the factor (e.g. 'f0')
+   * @param z measurement Z
+   * @param z_cov measurement covariance 
+   * @param keys_id array identifiers of the keys (e.g. "x0" , "x1"). Order must respect the set KeyConducts order
+   * @param tup_init_points_ptr init point of each key (for NL solvers)
+   */
   BaseFactor(const std::string&                      factor_id,
              const measure_t&                    z,
              const measure_cov_t&                    z_cov,
@@ -173,7 +209,23 @@ class BaseFactor
 
   std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
-  // init helper
+  /**
+   * @brief static method initial point guesstimator. At factor creation, an initial value for some key points is missing (e.g. observation of a new landmark)
+   * For every combination of missing/available key points, this method **tries to** guess an initial point for the missing ones by using the factor model.
+   * If a combination can't fill a missing init point(e.g. first bearing-only observation of a new 2D landmark ), a null option value  is returned.
+   *
+   * Since init points for all keys are necessary for the factor construction, failure to guess one or more missing initial key point prevents the factor instantiation.
+   * It is the responsibility of system designer to come up with adequate recovery approaches at higher level (e.g. waiting for several bearing-only observations to define triangulation scheme).
+   *
+   * If all initial values are available anyway, this method does nothing 
+   *
+   * @param x_init_ptr_optional_tup tuple containing, for each key in the factor type, the optional pointers to values of initial key points value. If
+   * no initial value is available in inputs, std::nullopt must be passed.
+   * @param z measurement M
+   * @return optional of either:
+   *            - nullopt if the guesstimator has failed for one or more points.
+   *            - a tuple of completed pointers to the values
+   */
   static
   std::optional< composite_state_ptr_t >
   guess_init_key_points(composite_of_opt_state_ptr_t x_init_ptr_optional_tup, const criterion_t & z)
@@ -181,6 +233,17 @@ class BaseFactor
     return DerivedFactor::guess_init_key_points_impl(x_init_ptr_optional_tup, z);      
   }
 
+  static composite_state_ptr_t make_composite(typename KeyConducts::Key_t ...keys )
+  {
+    return {  std::make_shared<typename KeyConducts::Key_t>(keys)  ...  };
+  }
+
+  /**
+   * @brief method that returns an array made of the keys id of this factor instance
+   * The order correspond to the one given at construction time.
+   *
+   * @return array made of the keys id (array of string) of this factor instance
+   */
   std::array<std::string, kNbKeys> get_array_keys_id() const
   {
     return sam_tuples::reduce_array_variadically(this->keys_set,
@@ -190,11 +253,18 @@ class BaseFactor
         });
   }
 
-  static composite_state_ptr_t make_composite(typename KeyConducts::Key_t ...keys )
-  {
-    return {  std::make_shared<typename KeyConducts::Key_t>(keys)  ...  };
-  }
 
+  /**
+   * @brief method template that computes matrices Ai and bi of this factor instance
+   *  bi:= -  r( \bar X )  where \bar X is the linearization point
+   *  Ai:=  \frac{ \partial r(X) } {\partial X} at \bar X .
+   *
+   *  The Ai matrix is actually given in a set of Aik (one Aik per key)
+   *
+   *  The method varies on linear factors whether or not the SLAM system is linear
+   *
+   * @return nested tuple of {bi , tuple (Aiks...) }
+   */
   template <bool isSystFullyLinear>
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi() const 
   {
@@ -202,11 +272,22 @@ class BaseFactor
     return static_cast<const DerivedFactor*>(this)->template compute_Ai_bi_impl<isSystFullyLinear>();
   }
 
+  /**
+   * @brief compute the value r(X) at X
+   *
+   * @param X tuple of pointers to Xk values (one Xk per key)
+   * @return r(X) value (eigen vector)
+   */
   criterion_t compute_r_of_x_at(const composite_state_ptr_t & X ) const
   {
     return static_cast<const DerivedFactor*>(this)->compute_r_of_x_at_impl(X);
   }
 
+  /**
+   * @brief compute r(\bar X) where \bar X is the curent linearization point
+   *
+   * @return r(\bar X) value (eigen vector)
+   */
   criterion_t compute_r_of_x_at_current_lin_point() const
   {
       // build back the tup of stored lin point
@@ -221,19 +302,41 @@ class BaseFactor
       return compute_r_of_x_at(lin_point_tup);
   }
 
+  /**
+   * @brief returns square root of the negative log likelihood at X.
+   *  - log ( p(Z|X) ) = r(X;Z)^T r(X;Z) = || r(X;Z) ||^2_2 = norm ^2
+   *
+   * @param X tuple of pointers to Xk values (one pointer to value Xk per key)
+   * @return scalar L2 norm
+   */
   double factor_norm_at(const composite_state_ptr_t & X) const
   {
-    return compute_r_of_x_at(X).norm();
+    // NOTE: still haven't decided if I should just return the squared norm instead
+    return sqrt(compute_r_of_x_at(X).norm());
   }
 
+  /**
+   * @brief returns square root of the negative log likelihood at the current linearization point \bar X.
+   *  - log ( p(Z|X) ) = r(X;Z)^T r(X;Z) = || r(X;Z) ||^2_2 = norm ^2
+   *
+   * @return scalar L2 norm
+   */
   double factor_norm_at_current_lin_point() const
   {
-    return compute_r_of_x_at_current_lin_point().norm();
+    // NOTE: still haven't decided if I should just return the squared norm instead
+    return sqrt(compute_r_of_x_at_current_lin_point().norm());
   }
 
   protected:
 
-  // ctor helper
+  /**
+   * @brief  constructor helper that creates a map that associated a key id to its index in the input array of keys
+   *
+   * E.g.  { "x0", "l2" , "x3" }  produces { {"x0",0}, {"l2", 1}, {"x3", 2} }
+   *
+   * @param keys_id array of key identifiers (array of string)
+   * @return std::map association key id (string) to index (int) in the input array
+   */
   std::map<std::string, std::size_t>
       map_keyid(const std::array<std::string, kNbKeys>& keys_id) const
   {
@@ -242,7 +345,11 @@ class BaseFactor
     return result;
   }
 
-  //  func that gets the tup of lin points contained in kcm into a tuple of Key_t
+  /**
+   * @brief method that gets the tuple of currently hold linearization points
+   *
+   * @return tuple of key values \bar Xk (one for each key in the factor)
+   */
   std::tuple<typename KeyConducts::Key_t ...> get_key_points() const
   {
     std::tuple<typename KeyConducts::Key_t ...> tup_mean;
@@ -257,9 +364,47 @@ class BaseFactor
   
 };
 
+
 //------------------------------------------------------------------//
 //                 Euclidian Factor class template                  //
+//                     r(X) := rho ( h(X) - z )                     //
+//        z and h(X) are euclidian vectors, keys X might not        //
+//                                be                                //
 //------------------------------------------------------------------//
+/**
+ * @brief Class template that holds:
+ * - a gaussian pdf of a measurement vector Z given its set of -hidden- variables \mathcal X. 
+ * - the model that links the measurement it to its set of hidden variables \cal X := { X_k }, also called keys.
+ *
+ * The Euclidian Factor template 'statically' derives from the Base Factor. It cover the cases where r(X) is of the form:
+ *  r(X) = \rho ( h(X) - z )
+ *  I.e. the measure z and h(X) are both euclidian vectors
+ *  The keys X might still not be expressed in euclidian space though (e.g. landmark cartesian observation).
+ *   Look at TrivialEuclidianFactor for a class template that supports euclidian keys.
+ *
+ * A factor is a representation of the pdf likelihood p(Z = z | \cal X) .
+ * It is assumed that p( Z = z | \mathcal X ) \propto \exp^ { - r(X;Z)^T r(X;Z) }
+ * This block is class template because:
+ * - the meta type, the number of keys varies factor to factor
+ * - the measurement meta type varies factor to factor
+ * - the model r(X;Z) varies factor to factor, which in turns implies that the Jacobian derivatives
+ *   of this function wrt X do vary too.
+ *
+ * The API exposes the computation of Ai and bi to be used by modern SLAM systems and the negative log likelyhood norm at a given point.
+ *
+ *
+ *   A factor implementation must 'statically' inherits from this template or its refined derivatives
+ *
+ * @tparam DerivedEuclidianFactor derived class that implements all of or part of the API specific to a factor type
+ * @tparam FactorLabel labelization of the factor type
+ * @tparam MEASURE_META meta data of the measurement (dimensions, components name ...)
+ * @tparam KeyConducts Contextual Conduct of a Key inside this factor type. See KeyContextualConduct class template.
+ * @param factor_id identifier (string) of the factor (e.g. 'f0')
+ * @param z measurement Z
+ * @param z_cov measurement covariance 
+ * @param keys_id identifiers of the keys (e.g. "x0" , "x1")
+ * @param tup_init_points_ptr init point of each key (for NL solvers)
+ */
 template <typename DerivedEuclidianFactor,
           const char* FactorLabel,
           typename MEASURE_META,
@@ -302,8 +447,19 @@ class EuclidianFactor
   // check that the measure is euclidian (i.e. same as the criterion_t)
   static_assert(std::is_same_v<measure_t,criterion_t>);
 
+  // rosie is a precious name for rho*z
   const criterion_t                         rosie = this->rho*this->z; 
                                                           
+  /**
+   * @brief Constructor
+   *
+   * @param factor_id
+   * @param factor_id identifier (string) of the factor (e.g. 'f0')
+   * @param z measurement Z
+   * @param z_cov measurement covariance 
+   * @param keys_id array identifiers of the keys (e.g. "x0" , "x1"). Order must respect the set KeyConducts order
+   * @param tup_init_points_ptr init point of each key (for NL solvers)
+   */
   EuclidianFactor(const std::string&                      factor_id,
                  const measure_t&                   z,
                  const measure_cov_t&                    z_cov,
@@ -313,6 +469,23 @@ class EuclidianFactor
   {
   }
   
+  /**
+   * @brief static method initial point guesstimator. At factor creation, an initial value for some key points is missing (e.g. observation of a new landmark)
+   * For every combination of missing/available key points, this method **tries to** guess an initial point for the missing ones by using the factor model.
+   * If a combination can't fill a missing init point(e.g. first bearing-only observation of a new 2D landmark ), a null option value  is returned.
+   *
+   * Since init points for all keys are necessary for the factor construction, failure to guess one or more missing initial key point prevents the factor instantiation.
+   * It is the responsibility of system designer to come up with adequate recovery approaches at higher level (e.g. waiting for several bearing-only observations to define triangulation scheme).
+   *
+   * If all initial values are available anyway, this method does nothing 
+   *
+   * @param x_init_ptr_optional_tup tuple containing, for each key in the factor type, the optional pointers to values of initial key points value. If
+   * no initial value is available in inputs, std::nullopt must be passed.
+   * @param z measurement M
+   * @return optional of either:
+   *            - nullopt if the guesstimator has failed for one or more points.
+   *            - a tuple of completed pointers to the values
+   */
   static
   std::optional< composite_state_ptr_t >
   guess_init_key_points_impl(composite_of_opt_state_ptr_t x_init_ptr_optional_tup, const criterion_t & z)
@@ -322,18 +495,42 @@ class EuclidianFactor
 
   protected:
 
+  /**
+   * @brief method template that computes matrices Ai and bi of this factor instance
+   *  bi:= -  r( \bar X )  where \bar X is the linearization point
+   *  Ai:=  \frac{ \partial r(X) } {\partial X} at \bar X .
+   *
+   *  The Ai matrix is actually given in a set of Aik (one Aik per key)
+   *
+   *  The method varies on linear factors whether or not the SLAM system is linear
+   *
+   * @return nested tuple of {bi , tuple (Aiks...) }
+   */
   template <bool isSystFullyLinear>
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_impl() const
   {
+    // TODO: test on cartesian landmark observation if we can be more explicit here: use the method from TrivialEuclidianFactor.
     return static_cast<const DerivedEuclidianFactor*>(this)->template compute_Ai_bi_impl<isSystFullyLinear>();
   }
 
 
+  /**
+   * @brief compute the value r(X) at X
+   *
+   * @param X tuple of pointers to Xk values (one Xk per key)
+   * @return r(X) value (eigen vector)
+   */
   criterion_t compute_r_of_x_at_impl(const composite_state_ptr_t & X ) const
   {
     return this->rho * this->compute_h_of_x(X) - this->rosie;
   }
 
+  /**
+   * @brief compute the value h(X) at X
+   *
+   * @param X X tuple of pointers to Xk values (on Xk per key)
+   * @return h(X) value (eigen vector)
+   */
   criterion_t compute_h_of_x(const composite_state_ptr_t & X) const
   {
     return static_cast<const DerivedEuclidianFactor*>(this)->compute_h_of_x_impl(X);
@@ -345,7 +542,42 @@ class EuclidianFactor
 
 //------------------------------------------------------------------//
 //                     Trivial Euclidian Factor                     //
+//            z, h(X), and the keys X are all euclidian             //
+//                   h(X) is generally nonlinear                    //
 //------------------------------------------------------------------//
+/**
+ * @brief Class template that holds:
+ * - a gaussian pdf of a measurement vector Z given its set of -hidden- variables \mathcal X. 
+ * - the model that links the measurement it to its set of hidden variables \cal X := { X_k }, also called keys.
+ *
+ * The Euclidian Factor template 'statically' derives from the Base Factor. It cover the cases where r(X) is of the form:
+ *  r(X) = \rho ( h(X) - z )
+ *  I.e. the measure z and h(X) are both euclidian vectors
+ * Additionnaly, the keys Xk of X are also euclidian vectors (no tricky manifolds such as SE(n) or SO(n), just \mathbb R^n )
+ *
+ * A factor is a representation of the pdf likelihood p(Z = z | \cal X) .
+ * It is assumed that p( Z = z | \mathcal X ) \propto \exp^ { - r(X;Z)^T r(X;Z) }
+ * This block is class template because:
+ * - the meta type, the number of keys varies factor to factor
+ * - the measurement meta type varies factor to factor
+ * - the model r(X;Z) varies factor to factor, which in turns implies that the Jacobian derivatives
+ *   of this function wrt X do vary too.
+ *
+ * The API exposes the computation of Ai and bi to be used by modern SLAM systems and the negative log likelyhood norm at a given point.
+ *
+ *
+ *   A factor implementation must 'statically' inherits from this template or its refined derivatives
+ *
+ * @tparam DerivedEuclidianFactor derived class that implements all of or part of the API specific to a factor type
+ * @tparam FactorLabel labelization of the factor type
+ * @tparam MEASURE_META meta data of the measurement (dimensions, components name ...)
+ * @tparam KeyConducts Contextual Conduct of a Key inside this factor type. See KeyContextualConduct class template.
+ * @param factor_id identifier (string) of the factor (e.g. 'f0')
+ * @param z measurement Z
+ * @param z_cov measurement covariance 
+ * @param keys_id identifiers of the keys (e.g. "x0" , "x1")
+ * @param tup_init_points_ptr init point of each key (for NL solvers)
+ */
 template <typename DerivedTrivialEuclidianFactor,
           const char* FactorLabel,
           typename MEASURE_META,
@@ -387,6 +619,16 @@ class TrivialEuclidianFactor  // the measure is euclidian and the keys are expre
   static_assert( (KeyConducts::kIsTrivialManifold && ... ));
 
 
+    /**
+     * @brief Constructor
+     *
+     * @param factor_id
+     * @param factor_id identifier (string) of the factor (e.g. 'f0')
+     * @param z measurement Z
+     * @param z_cov measurement covariance 
+     * @param keys_id array identifiers of the keys (e.g. "x0" , "x1"). Order must respect the set KeyConducts order
+     * @param tup_init_points_ptr init point of each key (for NL solvers)
+     */
     TrivialEuclidianFactor(const std::string&                      factor_id,
                            const measure_t&                   z,
                            const measure_cov_t&                    z_cov,
@@ -396,7 +638,23 @@ class TrivialEuclidianFactor  // the measure is euclidian and the keys are expre
     {
     }
     
-    // chores: passing static polymorphism to derived
+  /**
+   * @brief static method initial point guesstimator. At factor creation, an initial value for some key points is missing (e.g. observation of a new landmark)
+   * For every combination of missing/available key points, this method **tries to** guess an initial point for the missing ones by using the factor model.
+   * If a combination can't fill a missing init point(e.g. first bearing-only observation of a new 2D landmark ), a null option value  is returned.
+   *
+   * Since init points for all keys are necessary for the factor construction, failure to guess one or more missing initial key point prevents the factor instantiation.
+   * It is the responsibility of system designer to come up with adequate recovery approaches at higher level (e.g. waiting for several bearing-only observations to define triangulation scheme).
+   *
+   * If all initial values are available anyway, this method does nothing 
+   *
+   * @param x_init_ptr_optional_tup tuple containing, for each key in the factor type, the optional pointers to values of initial key points value. If
+   * no initial value is available in inputs, std::nullopt must be passed.
+   * @param z measurement M
+   * @return optional of either:
+   *            - nullopt if the guesstimator has failed for one or more points.
+   *            - a tuple of completed pointers to the values
+   */
     static
     std::optional< composite_state_ptr_t >
     guess_init_key_points_impl(const composite_of_opt_state_ptr_t & x_init_ptr_optional_tup, const criterion_t & z)
@@ -405,13 +663,29 @@ class TrivialEuclidianFactor  // the measure is euclidian and the keys are expre
     }
     
   protected:
-    // chores: passing static polymorphism to derived
+
+    /**
+     * @brief compute the value h(X) at X
+     *
+     * @param X X tuple of pointers to Xk values (on Xk per key)
+     * @return h(X) value (eigen vector)
+     */
     criterion_t compute_h_of_x_impl(const composite_state_ptr_t & X) const
     {
       return static_cast<const DerivedTrivialEuclidianFactor*>(this)->compute_h_of_x_impl(X);
     }
 
-    // the interesting part of the trivial euclidian factor: the compute Ai bi part can be defined generically
+    /**
+     * @brief method template that computes matrices Ai and bi of this factor instance
+     *  bi:= -  r( \bar X )  where \bar X is the linearization point
+     *  Ai:=  \frac{ \partial r(X) } {\partial X} at \bar X .
+     *
+     *  The Ai matrix is actually given in a set of Aik (one Aik per key)
+     *
+     *  The method varies on linear factors whether or not the SLAM system is linear
+     *
+     * @return nested tuple of {bi , tuple (Aiks...) }
+     */
     template <bool isSystFullyLinear>
     std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_impl() const
     {
@@ -781,8 +1055,13 @@ struct FactorsHistoriesContainer
 //------------------------------------------------------------------//
 //                      Helper print functions                      //
 //------------------------------------------------------------------//
-// TODO: use tuple_patterns rather
-// static traverse of the KeySet tuple
+// TODO:  refactor those method in a class template associated with 
+//        a factor class tempalte
+
+/**
+ * @brief Traverse a tuple and print
+ *
+ */
 template <typename TUP, size_t I = 0>
 constexpr void traverse_tup()
 {
