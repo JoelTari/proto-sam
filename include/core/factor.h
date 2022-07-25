@@ -335,8 +335,7 @@ class BaseFactor
    */
   double factor_norm_at(const composite_state_ptr_t& X) const
   {
-    // NOTE: still haven't decided if I should just return the squared norm instead
-    return sqrt(compute_r_of_x_at(X).norm());
+    return compute_r_of_x_at(X).norm();
   }
 
   /**
@@ -348,8 +347,7 @@ class BaseFactor
    */
   double factor_norm_at_current_lin_point() const
   {
-    // NOTE: still haven't decided if I should just return the squared norm instead
-    return sqrt(compute_r_of_x_at_current_lin_point().norm());
+    return compute_r_of_x_at_current_lin_point().norm();
   }
 
   protected:
