@@ -14,7 +14,7 @@ namespace __MetaKeyPosition
   inline static constexpr const char y[]        = "y";
   using KeyPosition_t                           = Eigen::Vector<double, 2>;
   // using MetaKeyPosition_t                = KeyMeta<position, 2, x, y>;
-  struct MetaKeyPosition_t : KeyMeta<MetaKeyPosition_t, KeyPosition_t, position, 2, x, y>
+  struct MetaKeyPosition_t : EuclidKeyMeta<MetaKeyPosition_t, position, KeyPosition_t, x, y>
   {
     template <const char* COMPONENT>
     static double get_component_impl(const KeyPosition_t& key_position_element)
