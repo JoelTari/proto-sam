@@ -40,11 +40,12 @@ int main(int argc, char* argv[])
   //------------------------------------------------------------------//
   //                       TEST compute Ai & bi                       //
   //------------------------------------------------------------------//
-  FA.compute_Ai_bi<true>();
-  FA.compute_Ai_bi<false>();
-  FB.compute_Ai_bi<true>();
-  FB.compute_Ai_bi<false>();
-  
+  // FA.compute_Ai_bi<true>();
+  // FA.compute_Ai_bi<false>();
+  // FB.compute_Ai_bi<true>();
+  // FB.compute_Ai_bi<false>();
+
+  std::cout << "compute Ai bi completed\n";
 
   //------------------------------------------------------------------//
   //         TEST query the factor at their current lin point         //
@@ -76,14 +77,20 @@ int main(int argc, char* argv[])
 
   std::cout << "\nAccess the 2nd component of the measurement embedded in the factor \n -> measure "
             << AnchorFactor::kMeasureComponentsName[1] << " = "
-            << AnchorFactor::measure_meta_t::get_component<AnchorFactor::kMeasureComponentsName[0]>(
+            << AnchorFactor::measure_meta_t::get_component<AnchorFactor::kMeasureComponentsName[1]>(
                    m)
             << "\n";
 
-  // this also works
-  static constexpr const char ycomp[]("y");
-  std::cout << AnchorFactor::measure_meta_t::get_component<ycomp>(m) << '\n';
+  // this also works (the constexpr is necessary, but then makes the const redundant)
+  static constexpr char y[] = "y", x[]= "x";
+  std::cout << "Get " << "y" << " component of measurement m : " 
+            <<  AnchorFactor::measure_meta_t::get_component<y>(m) << '\n';
+  AnchorFactor::measure_meta_t::get_component<x>(m);
+  // this wouldnt pass static assertion
+  // static constexpr char fake_comp[] = "zzz";
+  // std::cout << AnchorFactor::measure_meta_t::get_component<fake_comp>(m) << '\n';
 
+  // TODO: test the runtime versions of get_component
   //------------------------------------------------------------------//
   //                     TEST history management                      //
   //------------------------------------------------------------------//

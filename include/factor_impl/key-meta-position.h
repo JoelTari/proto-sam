@@ -23,10 +23,8 @@ namespace __MetaKeyPosition
         return key_position_element(0, 0);
       else
       {
-        if constexpr (std::string_view(COMPONENT) == y)
-          return key_position_element(1, 0);
-        else
-          return -1;   // FIX: create failure here
+        static_assert(std::string_view(COMPONENT) == y);
+        return key_position_element(1, 0);
       }
     }
 
