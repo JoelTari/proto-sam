@@ -44,12 +44,13 @@ struct KeyMeta
   // retrieve components statically
   // TODO: move to printer class (single responsibility principle)
   template <const char* COMPONENT>
-  static double get_component(const key_t & keyvalue)
+  static auto get_component(const key_t & keyvalue)
   {
     return DerivedKeyMeta::template get_component_impl<COMPONENT>(keyvalue);
   }
 
   // dynamic version
+  // TODO: actually, remvoe the dynamic access because the return type can't be auto
   static double get_component(const char* component, const key_t & keyvalue)
   {
     return DerivedKeyMeta::get_component_impl(component,keyvalue);

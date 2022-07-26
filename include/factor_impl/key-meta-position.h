@@ -17,7 +17,7 @@ namespace __MetaKeyPosition
   struct MetaKeyPosition_t : EuclidKeyMeta<MetaKeyPosition_t, position, KeyPosition_t, x, y>
   {
     template <const char* COMPONENT>
-    static double get_component_impl(const KeyPosition_t& key_position_element)
+    static auto get_component_impl(const KeyPosition_t& key_position_element)
     {
       if constexpr (std::string_view(COMPONENT) == x)
         return key_position_element(0, 0);
@@ -28,6 +28,7 @@ namespace __MetaKeyPosition
       }
     }
 
+    // remove
     static double get_component_impl(const char*          component,
                                      const KeyPosition_t& key_position_element)
     {
@@ -38,6 +39,7 @@ namespace __MetaKeyPosition
       else
         throw std::runtime_error("component requested doesnt exist in key position meta");
     }
+
   };
 }   // namespace __MetaKeyPosition
 using MetaKeyPosition_t = __MetaKeyPosition::MetaKeyPosition_t;
