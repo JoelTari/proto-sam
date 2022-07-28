@@ -96,7 +96,6 @@ struct KeyContextualConduct : KEYMETA
   {
     // necessary (but not sufficient) condition for this ctor: the context model must be linear.
     // sufficient condition would be that the wider system be linear (enforceable at higher level)
-    // static_assert(kLinear); // FIX: URGENT: remove kLinear
   }
 
   /**
@@ -165,7 +164,7 @@ struct LinearKeyContextualConduct
 
   // Matrix Hik, created at runtime (but still static accross all instantiations)
   // constexpr impossible because of SIMD specifities (IIRC)
-  inline static const key_process_matrix_t Hik; 
+  // inline static const key_process_matrix_t Hik; 
   // BUG: fix: just need to be able to fill Hik from template arguments to be able to remove the DerivedLinearKCC 
   // BUG: and simplify declaration. 
   // BUG: Problem: an Eigen Matrix cant be passed as a non-type template argument, so we have to pass something else, and convert.
@@ -201,12 +200,19 @@ struct LinearKeyContextualConduct
 
   // inline static const key_process_matrix_t Hik  = define_Hik();
 
+  static key_process_matrix_t get_Hik()
+  {
+    // until I fix getting Hik through template non-type arguments,
+    // I defer to implementation
+    return DerivedLinearKCC::get_Hik_impl();
+  }
+
   // static_assert(std::is_same_v<key_process_matrix_t, decltype(Hik) >);
 
   // this is a linear context for this KCC template
   static constexpr const bool        kLinear {true};
 
-  const key_process_matrix_t Aik = this->rho*Hik;
+  const key_process_matrix_t Aik = this->rho*this->get_Hik();
 
   LinearKeyContextualConduct(const std::string& key_id, const measure_cov_t& rho)
     : base_kcc_t(key_id,rho)
@@ -331,7 +337,6 @@ class BaseFactor
                   // and next line expanding tuple_cat with an intermediary function that has
                   // perfect forwarding ( TODO:)
                   return {KeyConducts(my_keys_id[I], rho, std::get<I>(tup_init_points_ptr))...};
-                  // FIX: URGENT Linear Key Conduct doesnot receive initpoints !!!
                 },
             rho,
             tup_init_points_ptr))
@@ -784,7 +789,7 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
   // all key conduct are trivial manifold
   static_assert((LinearKeyConducts::kIsTrivialManifold && ...));
   // measurement generative model wrt X is linear
-  static_assert((LinearKeyConducts::kLinear && ...)); // FIX: URGENT: assert that we have only LinearKeyCC
+  static_assert((LinearKeyConducts::kLinear && ...));
 
   // rosie is a precious name for rho*z
   const criterion_t rosie = this->rho * this->z;
@@ -874,7 +879,6 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
    */
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
   {
-    std::cout << "A new method !!!\n";
     matrices_Aik_t all_Aik
       =
       std::apply(

@@ -26,7 +26,7 @@ namespace __LinearTranslationKeyConducts
           // , std::array<double,kN_obs>{0,-1}
         >
         {
-          inline static const key_process_matrix_t Hik  {{-1,0},{0,-1}};
+          inline static key_process_matrix_t get_Hik_impl(){return key_process_matrix_t{{-1,0},{0,-1}};}
           // ctors (boring): 
           using BaseLinearKcc_t = LinearKeyContextualConduct<ObserverKeyConduct_t,MetaKeyPosition_t,dimMes,observer_var>;
           ObserverKeyConduct_t(const std::string& key_id,const measure_cov_t& rho)
@@ -46,7 +46,7 @@ namespace __LinearTranslationKeyConducts
           // , std::array<double,kN_obs>{0,1}
         >
         {
-          inline static const key_process_matrix_t Hik  {{1,0},{0,1}};
+          inline static key_process_matrix_t get_Hik_impl(){return key_process_matrix_t{{1,0},{0,1}};}
           // ctors (boring): 
           using BaseLinearKcc_t = LinearKeyContextualConduct<SightedKeyConduct_t,MetaKeyPosition_t,dimMes,sighted_var>;
           SightedKeyConduct_t(const std::string& key_id,const measure_cov_t& rho)
@@ -148,30 +148,6 @@ namespace
         return std::nullopt;
       }
     }
-
-    // private:
-    
-    // // making a friend so that we the next implementation method can stay private
-    // friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;
-
-    // criterion_t compute_h_of_x_impl(const composite_state_ptr_t & Xptr) const
-    // {
-    //   // TODO: HACK: seems that there is a generic form for linear euclidian factor
-    //   // Indeed, for any linear factor, we have h(x) = Sum_k ( Aik * xk  )
-    //   return
-    //     std::get<0>(this->keys_set).Hik* *std::get<0>(Xptr).get()
-    //       +
-    //       std::get<1>(this->keys_set).Hik* *std::get<0>(Xptr).get();
-    //   // return criterion_t();
-    // }
-
-    // private:
-    // // defined at ctor
-    // // NOTE: is that used ?? 
-    // const factor_process_matrix_t roach
-    //     = rho
-    //       * factor_process_matrix_t {{1, 0, -1, 0},
-    //                           {0, 1, 0, -1}};   // TODO: defined w.r.t to the partH of keyset
   };
 
 }   // namespace

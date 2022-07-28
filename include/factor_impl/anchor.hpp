@@ -26,7 +26,10 @@ namespace __UniqueKeyConduct
           // , std::array<double,kN>{0,1}
         >
     {
-      inline static const key_process_matrix_t Hik  {{1,0},{0,1}};
+      inline static key_process_matrix_t get_Hik_impl()
+      {
+        return key_process_matrix_t{{1,0},{0,1}};
+      }
       // ctors (boring): 
       using BaseLinearKcc_t = LinearKeyContextualConduct<UniqueKeyConduct_t,MetaKeyPosition_t,dimMes,anchor_role>;
       UniqueKeyConduct_t(const std::string& key_id,const measure_cov_t& rho)
@@ -47,15 +50,6 @@ namespace
     public:
     using BaseFactor_t = LinearEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct_t>;
     friend BaseFactor_t;
-    // using key_process_matrix_t = typename UniqueKeyConduct_t::key_process_matrix_t;
-    // using factor_process_matrix_t = typename parent_t::factor_process_matrix_t;
-    // using criterion_t = typename BaseFactor_t::criterion_t;
-    // using measure_t = typename BaseFactor_t::measure_t;
-    // using measure_cov_t = typename BaseFactor_t::measure_cov_t;
-    // using matrices_Aik_t = typename  BaseFactor_t::matrices_Aik_t;
-    // using composite_state_ptr_t = typename BaseFactor_t::composite_state_ptr_t;
-    // using composite_of_opt_state_ptr_t = typename BaseFactor_t::composite_of_opt_state_ptr_t;
-    //
     static_assert(std::is_same_v<UniqueKeyConduct_t::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
     static_assert(std::is_same_v<UniqueKeyConduct_t::Key_t, criterion_t>); // because linear factor &&  size M = size N
 
@@ -89,22 +83,6 @@ namespace
       }
       // NOTE: it never returns std::nullopt, that's normal in this situation
     }
-
-    // private:
-
-    // // making a friend so that we the next implementation method can stay private
-    // friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;
-
-    // criterion_t compute_h_of_x_impl(const composite_state_ptr_t &  Xptr) const
-    // {
-    //   // Xptr is a single tuple 
-    //   return std::get<0>(this->keys_set).Hik* *std::get<0>(Xptr);
-    // }
-
-    // private:
-    // // defined at ctor
-    // const process_matrix_t roach
-    //     = rho * process_matrix_t {{1, 0}, {0, 1}};   // TODO: defined w.r.t to the Hik of keyset
   };
 
 }   // namespace
