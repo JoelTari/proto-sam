@@ -24,7 +24,10 @@ namespace
     inline static const key_process_matrix_t Hik {{-1, 0}, {0, -1}};
     const key_process_matrix_t               Aik;
 
-    key_process_matrix_t compute_Aik_impl() const { return Aik; }
+    key_process_matrix_t compute_Aik_at_impl(const Key_t & Xk ) const // FIX: URGENT:
+    { 
+      return Aik; 
+    }
 
     // For linear systems
     ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho, std::shared_ptr<Key_t>  init_point_ptr)
@@ -56,7 +59,10 @@ namespace
     inline static const key_process_matrix_t Hik {{1, 0}, {0, 1}};
     const key_process_matrix_t Aik;
 
-    key_process_matrix_t compute_Aik_impl() const { return Aik; }
+    key_process_matrix_t compute_Aik_at_impl(const Key_t & Xk) const 
+    { 
+      return Aik; 
+    }
 
     // For linear systems
     SightedKeyConduct(const std::string key_id, const measure_cov_t& rho)
@@ -81,13 +87,13 @@ namespace
 namespace
 {
   class LinearTranslationFactor
-      : public TrivialEuclidianFactor<LinearTranslationFactor,
+      : public LinearEuclidianFactor<LinearTranslationFactor,
                       LinearTranslationLabel,
                       MetaMeasureLinearTranslation_t,
                       SightedKeyConduct,
                       ObserverKeyConduct>
   {
-    using BaseFactor_t = TrivialEuclidianFactor
+    using BaseFactor_t = LinearEuclidianFactor
                     <LinearTranslationFactor,
                       LinearTranslationLabel,
                       MetaMeasureLinearTranslation_t,
@@ -173,16 +179,16 @@ namespace
     // // making a friend so that we the next implementation method can stay private
     // friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;
 
-    criterion_t compute_h_of_x_impl(const composite_state_ptr_t & Xptr) const
-    {
-      // TODO: HACK: seems that there is a generic form for linear euclidian factor
-      // Indeed, for any linear factor, we have h(x) = Sum_k ( Aik * xk  )
-      return
-        std::get<0>(this->keys_set).compute_Aik()* *std::get<0>(Xptr).get()
-          +
-          std::get<1>(this->keys_set).compute_Aik()* *std::get<1>(Xptr).get();
-      // return criterion_t();
-    }
+    // criterion_t compute_h_of_x_impl(const composite_state_ptr_t & Xptr) const
+    // {
+    //   // TODO: HACK: seems that there is a generic form for linear euclidian factor
+    //   // Indeed, for any linear factor, we have h(x) = Sum_k ( Aik * xk  )
+    //   return
+    //     std::get<0>(this->keys_set).Hik* *std::get<0>(Xptr).get()
+    //       +
+    //       std::get<1>(this->keys_set).Hik* *std::get<0>(Xptr).get();
+    //   // return criterion_t();
+    // }
 
     // private:
     // // defined at ctor

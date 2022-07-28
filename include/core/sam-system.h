@@ -183,7 +183,7 @@ namespace SAM
             // bi is factor_t::criterion_t, 
             // matrices_Aik is tuple( Ai1, Ai2 ,... ) 
             //   i.e. submatrices of row length = factor_t::kM and sum of their columns is factor_t::kN
-            auto [bi, matrices_Aik] = factor.template compute_Ai_bi<isSystFullyLinear>();
+            auto [bi, matrices_Aik] = compute_Ai_bi<factor_t>(factor);
 
             // declaring a triplets for matrices_Aik values to be associated with their
             // row/col indexes in view of its future integration into the system matrix A
@@ -382,7 +382,7 @@ namespace SAM
             //  the main task is to decouple the usage from the affectation in bigger matrices A & b below
 
             // bi is factor_t::criterion_t, matrices_Aik is tuple( Ai1, Ai2 ,... ) i.e. submatrices of row length = factor_t::kM and sum of their columns is factor_t::kN
-            auto [bi, matrices_Aik] = factor.template compute_Ai_bi<isSystFullyLinear>();
+            auto [bi, matrices_Aik] = compute_Ai_bi<factor_t>(factor);
 
             // declaring a triplets for matrices_Aik values to be associated with their
             // row/col indexes in view of its future integration into the system matrix A
@@ -688,6 +688,16 @@ namespace SAM
         }
       }
     }
+
+    template <typename FT>
+    auto compute_Ai_bi(const FT & factor)
+    {
+      if constexpr (isSystFullyLinear) 
+        return factor.compute_Ai_bi_at_current_lin_point();
+      else 
+        return factor.compute_Ai_bi_linear();
+    }
+
 
     template <typename FT>
     void add_keys_to_bookkeeper(const std::array<std::string, FT::kNbKeys>& keys_id,

@@ -23,7 +23,7 @@ namespace
         {0, 1}};   // cant make it constexpr, but it's probably still compile time
     const key_process_matrix_t Aik;
 
-    key_process_matrix_t compute_Aik_impl() const
+    key_process_matrix_t compute_Aik_at_impl(const Key_t & Xk) const
     {
       return Aik;   // since it is linear, no need to do anything
     }
@@ -47,10 +47,10 @@ namespace
 {
   inline static constexpr const char anchorLabel[] = "anchor";
   class AnchorFactor
-      : public TrivialEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>
+      : public LinearEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>
   {
     public:
-    using BaseFactor_t = TrivialEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>;
+    using BaseFactor_t = LinearEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>;
     friend BaseFactor_t;
     // using key_process_matrix_t = typename UniqueKeyConduct::key_process_matrix_t;
     // using factor_process_matrix_t = typename parent_t::factor_process_matrix_t;
@@ -100,11 +100,11 @@ namespace
     // // making a friend so that we the next implementation method can stay private
     // friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;
 
-    criterion_t compute_h_of_x_impl(const composite_state_ptr_t &  Xptr) const
-    {
-      // Xptr is a single tuple 
-      return std::get<0>(this->keys_set).compute_Aik() * *std::get<0>(Xptr);
-    }
+    // criterion_t compute_h_of_x_impl(const composite_state_ptr_t &  Xptr) const
+    // {
+    //   // Xptr is a single tuple 
+    //   return std::get<0>(this->keys_set).Hik* *std::get<0>(Xptr);
+    // }
 
     // private:
     // // defined at ctor
