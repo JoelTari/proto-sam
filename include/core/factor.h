@@ -22,15 +22,13 @@
  *
  * @tparam DerivedKCC Derived user class. Static polymorhism pattern.
  * @tparam KEYMETA Meta of the key (dimensions, type, components name of the key)
+ * @tparam DimMes dimension of the measure
  * @tparam ContextRole -- (text) role of the key in the context
- * @tparam linearModel -- true if the key is linear in its context (e.g.  h(X)-z = H.X - z ), this
- * information entails simplifications on the differenciation
  */
 template <typename DerivedKCC,
-          typename KEYMETA,
-          size_t      DimMes,
+          typename KEYMETA,    // TODO: rename KEYMETA by KEY_META
+          size_t      DimMes, // TODO: replace DimMes by MEASURE_META
           const char* ContextRole>
-          // bool        LinearModel = false> // FIX: URGENT: remove kLinear
 struct KeyContextualConduct : KEYMETA
 {
   using KeyMeta_t = KEYMETA;
@@ -127,14 +125,23 @@ struct KeyContextualConduct : KEYMETA
 //------------------------------------------------------------------//
 //          Linear augmentation of Key Contextual Conduct           //
 //------------------------------------------------------------------//
+/**
+ * @brief KeyContextualConduct  -- The class describes how a key (associated with a key meta)
+ * behaves in a certain context (in a linear factor). It stores dimension informations name and most
+ * importantly process matrices to be used when assessing the measure expectation wrt the decision keys.
+ * As a factor can have several keys, therefore, the LinearKeyContextualConduct class only manages a
+ * subset of the columns of the factor 's process matrix.
+ *
+ * @tparam DerivedLinearKCC Derived user class. Static polymorhism pattern.
+ * @tparam KEYMETA Meta of the key (dimensions, type, components name of the key)
+ * @tparam DimMes dimension of the measure
+ * @tparam ContextRole -- (text) role of the key in the context
+ */
 template <typename DerivedLinearKCC,
           typename KEYMETA,
           size_t      DimMes,
           const char* ContextRole
-          // ,
-          // std::array<double, KEYMETA::kN> ... Hik_rows
           >
-          // NOTE: can't pass a Eigen Matrix in template non-type (non literal type), but I can pass a bunch of static arrays
 struct LinearKeyContextualConduct 
 : KeyContextualConduct
     <
@@ -158,7 +165,11 @@ struct LinearKeyContextualConduct
 
   // Matrix Hik, created at runtime (but still static accross all instantiations)
   // constexpr impossible because of SIMD specifities (IIRC)
-  inline static const key_process_matrix_t Hik; // BUG: fix: just need to be able to fill Hik from template arguments to be able to remove the DerivedLinearKCC and simplify declaration
+  inline static const key_process_matrix_t Hik; 
+  // BUG: fix: just need to be able to fill Hik from template arguments to be able to remove the DerivedLinearKCC 
+  // BUG: and simplify declaration. 
+  // BUG: Problem: an Eigen Matrix cant be passed as a non-type template argument, so we have to pass something else, and convert.
+  // BUG: See the commented attempt below.
   
   // // TODO:  defining Hik via the template arguments would be great as it avoids the necessity of a derived class
   // static key_process_matrix_t define_Hik()
@@ -265,12 +276,6 @@ class BaseFactor
   using measure_cov_t                  = Eigen::Matrix<double, kM, kM>;
   using factor_process_matrix_t        = Eigen::Matrix<double, kM, kN>;
   using state_vector_t                 = Eigen::Matrix<double, kN, 1>;   // { dXk , ... }
-  // // the next 2 are probably unnecessary at Base
-  // using tuple_of_part_state_ptr_t
-  //   = std::tuple<std::shared_ptr<typename KeyConducts::part_state_vect_t> ...>;
-  // using tuple_of_opt_part_state_ptr_t
-  //   = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::part_state_vect_t>> ...>;
-  // remove the last two
   using composite_state_ptr_t
       = std::tuple<std::shared_ptr<typename KeyConducts::Key_t>...>;   // {*Xk ...}
   using composite_of_opt_state_ptr_t
@@ -500,12 +505,6 @@ class BaseFactor
         );
     return current_lin_points_ptr;
   }
-
-  // criterion_t compute_bi_nl() const // FIX: URGENT:
-  // {
-  //   auto tuple_of_means = this->get_key_points();
-  //   return - this->rho * compute_r_of_x_at(tuple_of_means);
-  // }
 };
 
 
@@ -842,7 +841,11 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
   /**
    * @brief compute Ai and bi in the case that the factor is linear AND the
    * system is linear (all other factors in the system are linear).
-   * bi := rho* z 
+   * bi := rho* z .
+   * This yields a different result for b, because , in linear systems, the 
+   * Ai bi are in this context:    Ai X - bi .
+   * While in NL system its   :      Ai dX - bi.
+   * Hence the bi s are not the same
    * NOTE: this method does not appear in base factor
    *
    * @return nested tuple of {bi, tuple (Aiks ...)}
@@ -862,6 +865,13 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
     return { bi , all_Aik };
   }
 
+  /**
+   * @brief compute Ai and bi of this linear factor inside a NL system:  Ai . dX - bi.
+   * This implentation is valid for all linear factors.
+   *
+   * @param X composite state of linearization points
+   * @return tuple of { bi, tuple of Aiks } 
+   */
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
   {
     std::cout << "A new method !!!\n";
