@@ -6,53 +6,48 @@
 #include "factor_impl/key-meta-position.h"
 #include "factor_impl/measure-meta-absolute-position.h"
 
-namespace
+namespace __UniqueKeyConduct
 {
   // factor instantiation from templates
   // instantiate the (unique) key conduct
-  inline static constexpr const char anchor_var[] = "unique var";
-  struct UniqueKeyConduct
-      : KeyContextualConduct<UniqueKeyConduct,
-                             MetaKeyPosition_t,
-                             MetaMeasureAbsolutePosition_t::kM,
-                             anchor_var,
-                             true>
-  {
-    inline static const key_process_matrix_t Hik {
-        {1, 0},
-        {0, 1}};   // cant make it constexpr, but it's probably still compile time
-    const key_process_matrix_t Aik;
+  inline static constexpr const char anchor_role[] = "unique var";
+  inline static const  Eigen::Matrix<double,2,2> H_anchor{{1,0},{0,1}};
+  inline static constexpr std::size_t dimMes = MetaMeasureAbsolutePosition_t::kM;
+  inline static constexpr std::size_t kN = MetaKeyPosition_t::kN;
 
-    key_process_matrix_t compute_Aik_at_impl(const Key_t & Xk) const
+  struct UniqueKeyConduct_t
+    : LinearKeyContextualConduct
+        <
+          UniqueKeyConduct_t
+          , MetaKeyPosition_t
+          , dimMes
+          , anchor_role
+          // , std::array<double,kN>{1,0}
+          // , std::array<double,kN>{0,1}
+        >
     {
-      return Aik;   // since it is linear, no need to do anything
-    }
-
-    UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho)
-        : KeyContextualConduct(key_id, rho)
-        , Aik(rho * Hik)   // rho*H
-    {
-    }
-
-    // for NL cases
-    UniqueKeyConduct(const std::string key_id, const measure_cov_t& rho,std::shared_ptr<Key_t> init_point)
-        : KeyContextualConduct(key_id, rho, init_point)
-        , Aik(rho * Hik)   // rho*H
-    {
-    }
-  };
+      inline static const key_process_matrix_t Hik  {{1,0},{0,1}};
+      // ctors (boring): 
+      using BaseLinearKcc_t = LinearKeyContextualConduct<UniqueKeyConduct_t,MetaKeyPosition_t,dimMes,anchor_role>;
+      UniqueKeyConduct_t(const std::string& key_id,const measure_cov_t& rho)
+        : BaseLinearKcc_t(key_id,rho){}
+      UniqueKeyConduct_t ( const std::string& key_id ,const measure_cov_t& rho ,std::shared_ptr<Key_t> init_point_view)
+        : BaseLinearKcc_t(key_id,rho,init_point_view) {}
+    };
+    
 }   // namespace
+using UniqueKeyConduct_t = __UniqueKeyConduct::UniqueKeyConduct_t;
 
 namespace
 {
   inline static constexpr const char anchorLabel[] = "anchor";
   class AnchorFactor
-      : public LinearEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>
+      : public LinearEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct_t>
   {
     public:
-    using BaseFactor_t = LinearEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct>;
+    using BaseFactor_t = LinearEuclidianFactor<AnchorFactor, anchorLabel, MetaMeasureAbsolutePosition_t, UniqueKeyConduct_t>;
     friend BaseFactor_t;
-    // using key_process_matrix_t = typename UniqueKeyConduct::key_process_matrix_t;
+    // using key_process_matrix_t = typename UniqueKeyConduct_t::key_process_matrix_t;
     // using factor_process_matrix_t = typename parent_t::factor_process_matrix_t;
     // using criterion_t = typename BaseFactor_t::criterion_t;
     // using measure_t = typename BaseFactor_t::measure_t;
@@ -61,8 +56,8 @@ namespace
     // using composite_state_ptr_t = typename BaseFactor_t::composite_state_ptr_t;
     // using composite_of_opt_state_ptr_t = typename BaseFactor_t::composite_of_opt_state_ptr_t;
     //
-    static_assert(std::is_same_v<UniqueKeyConduct::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
-    static_assert(std::is_same_v<UniqueKeyConduct::Key_t, criterion_t>); // because linear factor &&  size M = size N
+    static_assert(std::is_same_v<UniqueKeyConduct_t::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
+    static_assert(std::is_same_v<UniqueKeyConduct_t::Key_t, criterion_t>); // because linear factor &&  size M = size N
 
     AnchorFactor(const std::string&                                    factor_id,
                  const criterion_t&                                 mes_vect,
@@ -77,9 +72,9 @@ namespace
     }
 
     // init point guesser
-    static std::optional<std::tuple< std::shared_ptr<UniqueKeyConduct::Key_t> >>
+    static std::optional<std::tuple< std::shared_ptr<UniqueKeyConduct_t::Key_t> >>
         guess_init_key_points_impl( const composite_of_opt_state_ptr_t &
-            // std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct::Key_t> >>
+            // std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct_t::Key_t> >>
                                   x_init_ptr_optional_tup,
             const criterion_t& z)
     {
@@ -89,13 +84,13 @@ namespace
         return std::make_tuple(std::get<0>(x_init_ptr_optional_tup).value());
       else   // make a new state in the heap from the measurement
       {
-        auto xinit_ptr = std::make_shared<UniqueKeyConduct::Key_t>(z);
+        auto xinit_ptr = std::make_shared<UniqueKeyConduct_t::Key_t>(z);
         return std::make_tuple(xinit_ptr);
       }
       // NOTE: it never returns std::nullopt, that's normal in this situation
     }
 
-    private:
+    // private:
 
     // // making a friend so that we the next implementation method can stay private
     // friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;

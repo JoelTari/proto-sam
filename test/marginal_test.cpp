@@ -9,8 +9,8 @@ int main (int argc, char *argv[])
     using MarginalPosition_t = Marginal<MetaKeyPosition_t>;
     
     // UniqueKeyConduct::measure_cov_t rho({{1,0},{0,1}});
-    auto adfs = UniqueKeyConduct({ "test"}, Eigen::Matrix2d{{1,0},{0,1}} ) ;
-    const UniqueKeyConduct & adfss = UniqueKeyConduct({ "test"}, Eigen::Matrix2d{{1,0},{0,1}} ) ;
+    auto adfs = UniqueKeyConduct_t({ "test"}, Eigen::Matrix2d{{1,0},{0,1}} ) ;
+    const UniqueKeyConduct_t & adfss = UniqueKeyConduct_t({ "test"}, Eigen::Matrix2d{{1,0},{0,1}} ) ;
     auto & dd = adfs;
 
 

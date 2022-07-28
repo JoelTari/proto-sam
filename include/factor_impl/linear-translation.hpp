@@ -4,104 +4,79 @@
 #include "core/config.h"
 #include "core/factor.h"
 #include "factor_impl/key-meta-position.h"
+#include "factor_impl/measure-meta-absolute-position.h"
 #include "factor_impl/measure-meta-linear-translation.h"
 
+
+namespace __LinearTranslationKeyConducts
+{
+  inline static constexpr const char sighted_var[]           = "sighted";
+  inline static constexpr const char observer_var[]           = "observer";
+  inline static constexpr std::size_t dimMes = MetaMeasureAbsolutePosition_t::kM;
+  inline static constexpr std::size_t kN_obs = MetaKeyPosition_t::kN;
+  inline static constexpr std::size_t kN_sigh = MetaKeyPosition_t::kN;
+
+  struct ObserverKeyConduct_t 
+    : LinearKeyContextualConduct
+        < ObserverKeyConduct_t
+          ,MetaKeyPosition_t
+          , dimMes
+          , observer_var
+          // , std::array<double,kN_obs>{-1,0}
+          // , std::array<double,kN_obs>{0,-1}
+        >
+        {
+          inline static const key_process_matrix_t Hik  {{-1,0},{0,-1}};
+          // ctors (boring): 
+          using BaseLinearKcc_t = LinearKeyContextualConduct<ObserverKeyConduct_t,MetaKeyPosition_t,dimMes,observer_var>;
+          ObserverKeyConduct_t(const std::string& key_id,const measure_cov_t& rho)
+            : BaseLinearKcc_t(key_id,rho){}
+          ObserverKeyConduct_t ( const std::string& key_id ,const measure_cov_t& rho ,std::shared_ptr<Key_t> init_point_view)
+            : BaseLinearKcc_t(key_id,rho,init_point_view) {}
+        };
+
+  struct SightedKeyConduct_t 
+    : LinearKeyContextualConduct
+        <
+          SightedKeyConduct_t
+          ,MetaKeyPosition_t
+          , dimMes
+          , sighted_var
+          // , std::array<double,kN_obs>{1,0}
+          // , std::array<double,kN_obs>{0,1}
+        >
+        {
+          inline static const key_process_matrix_t Hik  {{1,0},{0,1}};
+          // ctors (boring): 
+          using BaseLinearKcc_t = LinearKeyContextualConduct<SightedKeyConduct_t,MetaKeyPosition_t,dimMes,sighted_var>;
+          SightedKeyConduct_t(const std::string& key_id,const measure_cov_t& rho)
+            : BaseLinearKcc_t(key_id,rho){}
+          SightedKeyConduct_t ( const std::string& key_id ,const measure_cov_t& rho ,std::shared_ptr<Key_t> init_point_view)
+            : BaseLinearKcc_t(key_id,rho,init_point_view) {}
+        };
+}   // namespace
+using ObserverKeyConduct_t = typename __LinearTranslationKeyConducts::ObserverKeyConduct_t;
+using SightedKeyConduct_t = typename __LinearTranslationKeyConducts::SightedKeyConduct_t;
 
 namespace
 {
   inline static constexpr const char LinearTranslationLabel[] = "linear translation";
-  inline static constexpr const char sighted_var[]           = "sighted";
-  inline static constexpr const char observer_var[]           = "observer";
-
-  // observer (xipp)
-  struct ObserverKeyConduct
-      : KeyContextualConduct<ObserverKeyConduct,
-                             MetaKeyPosition_t,
-                             MetaMeasureLinearTranslation_t::kM,
-                             observer_var,
-                             true>   // true for linear
-  {
-    inline static const key_process_matrix_t Hik {{-1, 0}, {0, -1}};
-    const key_process_matrix_t               Aik;
-
-    key_process_matrix_t compute_Aik_at_impl(const Key_t & Xk ) const // FIX: URGENT:
-    { 
-      return Aik; 
-    }
-
-    // For linear systems
-    ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho, std::shared_ptr<Key_t>  init_point_ptr)
-        : KeyContextualConduct(key_id, rho, init_point_ptr)
-        , Aik(rho * Hik)
-    {
-    }
-    
-    // For NL cases
-    ObserverKeyConduct(const std::string key_id, const measure_cov_t& rho)
-    : KeyContextualConduct(key_id, rho)
-    , Aik(rho * Hik)
-    {
-    }
-
-  };
-}   // namespace
-
-namespace
-{
-  // sighted (xi)
-  struct SightedKeyConduct
-      : KeyContextualConduct<SightedKeyConduct,
-                             MetaKeyPosition_t,
-                             MetaMeasureLinearTranslation_t::kM,
-                             sighted_var,
-                             true> // true for linear
-  {
-    inline static const key_process_matrix_t Hik {{1, 0}, {0, 1}};
-    const key_process_matrix_t Aik;
-
-    key_process_matrix_t compute_Aik_at_impl(const Key_t & Xk) const 
-    { 
-      return Aik; 
-    }
-
-    // For linear systems
-    SightedKeyConduct(const std::string key_id, const measure_cov_t& rho)
-        : KeyContextualConduct(key_id, rho)
-        , Aik(rho * Hik)
-    {
-    }
-
-    // For NL cases
-    SightedKeyConduct(const std::string key_id, const measure_cov_t& rho, std::shared_ptr<Key_t> init_point_ptr)
-    : KeyContextualConduct(key_id, rho,init_point_ptr)
-    , Aik(rho * Hik)
-    {
-    }
-
-    // euclidian space
-    static_assert(std::is_same_v<SightedKeyConduct::Key_t, SightedKeyConduct::tangent_space_vect_t>);
-  };
-
-}   // namespace
-
-namespace
-{
   class LinearTranslationFactor
       : public LinearEuclidianFactor<LinearTranslationFactor,
                       LinearTranslationLabel,
                       MetaMeasureLinearTranslation_t,
-                      SightedKeyConduct,
-                      ObserverKeyConduct>
+                      SightedKeyConduct_t,
+                      ObserverKeyConduct_t>
   {
     using BaseFactor_t = LinearEuclidianFactor
                     <LinearTranslationFactor,
                       LinearTranslationLabel,
                       MetaMeasureLinearTranslation_t,
-                      SightedKeyConduct,
-                      ObserverKeyConduct>;
+                      SightedKeyConduct_t,
+                      ObserverKeyConduct_t>;
     friend BaseFactor_t;
-    using SightedKey_process_matrix = typename SightedKeyConduct::key_process_matrix_t;
-    using ObserverKey_process_matrix = typename ObserverKeyConduct::key_process_matrix_t;
+    using SightedKey_process_matrix = typename SightedKeyConduct_t::key_process_matrix_t;
+    using ObserverKey_process_matrix = typename ObserverKeyConduct_t::key_process_matrix_t;
 
     public:
 
@@ -125,11 +100,11 @@ namespace
     // (used in NL systems if an init point must be set)
     static
     // std::optional<
-    //     std::tuple< std::shared_ptr<SightedKeyConduct::part_state_vect_t>, std::shared_ptr<ObserverKeyConduct::part_state_vect_t>>>
+    //     std::tuple< std::shared_ptr<SightedKeyConduct_t::part_state_vect_t>, std::shared_ptr<ObserverKeyConduct_t::part_state_vect_t>>>
     std::optional<composite_state_ptr_t>
         guess_init_key_points_impl(
-            // const std::tuple<std::optional<std::shared_ptr<SightedKeyConduct::part_state_vect_t>>,
-            //                  std::optional<std::shared_ptr<ObserverKeyConduct::part_state_vect_t>>>&
+            // const std::tuple<std::optional<std::shared_ptr<SightedKeyConduct_t::part_state_vect_t>>,
+            //                  std::optional<std::shared_ptr<ObserverKeyConduct_t::part_state_vect_t>>>&
             const composite_of_opt_state_ptr_t &
                                   x_init_ptr_optional_tup,
             const criterion_t& z)
@@ -146,12 +121,12 @@ namespace
       else if (std::get<kSightedKeyConductIdx>(x_init_ptr_optional_tup).has_value()
                && !std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).has_value())
       {
-        std::shared_ptr<ObserverKeyConduct::Key_t> observer_init_point_ptr;
-        std::shared_ptr<SightedKeyConduct::Key_t> sighted_init_point_ptr
+        std::shared_ptr<ObserverKeyConduct_t::Key_t> observer_init_point_ptr;
+        std::shared_ptr<SightedKeyConduct_t::Key_t> sighted_init_point_ptr
             = std::get<kSightedKeyConductIdx>(x_init_ptr_optional_tup).value();
 
 
-        observer_init_point_ptr = std::make_shared<ObserverKeyConduct::Key_t>(*sighted_init_point_ptr - z);
+        observer_init_point_ptr = std::make_shared<ObserverKeyConduct_t::Key_t>(*sighted_init_point_ptr - z);
 
         return std::make_tuple(sighted_init_point_ptr, observer_init_point_ptr);
       }
@@ -159,11 +134,11 @@ namespace
       else if (!std::get<kSightedKeyConductIdx>(x_init_ptr_optional_tup).has_value()
                && std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).has_value())
       {
-        std::shared_ptr<ObserverKeyConduct::Key_t> observer_init_point_ptr
+        std::shared_ptr<ObserverKeyConduct_t::Key_t> observer_init_point_ptr
             = std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).value();
-        std::shared_ptr<SightedKeyConduct::Key_t> sighted_init_point_ptr;
+        std::shared_ptr<SightedKeyConduct_t::Key_t> sighted_init_point_ptr;
 
-        sighted_init_point_ptr = std::make_shared<SightedKeyConduct::Key_t>(z - *observer_init_point_ptr);
+        sighted_init_point_ptr = std::make_shared<SightedKeyConduct_t::Key_t>(z - *observer_init_point_ptr);
 
         return std::make_tuple(sighted_init_point_ptr, observer_init_point_ptr);
       }
@@ -174,7 +149,7 @@ namespace
       }
     }
 
-    private:
+    // private:
     
     // // making a friend so that we the next implementation method can stay private
     // friend criterion_t BaseFactor_t::compute_h_of_x_impl(const composite_state_ptr_t &X) const;

@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
   //------------------------------------------------------------------//
   // AnchorFactor A;
   AnchorFactor::criterion_t              m    = {2.0, -1};
-  AnchorFactor::measure_cov_t            cov  = AnchorFactor::measure_cov_t::Identity();
+  AnchorFactor::measure_cov_t            cov  = AnchorFactor::measure_cov_t::Identity(); //TODO: test: do something else than identity
   LinearTranslationFactor::criterion_t   m2   = {-1.0, 1.0};
   LinearTranslationFactor::measure_cov_t cov2 = LinearTranslationFactor::measure_cov_t::Identity();
 

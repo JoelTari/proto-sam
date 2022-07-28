@@ -29,15 +29,15 @@
 template <typename DerivedKCC,
           typename KEYMETA,
           size_t      DimMes,
-          const char* ContextRole,
-          bool        LinearModel = false> // FIX: URGENT: remove kLinear
+          const char* ContextRole>
+          // bool        LinearModel = false> // FIX: URGENT: remove kLinear
 struct KeyContextualConduct : KEYMETA
 {
   using KeyMeta_t = KEYMETA;
   using Key_t     = typename KeyMeta_t::key_t;
   static constexpr const char*       kRole {ContextRole};
   static constexpr const std::size_t kM {DimMes};
-  static constexpr const bool        kLinear {LinearModel};
+  static constexpr const bool        kLinear {false};
   // non static but const
   const std::string key_id;
   // non static, not const
@@ -50,6 +50,7 @@ struct KeyContextualConduct : KEYMETA
   // euclidian space is a trivial manifold (same as its tangent space)
   static constexpr bool kIsTrivialManifold = std::is_same_v<Key_t, tangent_space_vect_t>;
 
+    // WARNING: SRP: remove
   const std::shared_ptr<Key_t> key_mean_view = nullptr;
 
   /**
@@ -77,6 +78,7 @@ struct KeyContextualConduct : KEYMETA
    */
   key_process_matrix_t compute_Aik_at_current_lin_point() const
   {
+    // WARNING: SRP: remove
     // copy the current linearization point
     if (key_mean_view == nullptr) throw std::runtime_error("nullptr to linearization point Xk");
     const auto Xk = *key_mean_view;
@@ -96,7 +98,7 @@ struct KeyContextualConduct : KEYMETA
   {
     // necessary (but not sufficient) condition for this ctor: the context model must be linear.
     // sufficient condition would be that the wider system be linear (enforceable at higher level)
-    static_assert(kLinear); // FIX: URGENT: remove kLinear
+    // static_assert(kLinear); // FIX: URGENT: remove kLinear
   }
 
   /**
@@ -117,6 +119,7 @@ struct KeyContextualConduct : KEYMETA
       : key_id(key_id)
       , rho(rho)
       , key_mean_view(init_point_view)
+    // WARNING: SRP: remove
   {
   }
 };
@@ -124,47 +127,89 @@ struct KeyContextualConduct : KEYMETA
 //------------------------------------------------------------------//
 //          Linear augmentation of Key Contextual Conduct           //
 //------------------------------------------------------------------//
-template <
+template <typename DerivedLinearKCC,
           typename KEYMETA,
           size_t      DimMes,
-          const char* ContextRole,
-          auto Hik>
+          const char* ContextRole
+          // ,
+          // std::array<double, KEYMETA::kN> ... Hik_rows
+          >
+          // NOTE: can't pass a Eigen Matrix in template non-type (non literal type), but I can pass a bunch of static arrays
 struct LinearKeyContextualConduct 
 : KeyContextualConduct
     <
-      LinearKeyContextualConduct<KEYMETA,DimMes,ContextRole,Hik>
+      LinearKeyContextualConduct<DerivedLinearKCC,KEYMETA,DimMes,ContextRole>
       ,KEYMETA
       ,DimMes
       ,ContextRole
-      ,true
     >
 {
   using base_kcc_t = KeyContextualConduct
     <
-      LinearKeyContextualConduct<KEYMETA,DimMes,ContextRole,Hik>
+      LinearKeyContextualConduct<DerivedLinearKCC,KEYMETA,DimMes,ContextRole>
       ,KEYMETA
       ,DimMes
       ,ContextRole
-      ,true
     >;
+  using Key_t = typename base_kcc_t::Key_t;
 
   using key_process_matrix_t = typename base_kcc_t::key_process_matrix_t;
   using measure_cov_t = typename base_kcc_t::measure_cov_t;
 
-  static_assert(std::is_same_v<key_process_matrix_t, decltype(Hik) >);
-
-  // static const auto Hik = Hprocess;
+  // Matrix Hik, created at runtime (but still static accross all instantiations)
+  // constexpr impossible because of SIMD specifities (IIRC)
+  inline static const key_process_matrix_t Hik; // BUG: fix: just need to be able to fill Hik from template arguments to be able to remove the DerivedLinearKCC and simplify declaration
   
+  // // TODO:  defining Hik via the template arguments would be great as it avoids the necessity of a derived class
+  // static key_process_matrix_t define_Hik()
+  // {
+  //   // looks a bit bloated
+  //   key_process_matrix_t tHik;
+  //   auto tuple_Hik_rows = std::make_tuple(Hik_rows...);
+  //   // make a tuple of row Matrix
+  //   auto tuple_of_rowMat = std::apply(
+  //     [&tHik](const auto & ... Hik_row )
+  //     {
+  //       return 
+  //       std::make_tuple(
+  //            Eigen::Matrix<double,1,key_process_matrix_t::RowsAtCompileTime >(Hik_row.data()) 
+  //           ... );
+  //     },tuple_Hik_rows);
+  //   // join these tuples of row Matrices into a single Matrix
+  //    auto themat = std::apply(
+  //       [](const auto & ... row){
+  //         // quite surprisngly, this works !
+  //        key_process_matrix_t mat;
+  //        // return ((mat << row),...).finished() ;
+  //        ((mat << row),...);
+  //        std::cout << mat ;
+  //        return mat;
+  //       }, tuple_of_rowMat );
+  //   return themat;
+  // }
+
+  // inline static const key_process_matrix_t Hik  = define_Hik();
+
+  // static_assert(std::is_same_v<key_process_matrix_t, decltype(Hik) >);
+
+  // this is a linear context for this KCC template
+  static constexpr const bool        kLinear {true};
+
   const key_process_matrix_t Aik = this->rho*Hik;
 
-  key_process_matrix_t compute_Aik() const
-  {
-    return Aik;
-  }
-  
   LinearKeyContextualConduct(const std::string& key_id, const measure_cov_t& rho)
     : base_kcc_t(key_id,rho)
   {}
+
+  LinearKeyContextualConduct
+    (
+      const std::string& key_id
+      ,const measure_cov_t& rho
+      ,std::shared_ptr<Key_t> init_point_view
+    )
+    : base_kcc_t(key_id,rho,init_point_view)
+  {
+  }
 };
 
 //------------------------------------------------------------------//
@@ -246,6 +291,8 @@ class BaseFactor
 
   static constexpr bool isLinear = (KeyConducts::kLinear && ...);
 
+  // TODO: assert that all kcc role (const char*) are unique
+
   /**
    * @brief Constructor
    *
@@ -279,6 +326,7 @@ class BaseFactor
                   // and next line expanding tuple_cat with an intermediary function that has
                   // perfect forwarding ( TODO:)
                   return {KeyConducts(my_keys_id[I], rho, std::get<I>(tup_init_points_ptr))...};
+                  // FIX: URGENT Linear Key Conduct doesnot receive initpoints !!!
                 },
             rho,
             tup_init_points_ptr))
@@ -356,10 +404,11 @@ class BaseFactor
     return static_cast<const DerivedFactor*>(this)->compute_Ai_bi_at_impl(X);
   }
 
+    // WARNING: SRP: remove
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_current_lin_point() const
   {
     auto X = get_key_points();
-    return compute_Ai_bi_at(X);
+    return this->compute_Ai_bi_at(X);
   }
 
   /**
@@ -379,6 +428,7 @@ class BaseFactor
    * @return r(\bar X) value (eigen vector)
    */
   criterion_t compute_r_of_x_at_current_lin_point() const
+    // WARNING: SRP: remove
   {
     // build back the tup of stored lin point
     auto lin_point_tup = this->get_key_points();
@@ -406,6 +456,7 @@ class BaseFactor
    */
   double factor_norm_at_current_lin_point() const
   {
+    // WARNING: SRP: remove
     return compute_r_of_x_at_current_lin_point().norm();
   }
 
@@ -435,6 +486,7 @@ class BaseFactor
    */
   composite_state_ptr_t get_key_points() const
   {
+    // WARNING: SRP: remove
     // REFACTOR: why not make it a const member, at worst it would mean that the 
     // class holds 2 times the same shared_ptr for each key (one in keys_set.key_mean_view
     // , the other in that new tuple member)
@@ -602,6 +654,16 @@ class EuclidianFactor
    */
   std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
   {
+    // if 
+    // if constexpr (
+    //     // HACK: branch to the derived (bad pattern)
+    //           std::is_member_function_pointer_v< decltype(&DerivedEuclidianFactor::compute_Ai_bi_at_impl)>
+    //             )
+    // {
+    //   return  static_cast<const DerivedEuclidianFactor*>(this)->compute_Ai_bi_at_impl(X); 
+    // }
+    // else
+    // {
     criterion_t bi = - this->compute_r_of_x_at(X);
     // matrices_Aik_t all_Aik ;
     // double apply pattern to zip two tuples
@@ -616,6 +678,7 @@ class EuclidianFactor
         );
 
     return { bi, all_Aik };
+    // }
   }
 
 
@@ -654,7 +717,7 @@ class EuclidianFactor
  * - the model that links the measurement it to its set of hidden variables \cal X := { X_k }, also
  * called keys.
  *
- * The Linear Factor template 'statically' derives from the Euclidian Factor. It cover the cases where
+ * The Linear Factor template 'statically' derives from the Base Factor. It cover the cases where
  * r(X) is of the form: r(X) = \rho ( HX - z ) I.e. the measure z and h(X)=HX are both euclidian
  * vectors Additionnaly, the keys Xk of X are also euclidian vectors (no tricky manifolds such as
  * SE(n) or SO(n), just \mathbb R^n )
@@ -688,42 +751,44 @@ class EuclidianFactor
 template <typename DerivedLinearEuclidianFactor,
           const char* FactorLabel,
           typename MEASURE_META,
-          typename... KeyConducts>
+          typename... LinearKeyConducts>
 class LinearEuclidianFactor   // the measure is euclidian and the keys are expressed in Euclidian
                                // space too
-    : public EuclidianFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
+    : public BaseFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
                                                     FactorLabel,
                                                     MEASURE_META,
-                                                    KeyConducts...>,
+                                                    LinearKeyConducts...>,
                              FactorLabel,
                              MEASURE_META,
-                             KeyConducts...>
+                             LinearKeyConducts...>
 {
   public:
-  using BaseEuclidianFactor_t
-      = EuclidianFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
+  using BaseFactor_t
+      = BaseFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
                                                FactorLabel,
                                                MEASURE_META,
-                                               KeyConducts...>,
+                                               LinearKeyConducts...>,
                         FactorLabel,
                         MEASURE_META,
-                        KeyConducts...>;
+                        LinearKeyConducts...>;
   // declares friendlies so that they get to protected impl methods of this class
   friend DerivedLinearEuclidianFactor;
-  friend BaseEuclidianFactor_t;
+  friend BaseFactor_t;
   // passing some type definitions for convenience
-  using criterion_t                  = typename BaseEuclidianFactor_t::criterion_t;
-  using measure_t                    = typename BaseEuclidianFactor_t::measure_t;
-  using measure_cov_t                = typename BaseEuclidianFactor_t::measure_cov_t;
-  using matrices_Aik_t               = typename BaseEuclidianFactor_t::matrices_Aik_t;
-  using composite_state_ptr_t        = typename BaseEuclidianFactor_t::composite_state_ptr_t;
-  using composite_of_opt_state_ptr_t = typename BaseEuclidianFactor_t::composite_of_opt_state_ptr_t;
-  using KeysSet_t = typename BaseEuclidianFactor_t::KeysSet_t;
+  using criterion_t                  = typename BaseFactor_t::criterion_t;
+  using measure_t                    = typename BaseFactor_t::measure_t;
+  using measure_cov_t                = typename BaseFactor_t::measure_cov_t;
+  using matrices_Aik_t               = typename BaseFactor_t::matrices_Aik_t;
+  using composite_state_ptr_t        = typename BaseFactor_t::composite_state_ptr_t;
+  using composite_of_opt_state_ptr_t = typename BaseFactor_t::composite_of_opt_state_ptr_t;
+  using KeysSet_t = typename BaseFactor_t::KeysSet_t;
   // all key conduct are trivial manifold
-  static_assert((KeyConducts::kIsTrivialManifold && ...));
+  static_assert((LinearKeyConducts::kIsTrivialManifold && ...));
   // measurement generative model wrt X is linear
-  static_assert((KeyConducts::kLinear && ...)); // FIX: URGENT: assert that we have only LinearKeyCC
+  static_assert((LinearKeyConducts::kLinear && ...)); // FIX: URGENT: assert that we have only LinearKeyCC
 
+  // rosie is a precious name for rho*z
+  const criterion_t rosie = this->rho * this->z;
 
   /**
    * @brief Constructor
@@ -739,9 +804,9 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
   LinearEuclidianFactor(const std::string&                                             factor_id,
                          const measure_t&                                               z,
                          const measure_cov_t&                                           z_cov,
-                         const std::array<std::string, BaseEuclidianFactor_t::kNbKeys>& keys_id,
+                         const std::array<std::string, BaseFactor_t::kNbKeys>& keys_id,
                          const composite_state_ptr_t& tup_init_points_ptr)
-      : BaseEuclidianFactor_t(factor_id, z, z_cov, keys_id, tup_init_points_ptr)
+      : BaseFactor_t(factor_id, z, z_cov, keys_id, tup_init_points_ptr)
   {
   }
 
@@ -778,10 +843,11 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
    * @brief compute Ai and bi in the case that the factor is linear AND the
    * system is linear (all other factors in the system are linear).
    * bi := rho* z 
+   * NOTE: this method does not appear in base factor
    *
    * @return nested tuple of {bi, tuple (Aiks ...)}
    */
-  std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_linear()
+  std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_linear() const
   {
     matrices_Aik_t all_Aik
       =
@@ -796,6 +862,22 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
     return { bi , all_Aik };
   }
 
+  std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
+  {
+    std::cout << "A new method !!!\n";
+    matrices_Aik_t all_Aik
+      =
+      std::apply(
+          [this,&all_Aik](const auto& ... kcc)
+          {
+            return std::make_tuple( kcc.Aik ... );
+          }
+          ,this->keys_set
+      );
+    criterion_t bi = - this->compute_r_of_x_at(X);
+    return { bi , all_Aik };
+  }
+
   protected:
   /**
    * @brief compute the value h(X) at X for linear. This is a generic method for linear systems
@@ -806,7 +888,7 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
    * @param X tuple of pointers to Xk values (on Xk per key)
    * @return h(X) value (eigen vector)
    */
-  criterion_t compute_h_of_x_impl(const composite_state_ptr_t& X) const
+  criterion_t compute_h_of_x(const composite_state_ptr_t& X) const
   {
     // h(X) = sum_k( Hik*Xk)
     // Nested tuples is a hacky way to *zip* those 2 tuples
@@ -831,15 +913,13 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
   /**
    * @brief compute the value r(X) at X. For LinearEuclidianFactor, the method 
    * is computed opportunely faster since each Aik=rho*Hik is already saved at constructor time
+   * r(X) = AX - b
    *
    * @param X tuple of pointers to Xk values (one Xk per key)
    * @return r(X) value (eigen vector)
    */
   criterion_t compute_r_of_x_at_impl(const composite_state_ptr_t& X) const
   {
-    // FIX: URGENT:            use the fact that roach is already computed
-    std::cout << "TUTUT\n";
-    // return this->rho * this->compute_h_of_x(X) - this->rosie;
     // use double std::apply to zip-multiply tuples X and kcc.Aik 
     // then sum the elements of resulting tuple
     // then substract by b
@@ -854,7 +934,7 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
               , X);
         }
         ,this->keys_set);
-
+    // r(X) =  - b  + Sum(Aik*Xk)
     return - this->rosie + std::apply([](const auto ... AikXk)
         {
           return (AikXk + ...);
@@ -1066,7 +1146,7 @@ void factor_print(const FT& fact)
 
 
   std::cout << "\t Measure: " << FT::kMeasureName;
-  std::cout << "\n\t\t { ";
+  std::cout << "\n\t\tz: { ";
   for (int i = 0; i < FT::kMeasureComponentsName.size(); i++)
     std::cout << FT::kMeasureComponentsName[i] << ": " << fact.z[i] << "  ";
   std::cout << "}\n\t\t Cov: [ " << fact.z_cov.format(CommaInitFmt) << " ] \n";
