@@ -10,9 +10,14 @@ namespace __MetaKeyPose_SE2
   inline static constexpr const char x[]   = "x";
   inline static constexpr const char y[]   = "y";
   inline static constexpr const char t[]   = "theta";
-  using KeyPoseSE2_t = manif::SE2d;
+  using KeyPoseSE2_t = typename manif::SE2d;
   struct MetaKeyPose_SE2_t : KeyMeta<MetaKeyPose_SE2_t, pose_SE2, KeyPoseSE2_t, manif::SE2Tangentd ,x,y,t>
   {
+    constexpr static std::size_t compute_kN_impl()
+    {
+        return manif::SE2Tangentd::DoF;
+    }
+    
     template<const char* COMPONENT>
     static auto get_component_impl(const KeyPoseSE2_t & key_SE2)
     {

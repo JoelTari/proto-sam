@@ -16,6 +16,11 @@ namespace __MetaKeyPosition
   // using MetaKeyPosition_t                = KeyMeta<position, 2, x, y>;
   struct MetaKeyPosition_t : EuclidKeyMeta<MetaKeyPosition_t, position, KeyPosition_t, x, y>
   {
+    constexpr static std::size_t compute_kN_impl()
+    {
+        return KeyPosition_t::RowsAtCompileTime;
+    }
+
     template <const char* COMPONENT>
     static auto get_component_impl(const KeyPosition_t& key_position_element)
     {

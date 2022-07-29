@@ -6,7 +6,7 @@
 #include <eigen3/Eigen/Dense>
 
 // meta absolute position measure
-namespace MetaMeasureAbsolutePosition
+namespace __MetaMeasureAbsolutePosition
 {
   // namespace is necessary so that the vars names (x) doesnt pollute global
   // scope
@@ -26,9 +26,10 @@ namespace MetaMeasureAbsolutePosition
       else
       {
         if constexpr (std::string_view(COMPONENT) == y)
+        {
+          static_assert(std::string_view(COMPONENT) == y);
           return measure(1,0);
-        else
-          return -1; // FIX: create static failure here
+        }
       }
     }
 
@@ -47,6 +48,6 @@ namespace MetaMeasureAbsolutePosition
   // using MetaMeasureAbsolutePosition_t
   //     = MeasureMeta<MeasureAbsolutePosition_t, absolute_position, 2, x, y>;
 }   // namespace MetaMeasureAbsolutePosition
-using MetaMeasureAbsolutePosition_t = MetaMeasureAbsolutePosition::MetaMeasureAbsolutePosition_t;
+using MetaMeasureAbsolutePosition_t = __MetaMeasureAbsolutePosition::MetaMeasureAbsolutePosition_t;
 
 #endif

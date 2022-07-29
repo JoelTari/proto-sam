@@ -21,16 +21,22 @@ struct KeyMeta
 
   constexpr static std::size_t compute_kN()
   {
-    // WARNING: Eigen assumption
-      return TANGENT_SPACE_T::RowsAtCompileTime;
-    // if constexpr (std::is_base_of_v<Eigen::MatrixBase<TANGENT_SPACE_T>,TANGENT_SPACE_T>)
+    // It's either  TANGENT_SPACE_T::RowsAtCompileTime ( eigen )
+    // or           TANGENT_SPACE_T::
+    // since I don't want to include them here, defer to Derived class
+      return DerivedKeyMeta::compute_kN_impl();
   }
 
   static constexpr const std::size_t  kN = compute_kN(); // DoF (or dim of the tangent space)
 
+  // Number of component is not necessarily the same as dimension of tangent space etc..
+  // It's an arbitrary choice. E.g. a SE2 measure can have all or part of the following
+  // component : x, y, t, qx, qy, qw, qz, SO2 matrix ...
+  static constexpr std::size_t kNbComponents { sizeof...(ORDERRED_COMPONENT_NAMEs)}; 
+
   // maps the idx to the component name. e.g. component[0] returns "x" etc..
-  static constexpr const std::array<const char*, sizeof...(ORDERRED_COMPONENT_NAMEs)> components {
-      ORDERRED_COMPONENT_NAMEs...};
+  static constexpr const std::array<const char*, kNbComponents> 
+    components { ORDERRED_COMPONENT_NAMEs...};
 
   using key_t= KEY_T; // might be a vector, SE2 SO3 etc..
   using tangent_space_t = TANGENT_SPACE_T;
@@ -81,8 +87,9 @@ struct MeasureMeta
   static constexpr std::size_t kM {DIM};
 
   // maps the idx to the component name. e.g. component[0] returns "dx" etc..
-  static constexpr std::array<const char*, sizeof...(ORDERRED_COMPONENT_NAMEs)> components
-      = std::array<const char*, sizeof...(ORDERRED_COMPONENT_NAMEs)> {ORDERRED_COMPONENT_NAMEs...};
+  static constexpr std::size_t kNbComponents { sizeof...(ORDERRED_COMPONENT_NAMEs)}; 
+  static constexpr const std::array<const char*, kNbComponents> 
+    components { ORDERRED_COMPONENT_NAMEs...};
 
   using type = MeasureMeta<MEASURE_T, DerivedMeasureMeta, NAME, DIM, ORDERRED_COMPONENT_NAMEs...>;
 

@@ -229,7 +229,7 @@ struct LinearKeyContextualConduct
  */
 template <typename DerivedFactor,
           const char* FactorLabel,
-          typename MEASURE_META,
+          typename MEASURE_META,    // FIX: URGENT no need MEASURE_META: can be access via Kcc (but s_assert its the same for all kcc)
           typename... KeyConducts>
 class BaseFactor
 {
@@ -255,7 +255,7 @@ class BaseFactor
   using KeysSet_t      = std::tuple<KeyConducts...>;
 
   static constexpr const char*                 kMeasureName {MEASURE_META::kMeasureName};
-  static constexpr std::array<const char*, kM> kMeasureComponentsName = MEASURE_META::components;
+  static constexpr auto kMeasureComponentsName = MEASURE_META::components;
   const std::string                            factor_id;   // fill at ctor
   const measure_t                              z;           // fill at ctor
   const measure_cov_t                          z_cov;       // fill at ctor
