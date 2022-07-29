@@ -16,44 +16,13 @@ namespace __LinearTranslationKeyConducts
   inline static constexpr std::size_t kN_obs = MetaKeyPosition_t::kN;
   inline static constexpr std::size_t kN_sigh = MetaKeyPosition_t::kN;
 
-  struct ObserverKeyConduct_t 
-    : LinearKeyContextualConduct
-        < ObserverKeyConduct_t
-          ,MetaKeyPosition_t
-          , dimMes
-          , observer_var
-          // , std::array<double,kN_obs>{-1,0}
-          // , std::array<double,kN_obs>{0,-1}
-        >
-        {
-          inline static key_process_matrix_t get_Hik_impl(){return key_process_matrix_t{{-1,0},{0,-1}};}
-          // ctors (boring): 
-          using BaseLinearKcc_t = LinearKeyContextualConduct<ObserverKeyConduct_t,MetaKeyPosition_t,dimMes,observer_var>;
-          ObserverKeyConduct_t(const std::string& key_id,const measure_cov_t& rho)
-            : BaseLinearKcc_t(key_id,rho){}
-          ObserverKeyConduct_t ( const std::string& key_id ,const measure_cov_t& rho ,std::shared_ptr<Key_t> init_point_view)
-            : BaseLinearKcc_t(key_id,rho,init_point_view) {}
-        };
+  // the process matrices
+  inline static const Eigen::Matrix<double, 2, 2> Hik_Observer {{-1,0},{0,-1}};
+  inline static const Eigen::Matrix<double, 2, 2> Hik_Sighted {{1,0},{0,1}};
+  // HACK: matrices Hik_ are passed in-template as the address of the above declarations
+  using ObserverKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t , dimMes , observer_var, &Hik_Observer>;
 
-  struct SightedKeyConduct_t 
-    : LinearKeyContextualConduct
-        <
-          SightedKeyConduct_t
-          ,MetaKeyPosition_t
-          , dimMes
-          , sighted_var
-          // , std::array<double,kN_obs>{1,0}
-          // , std::array<double,kN_obs>{0,1}
-        >
-        {
-          inline static key_process_matrix_t get_Hik_impl(){return key_process_matrix_t{{1,0},{0,1}};}
-          // ctors (boring): 
-          using BaseLinearKcc_t = LinearKeyContextualConduct<SightedKeyConduct_t,MetaKeyPosition_t,dimMes,sighted_var>;
-          SightedKeyConduct_t(const std::string& key_id,const measure_cov_t& rho)
-            : BaseLinearKcc_t(key_id,rho){}
-          SightedKeyConduct_t ( const std::string& key_id ,const measure_cov_t& rho ,std::shared_ptr<Key_t> init_point_view)
-            : BaseLinearKcc_t(key_id,rho,init_point_view) {}
-        };
+  using SightedKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t, dimMes, sighted_var, &Hik_Sighted>;
 }   // namespace
 using ObserverKeyConduct_t = typename __LinearTranslationKeyConducts::ObserverKeyConduct_t;
 using SightedKeyConduct_t = typename __LinearTranslationKeyConducts::SightedKeyConduct_t;

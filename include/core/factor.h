@@ -136,15 +136,16 @@ struct KeyContextualConduct : KEYMETA
  * @tparam DimMes dimension of the measure
  * @tparam ContextRole -- (text) role of the key in the context
  */
-template <typename DerivedLinearKCC,
+template <
           typename KEYMETA,
           size_t      DimMes,
-          const char* ContextRole
+          const char* ContextRole,
+          const auto * Hik_MATRIX_PTR
           >
 struct LinearKeyContextualConduct 
 : KeyContextualConduct
     <
-      LinearKeyContextualConduct<DerivedLinearKCC,KEYMETA,DimMes,ContextRole>
+      LinearKeyContextualConduct<KEYMETA,DimMes,ContextRole,Hik_MATRIX_PTR>
       ,KEYMETA
       ,DimMes
       ,ContextRole
@@ -152,7 +153,7 @@ struct LinearKeyContextualConduct
 {
   using base_kcc_t = KeyContextualConduct
     <
-      LinearKeyContextualConduct<DerivedLinearKCC,KEYMETA,DimMes,ContextRole>
+      LinearKeyContextualConduct<KEYMETA,DimMes,ContextRole,Hik_MATRIX_PTR>
       ,KEYMETA
       ,DimMes
       ,ContextRole
@@ -162,61 +163,22 @@ struct LinearKeyContextualConduct
   using key_process_matrix_t = typename base_kcc_t::key_process_matrix_t;
   using measure_cov_t = typename base_kcc_t::measure_cov_t;
 
-  // Matrix Hik, created at runtime (but still static accross all instantiations)
-  // constexpr impossible because of SIMD specifities (IIRC)
-  // inline static const key_process_matrix_t Hik; 
-  // BUG: fix: just need to be able to fill Hik from template arguments to be able to remove the DerivedLinearKCC 
-  // BUG: and simplify declaration. 
-  // BUG: Problem: an Eigen Matrix cant be passed as a non-type template argument, so we have to pass something else, and convert.
-  // BUG: See the commented attempt below.
-  
-  // // TODO:  defining Hik via the template arguments would be great as it avoids the necessity of a derived class
-  // static key_process_matrix_t define_Hik()
-  // {
-  //   // looks a bit bloated
-  //   key_process_matrix_t tHik;
-  //   auto tuple_Hik_rows = std::make_tuple(Hik_rows...);
-  //   // make a tuple of row Matrix
-  //   auto tuple_of_rowMat = std::apply(
-  //     [&tHik](const auto & ... Hik_row )
-  //     {
-  //       return 
-  //       std::make_tuple(
-  //            Eigen::Matrix<double,1,key_process_matrix_t::RowsAtCompileTime >(Hik_row.data()) 
-  //           ... );
-  //     },tuple_Hik_rows);
-  //   // join these tuples of row Matrices into a single Matrix
-  //    auto themat = std::apply(
-  //       [](const auto & ... row){
-  //         // quite surprisngly, this works !
-  //        key_process_matrix_t mat;
-  //        // return ((mat << row),...).finished() ;
-  //        ((mat << row),...);
-  //        std::cout << mat ;
-  //        return mat;
-  //       }, tuple_of_rowMat );
-  //   return themat;
-  // }
+  static_assert(std::is_same_v< std::remove_pointer_t<decltype(Hik_MATRIX_PTR)>,const key_process_matrix_t > );
 
-  // inline static const key_process_matrix_t Hik  = define_Hik();
-
-  static key_process_matrix_t get_Hik()
-  {
-    // until I fix getting Hik through template non-type arguments,
-    // I defer to implementation
-    return DerivedLinearKCC::get_Hik_impl();
-  }
-
-  // static_assert(std::is_same_v<key_process_matrix_t, decltype(Hik) >);
+   // NOTE: couldn't make it (inline) static, for some reason it would always be full of zeros
+   // NOTE: So it is only const, i.e. one object by instance but, for small matrix, the additional
+   // NOTE: memory cost shouldn't be too bad, plus it is probably better for cache locality
+  const key_process_matrix_t Hik  {*Hik_MATRIX_PTR}; // by copy at construction time
 
   // this is a linear context for this KCC template
   static constexpr const bool        kLinear {true};
 
-  const key_process_matrix_t Aik = this->rho*this->get_Hik();
+  const key_process_matrix_t Aik = this->rho*this->Hik;
 
   LinearKeyContextualConduct(const std::string& key_id, const measure_cov_t& rho)
     : base_kcc_t(key_id,rho)
-  {}
+  {
+  }
 
   LinearKeyContextualConduct
     (

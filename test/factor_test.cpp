@@ -13,9 +13,11 @@ int main(int argc, char* argv[])
   //------------------------------------------------------------------//
   // AnchorFactor A;
   AnchorFactor::criterion_t              m    = {2.0, -1};
-  AnchorFactor::measure_cov_t            cov  = AnchorFactor::measure_cov_t::Identity(); //TODO: test: do something else than identity
+  AnchorFactor::measure_cov_t            cov  = AnchorFactor::measure_cov_t::Identity()*2; 
+  // note the *2 in the measure cov, when the measure cov eigenvalues increases, the factor norm at a given point will decrease
+  // as it is proportional to the composite
   LinearTranslationFactor::criterion_t   m2   = {-1.0, 1.0};
-  LinearTranslationFactor::measure_cov_t cov2 = LinearTranslationFactor::measure_cov_t::Identity();
+  LinearTranslationFactor::measure_cov_t cov2 = LinearTranslationFactor::measure_cov_t::Identity()/2;
 
   auto FA = AnchorFactor("f0", m, cov, {"x0"}, {});
   auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"}, {});   // x0 sighted from x1
@@ -31,9 +33,9 @@ int main(int argc, char* argv[])
 
   // this tests the methods : compute_h_at_x compute_r_at_x
   double norm_FA = FA.factor_norm_at(proposalFA);   // expected sqrt( (2-1)^2 + (-1-0)^2 ) = 1.41
-  std::cout << "norm of FA at proposal {1, 0} : " << norm_FA << '\n';
-  double norm_FB = FB.factor_norm_at(proposalFB);   // expected 0
-  std::cout << "norm of FB at proposal (  {-3, -1}, {-2, -2} ) : " << norm_FB << '\n';
+  std::cout << "norm of FA at proposal {1, 0} ( result expected 1 ): " << norm_FA << '\n';
+  double norm_FB = FB.factor_norm_at(proposalFB);   // expected 0, here the measure cov have no effect since H.X = z
+  std::cout << "norm of FB at proposal (  {-3, -1}, {-2, -2} ), (exp: 0) : " << norm_FB << '\n';
   // TODO: test the other factors
   
   
