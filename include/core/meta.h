@@ -12,6 +12,7 @@
 //                         KeyMeta Template                         //
 //------------------------------------------------------------------//
 // template <typename DerivedKeyMeta, typename KEY_T, typename TANGENT_SPACE_T, const char* NAME, const char... ORDERRED_COMPONENT_NAMEs[]>
+// TODO: URGENT: use enums rather
 template <typename DerivedKeyMeta, const char* NAME, typename KEY_T, typename TANGENT_SPACE_T=KEY_T, const char... ORDERRED_COMPONENT_NAMEs[]>
 struct KeyMeta
 {
@@ -66,6 +67,7 @@ using EuclidKeyMeta = KeyMeta<DerivedKeyMeta,NAME,KEY_T,KEY_T,ORDERRED_COMPONENT
 //------------------------------------------------------------------//
 //                       MeasureMeta Template                       //
 //------------------------------------------------------------------//
+// TODO: URGENT: use enums rather than const char*
 template <typename DerivedMeasureMeta,
           typename MEASURE_T,
           const char* NAME,

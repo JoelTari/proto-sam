@@ -12,17 +12,14 @@ namespace __LinearTranslationKeyConducts
 {
   inline static constexpr const char sighted_var[]           = "sighted";
   inline static constexpr const char observer_var[]           = "observer";
-  inline static constexpr std::size_t dimMes = MetaMeasureAbsolutePosition_t::kM;
-  inline static constexpr std::size_t kN_obs = MetaKeyPosition_t::kN;
-  inline static constexpr std::size_t kN_sigh = MetaKeyPosition_t::kN;
 
   // the process matrices
   inline static const Eigen::Matrix<double, 2, 2> Hik_Observer {{-1,0},{0,-1}};
   inline static const Eigen::Matrix<double, 2, 2> Hik_Sighted {{1,0},{0,1}};
   // HACK: matrices Hik_ are passed in-template as the address of the above declarations
-  using ObserverKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t , dimMes , observer_var, &Hik_Observer>;
+  using ObserverKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t , MetaMeasureAbsolutePosition_t , observer_var, &Hik_Observer>;
 
-  using SightedKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t, dimMes, sighted_var, &Hik_Sighted>;
+  using SightedKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t, MetaMeasureAbsolutePosition_t, sighted_var, &Hik_Sighted>;
 }   // namespace
 using ObserverKeyConduct_t = typename __LinearTranslationKeyConducts::ObserverKeyConduct_t;
 using SightedKeyConduct_t = typename __LinearTranslationKeyConducts::SightedKeyConduct_t;

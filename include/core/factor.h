@@ -21,27 +21,28 @@
  * subset of the columns of the factor 's process matrix (normed Jacobian).
  *
  * @tparam DerivedKCC Derived user class. Static polymorhism pattern.
- * @tparam KEYMETA Meta of the key (dimensions, type, components name of the key)
- * @tparam DimMes dimension of the measure
+ * @tparam KEY_META Meta of the key (dimensions, type, components name of the key)
+ * @tparam MEASURE_META Meta of the measure z (dimensions, type, components name)
  * @tparam ContextRole -- (text) role of the key in the context
  */
 template <typename DerivedKCC,
-          typename KEYMETA,    // TODO: rename KEYMETA by KEY_META
-          size_t      DimMes, // TODO: replace DimMes by MEASURE_META
+          typename KEY_META,
+          typename MEASURE_META,
           const char* ContextRole>
-struct KeyContextualConduct : KEYMETA
+struct KeyContextualConduct : KEY_META
 {
-  using KeyMeta_t = KEYMETA;
+  using KeyMeta_t = KEY_META;
   using Key_t     = typename KeyMeta_t::key_t;
   static constexpr const char*       kRole {ContextRole};
-  static constexpr const std::size_t kM {DimMes};
+  static constexpr const std::size_t kM {MEASURE_META::kM};
+  static constexpr const std::size_t kN {KEY_META::kN};
   static constexpr const bool        kLinear {false};
   // non static but const
   const std::string key_id;
   // non static, not const
-  using key_process_matrix_t = Eigen::Matrix<double, kM, KEYMETA::kN>;
+  using key_process_matrix_t = Eigen::Matrix<double, kM, kN>;
   using measure_cov_t        = Eigen::Matrix<double, kM, kM>;
-  using tangent_space_vect_t = Eigen::Matrix<double, KEYMETA::kN, 1>;
+  using tangent_space_vect_t = Eigen::Matrix<double, kN, 1>;
   // measure_vect_t   b;
   const measure_cov_t& rho;
 
@@ -132,30 +133,30 @@ struct KeyContextualConduct : KEYMETA
  * subset of the columns of the factor 's process matrix.
  *
  * @tparam DerivedLinearKCC Derived user class. Static polymorhism pattern.
- * @tparam KEYMETA Meta of the key (dimensions, type, components name of the key)
+ * @tparam KEY_META Meta of the key (dimensions, type, components name of the key)
  * @tparam DimMes dimension of the measure
  * @tparam ContextRole -- (text) role of the key in the context
  */
 template <
-          typename KEYMETA,
-          size_t      DimMes,
+          typename KEY_META,
+          typename MEASURE_META,
           const char* ContextRole,
           const auto * Hik_MATRIX_PTR
           >
 struct LinearKeyContextualConduct 
 : KeyContextualConduct
     <
-      LinearKeyContextualConduct<KEYMETA,DimMes,ContextRole,Hik_MATRIX_PTR>
-      ,KEYMETA
-      ,DimMes
+      LinearKeyContextualConduct<KEY_META,MEASURE_META,ContextRole,Hik_MATRIX_PTR>
+      ,KEY_META
+      ,MEASURE_META
       ,ContextRole
     >
 {
   using base_kcc_t = KeyContextualConduct
     <
-      LinearKeyContextualConduct<KEYMETA,DimMes,ContextRole,Hik_MATRIX_PTR>
-      ,KEYMETA
-      ,DimMes
+      LinearKeyContextualConduct<KEY_META,MEASURE_META,ContextRole,Hik_MATRIX_PTR>
+      ,KEY_META
+      ,MEASURE_META
       ,ContextRole
     >;
   using Key_t = typename base_kcc_t::Key_t;
@@ -798,6 +799,7 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
    *            - nullopt if the guesstimator has failed for one or more points.
    *            - a tuple of completed pointers to the values
    */
+  // TODO: For linear factors, this method could be written generically  (difficulty: **)
   static std::optional<composite_state_ptr_t>
       guess_init_key_points_impl(const composite_of_opt_state_ptr_t& x_init_ptr_optional_tup,
                                  const criterion_t&                  z)

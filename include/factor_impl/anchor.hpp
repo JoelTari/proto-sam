@@ -11,38 +11,11 @@ namespace __UniqueKeyConduct
   // factor instantiation from templates
   // instantiate the (unique) key conduct
   inline static constexpr const char anchor_role[] = "unique var";
-  // inline static const  Eigen::Matrix<double,2,2> H_anchor{{1,0},{0,1}};
-  inline static constexpr std::size_t dimMes = MetaMeasureAbsolutePosition_t::kM;
-  inline static constexpr std::size_t kN = MetaKeyPosition_t::kN;
   
   // the matrix Hik, an improvement would be to use constexpr raw array and then transform in Matrix in the class, somehow.
   inline static const Eigen::Matrix<double,2,2> Hik_UniqueKeyConduct {{1,0},{0,1}};
   // HACK: matrix is passed in-template as the address of the above declaration
-  using UniqueKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t,dimMes,anchor_role,&Hik_UniqueKeyConduct>;
-
-  // struct UniqueKeyConduct_t
-  //   : LinearKeyContextualConduct
-  //       <
-  //         UniqueKeyConduct_t
-  //         , MetaKeyPosition_t
-  //         , dimMes
-  //         , anchor_role
-  //         // , std::array<double,kN>{1,0}
-  //         // , std::array<double,kN>{0,1}
-  //       >
-  //   {
-  //     inline static key_process_matrix_t get_Hik_impl()
-  //     {
-  //       return key_process_matrix_t{{1,0},{0,1}};
-  //     }
-  //     // ctors (boring): 
-  //     using BaseLinearKcc_t = LinearKeyContextualConduct<UniqueKeyConduct_t,MetaKeyPosition_t,dimMes,anchor_role>;
-  //     UniqueKeyConduct_t(const std::string& key_id,const measure_cov_t& rho)
-  //       : BaseLinearKcc_t(key_id,rho){}
-  //     UniqueKeyConduct_t ( const std::string& key_id ,const measure_cov_t& rho ,std::shared_ptr<Key_t> init_point_view)
-  //       : BaseLinearKcc_t(key_id,rho,init_point_view) {}
-  //   };
-    
+  using UniqueKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t,MetaMeasureAbsolutePosition_t,anchor_role,&Hik_UniqueKeyConduct>;
 }   // namespace
 using UniqueKeyConduct_t = __UniqueKeyConduct::UniqueKeyConduct_t;
 
