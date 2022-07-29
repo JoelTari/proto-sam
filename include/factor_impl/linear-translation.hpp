@@ -4,7 +4,6 @@
 #include "core/config.h"
 #include "core/factor.h"
 #include "factor_impl/key-meta-position.h"
-#include "factor_impl/measure-meta-absolute-position.h"
 #include "factor_impl/measure-meta-linear-translation.h"
 
 
@@ -17,14 +16,14 @@ namespace __LinearTranslationKeyConducts
   inline static const Eigen::Matrix<double, 2, 2> Hik_Observer {{-1,0},{0,-1}};
   inline static const Eigen::Matrix<double, 2, 2> Hik_Sighted {{1,0},{0,1}};
   // HACK: matrices Hik_ are passed in-template as the address of the above declarations
-  using ObserverKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t , MetaMeasureAbsolutePosition_t , observer_var, &Hik_Observer>;
+  using ObserverKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t , MetaMeasureLinearTranslation_t , observer_var, &Hik_Observer>;
 
-  using SightedKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t, MetaMeasureAbsolutePosition_t, sighted_var, &Hik_Sighted>;
+  using SightedKeyConduct_t = LinearKeyContextualConduct<MetaKeyPosition_t, MetaMeasureLinearTranslation_t, sighted_var, &Hik_Sighted>;
 }   // namespace
 using ObserverKeyConduct_t = typename __LinearTranslationKeyConducts::ObserverKeyConduct_t;
 using SightedKeyConduct_t = typename __LinearTranslationKeyConducts::SightedKeyConduct_t;
 
-namespace
+namespace __LinearTranslationFactor
 {
   inline static constexpr const char LinearTranslationLabel[] = "linear translation";
   class LinearTranslationFactor
@@ -49,7 +48,7 @@ namespace
 
     LinearTranslationFactor(
         const std::string&                                               factor_id,
-        const criterion_t&                                            mes_vect,
+        const measure_t&                                            mes_vect,
         const measure_cov_t&                                             measure_cov,
         const std::array<std::string, kNbKeys>& keys_id,
         const composite_state_ptr_t & init_points_ptr)
@@ -73,7 +72,7 @@ namespace
             //                  std::optional<std::shared_ptr<ObserverKeyConduct_t::part_state_vect_t>>>&
             const composite_of_opt_state_ptr_t &
                                   x_init_ptr_optional_tup,
-            const criterion_t& z)
+            const measure_t& z)
     {
       // if both values are given, just echo the means
       if (std::get<kSightedKeyConductIdx>(x_init_ptr_optional_tup).has_value()
@@ -117,6 +116,7 @@ namespace
   };
 
 }   // namespace
+using LinearTranslationFactor = __LinearTranslationFactor::LinearTranslationFactor;
 
 
 #endif

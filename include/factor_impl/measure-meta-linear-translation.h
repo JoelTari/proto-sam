@@ -6,7 +6,7 @@
 #include <eigen3/Eigen/Dense>
 
 // meta linear translation measure
-namespace __MetaLinearTranslation
+namespace __MetaMeasureLinearTranslation
 {
   inline static constexpr const char linearTranslation[] = "linear-translation";
   inline static constexpr const char dx[]                = "dx";
@@ -19,10 +19,10 @@ namespace __MetaLinearTranslation
       : MeasureMeta<MetaMeasureLinearTranslation_t,
                     MeasureLinearTranslation_t,
                     linearTranslation,
-                    2,
                     dx,
                     dy>
   {
+    static constexpr std::size_t compute_kM_impl(){ return MeasureLinearTranslation_t::RowsAtCompileTime; }
     // method where the component name is given in static
     template <const char* COMPONENT>
     static double get_component_impl(const MeasureLinearTranslation_t& measure)
@@ -32,9 +32,10 @@ namespace __MetaLinearTranslation
       else
       {
         if constexpr (std::string_view(COMPONENT) == dy)
+        {
+          static_assert(std::string_view(COMPONENT) == dy);
           return measure(1, 0);
-        else
-          return -1;   // FIX: create failure here , static throw ?
+        }
       }
     }
 
@@ -51,7 +52,7 @@ namespace __MetaLinearTranslation
     }
   };
 }   // namespace __MetaLinearTranslation
-using MetaMeasureLinearTranslation_t = __MetaLinearTranslation::MetaMeasureLinearTranslation_t;
+using MetaMeasureLinearTranslation_t = __MetaMeasureLinearTranslation::MetaMeasureLinearTranslation_t;
 
 
 #endif

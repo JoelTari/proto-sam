@@ -79,18 +79,18 @@ int main(int argc, char* argv[])
 
   std::cout << "\nAccess the 2nd component of the measurement embedded in the factor \n -> measure "
             << AnchorFactor::kMeasureComponentsName[1] << " = "
-            << AnchorFactor::measure_meta_t::get_component<AnchorFactor::kMeasureComponentsName[1]>(
+            << AnchorFactor::MeasureMeta_t::get_component<AnchorFactor::kMeasureComponentsName[1]>(
                    m)
             << "\n";
 
   // this also works (the constexpr is necessary, but then makes the const redundant)
   static constexpr char y[] = "y", x[]= "x";
   std::cout << "Get " << "y" << " component of measurement m : " 
-            <<  AnchorFactor::measure_meta_t::get_component<y>(m) << '\n';
-  AnchorFactor::measure_meta_t::get_component<x>(m);
+            <<  AnchorFactor::MeasureMeta_t::get_component<y>(m) << '\n';
+  AnchorFactor::MeasureMeta_t::get_component<x>(m);
   // this wouldnt pass static assertion
   // static constexpr char fake_comp[] = "zzz";
-  // std::cout << AnchorFactor::measure_meta_t::get_component<fake_comp>(m) << '\n';
+  // std::cout << AnchorFactor::MeasureMeta_t::get_component<fake_comp>(m) << '\n';
 
   // TODO: test the runtime versions of get_component
   //------------------------------------------------------------------//

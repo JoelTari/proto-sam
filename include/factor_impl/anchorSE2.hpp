@@ -58,6 +58,12 @@ namespace __AnchorSE2Factor
     static_assert( std::is_same_v<measure_t, UniqueSE2KeyConduct_t::Key_t> , "measure and key types should be the same for anchor SE2 factor.");
 
     // init point guesser
+    /**
+     * @brief guess initial point: this function is trivial as the initial point could be the measure...
+     *
+     * @param x_init_ptr_optional_tup  already avaible tuple (single element tuple...) of optional init point (nullopt if not available)
+     * @param z [TODO:parameter]
+     */
     static std::optional< composite_state_ptr_t >
         guess_init_key_points_impl( const composite_of_opt_state_ptr_t &
                                   x_init_ptr_optional_tup,

@@ -5,7 +5,7 @@ int main (int argc, char *argv[])
   // testing some declarations
   MetaKeyPose_SE2_t A;
   MetaMeasureAbsolutePoseSE2_t M;
-  UniqueSE2KeyConduct_t U("test_kcc", Eigen::Matrix2d::Identity());
+  UniqueSE2KeyConduct_t U("test_kcc", AnchorSE2Factor::measure_cov_t::Identity());
   AnchorSE2Factor::measure_t z (5,-5,1.57);
   AnchorSE2Factor::measure_cov_t cov_z ( AnchorSE2Factor::measure_cov_t::Identity()/3 );
   AnchorSE2Factor::composite_state_ptr_t init_point_ptr = { std::make_shared<UniqueSE2KeyConduct_t::Key_t>(0,0,0) };
@@ -14,6 +14,8 @@ int main (int argc, char *argv[])
   factor_print(FA) ;
   std::cout << "Printing any anchor SE2 factor: \n";
   factor_print<AnchorSE2Factor>();
+
+  // TODO: FA.compute_Ai_bi_at ...  norm_at
 
   return 0;
 }

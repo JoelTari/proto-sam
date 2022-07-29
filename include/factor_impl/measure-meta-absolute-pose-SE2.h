@@ -15,8 +15,10 @@ namespace __MetaMeasureAbsolutePoseSE2
   // the measure type
   using MeasureAbsolutePoseSE2_t = typename manif::SE2d;
 
-  struct MetaMeasureAbsolutePoseSE2_t : MeasureMeta<MetaMeasureAbsolutePoseSE2_t, MeasureAbsolutePoseSE2_t, absolute_pose, 2, x,y,t>
+  struct MetaMeasureAbsolutePoseSE2_t : MeasureMeta<MetaMeasureAbsolutePoseSE2_t, MeasureAbsolutePoseSE2_t, absolute_pose, x,y,t>
   {
+    static constexpr std::size_t compute_kM_impl(){ return manif::SE2d::DoF; }
+
     template <const char* COMPONENT>
     static auto get_component_impl(const MeasureAbsolutePoseSE2_t& SE2_element)
     {

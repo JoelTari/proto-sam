@@ -17,7 +17,6 @@ template <typename DerivedKeyMeta, const char* NAME, typename KEY_T, typename TA
 struct KeyMeta
 {
   inline static constexpr const char* kKeyName = NAME;
-  // static constexpr const std::size_t  kN {DIM}; // DoF (or dim of the tangent space)
 
   constexpr static std::size_t compute_kN()
   {
@@ -45,7 +44,6 @@ struct KeyMeta
   static constexpr bool kTrivialMeta = std::is_same_v<key_t,tangent_space_t>;
 
   // type enunciation to play well with type_trait convention
-  // using type = KeyMeta<DerivedKeyMeta, KEY_T,TANGENT_SPACE_T, NAME, DIM, ORDERRED_COMPONENT_NAMEs...>;
   using type = KeyMeta<DerivedKeyMeta, NAME, KEY_T,TANGENT_SPACE_T, ORDERRED_COMPONENT_NAMEs...>;
 
   // retrieve components statically
@@ -77,24 +75,31 @@ using EuclidKeyMeta = KeyMeta<DerivedKeyMeta,NAME,KEY_T,KEY_T,ORDERRED_COMPONENT
 template <typename DerivedMeasureMeta,
           typename MEASURE_T,
           const char* NAME,
-          std::size_t DIM,
           const char*... ORDERRED_COMPONENT_NAMEs>
 struct MeasureMeta
 {
   inline static constexpr const char* kMeasureName {
       NAME};   // "linear-translation" "rigid-transformation2"
                // "rigid-transformation3"
-  static constexpr std::size_t kM {DIM};
 
   // maps the idx to the component name. e.g. component[0] returns "dx" etc..
   static constexpr std::size_t kNbComponents { sizeof...(ORDERRED_COMPONENT_NAMEs)}; 
   static constexpr const std::array<const char*, kNbComponents> 
     components { ORDERRED_COMPONENT_NAMEs...};
 
-  using type = MeasureMeta<MEASURE_T, DerivedMeasureMeta, NAME, DIM, ORDERRED_COMPONENT_NAMEs...>;
+  using type = MeasureMeta<MEASURE_T, DerivedMeasureMeta, NAME, ORDERRED_COMPONENT_NAMEs...>;
 
   // measure type : is often a vector, but could be also manifold such SE(n) type (e.g. from scan matcher in pose graphs problems)
   using measure_t = MEASURE_T;
+
+  constexpr static std::size_t compute_kM()
+  {
+    // It's either  MEASURE_T::RowsAtCompileTime ( eigen )
+    // or           MEASURE_T::DoF
+    // since I don't want to include them here, defer to Derived class
+      return DerivedMeasureMeta::compute_kM_impl();
+  }
+  static constexpr const std::size_t  kM = compute_kM(); // DoF (or dim of the tangent space)
 
   // Get a subset of themeasure by component (e.g. 'y' of a absolute position measurement, or 't' of a SE2 measure)
   // This necessarily defers to the derived class

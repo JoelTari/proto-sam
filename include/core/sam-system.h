@@ -461,7 +461,7 @@ namespace SAM
           for (std::size_t i=0;i< factor_t::kMeasureComponentsName.size(); i++ )
           {
             json_measure[factor_t::kMeasureComponentsName[i]] 
-              = factor_t::measure_meta_t::get_component(factor_t::kMeasureComponentsName[i],factor_h.z);
+              = factor_t::MeasureMeta_t::get_component(factor_t::kMeasureComponentsName[i],factor_h.z);
           }
           json_factor["measure"] = json_measure;
           // Append at the json list of factors

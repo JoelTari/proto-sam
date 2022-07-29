@@ -16,7 +16,7 @@ namespace __MetaMeasureAbsolutePosition
   // the measure type
   using MeasureAbsolutePosition_t = Eigen::Vector<double, 2>;
 
-  struct MetaMeasureAbsolutePosition_t : MeasureMeta<MetaMeasureAbsolutePosition_t, MeasureAbsolutePosition_t, absolute_position, 2, x, y>
+  struct MetaMeasureAbsolutePosition_t : MeasureMeta<MetaMeasureAbsolutePosition_t, MeasureAbsolutePosition_t, absolute_position, x, y>
   {
     template <const char* COMPONENT>
     static double get_component_impl(const MeasureAbsolutePosition_t & measure)
@@ -32,6 +32,8 @@ namespace __MetaMeasureAbsolutePosition
         }
       }
     }
+
+    static constexpr std::size_t compute_kM_impl(){ return MeasureAbsolutePosition_t::RowsAtCompileTime; }
 
     // method where the component name is given dynamic
     static double get_component_impl(const char*                       component,

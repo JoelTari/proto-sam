@@ -32,10 +32,12 @@ template <typename DerivedKCC,
 struct KeyContextualConduct : KEY_META
 {
   using KeyMeta_t = KEY_META;
+  using MeasureMeta_t = MEASURE_META;
   using Key_t     = typename KeyMeta_t::key_t;
+  using Measure_t = typename MeasureMeta_t::measure_t;
   static constexpr const char*       kRole {ContextRole};
-  static constexpr const std::size_t kM {MEASURE_META::kM};
-  static constexpr const std::size_t kN {KEY_META::kN};
+  static constexpr const std::size_t kM {MeasureMeta_t::kM};
+  static constexpr const std::size_t kN {KeyMeta_t::kN};
   static constexpr const bool        kLinear {false};
   // non static but const
   const std::string key_id;
@@ -219,7 +221,7 @@ struct LinearKeyContextualConduct
  * factor type
  * @tparam FactorLabel labelization of the factor type
  * @tparam MEASURE_META meta data of the measurement (dimensions, components name ...)
- * @tparam KeyConducts Contextual Conduct of a Key inside this factor type. See KeyContextualConduct
+ * @tparam KCCs Contextual Conduct of a Key inside this factor type. See KeyContextualConduct
  * class template.
  * @param factor_id identifier (string) of the factor (e.g. 'f0')
  * @param z measurement Z
@@ -230,32 +232,32 @@ struct LinearKeyContextualConduct
 template <typename DerivedFactor,
           const char* FactorLabel,
           typename MEASURE_META,    // FIX: URGENT no need MEASURE_META: can be access via Kcc (but s_assert its the same for all kcc)
-          typename... KeyConducts>
+          typename... KCCs>  // FIX: CHORE: perhaps make it clear that you need always at least 1 KCC
 class BaseFactor
 {
   public:
   friend DerivedFactor;
-  using measure_meta_t = MEASURE_META;
-  using measure_t      = typename measure_meta_t::measure_t;
+  using MeasureMeta_t = MEASURE_META;
+  using measure_t      = typename MeasureMeta_t::measure_t;
   static constexpr const char* kFactorLabel {FactorLabel};
-  static constexpr size_t      kN      = (KeyConducts::kN + ...);
-  static constexpr size_t      kM      = MEASURE_META::kM;
-  static constexpr size_t      kNbKeys = sizeof...(KeyConducts);
+  static constexpr size_t      kN      = (KCCs::kN + ...);
+  static constexpr size_t      kM      = MeasureMeta_t::kM;
+  static constexpr size_t      kNbKeys = sizeof...(KCCs);
   using criterion_t                    = Eigen::Vector<double, kM>;
   using measure_cov_t                  = Eigen::Matrix<double, kM, kM>;
   using factor_process_matrix_t        = Eigen::Matrix<double, kM, kN>;
   using state_vector_t                 = Eigen::Matrix<double, kN, 1>;   // { dXk , ... }
   using composite_state_ptr_t
-      = std::tuple<std::shared_ptr<typename KeyConducts::Key_t>...>;   // {*Xk ...}
+      = std::tuple<std::shared_ptr<typename KCCs::Key_t>...>;   // {*Xk ...}
   using composite_of_opt_state_ptr_t
-      = std::tuple<std::optional<std::shared_ptr<typename KeyConducts::Key_t>>...>;
+      = std::tuple<std::optional<std::shared_ptr<typename KCCs::Key_t>>...>;
   //  NOTE: Xk same type as dXk in euclidian factors
   using matrix_Ai_t    = Eigen::Matrix<double, kM, kN>;
-  using matrices_Aik_t = std::tuple<typename KeyConducts::key_process_matrix_t...>;
-  using KeysSet_t      = std::tuple<KeyConducts...>;
+  using matrices_Aik_t = std::tuple<typename KCCs::key_process_matrix_t...>;
+  using KeysSet_t      = std::tuple<KCCs...>;
 
-  static constexpr const char*                 kMeasureName {MEASURE_META::kMeasureName};
-  static constexpr auto kMeasureComponentsName = MEASURE_META::components;
+  static constexpr const char*                 kMeasureName {MeasureMeta_t::kMeasureName};
+  static constexpr auto kMeasureComponentsName = MeasureMeta_t::components;
   const std::string                            factor_id;   // fill at ctor
   const measure_t                              z;           // fill at ctor
   const measure_cov_t                          z_cov;       // fill at ctor
@@ -263,9 +265,9 @@ class BaseFactor
   const std::array<std::string, kNbKeys>       keys_id;     // fill at ctor
   KeysSet_t                                    keys_set;    // fill at ctor, mutable
 
-  static constexpr bool isLinear = (KeyConducts::kLinear && ...);
+  static constexpr bool isLinear = (KCCs::kLinear && ...);
 
-  // TODO: assert that all kcc role (const char*) are unique
+  static_assert( (std::is_same_v<MeasureMeta_t,typename KCCs::MeasureMeta_t> && ...) );
 
   /**
    * @brief Constructor
@@ -275,7 +277,7 @@ class BaseFactor
    * @param z measurement Z
    * @param z_cov measurement covariance
    * @param keys_id array identifiers of the keys (e.g. "x0" , "x1"). Order must respect the set
-   * KeyConducts order
+   * KCCs order
    * @param tup_init_points_ptr init point of each key (for NL solvers)
    */
   BaseFactor(const std::string&                      factor_id,
@@ -289,17 +291,18 @@ class BaseFactor
       , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
       , keys_id(keys_id)
       , keys_set(sam_tuples::reduce_array_variadically(
-            keys_id,
+            keys_id, 
             []<std::size_t... I>(const auto& my_keys_id,
                                  const auto& rho,
                                  const auto& tup_init_points_ptr,
                                  std::index_sequence<I...>)
                 ->KeysSet_t {
-                  // return std::make_tuple(KeyConducts(my_keys_id[I], rho)...); // original
+                  // return std::make_tuple(KCCs(my_keys_id[I], rho)...); // original
                   // might be possible to use perfect forwarding, by declaring an empty tuple
                   // and next line expanding tuple_cat with an intermediary function that has
                   // perfect forwarding ( TODO:)
-                  return {KeyConducts(my_keys_id[I], rho, std::get<I>(tup_init_points_ptr))...};
+                  //  TODO: CHORE: use std::apply here
+                  return {KCCs(my_keys_id[I], rho, std::get<I>(tup_init_points_ptr))...};
                 },
             rho,
             tup_init_points_ptr))
@@ -339,9 +342,9 @@ class BaseFactor
     return DerivedFactor::guess_init_key_points_impl(x_init_ptr_optional_tup, z);
   }
 
-  static composite_state_ptr_t make_composite(typename KeyConducts::Key_t... keys)
+  static composite_state_ptr_t make_composite(typename KCCs::Key_t... keys)
   {
-    return {std::make_shared<typename KeyConducts::Key_t>(keys)...};
+    return {std::make_shared<typename KCCs::Key_t>(keys)...};
   }
 
   /**
@@ -513,7 +516,7 @@ class BaseFactor
  * to a factor type
  * @tparam FactorLabel labelization of the factor type
  * @tparam MEASURE_META meta data of the measurement (dimensions, components name ...)
- * @tparam KeyConducts Contextual Conduct of a Key inside this factor type. See KeyContextualConduct
+ * @tparam KCCs Contextual Conduct of a Key inside this factor type. See KeyContextualConduct
  * class template.
  * @param factor_id identifier (string) of the factor (e.g. 'f0')
  * @param z measurement Z
@@ -524,22 +527,22 @@ class BaseFactor
 template <typename DerivedEuclidianFactor,
           const char* FactorLabel,
           typename MEASURE_META,
-          typename... KeyConducts>
+          typename... KCCs>
 class EuclidianFactor
     : public BaseFactor<
-          EuclidianFactor<DerivedEuclidianFactor, FactorLabel, MEASURE_META, KeyConducts...>,
+          EuclidianFactor<DerivedEuclidianFactor, FactorLabel, MEASURE_META, KCCs...>,
           FactorLabel,
           MEASURE_META,
-          KeyConducts...>
+          KCCs...>
 {
   friend DerivedEuclidianFactor;
 
   public:
   using BaseFactor_t = BaseFactor<
-      EuclidianFactor<DerivedEuclidianFactor, FactorLabel, MEASURE_META, KeyConducts...>,
+      EuclidianFactor<DerivedEuclidianFactor, FactorLabel, MEASURE_META, KCCs...>,
       FactorLabel,
       MEASURE_META,
-      KeyConducts...>;
+      KCCs...>;
   // declares friendlies so that they get to protected impl methods of this class
   friend DerivedEuclidianFactor;
   friend BaseFactor_t;
@@ -566,7 +569,7 @@ class EuclidianFactor
    * @param z measurement Z
    * @param z_cov measurement covariance
    * @param keys_id array identifiers of the keys (e.g. "x0" , "x1"). Order must respect the set
-   * KeyConducts order
+   * KCCs order
    * @param tup_init_points_ptr init point of each key (for NL solvers)
    */
   EuclidianFactor(const std::string&                                    factor_id,
@@ -707,7 +710,7 @@ class EuclidianFactor
  * to a factor type
  * @tparam FactorLabel labelization of the factor type
  * @tparam MEASURE_META meta data of the measurement (dimensions, components name ...)
- * @tparam KeyConducts Contextual Conduct of a Key inside this factor type. See KeyContextualConduct
+ * @tparam KCCs Contextual Conduct of a Key inside this factor type. See KeyContextualConduct
  * class template.
  * @param factor_id identifier (string) of the factor (e.g. 'f0')
  * @param z measurement Z
@@ -718,26 +721,26 @@ class EuclidianFactor
 template <typename DerivedLinearEuclidianFactor,
           const char* FactorLabel,
           typename MEASURE_META,
-          typename... LinearKeyConducts>
+          typename... LinearKCCs>
 class LinearEuclidianFactor   // the measure is euclidian and the keys are expressed in Euclidian
                                // space too
     : public BaseFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
                                                     FactorLabel,
                                                     MEASURE_META,
-                                                    LinearKeyConducts...>,
+                                                    LinearKCCs...>,
                              FactorLabel,
                              MEASURE_META,
-                             LinearKeyConducts...>
+                             LinearKCCs...>
 {
   public:
   using BaseFactor_t
       = BaseFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
                                                FactorLabel,
                                                MEASURE_META,
-                                               LinearKeyConducts...>,
+                                               LinearKCCs...>,
                         FactorLabel,
                         MEASURE_META,
-                        LinearKeyConducts...>;
+                        LinearKCCs...>;
   // declares friendlies so that they get to protected impl methods of this class
   friend DerivedLinearEuclidianFactor;
   friend BaseFactor_t;
@@ -750,9 +753,9 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
   using composite_of_opt_state_ptr_t = typename BaseFactor_t::composite_of_opt_state_ptr_t;
   using KeysSet_t = typename BaseFactor_t::KeysSet_t;
   // all key conduct are trivial manifold
-  static_assert((LinearKeyConducts::kIsTrivialManifold && ...));
+  static_assert((LinearKCCs::kIsTrivialManifold && ...));
   // measurement generative model wrt X is linear
-  static_assert((LinearKeyConducts::kLinear && ...));
+  static_assert((LinearKCCs::kLinear && ...));
 
   // rosie is a precious name for rho*z
   const criterion_t rosie = this->rho * this->z;
@@ -765,7 +768,7 @@ class LinearEuclidianFactor   // the measure is euclidian and the keys are expre
    * @param z measurement Z
    * @param z_cov measurement covariance
    * @param keys_id array identifiers of the keys (e.g. "x0" , "x1"). Order must respect the set
-   * KeyConducts order
+   * KCCs order
    * @param tup_init_points_ptr init point of each key (for NL solvers)
    */
   LinearEuclidianFactor(const std::string&                                             factor_id,

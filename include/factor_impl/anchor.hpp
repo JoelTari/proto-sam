@@ -19,7 +19,7 @@ namespace __UniqueKeyConduct
 }   // namespace
 using UniqueKeyConduct_t = __UniqueKeyConduct::UniqueKeyConduct_t;
 
-namespace
+namespace __AnchorFactor
 {
   inline static constexpr const char anchorLabel[] = "anchor";
   class AnchorFactor
@@ -64,6 +64,7 @@ namespace
   };
 
 }   // namespace
+using AnchorFactor = __AnchorFactor::AnchorFactor;
 
 
 #endif
