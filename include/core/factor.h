@@ -269,6 +269,8 @@ class BaseFactor
 
   static_assert( (std::is_same_v<MeasureMeta_t,typename KCCs::MeasureMeta_t> && ...) );
 
+  // FIX: URGENT: have a default constructor ...?
+
   /**
    * @brief Constructor
    *
@@ -302,6 +304,7 @@ class BaseFactor
                   // and next line expanding tuple_cat with an intermediary function that has
                   // perfect forwarding ( TODO:)
                   //  TODO: CHORE: use std::apply here
+                  //  FIX: URGENT: main point of difficulty when breaking downs the <,KCCs...> into <,KCC,...KCCs>
                   return {KCCs(my_keys_id[I], rho, std::get<I>(tup_init_points_ptr))...};
                 },
             rho,
@@ -1135,5 +1138,9 @@ void factor_print(const FT& fact)
 
   std::cout << "\t----- \n";
 }
+
+// TODO: URGENT: print a composite_state_ptr_t (hint: cppman tuple)
+//
+// TODO: URGENT: print tup_bi_Aiks
 
 #endif

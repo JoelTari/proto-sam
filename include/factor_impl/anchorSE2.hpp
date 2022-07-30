@@ -62,7 +62,7 @@ namespace __AnchorSE2Factor
      * @brief guess initial point: this function is trivial as the initial point could be the measure...
      *
      * @param x_init_ptr_optional_tup  already avaible tuple (single element tuple...) of optional init point (nullopt if not available)
-     * @param z [TODO:parameter]
+     * @param z measure (an SE2 element)
      */
     static std::optional< composite_state_ptr_t >
         guess_init_key_points_impl( const composite_of_opt_state_ptr_t &
@@ -81,6 +81,32 @@ namespace __AnchorSE2Factor
       }
       // NOTE: it never returns std::nullopt, that's normal in this situation
     }
+    
+    std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
+    {
+      // In this factor we use the r-minus convention
+
+      // extract Xk (X is a tuple of 1 element...)
+      auto Xk = *std::get<0>(X);
+      // pre declaring the jacobian
+      using Aik_t = std::tuple_element_t<0, matrices_Aik_t>;
+      Aik_t J_ZrmX_X;
+      // compute bi = -  r(X) = - rho * ( Z (r-) X )
+      // and fill the Jacobian
+      criterion_t bi = -this->rho*this->z.rminus(Xk, {}, J_ZrmX_X).coeffs();
+      // compute tuple of the Aiks (just one in this factor)
+      Aik_t Aik = this->rho * J_ZrmX_X;
+      // 
+      return {bi, {Aik}};
+    }
+
+    criterion_t compute_r_of_x_at_impl(const composite_state_ptr_t & X) const
+    {
+      auto Xk = *std::get<0>(X);
+      return this->rho* this->z.rminus(Xk).coeffs();
+    }
+
+
   };
 }   // namespace
 using AnchorSE2Factor = __AnchorSE2Factor::AnchorSE2Factor;

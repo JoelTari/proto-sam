@@ -15,7 +15,20 @@ int main (int argc, char *argv[])
   std::cout << "Printing any anchor SE2 factor: \n";
   factor_print<AnchorSE2Factor>();
 
-  // TODO: FA.compute_Ai_bi_at ...  norm_at
+  auto Xq =   AnchorSE2Factor::make_composite({4,-5,0}) ;
+  double norm_value = FA.factor_norm_at(Xq);
+
+  std::cout << "Norm of FA at Xq: " << // Xq << '\n';
+            norm_value << "\n";
+  
+  auto tup_bi_Ai = FA.compute_Ai_bi_at(Xq);
+
+  std::cout << "Computed Ai bi at Xq. \n" << // Xq << '\n';
+             "bi : \n"
+               << std::get<0>(tup_bi_Ai) << "\n"
+               << "Ai: \n"
+               << std::get<0>(std::get<1>(tup_bi_Ai))
+               << "\n -------- \n";
 
   return 0;
 }
