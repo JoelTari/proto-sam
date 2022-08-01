@@ -12,18 +12,18 @@ int main(int argc, char* argv[])
   // scoped Timer
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
-  // AnchorFactor A;
-  AnchorFactor::criterion_t m = {0, 0};
-  AnchorFactor::measure_cov_t  cov;
+  // ::sam::Factor::Anchor2d A;
+  ::sam::Factor::Anchor2d::criterion_t m = {0, 0};
+  ::sam::Factor::Anchor2d::measure_cov_t  cov;
   cov << 3.15, 0, 0, 1.09;
-  LinearTranslationFactor::criterion_t m2
+  ::sam::Factor::LinearTranslation2d::criterion_t m2
       = {-1, 0.1};   // Matrix<2,1> can be init by '='
-  LinearTranslationFactor::measure_cov_t cov2 {
+  ::sam::Factor::LinearTranslation2d::measure_cov_t cov2 {
       {2.1, 0},
       {0, 0.008}};   // Matrix<2,2> can't haha
 
-  auto FA = AnchorFactor("f0", m, cov, {"x0"},{});
-  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"},{});
+  auto FA = ::sam::Factor::Anchor2d("f0", m, cov, {"x0"},{});
+  auto FB = ::sam::Factor::LinearTranslation2d("f1", m2, cov2, {"x0", "x1"},{});
 
   std::cout << "Printing runtime infos of a factor : \n\n";
   // factor_print(FA);
@@ -31,29 +31,29 @@ int main(int argc, char* argv[])
 
   std::cout << "\nPrinting infos of a factor type (only static infos since it "
                "is just a type) : \n\n";
-  // factor_print<AnchorFactor>();
-  // factor_print<LinearTranslationFactor>();
+  // factor_print<::sam::Factor::Anchor2d>();
+  // factor_print<::sam::Factor::LinearTranslation2d>();
 
 
   std::cout << "\n\n Declaring a sam system:\n";
-  auto samsyst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>("A");
+  auto samsyst = ::sam::System::SamSystem<::sam::Factor::Anchor2d, ::sam::Factor::LinearTranslation2d>("A");
 
-  // samsyst.register_new_factor<AnchorFactor>("f0", m,cov , {"x0"});
-  // samsyst.register_new_factor<LinearTranslationFactor>("f1",m2,cov2,{"x0","x1"});
-  samsyst.register_new_factor<AnchorFactor>(
+  // samsyst.register_new_factor<::sam::Factor::Anchor2d>("f0", m,cov , {"x0"});
+  // samsyst.register_new_factor<::sam::Factor::LinearTranslation2d>("f1",m2,cov2,{"x0","x1"});
+  samsyst.register_new_factor<::sam::Factor::Anchor2d>(
       "f0",
-      AnchorFactor::criterion_t { 0, 0},
-      AnchorFactor::measure_cov_t {{1, 0}, {0, 1}},
+      ::sam::Factor::Anchor2d::criterion_t { 0, 0},
+      ::sam::Factor::Anchor2d::measure_cov_t {{1, 0}, {0, 1}},
       {"x0"});
-  samsyst.register_new_factor<LinearTranslationFactor>(
+  samsyst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f1",
-      LinearTranslationFactor::criterion_t {0, 0},
-      LinearTranslationFactor::measure_cov_t {{1, 0}, {0, 1}},
+      ::sam::Factor::LinearTranslation2d::criterion_t {0, 0},
+      ::sam::Factor::LinearTranslation2d::measure_cov_t {{1, 0}, {0, 1}},
       {"x0", "x1"});
-  samsyst.register_new_factor<LinearTranslationFactor>(
+  samsyst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f2",
-      LinearTranslationFactor::criterion_t {0, 0},
-      LinearTranslationFactor::measure_cov_t {{1, 0}, {0, 1}},
+      ::sam::Factor::LinearTranslation2d::criterion_t {0, 0},
+      ::sam::Factor::LinearTranslation2d::measure_cov_t {{1, 0}, {0, 1}},
       {"x1", "x2"});
 
     
