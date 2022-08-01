@@ -13,10 +13,10 @@
 #include <type_traits>
 #include <unordered_map>
 
-namespace
+namespace sam::Marginal
 {
   template <typename KEYMETA>
-  class Marginal : KEYMETA    // Rename as guassin
+  class BaseMarginal : KEYMETA    // Rename as guassin
   {
     public:
     using KeyMeta_t = KEYMETA;
@@ -34,7 +34,7 @@ namespace
     
 
     // ctor
-    Marginal(Mean_t_ptr mean_ptr,const Covariance_t& covariance = Covariance_t::Zero()) // TODO: ACTION: use distribution mean
+    BaseMarginal(Mean_t_ptr mean_ptr,const Covariance_t& covariance = Covariance_t::Zero()) // TODO: ACTION: use distribution mean
         : mean_ptr(mean_ptr)
         , covariance(covariance) 
     {};
@@ -102,8 +102,8 @@ namespace
   {
     // type define a tuple of map of MarginalHistory types of each type of marginal
     using marginals_histories_t
-        = std::tuple<std::unordered_map<std::string, MarginalHistory<Marginal<KEYMETA_T>>>,
-                     std::unordered_map<std::string, MarginalHistory<Marginal<KEYMETA_Ts>>>...>; 
+        = std::tuple<std::unordered_map<std::string, MarginalHistory<BaseMarginal<KEYMETA_T>>>,
+                     std::unordered_map<std::string, MarginalHistory<BaseMarginal<KEYMETA_Ts>>>...>; 
     
     // maps (one for each marginal type) of marginal identifier (string) to its history (MarginalHistory<Marginal_T>)
     marginals_histories_t marginal_history_tuple;
@@ -205,8 +205,8 @@ namespace
     using type = MarginalsContainer<KEYMETA_T, KEYMETA_Ts...>;
 
     using marginals_containers_t
-        = std::tuple<std::unordered_map<std::string, std::shared_ptr<Marginal<KEYMETA_T>>>,
-                     std::unordered_map<std::string, std::shared_ptr<Marginal<KEYMETA_Ts>>>...>;
+        = std::tuple<std::unordered_map<std::string, std::shared_ptr<BaseMarginal<KEYMETA_T>>>,
+                     std::unordered_map<std::string, std::shared_ptr<BaseMarginal<KEYMETA_Ts>>>...>;
 
     static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_containers_t>};
 
@@ -219,7 +219,7 @@ namespace
      * @return optional marginal shared pointer
      */
     template <typename Q_KEYMETA_T>
-    std::optional<std::shared_ptr<Marginal<Q_KEYMETA_T>>>
+    std::optional<std::shared_ptr<BaseMarginal<Q_KEYMETA_T>>>
         find_marginal_ptr(const std::string& key_id) 
     {
       // static assert
@@ -244,7 +244,7 @@ namespace
      * @return optional mean shared pointer
      */
     template <typename Q_KEYMETA_T>
-    std::optional<std::shared_ptr<typename Marginal<Q_KEYMETA_T>::Mean_t>>  // TODO: ACTION: use the distribution mean type ??
+    std::optional<std::shared_ptr<typename BaseMarginal<Q_KEYMETA_T>::Mean_t>>  // TODO: ACTION: use the distribution mean type ??
         find_mean_ptr(const std::string& key_id) 
     {
       // static assert

@@ -17,6 +17,7 @@ namespace details_sam::Factor {
     // HACK: matrix is passed in-template as the address of the above declaration
 
     using namespace ::sam::Meta;
+    using namespace ::details_sam::Conduct;
 
     using UniqueKeyConduct = 
       LinearKeyContextualConduct
@@ -32,10 +33,10 @@ namespace details_sam::Factor {
     inline namespace exports{
 
       class Anchor2d
-          : public LinearEuclidianFactor<Anchor2d, anchorLabel, Measure::AbsolutePosition2d, UniqueKeyConduct>
+          : public sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, Measure::AbsolutePosition2d, UniqueKeyConduct>
       {
         public:
-        using BaseFactor_t = LinearEuclidianFactor<Anchor2d, anchorLabel, Measure::AbsolutePosition2d, UniqueKeyConduct>;
+        using BaseFactor_t = sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, Measure::AbsolutePosition2d, UniqueKeyConduct>;
         friend BaseFactor_t;
         static_assert(std::is_same_v<UniqueKeyConduct::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
         static_assert(std::is_same_v<UniqueKeyConduct::Key_t, criterion_t>); // because linear factor &&  size M = size N
