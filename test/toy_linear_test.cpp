@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 
   std::cout << "\n\n Declaring a sam system:\n";
 
-  auto syst = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>("A");
+  auto syst = ::sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::LinearTranslation2d>("A");
   // test cat_tuple_in_depth
   // using aggrkeymeta_t
   //     = cat_tuple_in_depth<AnchorFactor::KeysSet_t, LinearTranslationFactor::KeysSet_t>::type;
@@ -64,38 +64,38 @@ int main(int argc, char* argv[])
   // using marginals_t = MarginalsContainer<uniq_keymeta_set_t> ;
   
 
-  AnchorFactor::criterion_t z {0, 0};
-  AnchorFactor::measure_cov_t      Sigma {{0.2, 0}, {0, 0.2}};
+  ::sam::Factor::Anchor2d::criterion_t z {0, 0};
+  ::sam::Factor::Anchor2d::measure_cov_t      Sigma {{0.2, 0}, {0, 0.2}};
 
-  syst.register_new_factor<AnchorFactor>("f0", z, Sigma, {"x0"});
-  syst.register_new_factor<LinearTranslationFactor>(
+  syst.register_new_factor<::sam::Factor::Anchor2d>("f0", z, Sigma, {"x0"});
+  syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f1",
-      LinearTranslationFactor::criterion_t {-0.95, 0.1},
-      LinearTranslationFactor::measure_cov_t {{0.1, 0}, {0, 0.1}},
+      ::sam::Factor::LinearTranslation2d::criterion_t {-0.95, 0.1},
+      ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.1, 0}, {0, 0.1}},
       {"x0", "x1"});
 
-  syst.register_new_factor<LinearTranslationFactor>(
+  syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f2",
-      LinearTranslationFactor::criterion_t {-0.01654, -1.21},
-      LinearTranslationFactor::measure_cov_t {{0.02, 0}, {0, 0.3}},
+      ::sam::Factor::LinearTranslation2d::criterion_t {-0.01654, -1.21},
+      ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.02, 0}, {0, 0.3}},
       {"x1", "x2"});
 
-  syst.register_new_factor<LinearTranslationFactor>(
+  syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f3",
-      LinearTranslationFactor::criterion_t {1.01654, -.11},
-      LinearTranslationFactor::measure_cov_t {{0.32, 0}, {0, 0.1}},
+      ::sam::Factor::LinearTranslation2d::criterion_t {1.01654, -.11},
+      ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.32, 0}, {0, 0.1}},
       {"x2", "x3"});
 
   // loop-closure
-  syst.register_new_factor<LinearTranslationFactor>(
+  syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f4",
-      LinearTranslationFactor::criterion_t {0.01654, 1.181},
-      LinearTranslationFactor::measure_cov_t {{0.002, 0}, {0, 0.173}},
+      ::sam::Factor::LinearTranslation2d::criterion_t {0.01654, 1.181},
+      ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.002, 0}, {0, 0.173}},
       {"x3", "x0"});
-  syst.register_new_factor<LinearTranslationFactor>(
+  syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f5",
-      LinearTranslationFactor::criterion_t {-1.01654, -0.8},
-      LinearTranslationFactor::measure_cov_t {{0.2, 0}, {0, 0.17}},
+      ::sam::Factor::LinearTranslation2d::criterion_t {-1.01654, -0.8},
+      ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.2, 0}, {0, 0.17}},
       {"x0", "x2"});
 
   // std::this_thread::sleep_for(std::chrono::seconds(1));

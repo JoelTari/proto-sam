@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace SAM
+namespace sam::System
 {
   template <typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
@@ -28,9 +28,9 @@ namespace SAM
     // remove duplicates
     using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
     // declare marginal container type of those keymetas
-    using marginals_t = MarginalsContainer<___uniq_keymeta_set_t> ;
+    using marginals_t = ::sam::Marginal::MarginalsContainer<___uniq_keymeta_set_t> ;
     // declare marginal histories (over the span of iterative linearization) type
-    using marginals_histories_container_t = MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
+    using marginals_histories_container_t = ::sam::Marginal::MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
     // declare factor histories (over the span of iterative linearization) type
     using factors_histories_t = FactorsHistoriesContainer<FACTOR_T, FACTORS_Ts ...>;
 
@@ -649,7 +649,7 @@ namespace SAM
                 // isolate the shared ptr to the guessed init point
                 auto guessed_init_point_ptr = std::get<tuple_idx>(opt_tuple_of_init_point_ptr.value());
                 // make a new marginal from the guessed init point
-                using marginal_t = Marginal<typename std::tuple_element_t<tuple_idx,typename FT::KeysSet_t>::KeyMeta_t>;
+                using marginal_t = ::sam::Marginal::BaseMarginal<typename std::tuple_element_t<tuple_idx,typename FT::KeysSet_t>::KeyMeta_t>;
                 std::shared_ptr<marginal_t> new_marginal_ptr = std::make_shared<marginal_t>(guessed_init_point_ptr); // NOTE: HEAP allocation for the full MARGINAL OF THE KEY  (this is a nuance from previous heap allocation)
                 // TODO: intermediary step before updating the marginal: infer a covariance (difficulty ***)
                 // insert the (shared ptr) marginal we just created in the system's marginal container
