@@ -30,7 +30,7 @@ int main (int argc, char *argv[])
     auto opt = container.find_mean_ptr<sam::Meta::Key::Position2d>("k");
     std::cout << "has value? : " << opt.has_value();
     if (opt.has_value())
-      std::cout << "  value (mean) of k is : " << *opt.value() << '\n';
+      std::cout << " value (mean) of k is :\n" << *opt.value() << '\n';
 
 
     // TODO: marginal SE2
