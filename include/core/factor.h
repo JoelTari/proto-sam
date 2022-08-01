@@ -231,7 +231,7 @@ struct LinearKeyContextualConduct
  */
 template <typename DerivedFactor,
           const char* FactorLabel,
-          typename MEASURE_META,    // FIX: URGENT no need MEASURE_META: can be access via Kcc (but s_assert its the same for all kcc)
+          typename MEASURE_META,    // FIX: URGENT: no need MEASURE_META: can be access via Kcc (but s_assert its the same for all kcc)
           typename... KCCs>  // FIX: CHORE: perhaps make it clear that you need always at least 1 KCC
 class BaseFactor
 {

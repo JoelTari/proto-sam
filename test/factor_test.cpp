@@ -8,19 +8,23 @@
 //------------------------------------------------------------------//
 int main(int argc, char* argv[])
 {
+  // test key, measures
+  sam::Key::Position2d_t X;
+  sam::Measure::AbsolutePosition2d_t Z1;
+  sam::Measure::LinearTranslation2d_t Z2;
   //------------------------------------------------------------------//
   //                     TEST Factor Constructors                     //
   //------------------------------------------------------------------//
-  // AnchorFactor A;
-  AnchorFactor::criterion_t              m    = {2.0, -1};
-  AnchorFactor::measure_cov_t            cov  = AnchorFactor::measure_cov_t::Identity()*2; 
+  // sam::Factor::Anchor2d A;
+  sam::Factor::Anchor2d::criterion_t              m    = {2.0, -1};
+  sam::Factor::Anchor2d::measure_cov_t            cov  = sam::Factor::Anchor2d::measure_cov_t::Identity()*2; 
   // note the *2 in the measure cov, when the measure cov eigenvalues increases, the factor norm at a given point will decrease
   // as it is proportional to the composite
-  LinearTranslationFactor::criterion_t   m2   = {-1.0, 1.0};
-  LinearTranslationFactor::measure_cov_t cov2 = LinearTranslationFactor::measure_cov_t::Identity()/2;
+  sam::Factor::LinearTranslation2d::criterion_t   m2   = {-1.0, 1.0};
+  sam::Factor::LinearTranslation2d::measure_cov_t cov2 = sam::Factor::LinearTranslation2d::measure_cov_t::Identity()/2;
 
-  auto FA = AnchorFactor("f0", m, cov, {"x0"}, {});
-  auto FB = LinearTranslationFactor("f1", m2, cov2, {"x0", "x1"}, {});   // x0 sighted from x1
+  auto FA = sam::Factor::Anchor2d("f0", m, cov, {"x0"}, {});
+  auto FB = sam::Factor::LinearTranslation2d("f1", m2, cov2, {"x0", "x1"}, {});   // x0 sighted from x1
   // TODO: FA_NL FB_NL
   // TODO: more factor types
 
@@ -28,8 +32,8 @@ int main(int argc, char* argv[])
   //           TEST query the factor norm at a given point            //
   //------------------------------------------------------------------//
   // make a tuple of X points (ptr to be precise) for the factors
-  AnchorFactor::composite_state_ptr_t proposalFA = AnchorFactor::make_composite({1, 0});
-  auto proposalFB = LinearTranslationFactor::make_composite({-3, -1}, {-2, -2});
+  sam::Factor::Anchor2d::composite_state_ptr_t proposalFA = sam::Factor::Anchor2d::make_composite({1, 0});
+  auto proposalFB = sam::Factor::LinearTranslation2d::make_composite({-3, -1}, {-2, -2});
 
   // this tests the methods : compute_h_at_x compute_r_at_x
   double norm_FA = FA.factor_norm_at(proposalFA);   // expected sqrt( (2-1)^2 + (-1-0)^2 ) = 1.41
@@ -73,37 +77,37 @@ int main(int argc, char* argv[])
 
   std::cout << "\nPrinting infos of a factor type (only static infos since it "
                "is just a type) : \n\n";
-  factor_print<AnchorFactor>();
-  factor_print<LinearTranslationFactor>();
+  factor_print<sam::Factor::Anchor2d>();
+  factor_print<sam::Factor::LinearTranslation2d>();
 
 
   std::cout << "\nAccess the 2nd component of the measurement embedded in the factor \n -> measure "
-            << AnchorFactor::kMeasureComponentsName[1] << " = "
-            << AnchorFactor::MeasureMeta_t::get_component<AnchorFactor::kMeasureComponentsName[1]>(
+            << sam::Factor::Anchor2d::kMeasureComponentsName[1] << " = "
+            << sam::Factor::Anchor2d::MeasureMeta_t::get_component<sam::Factor::Anchor2d::kMeasureComponentsName[1]>(
                    m)
             << "\n";
 
   // this also works (the constexpr is necessary, but then makes the const redundant)
   static constexpr char y[] = "y", x[]= "x";
   std::cout << "Get " << "y" << " component of measurement m : " 
-            <<  AnchorFactor::MeasureMeta_t::get_component<y>(m) << '\n';
-  AnchorFactor::MeasureMeta_t::get_component<x>(m);
+            <<  sam::Factor::Anchor2d::MeasureMeta_t::get_component<y>(m) << '\n';
+  sam::Factor::Anchor2d::MeasureMeta_t::get_component<x>(m);
   // this wouldnt pass static assertion
   // static constexpr char fake_comp[] = "zzz";
-  // std::cout << AnchorFactor::MeasureMeta_t::get_component<fake_comp>(m) << '\n';
+  // std::cout << sam::Factor::Anchor2d::MeasureMeta_t::get_component<fake_comp>(m) << '\n';
 
   // TODO: test the runtime versions of get_component
   //------------------------------------------------------------------//
   //                     TEST history management                      //
   //------------------------------------------------------------------//
   auto factors_histories_container
-      = FactorsHistoriesContainer<AnchorFactor, LinearTranslationFactor>();
+      = FactorsHistoriesContainer<sam::Factor::Anchor2d, sam::Factor::LinearTranslation2d>();
   auto factor_FA_history = FactorHistory<decltype(FA)>(FA.factor_id, {"x0"}, FA.z);
   FactorHistory<decltype(FA)> factor_FA_history_assignment_test = factor_FA_history;
   // auto cc_factor_FA_history = std::move(factor_FA_history); // OK
   factors_histories_container.insert_new_factor_history(FA.factor_id, FA);
 
-  // std::cout << AnchorFactor::kN << '\n';
+  // std::cout << sam::Factor::Anchor2d::kN << '\n';
   // std::cout << LinearTranslationMetaFactor::kN << '\n';
 
   return 0;
