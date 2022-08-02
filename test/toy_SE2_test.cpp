@@ -2,6 +2,7 @@
 #include "factor_impl/measure-meta-absolute-pose-SE2.h"
 #include <factor_impl/anchorSE2.hpp>
 #include <factor_impl/motion-model-SE2.hpp>
+#include <factor_impl/pose-matcher-SE2.hpp>
 
 int main (int argc, char *argv[])
 {
@@ -37,6 +38,10 @@ int main (int argc, char *argv[])
                << std::get<0>(std::get<1>(tup_bi_Ai))
                << "\n -------- \n";
 
+
+  std::cout << "\n ------------------------- \n";
+  std::cout << "\n ----Motion Model SE2----- \n";
+  std::cout << "\n ------------------------- \n";
   // Motion Model SE2
   ::sam::Factor::MotionModelSE2::measure_t u (2, 0, -MANIF_PI/3);
   ::sam::Factor::MotionModelSE2::measure_cov_t cov_u ( ::sam::Factor::MotionModelSE2::measure_cov_t::Identity()/3 );
@@ -46,10 +51,6 @@ int main (int argc, char *argv[])
 
   double norm_value2 = factor_motion_model.factor_norm_at(query_factor_point);
   auto tup_bi_Ai_f1 = factor_motion_model.compute_Ai_bi_at(query_factor_point);
-
-  std::cout << "\n ------------------------- \n";
-  std::cout << "\n ----Motion Model SE2----- \n";
-  std::cout << "\n ------------------------- \n";
 
   std::cout << "Printing the factor: \n";
   factor_print(factor_motion_model) ;
@@ -66,6 +67,12 @@ int main (int argc, char *argv[])
                // << "Ai: \n"
                // << std::get<0>(std::get<1>(tup_bi_Ai))
                // << "\n -------- \n";
+
+  std::cout << "\n ------------------------- \n";
+  std::cout << "\n ----Pose Matcher SE2----- \n";
+  std::cout << "\n ------------------------- \n";
+
+  // ::sam::Factor::
 
   return 0;
 }

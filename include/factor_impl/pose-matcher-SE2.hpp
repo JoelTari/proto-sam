@@ -5,7 +5,6 @@
 #include "core/factor.h"
 #include "factor_impl/key-meta-SE2.h"
 #include "factor_impl/measure-meta-rigid-motion-SE2.h"
-#include <memory>
 
 
 
@@ -22,7 +21,7 @@ namespace details_sam::Factor{
         <SightedSE2KeyConduct,Key::PoseSE2,Measure::RigidBodyMotionSE2,sighted_role_str>
     {
       using BaseKeyCC_t = KeyContextualConduct
-        <SightedKeyConduct,Key::PoseSE2,Measure::RigidBodyMotionSE2,observer_role_str>;
+        <SightedSE2KeyConduct,Key::PoseSE2,Measure::RigidBodyMotionSE2,sighted_role_str>;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;
 
       key_process_matrix_t compute_Aik_at(const Key_t & Xk) const
@@ -41,10 +40,10 @@ namespace details_sam::Factor{
 
     struct ObserverSE2KeyConduct 
       : KeyContextualConduct
-        <ObserverSE2KeyConduct,Key::PoseSE2,Measure::RigidBodyMotionSE2,antecedent_role_str>
+        <ObserverSE2KeyConduct,Key::PoseSE2,Measure::RigidBodyMotionSE2,observer_role_str>
     {
       using BaseKeyCC_t = KeyContextualConduct
-        <ObserverSE2KeyConduct,Key::PoseSE2,Measure::RigidBodyMotionSE2,sighted_role_str>;
+        <ObserverSE2KeyConduct,Key::PoseSE2,Measure::RigidBodyMotionSE2,observer_role_str>;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;
 
       key_process_matrix_t compute_Aik_at(const Key_t & Xk) const
@@ -104,38 +103,37 @@ namespace details_sam::Factor{
                                         x_init_ptr_optional_tup,
                   const measure_t& z)
           {
-            // if subsequent exists but antecedent is unknown (unlikely though)
+            // if sighted exists but observer is unknown 
+            // e.g. scan matching odometry where observer is Xi+1, sighted is Xi
             if (std::get<kSightedKeyConductIdx>(x_init_ptr_optional_tup).has_value()
                 && !std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).has_value())
             {
                 
-                std::shared_ptr<ObserverSE2KeyConduct::Key_t> antecedent_init_point_ptr;
-                std::shared_ptr<SightedSE2KeyConduct::Key_t> subsequent_init_point_ptr
+                std::shared_ptr<ObserverSE2KeyConduct::Key_t> observer_init_point_ptr;
+                std::shared_ptr<SightedSE2KeyConduct::Key_t> sighted_init_point_ptr
                     = std::get<kSightedKeyConductIdx>(x_init_ptr_optional_tup).value();
-                // X_i = X_{i+1} * (Exp u)^-1
-                antecedent_init_point_ptr 
+                // X_observer = X_sighted * Z^-1
+                observer_init_point_ptr 
                   = std::make_shared<ObserverSE2KeyConduct::Key_t>
                     (
-                     (*subsequent_init_point_ptr)
-                               .compose( 
-                                         manif::SE2Tangentd(z)
-                                         .exp()
-                                         .inverse()
-                                       )
+                     (*sighted_init_point_ptr)
+                               .compose( z .inverse())
                     );
-                return std::make_tuple( subsequent_init_point_ptr, antecedent_init_point_ptr );
+                return std::make_tuple( sighted_init_point_ptr, observer_init_point_ptr );
             }
             else if (!std::get<kSightedKeyConductIdx>(x_init_ptr_optional_tup).has_value()
                 && std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).has_value())
             {
-              std::shared_ptr<SightedSE2KeyConduct::Key_t> subsequent_init_point_ptr;
-              std::shared_ptr<ObserverSE2KeyConduct::Key_t> antecedent_init_point_ptr
+              std::shared_ptr<SightedSE2KeyConduct::Key_t> sighted_init_point_ptr;
+              std::shared_ptr<ObserverSE2KeyConduct::Key_t> observer_init_point_ptr
                   = std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).value();
 
-              subsequent_init_point_ptr = std::make_shared<SightedSE2KeyConduct::Key_t>
-                (*subsequent_init_point_ptr + manif::SE2Tangentd(z));
-              return std::make_tuple( subsequent_init_point_ptr ,antecedent_init_point_ptr );
+              // X_sighted = X_observer * Z
+              sighted_init_point_ptr = std::make_shared<SightedSE2KeyConduct::Key_t>
+                (sighted_init_point_ptr->compose(z));
+              return std::make_tuple( sighted_init_point_ptr ,observer_init_point_ptr );
             }
+            // both sighted and observer already have init values (e.g. loop closure situation)
             else if (std::get<kSightedKeyConductIdx>(x_init_ptr_optional_tup).has_value()
                 && std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).has_value())
             {
@@ -147,34 +145,38 @@ namespace details_sam::Factor{
               return std::nullopt;
           }
           
-          // WARNING: this differs from my notes, perhaps the measure type should be in the skew-sym rather than vec3
           std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
           {
-            // extract Xk (X is a tuple of 1 element...)
-            auto X_kp1 = *std::get<0>(X);
-            auto X_k = *std::get<1>(X);
+            auto X_observer = *std::get<kObserverKeyConductIdx>(X);
+            auto X_sighted = *std::get<kSightedKeyConductIdx>(X);
             // pre declaring the jacobian
-            using Ai_kp1_t = std::tuple_element_t<0, matrices_Aik_t>;
-            using Ai_k_t = std::tuple_element_t<1, matrices_Aik_t>;
-            Ai_kp1_t J_rminus_X_kp1;
-            Ai_k_t J_rminus_X_k;
-            // compute bi = -  r(X) = - rho * ( Z (r-) X )
-            // and fill the Jacobian
-            criterion_t bi = -this->rho*(this->z - X_kp1.rminus( X_k , J_rminus_X_kp1, J_rminus_X_k).coeffs());
-            // FIX: URGENT:  is ( z^  -   Xkp(r-)Xk ).coeffs() the same as ( z  -   (Xkp(r-)Xk).coeffs() ) ???
+            using Aik_Observer_t = std::tuple_element_t<kObserverKeyConductIdx, matrices_Aik_t>;
+            using Aik_Sighted_t = std::tuple_element_t<kSightedKeyConductIdx, matrices_Aik_t>;
+
+            // WARNING: interpretration : types name are wrong here (but they both are 3x3 matrices anyway)
+            Aik_Observer_t J_XobsInv_Xobs,J_XobsInvXsigh_Xobs;
+            Aik_Sighted_t  J_XobsInvXsigh_Xsigh, J_ZmY_Y;
+
+            auto Y = X_observer.inverse(J_XobsInv_Xobs).compose(X_sighted, J_XobsInvXsigh_Xobs , J_XobsInvXsigh_Xsigh );
+
+            criterion_t bi = this->rho*(
+                      this->z.rminus( Y, {}, J_ZmY_Y).coeffs()
+                );
+
             // compute tuple of the Aiks (just one in this factor)
-            Ai_kp1_t Ai_kp1 = - this->rho * J_rminus_X_kp1;
-            Ai_k_t Ai_k = -this->rho * J_rminus_X_k;
+            Aik_Sighted_t Aik_Sighted = this->rho*J_ZmY_Y*J_XobsInvXsigh_Xsigh;
+            Aik_Observer_t Aik_Observer = this->rho*J_ZmY_Y*J_XobsInvXsigh_Xobs *J_XobsInv_Xobs;
             // 
-            return {bi, {Ai_kp1, Ai_k}};
+            return {bi, {Aik_Sighted, Aik_Observer}};
           }
 
           criterion_t compute_r_of_x_at_impl(const composite_state_ptr_t & X) const
           {
-            auto X_kp1 = *std::get<0>(X);
-            auto X_k   = *std::get<1>(X);
-            return this->rho* (this->z - X_kp1.rminus(X_k).coeffs() );
-            // FIX: URGENT:  is ( z^  -   Xkp(r-)Xk ).coeffs() the same as ( z  -   (Xkp(r-)Xk).coeffs() ) ???
+            auto X_observer = *std::get<kObserverKeyConductIdx>(X);
+            auto X_sighted = *std::get<kSightedKeyConductIdx>(X);
+            return this->rho* (
+                      this->z.rminus( X_observer.inverse().compose(X_sighted) ).coeffs()
+                );
           }
       };
 

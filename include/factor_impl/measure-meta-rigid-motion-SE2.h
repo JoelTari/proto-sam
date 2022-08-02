@@ -19,9 +19,9 @@ namespace details_sam::Meta::Measure{
     using namespace ::sam::Meta::Measure;
 
     namespace exports{
-      struct RigidBodyMotionSE2 : Base<RigidBodyMotionSE2, RigidBodyMotionSE2_t, rigid_body_motion_label, vx,vy,vt>
+      struct RigidBodyMotionSE2 : Base<RigidBodyMotionSE2, RigidBodyMotionSE2_t, rigid_body_motion_label, x,y,t>
       {
-        static constexpr std::size_t compute_kM_impl(){ return RigidBodyMotionSE2_t::RowsAtCompileTime; }
+        static constexpr std::size_t compute_kM_impl(){ return RigidBodyMotionSE2_t::DoF; }
 
         template <const char* COMPONENT>
         static auto get_component_impl(const RigidBodyMotionSE2_t& element)
@@ -43,11 +43,11 @@ namespace details_sam::Meta::Measure{
         static double get_component_impl(const char*          component,
                                          const RigidBodyMotionSE2_t& element)
         {
-          if (std::string_view(component) == vx)
+          if (std::string_view(component) == x)
             return element.x();
-          else if (std::string_view(component) == vy)
+          else if (std::string_view(component) == y)
             return element.y();
-          else if (std::string_view(component) == vt)
+          else if (std::string_view(component) == t)
             return element.angle();
           else
             throw std::runtime_error("component requested doesnt exist in key position meta");
