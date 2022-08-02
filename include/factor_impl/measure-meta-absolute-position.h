@@ -15,7 +15,7 @@ namespace details_sam::Meta::Measure
     using AbsolutePosition2d_t = Eigen::Vector<double, 2>;
     using namespace ::sam::Meta::Measure;
 
-    inline namespace exports{
+    namespace exports{
 
       struct AbsolutePosition2d : Base<AbsolutePosition2d, AbsolutePosition2d_t, absolute_position_str, x, y>
       {

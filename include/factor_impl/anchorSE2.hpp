@@ -39,7 +39,7 @@ namespace details_sam::Factor{
 
     inline static constexpr const char anchor_label[] = "anchor SE2";
 
-    inline namespace exports{
+    namespace exports{
 
       class AnchorSE2 :
         public sam::Factor::BaseFactor<AnchorSE2, anchor_label, Measure::AbsolutePoseSE2, PriorSE2KeyConduct>

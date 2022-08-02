@@ -18,7 +18,7 @@ namespace details_sam::Meta::Key
     using Position2d_t                           = Eigen::Vector<double, 2>;
     using namespace ::sam::Meta::Key;
 
-    inline namespace exports{
+    namespace exports{
       struct Position2d : 
         ::sam::Meta::Key::EuclidBase <Position2d, position_str, Position2d_t,x,y>
       {

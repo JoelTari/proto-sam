@@ -15,7 +15,7 @@ namespace details_sam::Meta::Key
 
     using namespace ::sam::Meta::Key;
 
-    inline namespace exports{
+    namespace exports{
       struct PoseSE2 : ::sam::Meta::Key::Base<PoseSE2, pose_SE2_label, PoseSE2_t, manif::SE2Tangentd ,x,y,t>
       {
         constexpr static std::size_t compute_kN_impl()

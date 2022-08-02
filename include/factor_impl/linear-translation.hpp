@@ -23,7 +23,7 @@ namespace details_sam::Factor{
 
     inline static constexpr const char LinearTranslationLabel[] = "linear translation 2d";
 
-    inline namespace exports{
+    namespace exports{
 
       class LinearTranslation2d
         : public 

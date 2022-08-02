@@ -30,7 +30,7 @@ namespace details_sam::Factor {
 
     inline static constexpr const char anchorLabel[] = "anchor 2d";
 
-    inline namespace exports{
+    namespace exports{
 
       class Anchor2d
           : public sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, Measure::AbsolutePosition2d, UniqueKeyConduct>

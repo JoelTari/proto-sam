@@ -15,7 +15,7 @@ namespace details_sam::Meta::Measure
     using LinearTranslation2d_t = Eigen::Vector<double, 2>;
     using namespace ::sam::Meta;
 
-    inline namespace exports{
+    namespace exports{
 
       struct LinearTranslation2d
           : ::sam::Meta::Measure::Base<
