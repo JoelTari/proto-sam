@@ -1138,7 +1138,11 @@ void factor_print(const FT& fact)
   std::cout << "\t Measure: " << FT::kMeasureName;
   std::cout << "\n\t\tz: { ";
   for (int i = 0; i < FT::kMeasureComponentsName.size(); i++)
-    std::cout << FT::kMeasureComponentsName[i] << ": " << fact.z[i] << "  ";
+  {
+    std::cout << FT::kMeasureComponentsName[i] << ": " //<< fact.z[i] << "  ";
+              << FT::MeasureMeta_t::get_component(FT::kMeasureComponentsName[i], fact.z)
+              << "  ";
+  }
   std::cout << "}\n\t\t Cov: [ " << fact.z_cov.format(CommaInitFmt) << " ] \n";
 
 
