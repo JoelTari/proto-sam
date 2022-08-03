@@ -345,7 +345,7 @@ namespace sam::Factor
      */
     static std::optional<composite_state_ptr_t>
         guess_init_key_points(composite_of_opt_state_ptr_t x_init_ptr_optional_tup,
-                              const criterion_t&           z)
+                              const measure_t&           z)
     {
       return DerivedFactor::guess_init_key_points_impl(x_init_ptr_optional_tup, z);
     }
@@ -613,7 +613,7 @@ namespace sam::Factor
      */
     static std::optional<composite_state_ptr_t>
         guess_init_key_points_impl(composite_of_opt_state_ptr_t x_init_ptr_optional_tup,
-                                   const criterion_t&           z)
+                                   const measure_t&           z)
     {
       return DerivedEuclidianFactor::guess_init_key_points_impl(x_init_ptr_optional_tup, z);
     }
@@ -813,7 +813,7 @@ namespace sam::Factor
     // TODO: For linear factors, this method could be written generically  (difficulty: **)
     static std::optional<composite_state_ptr_t>
         guess_init_key_points_impl(const composite_of_opt_state_ptr_t& x_init_ptr_optional_tup,
-                                   const criterion_t&                  z)
+                                   const measure_t&                  z)
     {
       return DerivedLinearEuclidianFactor::guess_init_key_points_impl(x_init_ptr_optional_tup, z);
     }

@@ -21,7 +21,8 @@ namespace sam::Marginal
     public:
     using KeyMeta_t = KEYMETA;
     // URGENT: decouple type mean of dX (a vector) and the type of the mean of the distribution (not necessarily a vector, e.g. an element of SE(n) ...)
-    using Mean_t = Eigen::Vector<double, KEYMETA::kN>;
+    // using Mean_t = Eigen::Vector<double, KEYMETA::kN>;
+    using Mean_t = typename KeyMeta_t::key_t;
     using Mean_Distribution_t = Mean_t; // Distribution mean : by default same as Mean_t, but it's the implementer job's to override it
     using Mean_Distribution_t_ptr = std::shared_ptr<Mean_Distribution_t>; // Distribution mean : by default same as Mean_t, but it's the implementer job's to override it
     using Mean_t_ptr = std::shared_ptr<Mean_t>;

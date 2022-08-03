@@ -58,7 +58,7 @@ namespace details_sam::Factor {
             guess_init_key_points_impl( const composite_of_opt_state_ptr_t &
                 // std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct_t::Key_t> >>
                                       x_init_ptr_optional_tup,
-                const criterion_t& z)
+                const measure_t& z)
         {
           if (std::get<0>(x_init_ptr_optional_tup).has_value())
             // if the optional mean value inside the tuple is given, we report this value as initial

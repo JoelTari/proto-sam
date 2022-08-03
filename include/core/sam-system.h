@@ -70,7 +70,7 @@ namespace sam::System
     */
     template <typename FT>
     void register_new_factor(const std::string&                          factor_id,
-                             const typename FT::criterion_t&          mes_vect,
+                             const typename FT::measure_t&          mes_vect,
                              const typename FT::measure_cov_t&           measure_cov,
                              const std::array<std::string, FT::kNbKeys>& keys_id)
     {
@@ -597,7 +597,7 @@ namespace sam::System
      */
     template <std::size_t I = 0, typename FT>
     void place_factor_in_container(const std::string&                          factor_id,
-                                   const typename FT::criterion_t&          mes_vect,
+                                   const typename FT::measure_t&          mes_vect,
                                    const typename FT::measure_cov_t&           measure_cov,
                                    const std::array<std::string, FT::kNbKeys>& keys_id)
     {
@@ -693,9 +693,9 @@ namespace sam::System
     auto compute_Ai_bi(const FT & factor)
     {
       if constexpr (isSystFullyLinear) 
-        return factor.compute_Ai_bi_at_current_lin_point();
-      else 
         return factor.compute_Ai_bi_linear();
+      else 
+        return factor.compute_Ai_bi_at_current_lin_point();
     }
 
 
