@@ -1139,7 +1139,7 @@ void factor_print(const FT& fact)
   std::cout << "\n\t\tz: { ";
   for (int i = 0; i < FT::kMeasureComponentsName.size(); i++)
   {
-    std::cout << FT::kMeasureComponentsName[i] << ": " //<< fact.z[i] << "  ";
+    std::cout << FT::kMeasureComponentsName[i] << ": " // this could use the constexpr get_component version
               << FT::MeasureMeta_t::get_component(FT::kMeasureComponentsName[i], fact.z)
               << "  ";
   }

@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 #endif
 
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());   // TODO: remove those calls
-  auto syst   = SAM::SamSystem<AnchorFactor, LinearTranslationFactor>(argId);
+  auto syst   = sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::LinearTranslation2d>(argId);
   int  fcount = 0;
 
   {
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
         Eigen::Map<Eigen::Matrix2d> Sigma(cov_vect.data());
         std::stringstream           fid;   // factor id
         fid << "f" << fcount;
-        syst.register_new_factor<AnchorFactor>(fid.str(),
+        syst.register_new_factor<sam::Factor::Anchor2d>(fid.str(),
                                                z,
                                                Sigma,
                                                {mesJson["vars_id"][0].asCString()});
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
         Eigen::Map<Eigen::Matrix2d> Sigma(cov_vect.data());
         std::stringstream           fid;
         fid << "f" << fcount;
-        syst.register_new_factor<LinearTranslationFactor>(
+        syst.register_new_factor<sam::Factor::LinearTranslation2d>(
             fid.str(),
             z,
             Sigma,
