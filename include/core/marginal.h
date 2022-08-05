@@ -23,6 +23,7 @@ namespace sam::Marginal
     // URGENT: decouple type mean of dX (a vector) and the type of the mean of the distribution (not necessarily a vector, e.g. an element of SE(n) ...)
     // using Mean_t = Eigen::Vector<double, KEYMETA::kN>;
     using Mean_t = typename KeyMeta_t::key_t;
+    using Tangent_Space_t = typename KeyMeta_t::tangent_space_t;
     using Mean_Distribution_t = Mean_t; // Distribution mean : by default same as Mean_t, but it's the implementer job's to override it
     using Mean_Distribution_t_ptr = std::shared_ptr<Mean_Distribution_t>; // Distribution mean : by default same as Mean_t, but it's the implementer job's to override it
     using Mean_t_ptr = std::shared_ptr<Mean_t>;
@@ -57,9 +58,10 @@ namespace sam::Marginal
 
     // FIX: add method, or the DerivedMarginal doesnot work, so maybe overide the '+' operator
     // FIX: overloading the + operator must be done at implementation level
-    // FIX: OR, one must declare a derivation such as class SE2Marginal : Marginal { /* overload '+' here */ }
+    // FIX: OR, one must declare a derivation such as class SEnMarginal : Marginal { /* overload '+' here */ }
     // FIX: We will also have to assume that a SEn marginal mean's is represented as vector in its Lie Algebra
-    // void add (const Mean_t & increment)
+    // add an increment from the tangent space to the mean following NL opt, in R^n this is trivial.
+    // void add (const Tangent_Space_t & increment)
     // {
     //   static_cast<DerivedMarginal*>(this)->add(increment);
     // }

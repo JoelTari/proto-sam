@@ -12,11 +12,12 @@ namespace details_sam::Meta::Key
     inline static constexpr const char y[]   = "y";
     inline static constexpr const char t[]   = "theta";
     using PoseSE2_t = typename manif::SE2d;
+    using Tangent_Space_SE2_t = typename manif::SE2Tangentd;
 
     using namespace ::sam::Meta::Key;
 
     namespace exports{
-      struct PoseSE2 : ::sam::Meta::Key::Base<PoseSE2, pose_SE2_label, PoseSE2_t, manif::SE2Tangentd ,x,y,t>
+      struct PoseSE2 : ::sam::Meta::Key::Base<PoseSE2, pose_SE2_label, PoseSE2_t, Tangent_Space_SE2_t ,x,y,t>
       {
         constexpr static std::size_t compute_kN_impl()
         {

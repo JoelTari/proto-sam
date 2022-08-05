@@ -61,6 +61,12 @@ namespace sam::Meta::Key
         return DerivedKeyMeta::get_component_impl(component,keyvalue);
       }
 
+      // NL opt 
+      static void add(const key_t & element, const tangent_space_t & increment)
+      {
+        return element + increment;
+      }
+
       // TODO: add some meta about the covariance of the key once feature visibility is improved
     };
 

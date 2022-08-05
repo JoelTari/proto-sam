@@ -301,6 +301,7 @@ namespace sam::System
         [this, &MaP, &SigmaCovariance, &nIter, &marginals_histories_container ](auto & map_to_marginal_ptr, auto margTypeIdx)
         {
           using marginal_t = typename std::decay_t<decltype(map_to_marginal_ptr)>::mapped_type::element_type;
+          using tangent_space_t = typename marginal_t::Tangent_Space_t;
           using keymeta_t = typename marginal_t::KeyMeta_t;
           constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
           PROFILE_SCOPE( keymeta_t::kKeyName ,sam_utils::JSONLogger::Instance());
@@ -310,14 +311,16 @@ namespace sam::System
             std::string key_id = pair.first;
             auto marginal_ptr = pair.second;
             auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
+            auto marginal_MaP = MaP.block<kN,1>(sysidx, 0);
             // writes the new mean (or increment in NL systems) and the new covariance in the marginal
             if constexpr (isSystFullyLinear) 
               // replace the eman
-              *(marginal_ptr->mean_ptr) =  MaP.block<kN,1>(sysidx, 0); // ACTION : use mean distribution, not vector (although there is no example where this subtlety matters)
+              *(marginal_ptr->mean_ptr) =  marginal_MaP;
             else
               // increment the mean
-              *(marginal_ptr->mean_ptr) += MaP.block<kN,1>(sysidx, 0); // URGENT: TEST // ACTION: use mean distribution not vector
-
+              // BUG: URGENT: update in not the same for R^n,SE(n) and SO(n). For SE(n), it should be += manif::SE2Tangentd(marginalMaP)
+              *(marginal_ptr->mean_ptr) += tangent_space_t(marginal_MaP);
+                                                                       //
             marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
             // fill/complete the history
             if (nIter == 0)
