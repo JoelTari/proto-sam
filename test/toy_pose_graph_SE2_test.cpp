@@ -1,10 +1,11 @@
+#define ENABLE_DEBUG_TRACE 1
+
 #include "core/sam-system.h"
 #include "factor_impl/anchorSE2.hpp"
 #include "factor_impl/pose-matcher-SE2.hpp"
 
 #include <memory>
 #include <random>
-
 using std::cout;
 
 template <std::size_t N>
@@ -87,16 +88,6 @@ int main(int argc, char* argv[])
       samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f1", z, cov_z, {"x0","x1"} );
     }
 
-    // odometry pose matcher  x0 to x1
-    {
-      auto true_Z = true_poses[1].inverse().compose(true_poses[0]);
-      // noisy pose matcher: noise applied in the right tangent space (rplus)
-      manif::SE2Tangentd pose_matcher_noise = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
-      auto z           = true_Z + pose_matcher_noise;
-      auto cov_z       = cov_pose_matcher;
-      // registration
-      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f2", z, cov_z, {"x1","x0"} );
-    }
     // odometry pose matcher  x1 to x2
     {
       auto true_Z = true_poses[2].inverse().compose(true_poses[1]);
@@ -105,7 +96,7 @@ int main(int argc, char* argv[])
       auto z           = true_Z + pose_matcher_noise;
       auto cov_z       = cov_pose_matcher;
       // registration
-      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f3", z, cov_z, {"x2","x1"} );
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f2", z, cov_z, {"x1","x2"} );
     }
     // odometry pose matcher  x2 to x3
     {
@@ -115,7 +106,7 @@ int main(int argc, char* argv[])
       auto z           = true_Z + pose_matcher_noise;
       auto cov_z       = cov_pose_matcher;
       // registration
-      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f4", z, cov_z, {"x3","x2"} );
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f3", z, cov_z, {"x2","x3"} );
     }
     // odometry pose matcher  x3 to x4
     {
@@ -125,7 +116,7 @@ int main(int argc, char* argv[])
       auto z           = true_Z + pose_matcher_noise;
       auto cov_z       = cov_pose_matcher;
       // registration
-      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f5", z, cov_z, {"x4","x3"} );
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f4", z, cov_z, {"x3","x4"} );
     }
     // odometry pose matcher  x4 to x5
     {
@@ -135,7 +126,7 @@ int main(int argc, char* argv[])
       auto z           = true_Z + pose_matcher_noise;
       auto cov_z       = cov_pose_matcher;
       // registration
-      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f6", z, cov_z, {"x5","x4"} );
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f5", z, cov_z, {"x4","x5"} );
     }
     // loop closure from x5 to x0
     {
@@ -145,7 +136,7 @@ int main(int argc, char* argv[])
       auto z =  true_Z + loop_closure_matcher_noise;
       auto cov_z = cov_loop_closure;
       // registration 
-      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f7", z, cov_z, {"x5","x0"} );
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f6", z, cov_z, {"x0","x5"} );
     }
 
 
