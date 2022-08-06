@@ -50,46 +50,106 @@ int main(int argc, char* argv[])
     loop_closure_sigmas << 0.02, 0.02, 0.01;
 
     Eigen::Matrix<double, 3, 3> cov_prior        = prior_sigmas.square().matrix().asDiagonal();
+    Eigen::Matrix<double, 3, 3> chol_cov_prior    = cov_prior.llt().matrixL();
+    // rho.rho^T := Omega = Cov^-1
+    Eigen::Matrix<double, 3, 3> rho_fisher_prior = cov_prior.inverse().llt().matrixL(); // BUG: 
+
+    
     Eigen::Matrix<double, 3, 3> cov_pose_matcher = pose_matcher_sigmas.square().matrix().asDiagonal();
+    Eigen::Matrix<double, 3, 3> chol_cov_pose_matcher = cov_pose_matcher.llt().matrixL();
+    // rho.rho^T := Omega = Cov^-1
+    Eigen::Matrix<double, 3, 3> rho_fisher_pose_matcher = cov_pose_matcher.inverse().llt().matrixL(); // BUG:
+
+
     Eigen::Matrix<double, 3, 3> cov_loop_closure = loop_closure_sigmas.square().matrix().asDiagonal();
+    Eigen::Matrix<double, 3, 3> chol_cov_loop_closure = cov_loop_closure.llt().matrixL();
+    Eigen::Matrix<double, 3, 3> rho_fisher_loop_closure = cov_loop_closure.inverse().llt().matrixL(); // BUG:
+
+    // anchor
+    {
+      // TODO: maths check
+      manif::SE2Tangentd u_noisy_prior
+          = chol_cov_prior * sample_nmv_u_vector<3>(generator);   // + 0, mean is
+      auto z           = true_poses[0] + u_noisy_prior;
+      auto cov_z       = cov_prior;
+      // registration
+      samsyst.register_new_factor<::sam::Factor::AnchorSE2>( "f0", z, cov_z, {"x0"} );
+    }
+
+    // odometry pose matcher  x0 to x1
+    {
+      auto true_Z = true_poses[1].inverse().compose(true_poses[0]);
+      // noisy pose matcher: noise applied in the right tangent space (rplus)
+      manif::SE2Tangentd pose_matcher_noise = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+      auto z           = true_Z + pose_matcher_noise;
+      auto cov_z       = cov_pose_matcher;
+      // registration
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f1", z, cov_z, {"x0","x1"} );
+    }
+
+    // odometry pose matcher  x0 to x1
+    {
+      auto true_Z = true_poses[1].inverse().compose(true_poses[0]);
+      // noisy pose matcher: noise applied in the right tangent space (rplus)
+      manif::SE2Tangentd pose_matcher_noise = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+      auto z           = true_Z + pose_matcher_noise;
+      auto cov_z       = cov_pose_matcher;
+      // registration
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f2", z, cov_z, {"x1","x0"} );
+    }
+    // odometry pose matcher  x1 to x2
+    {
+      auto true_Z = true_poses[2].inverse().compose(true_poses[1]);
+      // noisy pose matcher: noise applied in the right tangent space (rplus)
+      manif::SE2Tangentd pose_matcher_noise = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+      auto z           = true_Z + pose_matcher_noise;
+      auto cov_z       = cov_pose_matcher;
+      // registration
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f3", z, cov_z, {"x2","x1"} );
+    }
+    // odometry pose matcher  x2 to x3
+    {
+      auto true_Z = true_poses[3].inverse().compose(true_poses[2]);
+      // noisy pose matcher: noise applied in the right tangent space (rplus)
+      manif::SE2Tangentd pose_matcher_noise = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+      auto z           = true_Z + pose_matcher_noise;
+      auto cov_z       = cov_pose_matcher;
+      // registration
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f4", z, cov_z, {"x3","x2"} );
+    }
+    // odometry pose matcher  x3 to x4
+    {
+      auto true_Z = true_poses[4].inverse().compose(true_poses[3]);
+      // noisy pose matcher: noise applied in the right tangent space (rplus)
+      manif::SE2Tangentd pose_matcher_noise = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+      auto z           = true_Z + pose_matcher_noise;
+      auto cov_z       = cov_pose_matcher;
+      // registration
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f5", z, cov_z, {"x4","x3"} );
+    }
+    // odometry pose matcher  x4 to x5
+    {
+      auto true_Z = true_poses[5].inverse().compose(true_poses[4]);
+      // noisy pose matcher: noise applied in the right tangent space (rplus)
+      manif::SE2Tangentd pose_matcher_noise = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+      auto z           = true_Z + pose_matcher_noise;
+      auto cov_z       = cov_pose_matcher;
+      // registration
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f6", z, cov_z, {"x5","x4"} );
+    }
+    // loop closure from x5 to x0
+    {
+      auto true_Z = true_poses[5].inverse().compose(true_poses[4]);
+      // noisy pose matcher: noise applied in the right tangent space (rplus)
+      manif ::SE2Tangentd loop_closure_matcher_noise = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+      auto z =  true_Z + loop_closure_matcher_noise;
+      auto cov_z = cov_loop_closure;
+      // registration 
+      samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f7", z, cov_z, {"x5","x0"} );
+    }
 
 
-  {
-    auto z           = ::sam::Factor::AnchorSE2::measure_t(0, 0, 0);
-    auto cov_z       = ::sam::Factor::AnchorSE2::measure_cov_t::Identity()/2.5;
-    // auto init_point_ptr = ::sam::Factor::AnchorSE2::make_composite ( ::sam::Key::PoseSE2_t(1,0,0)  );
-    // registration
-    samsyst.register_new_factor<::sam::Factor::AnchorSE2>( "f0", z, cov_z, {"x0"} );
-  }
-
-  {
-    auto z           = ::sam::Factor::PoseMatcherSE2::measure_t(-1, 0, 0);
-    auto cov_z       = ::sam::Factor::PoseMatcherSE2::measure_cov_t::Identity()/2.5;
-    // auto init_point_ptr = ::sam::Factor::PoseMatcherSE2::make_composite ( ::sam::Key::PoseSE2_t(1,0,0)  );
-    // registration
-    samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>( "f1", z, cov_z, {"x0","x1"} );
-  }
-
-  // ::sam::Factor::AnchorSE2::measure_cov_t::Identity()/2 , {"x0"});
-  // // samsyst.register_new_factor<::sam::Factor::LinearTranslation2d>("f1",m2,cov2,{"x0","x1"});
-  // samsyst.register_new_factor<::sam::Factor::PoseMatcherSE2>(
-  //     "f0",
-  //     ::sam::Factor::Anchor2d::criterion_t { 0, 0},
-  //     ::sam::Factor::Anchor2d::measure_cov_t {{1, 0}, {0, 1}},
-  //     {"x0"});
-  // samsyst.register_new_factor<::sam::Factor::LinearTranslation2d>(
-  //     "f1",
-  //     ::sam::Factor::LinearTranslation2d::criterion_t {0, 0},
-  //     ::sam::Factor::LinearTranslation2d::measure_cov_t {{1, 0}, {0, 1}},
-  //     {"x0", "x1"});
-  // samsyst.register_new_factor<::sam::Factor::LinearTranslation2d>(
-  //     "f2",
-  //     ::sam::Factor::LinearTranslation2d::criterion_t {0, 0},
-  //     ::sam::Factor::LinearTranslation2d::measure_cov_t {{1, 0}, {0, 1}},
-  //     {"x1", "x2"});
-
-
-  samsyst.sam_optimize();
+    samsyst.sam_optimize();
 
   cout << "\n NOTA: above result doesnt matter, point of this test is : compile, run/print \n";
 
