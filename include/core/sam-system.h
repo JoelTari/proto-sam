@@ -112,6 +112,8 @@ namespace sam::System
         PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
         std::cout << "### Syst: Starting an optimization \n";
         std::cout << "### Syst: size " << M << " * " << N << '\n';
+        // TODO: URGENT: print init point on NL systems
+        // loop over marginals, and print current mean
       }
 #endif
 

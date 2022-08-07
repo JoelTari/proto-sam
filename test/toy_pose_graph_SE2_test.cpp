@@ -30,13 +30,12 @@ int main(int argc, char* argv[])
 
   // ground truth
   std::vector<::sam::Key::PoseSE2_t> true_poses;
-  true_poses.emplace_back(0, 0, 0);   // TODO: vary from 0 0 0
-  true_poses.emplace_back(5, 0, MANIF_PI_2 / 3);
-  true_poses.emplace_back(7.5, 2.5, MANIF_PI_2);
-  true_poses.emplace_back(5, 5, MANIF_PI);
-  true_poses.emplace_back(0, 5, -MANIF_PI_2);
-  true_poses.emplace_back(0, 0, -MANIF_PI_4);
-
+  true_poses.emplace_back(0, 0, 0);                // x0 // TODO: vary from 0 0 0 
+  true_poses.emplace_back(5, 0, MANIF_PI_2 / 3);   // x1
+  true_poses.emplace_back(7.5, 2.5, MANIF_PI_2);   // x2
+  true_poses.emplace_back(5, 5, MANIF_PI);         // x3
+  true_poses.emplace_back(0, 5, -MANIF_PI_2);      // x4
+  true_poses.emplace_back(0, 0, -MANIF_PI_4);      // x5
 
   cout << "\n\n Declaring a sam system:\n";
   auto samsyst = ::sam::System::SamSystem<::sam::Factor::AnchorSE2, ::sam::Factor::PoseMatcherSE2>(
@@ -52,21 +51,12 @@ int main(int argc, char* argv[])
 
   Eigen::Matrix<double, 3, 3> cov_prior      = prior_sigmas.square().matrix().asDiagonal();
   Eigen::Matrix<double, 3, 3> chol_cov_prior = cov_prior.llt().matrixL();
-  // rho.rho^T := Omega = Cov^-1
-  Eigen::Matrix<double, 3, 3> rho_fisher_prior = cov_prior.inverse().llt().matrixL();   // BUG:
-
 
   Eigen::Matrix<double, 3, 3> cov_pose_matcher = pose_matcher_sigmas.square().matrix().asDiagonal();
   Eigen::Matrix<double, 3, 3> chol_cov_pose_matcher = cov_pose_matcher.llt().matrixL();
-  // rho.rho^T := Omega = Cov^-1
-  Eigen::Matrix<double, 3, 3> rho_fisher_pose_matcher
-      = cov_pose_matcher.inverse().llt().matrixL();   // BUG:
-
 
   Eigen::Matrix<double, 3, 3> cov_loop_closure = loop_closure_sigmas.square().matrix().asDiagonal();
   Eigen::Matrix<double, 3, 3> chol_cov_loop_closure = cov_loop_closure.llt().matrixL();
-  Eigen::Matrix<double, 3, 3> rho_fisher_loop_closure
-      = cov_loop_closure.inverse().llt().matrixL();   // BUG:
 
   // anchor
   {
@@ -137,7 +127,7 @@ int main(int argc, char* argv[])
   }
   // loop closure from x5 to x0
   {
-    auto true_Z = true_poses[5].inverse().compose(true_poses[4]);
+    auto true_Z = true_poses[5].inverse().compose(true_poses[0]);
     // noisy pose matcher: noise applied in the right tangent space (rplus)
     manif ::SE2Tangentd loop_closure_matcher_noise
         = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);

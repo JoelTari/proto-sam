@@ -295,7 +295,7 @@ namespace sam::Factor
         : z(z)
         , z_cov(z_cov)
         , factor_id(factor_id)
-        , rho(Eigen::LLT<measure_cov_t>(z_cov.inverse()).matrixU())
+        , rho(z_cov.inverse().llt().matrixU())
         , keys_id(keys_id)
         , keys_set(sam_tuples::reduce_array_variadically(
               keys_id, 
