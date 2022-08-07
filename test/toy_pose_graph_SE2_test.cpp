@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
     auto true_Z = true_poses[5].inverse().compose(true_poses[0]);
     // noisy pose matcher: noise applied in the right tangent space (rplus)
     manif ::SE2Tangentd loop_closure_matcher_noise
-        = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+        = chol_cov_loop_closure * sample_nmv_u_vector<3>(generator);
     auto z     = true_Z + loop_closure_matcher_noise;
     auto cov_z = cov_loop_closure;
     // registration
