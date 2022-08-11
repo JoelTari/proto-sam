@@ -1,8 +1,8 @@
-#include "factor_impl/key-meta-SE2.h"
 #include "factor_impl/measure-meta-absolute-pose-SE2.h"
 #include <factor_impl/anchorSE2.hpp>
 #include <factor_impl/motion-model-SE2.hpp>
 #include <factor_impl/pose-matcher-SE2.hpp>
+#include <factor_impl/cartesian-landmark-obs-SE2.hpp>
 
 int main (int argc, char *argv[])
 {
@@ -23,7 +23,8 @@ int main (int argc, char *argv[])
 
     ::sam::Factor::AnchorSE2::measure_t z (5,-5,1.57);
     ::sam::Factor::AnchorSE2::measure_cov_t cov_z ( ::sam::Factor::AnchorSE2::measure_cov_t::Identity()/3 );
-    ::sam::Factor::AnchorSE2::composite_state_ptr_t init_point_ptr = { std::make_shared<::sam::Key::PoseSE2_t>(0,0,0) }; // WARNING: not the proper way: use make_composite() method
+    ::sam::Factor::AnchorSE2::composite_state_ptr_t init_point_ptr = { std::make_shared<::sam::Key::PoseSE2_t>(0,0,0) };
+    // WARNING: not the proper way: use make_composite() method
     auto FA = ::sam::Factor::AnchorSE2("f0",z,cov_z,{"x0"},init_point_ptr );
     std::cout << "Printing the factor: \n";
     factor_print(FA) ;
@@ -90,8 +91,37 @@ int main (int argc, char *argv[])
     auto factor = ::sam::Factor::PoseMatcherSE2("f2",z,cov_z,{"x1","x2"},Xq );
     std::cout << "Printing the factor: \n";
     factor_print(factor) ;
-    std::cout << "Printing any anchor SE2 factor: \n";
+    std::cout << "Printing any Pose Matcher SE2 factor: \n";
     factor_print<::sam::Factor::PoseMatcherSE2>();
+
+    double norm_value = factor.factor_norm_at(Xq);
+
+    std::cout << "Norm of FA at Xq: " << // Xq << '\n';
+              norm_value << "\n";
+    
+    auto tup_bi_Ai = factor.compute_Ai_bi_at(Xq);
+
+    std::cout << "Computed Ai bi at Xq. \n" << // Xq << '\n';
+               "bi : \n"
+                 << std::get<0>(tup_bi_Ai) << "\n"
+                 << "Ai: \n"
+                 << std::get<0>(std::get<1>(tup_bi_Ai))
+                 << "\n -------- \n";
+  }
+
+  std::cout << "\n ------------------------------------------------- \n";
+  std::cout << "\n ----Cartesian Observation of landmark by SE2----- \n";
+  std::cout << "\n ------------------------------------------------- \n";
+
+  {
+    ::sam::Factor::LandmarkCartesianObsSE2::measure_t z (-1,2.1);
+    auto cov_z = ::sam::Factor::LandmarkCartesianObsSE2::measure_cov_t::Identity()*3; 
+    auto Xq = sam::Factor::LandmarkCartesianObsSE2::make_composite( {-0.7,5.5}, {3.1,-0.6,2.2} );
+    auto factor = ::sam::Factor::LandmarkCartesianObsSE2("f2",z,cov_z,{"b0","x2"},Xq );
+    std::cout << "Printing the factor: \n";
+    factor_print(factor) ;
+    std::cout << "Printing any Landmark Cartesian Observation factor: \n";
+    factor_print<::sam::Factor::LandmarkCartesianObsSE2>();
 
     double norm_value = factor.factor_norm_at(Xq);
 
