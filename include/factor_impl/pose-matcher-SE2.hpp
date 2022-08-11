@@ -130,7 +130,7 @@ namespace details_sam::Factor{
 
               // X_sighted = X_observer * Z
               sighted_init_point_ptr = std::make_shared<SightedSE2KeyConduct::Key_t>
-                (sighted_init_point_ptr->compose(z));
+                (observer_init_point_ptr->compose(z));
               return std::make_tuple( sighted_init_point_ptr ,observer_init_point_ptr );
             }
             // both sighted and observer already have init values (e.g. loop closure situation)
