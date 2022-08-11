@@ -103,7 +103,7 @@ namespace details_sam::Factor{
                                         x_init_ptr_optional_tup,
                   const measure_t& z)
           {
-            // if sighted exists but observer is unknown 
+            // if sighted exists but observer is unknown  NOTE: most common situation
             // e.g. scan matching odometry where observer is Xi+1, sighted is Xi
             if (std::get<kSightedKeyConductIdx>(x_init_ptr_optional_tup).has_value()
                 && !std::get<kObserverKeyConductIdx>(x_init_ptr_optional_tup).has_value())
@@ -159,9 +159,8 @@ namespace details_sam::Factor{
 
             auto Y = X_observer.inverse(J_XobsInv_Xobs).compose(X_sighted, J_XobsInvXsigh_Xobs , J_XobsInvXsigh_Xsigh );
 
-            criterion_t bi = this->rho*(
-                      this->z.rminus( Y, {}, J_ZmY_Y).coeffs()
-                );
+            criterion_t bi = - this->rho*
+                      this->z.rminus( Y, {}, J_ZmY_Y).coeffs() ;
 
             // compute tuple of the Aiks (just one in this factor)
             Aik_Sighted_t Aik_Sighted = this->rho*J_ZmY_Y*J_XobsInvXsigh_Xsigh;

@@ -14,6 +14,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <iomanip>
 
 namespace sam::System
 {
@@ -89,33 +90,15 @@ namespace sam::System
     }
 
     /**
-    * @brief QR optimization method
-    *
-    * @param logger the log
-    */
-    void sam_optimize(sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance())
+     * @brief compute vector b and sparse matrix A of the convex system
+     *
+     * @param system_infos system information (dimensions, indexes, graph connectivity ...)
+     */
+    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(const SystemInfo & system_infos) const
     {
-      // scoped timer
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-
-      // get some dimension constants of the system
-      SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
       uint nnz = system_infos.nnz;
       int        M            = system_infos.aggr_dim_mes;
       int        N            = system_infos.aggr_dim_keys;
-
-      // reset vector of quadratic error TODO: maybe do it at end of function
-      this->bookkeeper_.clear_quadratic_errors();
-
-#if ENABLE_DEBUG_TRACE
-      {
-        PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
-        std::cout << "### Syst: Starting an optimization \n";
-        std::cout << "### Syst: size " << M << " * " << N << '\n';
-        // TODO: URGENT: print init point on NL systems
-        // loop over marginals, and print current mean
-      }
-#endif
 
       // declare A & b
       Eigen::SparseMatrix<double> A(M,N);
@@ -142,49 +125,6 @@ namespace sam::System
             PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
             // compute Ai and bi 
             // // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
-            // // first: compute bi
-            // typename factor_t::criterion_t bi;
-            // constexpr int mesdim = factor_t::kM;
-            // if constexpr (isSystFullyLinear) bi = factor.rosie;
-            // else bi = factor.compute_bi_nl();
-            // // second: compute Ai
-            // // declare a triplet for Ai (that will be push back into the wider A triplets)
-            // std::vector<Eigen::Triplet<double>> Ai_triplets; 
-            // Ai_triplets.reserve(factor_t::kN*factor_t::kM);
-            // // 
-            // sam_tuples::for_each_in_tuple(factor.keys_set,[this, &mesdim, &line_counter, &Ai_triplets]
-            // (auto & key_context_model, auto keyTypeIdx)
-            // {
-            //   constexpr int kcm_kN = std::decay_t<decltype(key_context_model)>::KeyMeta_t::kN;
-            //   auto partAi = key_context_model.compute_part_A(); // works in NL too.
-            //   // NOTE: 1/partAi is not stored internally in the factor, except for linear (because its const)
-            //   // NOTE: 2/the rest of this code is formation of Ai triplets, could be done in another loop-tuple (then this one has to return a tuple of partAi)
-            //   // get the col in systA (the big A of the system)
-            //   int colInBigA = this->bookkeeper_.getKeyInfos(key_context_model.key_id).sysidx;
-            //   // reshape the partA matrix in a one-dimensional, so that it is easier to loop. (column major)
-            //   auto partAi_1d = partAi.reshaped();
-            //   // now, loop and write
-            //   for (int i = 0; i < kcm_kN * mesdim; i++)
-            //   {
-            //     // row in big A is easier, just wrap the i index & add the line
-            //     // counter
-            //     int row = line_counter + (i % mesdim);  // WARNING: race condition if parallel policy
-            //     // col idx in big A : we know
-            //     int col = colInBigA + i / mesdim;
-            //     Ai_triplets.emplace_back(row, col, partAi_1d[i]);
-            //   }
-            // });
-            //
-            // // put Ai and bi into sparseA_triplets and b
-            // // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
-            // b.block<mesdim,1>(line_counter,0) = bi;
-            // line_counter += mesdim;
-            // // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
-            // sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
-            //
-            // bi is factor_t::criterion_t, 
-            // matrices_Aik is tuple( Ai1, Ai2 ,... ) 
-            //   i.e. submatrices of row length = factor_t::kM and sum of their columns is factor_t::kN
             auto [bi, matrices_Aik] = compute_Ai_bi<factor_t>(factor);
 
             // declaring a triplets for matrices_Aik values to be associated with their
@@ -224,6 +164,104 @@ namespace sam::System
       // set A from triplets, clear the triplets
       A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
       sparseA_triplets.clear(); // doesnt alter the capacity, so the .reserve( N ) is still valid 
+    }
+
+    /**
+    * @brief QR optimization method
+    *
+    * @param logger the log
+    */
+    void sam_optimize(sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance())
+    {
+      // scoped timer
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+
+      // get some dimension constants of the system
+      SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
+      uint nnz = system_infos.nnz;
+      int        M            = system_infos.aggr_dim_mes;
+      int        N            = system_infos.aggr_dim_keys;
+
+      // reset vector of quadratic error TODO: maybe do it at end of function
+      this->bookkeeper_.clear_quadratic_errors();
+
+#if ENABLE_DEBUG_TRACE
+      {
+        PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
+        std::cout << "### Syst: Starting an optimization \n";
+        std::cout << "### Syst: size " << M << " * " << N << '\n';
+        // TODO: URGENT: print init point on NL systems
+        // loop over marginals, and print current mean
+      }
+#endif
+      // auto [b,A] = compute_A_b( tuple_of_factor_list, system_infos ); // later one more argument: lin point ??
+
+      // declare A & b
+      Eigen::SparseMatrix<double> A(M,N);
+      Eigen::VectorXd b(M);
+
+      // start compute_b_A
+      std::vector<Eigen::Triplet<double>> sparseA_triplets;
+      sparseA_triplets.reserve(nnz); // expected number of nonzeros elements
+      uint64_t line_counter = 0;
+      //------------------------------------------------------------------//
+      //                fill triplets of A and vector of b                //
+      //------------------------------------------------------------------//
+      //  OPTIMIZE: the computation of {partAi...} & bi for each factor could be assumed to be already done (at factor ctor, or after the lin point is analysed)
+      //  OPTIMIZE: EXPECTED PERFORMANCE GAIN : low to medium 
+      sam_tuples::for_each_in_tuple(
+        this->all_factors_tuple_,
+        [this,&sparseA_triplets,&b,&line_counter](auto& vect_of_f, auto I) // NOTE: I unusable (not constexpr-able)
+        {
+          using factor_t =typename std::decay_t<decltype(vect_of_f)>::value_type;
+          // OPTIMIZE: parallel loop
+          // OPTIMIZE: race: sparseA_triplets, b ; potential race : vector of factors (check)
+          // https://stackoverflow.com/a/45773308
+          for(auto & factor : vect_of_f)
+          {
+            PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
+            // compute Ai and bi 
+            // // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
+            auto [bi, matrices_Aik] = compute_Ai_bi<factor_t>(factor);
+
+            // declaring a triplets for matrices_Aik values to be associated with their
+            // row/col indexes in view of its future integration into the system matrix A
+            std::vector<Eigen::Triplet<double>> Ai_triplets; 
+            Ai_triplets.reserve(factor_t::kN*factor_t::kM);
+            constexpr int mesdim = factor_t::kM;
+            
+            // placing those matrices in Ai_triplets
+            int k = 0; // tuple idx
+            sam_tuples::for_each_in_const_tuple( matrices_Aik,
+            [this, &mesdim, &line_counter, &Ai_triplets, &k, &factor](auto & Aik, auto NIET)
+            {
+                int Nk = Aik.cols();
+                auto key_id = factor.keys_id[k] ; k++; // WARNING: race condition if parallel policy
+                int colIdxInSystemA = this->bookkeeper_.getKeyInfos(key_id).sysidx;
+                auto spaghetti_Aik = Aik.reshaped(); // make it one dimension
+                for (int i=0; i< Nk*mesdim; i++)
+                {
+                  int row = line_counter + (i%mesdim);
+                  int col = colIdxInSystemA + i /mesdim;
+                  Ai_triplets.emplace_back(row,col,spaghetti_Aik[i]);
+                }
+            });
+
+             
+            // put Ai and bi into sparseA_triplets and b
+            // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
+            b.block<mesdim,1>(line_counter,0) = bi;
+            line_counter += mesdim;
+            // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
+            sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
+          }
+        }
+      );
+
+      // set A from triplets, clear the triplets
+      A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
+      sparseA_triplets.clear(); // doesnt alter the capacity, so the .reserve( N ) is still valid 
+      // end compute_A_b
 
       // TODO: declare the eigen SPQR solver here, and analyse the pattern (because A pattern will not change in the loop)
 
@@ -277,13 +315,14 @@ namespace sam::System
 #if ENABLE_DEBUG_TRACE
       {
         PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
+        std::cout << "#### Iteration : " << nIter << '\n';
         std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n";
         // only display if matrix not too big
-        if ( A.rows() < 15 ) std::cout << Eigen::MatrixXd(A) << "\n\n";
+        if ( A.rows() < 22 && nIter ==0) std::cout << Eigen::MatrixXd(A) << "\n\n";
         // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
         // "\n\n";
         std::cout << "#### Syst: b computed :\n";
-        if ( b.rows() < 15 ) std::cout << b << "\n";
+        if ( b.rows() < 22 && nIter ==0) std::cout << b << "\n";
         std::cout << "#### Syst: MAP computed :\n" << MaP << '\n';
         std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
         if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
@@ -432,6 +471,22 @@ namespace sam::System
 
         nIter++;
       }
+      // print MaP (Xmap, not dX) once all iterations are done
+#if ENABLE_DEBUG_TRACE
+      std::cout << std::fixed << std::setprecision(3) << std::showpos;
+      sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,
+          [](const auto & map_marginals, auto NIET)
+          {
+            for (const auto & pair : map_marginals)
+            {
+              std::string key_id = pair.first;
+              auto marg_ptr = pair.second;
+              std::cout << "key " << key_id << '\n';
+              std::cout << *(marg_ptr->mean_ptr) << '\n';
+            }
+          }
+          );
+#endif
       // declare the json graph
       Json::Value json_graph;
       json_graph["header"] = write_header(this->bookkeeper_.getSystemInfos());

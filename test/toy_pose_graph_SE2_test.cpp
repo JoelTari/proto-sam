@@ -1,5 +1,6 @@
 #define ENABLE_DEBUG_TRACE 1
 
+
 #include "core/sam-system.h"
 #include "factor_impl/anchorSE2.hpp"
 #include "factor_impl/pose-matcher-SE2.hpp"
@@ -61,8 +62,7 @@ int main(int argc, char* argv[])
   // anchor
   {
     // TODO: maths check
-    manif::SE2Tangentd u_noisy_prior
-        = chol_cov_prior * sample_nmv_u_vector<3>(generator);   // + 0, mean is
+    manif::SE2Tangentd u_noisy_prior = manif::SE2Tangentd(-0.000, -0.002, +0.000);
     auto z     = true_poses[0] + u_noisy_prior;
     auto cov_z = cov_prior;
     // registration
@@ -73,8 +73,8 @@ int main(int argc, char* argv[])
   {
     auto true_Z = true_poses[1].inverse().compose(true_poses[0]);
     // noisy pose matcher: noise applied in the right tangent space (rplus)
-    manif::SE2Tangentd pose_matcher_noise
-        = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+    manif::SE2Tangentd pose_matcher_noise = manif::SE2Tangentd(+0.093, +0.040, +0.212);
+// rd meas pose_matcher :  +0.007, +0.149, +0.003
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
@@ -85,8 +85,7 @@ int main(int argc, char* argv[])
   {
     auto true_Z = true_poses[2].inverse().compose(true_poses[1]);
     // noisy pose matcher: noise applied in the right tangent space (rplus)
-    manif::SE2Tangentd pose_matcher_noise
-        = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+    manif::SE2Tangentd pose_matcher_noise = manif::SE2Tangentd(+0.204, +0.157, -0.013);
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
@@ -96,8 +95,7 @@ int main(int argc, char* argv[])
   {
     auto true_Z = true_poses[3].inverse().compose(true_poses[2]);
     // noisy pose matcher: noise applied in the right tangent space (rplus)
-    manif::SE2Tangentd pose_matcher_noise
-        = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+    manif::SE2Tangentd pose_matcher_noise (-0.137, +0.262, -0.094);
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
@@ -107,8 +105,7 @@ int main(int argc, char* argv[])
   {
     auto true_Z = true_poses[4].inverse().compose(true_poses[3]);
     // noisy pose matcher: noise applied in the right tangent space (rplus)
-    manif::SE2Tangentd pose_matcher_noise
-        = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+    manif::SE2Tangentd pose_matcher_noise ( -0.155, -0.104, -0.202);
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
@@ -118,8 +115,7 @@ int main(int argc, char* argv[])
   {
     auto true_Z = true_poses[5].inverse().compose(true_poses[4]);
     // noisy pose matcher: noise applied in the right tangent space (rplus)
-    manif::SE2Tangentd pose_matcher_noise
-        = chol_cov_pose_matcher * sample_nmv_u_vector<3>(generator);
+    manif::SE2Tangentd pose_matcher_noise ( -0.179, -0.003, -0.018);
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
@@ -129,8 +125,7 @@ int main(int argc, char* argv[])
   {
     auto true_Z = true_poses[5].inverse().compose(true_poses[0]);
     // noisy pose matcher: noise applied in the right tangent space (rplus)
-    manif ::SE2Tangentd loop_closure_matcher_noise
-        = chol_cov_loop_closure * sample_nmv_u_vector<3>(generator);
+    manif ::SE2Tangentd loop_closure_matcher_noise (-0.024,-0.217,+0.068);
     auto z     = true_Z + loop_closure_matcher_noise;
     auto cov_z = cov_loop_closure;
     // registration
@@ -139,8 +134,6 @@ int main(int argc, char* argv[])
 
 
   samsyst.sam_optimize();
-
-  cout << "\n NOTA: above result doesnt matter, point of this test is : compile, run/print \n";
 
   return 0;
 }

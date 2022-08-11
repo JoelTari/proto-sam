@@ -48,6 +48,7 @@ target_compile_features(sam-system-factor_test PUBLIC cxx_std_20)
 target_compile_features(toy_linear_test PUBLIC cxx_std_20)
 target_compile_features(toy_SE2_test PUBLIC cxx_std_20)
 target_compile_features(toy_pose_graph_SE2_test PUBLIC cxx_std_20)
+target_compile_definitions(toy_pose_graph_SE2_test PUBLIC ENABLE_DEBUG_TRACE=1)
 # mainstding
 target_compile_features(mainstdin PUBLIC cxx_std_20)
 # target_compile_options(mainstdin PUBLIC "-O3" "-std=c++20") # "-fopt-info")

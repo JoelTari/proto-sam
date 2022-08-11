@@ -295,7 +295,7 @@ namespace sam::Factor
         : z(z)
         , z_cov(z_cov)
         , factor_id(factor_id)
-        , rho(z_cov.inverse().llt().matrixU())
+        , rho(z_cov.inverse().llt().matrixL().transpose())  // cov^-1 =: LL^T
         , keys_id(keys_id)
         , keys_set(sam_tuples::reduce_array_variadically(
               keys_id, 
@@ -317,6 +317,9 @@ namespace sam::Factor
         , keyIdToTupleIdx(map_keyid(keys_id))
     {
       // TODO: throw if cov is not a POS matrix (consistency check enabled ?)
+#if ENABLE_DEBUG_TRACE
+      std::cout << "factor " << factor_id << " rho: \n" << this->rho << '\n';
+#endif
     }
 
     std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
