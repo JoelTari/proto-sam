@@ -260,6 +260,7 @@ namespace sam::Factor
     using matrix_Ai_t    = Eigen::Matrix<double, kM, kN>;
     using matrices_Aik_t = std::tuple<typename KCCs::key_process_matrix_t...>;
     using KeysSet_t      = std::tuple<KCCs...>;
+    using KeyMetas_t     = std::tuple<typename KCCs::KeyMeta_t...>; // not unique
 
     static constexpr const char*                 kMeasureName {MeasureMeta_t::kMeasureName};
     static constexpr auto kMeasureComponentsName = MeasureMeta_t::components;
@@ -268,7 +269,7 @@ namespace sam::Factor
     const measure_cov_t                          z_cov;       // fill at ctor
     const measure_cov_t                          rho;         // fill at ctor
     const std::array<std::string, kNbKeys>       keys_id;     // fill at ctor
-    KeysSet_t                                    keys_set;    // fill at ctor, mutable
+    KeysSet_t                                    keys_set;    // fill at ctor, mutable NOTE: perhaps shouldnt be mutable
 
     static constexpr bool isLinear = (KCCs::kLinear && ...);
 

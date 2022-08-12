@@ -25,7 +25,7 @@ namespace sam::System
     public:
     // marginals: infer the different types of marginals by looking into the keymeta of the factors (and filtering duplicates)
     using ___aggrkeymeta_t
-        = typename sam_tuples::cat_tuple_in_depth<typename FACTOR_T::KeysSet_t, typename FACTORS_Ts::KeysSet_t ... >::type;
+        = sam_tuples::tuple_cat_t<typename FACTOR_T::KeyMetas_t, typename FACTORS_Ts::KeyMetas_t ... >;
     // remove duplicates
     using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
     // declare marginal container type of those keymetas

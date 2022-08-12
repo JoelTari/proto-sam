@@ -7,8 +7,6 @@
 
 namespace sam_tuples
 {
-  // index sequence pattern
-
 
   //------------------------------------------------------------------//
   //             Reduce an array by zipping with a tuple              //
@@ -60,48 +58,6 @@ namespace sam_tuples
       return f(N);
     }
   }
-  // // typical use : sum, multiply, make_tuple
-  // template <typename ARRAY, std::size_t I0, std::size_t... I>
-  // static auto core_function(const ARRAY& array, std::index_sequence<I0, I...>)
-  // {
-  //   static_assert(std::tuple_size_v<ARRAY> == 1 + sizeof...(I));
-  //   static_assert(I0 == 0);
-  //   // toute la logique basee template doit etre ici
-  //   // si notre expression est cachee sous un tuple:
-  //   //       return std::get<I0>(my_tuple).something_value()  + (
-  //   //       std::get<I>(my_tuple).something_value() + ... );
-  //   return array[I0] + (array[I] + ...);
-  // }
-  // template <typename ARRAY>
-  // static auto wrapper_function(const ARRAY& array)
-  // {
-  //   std::make_index_sequence<std::tuple_size_v<ARRAY>> N {};
-  //   // auto truc = std::function<typename _Signature>;
-  //   return core_function(array, N);
-  // }
-  // // call
-  // reduce_variadically(A, &wrapper_function<std::array<double, 4>>);
-  // // or same with a lambda (c++20 required)
-  // auto lambda_result = []<typename ARRAY, std::size_t I0, std::size_t... I>(
-  //     const ARRAY& array,
-  //     std::index_sequence<I0, I...>)
-  // {
-  //   static_assert(I0 == 0, "not 0");
-  //   // return std::get<I0>(my_tuple).something_value(array[I0])  + (
-  //   // std::get<I>(my_tuple).something_value(array[I]) + ... );
-  //   return array[I0] + (array[I] + ...);
-  // };
-  // reduce_variadically(A, lambda_result);
-  //
-  // static example:
-  // auto cumul2 =reduce_static_tuple_variadically< tt_tuple_t >([]<std::size_t I0, std::size_t...
-  // I>(std::index_sequence<I0, I...>)
-  // {
-  //   return std::tuple_element_t<I0, tt_tuple_t>::value + (std::tuple_element_t<I,
-  //   tt_tuple_t>::value + ...);
-  // }
-  // );
-  // std::cout << "reduce static tuple variadically : " << cumul2 << '\n';
 
   //------------------------------------------------------------------//
   //                           foreach tup                            //
@@ -145,62 +101,27 @@ namespace sam_tuples
   }
 
 
-  //------------------------------------------------------------------//
-  //                std::apply (permits lambda c++17)                 //
-  //          std::apply should be the prefer way for tuple           //
-  //                            traversing                            //
-  //------------------------------------------------------------------//
-  // std::apply([](auto... e) { ((std::cout << e << '\n'), ...); int a = 1+1; }, my_tuple);
-  // std::apply([](auto... e) { ((customAction(e)), ...);  std::cout<< '\n'; }, my_tuple);
-  // std::apply([](auto... e) { auto l = [](auto e){ std::cout << e << '\t';}; ((l(e)), ...);
-  // std::cout<< '\n'; }, my_tuple);
+//------------------------------------------------------------------//
+//                  type version of std::tuple_cat                  //
+//------------------------------------------------------------------//
+template <typename... Tups>
+using tuple_cat_t = decltype(std::tuple_cat(std::declval<Tups>()...));
 
 //------------------------------------------------------------------//
-//                       extend tuple by type                       //
+//          flatten a two layer tuple into a single tuple           //
+//    Output tuple is composed of the concatenation of the types in //
+//                        the deepest layer                         //
 //------------------------------------------------------------------//
-// template <typename, typename>
-// struct tuple_type_cat;
-// template <typename... First, typename... Second>
-// struct tuple_type_cat<std::tuple<First...>, std::tuple<Second...>> {
-//     using type = std::tuple<First..., Second...>;
-// };
-
-// quite good
-template<typename ... input_t>
-using tuple_cat_t=
-decltype(std::tuple_cat(
-    std::declval<input_t>()...
-));
-
-//------------------------------------------------------------------//
-//          define a tuple by catting a type member of the          //
-//                           input types                            //
-//------------------------------------------------------------------//
-template< typename ...Ts>
-struct cat_tuple_in_depth;
-// FIX: the "REPLACE_ME_T" must be replaced by the static member name
-template<typename T>
-struct cat_tuple_in_depth<T>
+// unspecialised structure (useless in itself but has to be declared)
+template <typename ...DeepestTups>
+struct flattened_tuples;
+template <typename DeepestTup, typename... DeepestTups>
+struct flattened_tuples<std::tuple<DeepestTup, DeepestTups...>>
 {
-  using type = std::tuple<typename T::KeyMeta_t>; // WARNING: weakness here: use macro ?
+  using type = tuple_cat_t<DeepestTup, DeepestTups...>;
 };
-template<typename T,typename ...Ts>
-struct cat_tuple_in_depth<T,Ts...>
-{
-  using type = tuple_cat_t<std::tuple<typename T::KeyMeta_t>, typename cat_tuple_in_depth<Ts...>::type >;
-};
-// extract tuple template argument specialisation
-template<typename...Ts>
-struct cat_tuple_in_depth< std::tuple<Ts...> >: cat_tuple_in_depth<Ts...>
-{};
-template <typename... Ts, typename... Tss>
-struct cat_tuple_in_depth<std::tuple<Ts...>, std::tuple<Tss...>> : cat_tuple_in_depth<Ts..., Tss...>
-{
-};
-template <typename T>
-struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
-{
-};
+template <typename Tup>
+using flattened_tuples_t = typename flattened_tuples<Tup>::type;
 
 
 //------------------------------------------------------------------//
@@ -208,35 +129,35 @@ struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
 //         and output type a tuple of this filtered set of          //
 //                              types                               //
 //------------------------------------------------------------------//
-template<typename ...Ts>
+template<typename ...ts>
 struct tuple_filter_duplicate;
-template<typename ...Ts> // not sure 1/2
-using tuple_filter_duplicate_t =typename tuple_filter_duplicate<Ts...>::type; // not sure 2/2
+template<typename ...ts> // not sure 1/2
+using tuple_filter_duplicate_t =typename tuple_filter_duplicate<ts...>::type; // not sure 2/2
 // unitype specialisation, wow !
-template<typename T>
-struct tuple_filter_duplicate<T>
+template<typename t>
+struct tuple_filter_duplicate<t>
 {
   static constexpr std::size_t size = 1;
-  using type = typename std::tuple<T>;
+  using type = typename std::tuple<t>;
 };
 // recurse
-template<typename TNEW,typename Ts0,typename ...Ts>
-struct tuple_filter_duplicate<TNEW,Ts0,Ts...>
+template<typename tnew,typename ts0,typename ...ts>
+struct tuple_filter_duplicate<tnew,ts0,ts...>
 {
-  // check if the new type TNEW exists in the set
-   static constexpr std::size_t B= std::is_same_v<TNEW,Ts0> || ( std::is_same_v<TNEW,Ts> || ... );
-   // using type = typename std::conditional_t<B, std::tuple<Ts...>, std::tuple<TNEW,Ts...>>;
-   using type = typename std::conditional_t<B,typename tuple_filter_duplicate<Ts0,Ts...>::type, std::tuple<TNEW,Ts0,Ts...>>;
-   // using recurs_type = typename std::tuple<Ts...>;
+  // check if the new type tnew exists in the set
+   static constexpr std::size_t b= std::is_same_v<tnew,ts0> || ( std::is_same_v<tnew,ts> || ... );
+   // using type = typename std::conditional_t<b, std::tuple<ts...>, std::tuple<tnew,ts...>>;
+   using type = typename std::conditional_t<b,typename tuple_filter_duplicate<ts0,ts...>::type, std::tuple<tnew,ts0,ts...>>;
+   // using recurs_type = typename std::tuple<ts...>;
   static constexpr std::size_t size = std::tuple_size_v<type>;
 };
 
-// // NOTE: the duplicates are eleminated from left to right: the first "int" is gone (play with the initializer list)
-// inline static constexpr tuple_filter_duplicate<int,std::array<int,2>, double, int,const char*>::type AAAA {{1,2},-3.1654,45,"jk"};
-// // NOTE: Obvious advise is then to use a typedef/using after instanciating
+// // note: the duplicates are eleminated from left to right: the first "int" is gone (play with the initializer list)
+// inline static constexpr tuple_filter_duplicate<int,std::array<int,2>, double, int,const char*>::type aaaa {{1,2},-3.1654,45,"jk"};
+// // note: obvious advise is then to use a typedef/using after instanciating
 // using my_filtered_tuple_t = tuple_filter_duplicate<int,std::array<int,2>, double, int,const char*>;
 
-// TODO: specialize tuple_filter_duplicate if given argument is tuple ?
+// todo: specialize tuple_filter_duplicate if given argument is tuple ?
 // tuple argument specialisation (-> extract what's inside the tuple, and filter duplicate)
 template<typename ...Ts>
 struct tuple_filter_duplicate< std::tuple<Ts...> >: tuple_filter_duplicate<Ts...>{};
@@ -270,18 +191,6 @@ constexpr void constexpr_for(F &&func)
     if constexpr (N > 0)
         constexpr_for_each(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
 }
-
-// usage:  input Cn,  tuple : pointers  (from https://stackoverflow.com/a/66661980 )
-//
-// constexpr_for<sizeof...(Cn)>([&](auto index)
-// {
-//     constexpr auto i = index.value;
-//     std::get<i>(pointers) = pChunk->memory + m_groups.componentOffsets[i];
-// });
-
-
-
-
 
 }   // namespace sam_tuples
 #endif
