@@ -199,6 +199,8 @@ namespace details_sam::Conduct{
 
 namespace sam::Factor
 {
+  template<typename Tup_composite,typename Tup_keys_id>
+  void print_composite_state(const Tup_composite & X, const Tup_keys_id & keys_id);
   //------------------------------------------------------------------//
   //                    Base Factor class template                    //
   //------------------------------------------------------------------//
@@ -319,7 +321,14 @@ namespace sam::Factor
     {
       // TODO: throw if cov is not a POS matrix (consistency check enabled ?)
 #if ENABLE_DEBUG_TRACE
+      std::cout << "------------ \n ";
       std::cout << "factor " << factor_id << " rho: \n" << this->rho << '\n';
+      if constexpr (!isLinear)  // FIX: refactor soon
+      {
+        std::cout << "init points : \n";
+        print_composite_state(tup_init_points_ptr, this->keys_id);
+      }
+      std::cout << "------------ \n ";
 #endif
     }
 
@@ -936,6 +945,29 @@ namespace sam::Factor
 
   };
 
+  // helper
+  template<typename Tup_composite, typename Tup_keys_id>
+  void print_composite_state(const Tup_composite & X, const Tup_keys_id & keys_id)
+  {
+    // zip tupple pattern
+    std::stringstream ss;
+    std::apply(
+                [&ss,&X](auto&&...key_id)
+                {
+                  std::apply(
+                      [&](auto&&...Xk_ptr)
+                      {
+                          ss.width(10);
+                          ((ss << key_id << ": "<< *Xk_ptr << "\n"), ...);
+                      }
+                      ,X
+                      );
+                }
+                ,keys_id
+              );
+    std::cout << ss.str();
+  }
+
 }
 
 
@@ -1122,6 +1154,7 @@ constexpr void factor_print()
 template <typename FT>
 void factor_print(const FT& fact)
 {
+  // TODO: use stringstream for formatting, and return the string (or ss, doesnt matter, the point is that cout<< should be called elsewhere)
   Eigen::IOFormat
       CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "  ", ";");
 
@@ -1153,8 +1186,7 @@ void factor_print(const FT& fact)
   std::cout << "\t----- \n";
 }
 
-// TODO: URGENT: print a composite_state_ptr_t (hint: cppman tuple)
-//
+
 // TODO: URGENT: print tup_bi_Aiks
 
 #endif
