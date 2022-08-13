@@ -173,6 +173,8 @@ namespace sam::System
     */
     void sam_optimize(sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance())
     {
+      // FIX: uncontrolled failure if the system is empty (no factors)
+
       // scoped timer
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
@@ -318,11 +320,11 @@ namespace sam::System
         std::cout << "#### Iteration : " << nIter << '\n';
         std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n";
         // only display if matrix not too big
-        if ( A.rows() < 22 && nIter ==0) std::cout << Eigen::MatrixXd(A) << "\n\n";
+        if ( A.rows() < 30 && nIter ==0) std::cout << Eigen::MatrixXd(A) << "\n\n";
         // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
         // "\n\n";
         std::cout << "#### Syst: b computed :\n";
-        if ( b.rows() < 22 && nIter ==0) std::cout << b << "\n";
+        if ( b.rows() < 30 && nIter ==0) std::cout << b << "\n";
         std::cout << "#### Syst: MAP computed :\n" << MaP << '\n';
         std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
         if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
@@ -471,8 +473,9 @@ namespace sam::System
 
         nIter++;
       }
-      // print MaP (Xmap, not dX) once all iterations are done
+
 #if ENABLE_DEBUG_TRACE
+      // print MaP (Xmap, not dX) once all iterations are done
       std::cout << std::fixed << std::setprecision(3) << std::showpos;
       sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,
           [](const auto & map_marginals, auto NIET)
@@ -771,11 +774,11 @@ namespace sam::System
                                      const std::array<std::string, FT::kNbKeys>& keys_id,
                                      std::index_sequence<I...>)
     {
-      (dosomething(factor_id, keys_id[I], std::tuple_element_t<I, typename FT::KeysSet_t>::kN),
+      (add_in_bookkeeper_in_once(factor_id, keys_id[I], std::tuple_element_t<I, typename FT::KeysSet_t>::kN),
        ...);
     }
-    // TODO: rename
-    void dosomething(const std::string& factor_id,
+
+    void add_in_bookkeeper_in_once(const std::string& factor_id,
                      const std::string& key_id,
                      int                key_dimension)   // string_view?
     {
