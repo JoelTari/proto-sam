@@ -166,7 +166,7 @@ namespace details_sam::Factor{
           {
             auto X_observer = *std::get<kObserverKeyConductIdx>(X);
             auto B_sighted = *std::get<kSightedKeyConductIdx>(X);
-            return this->rho* (
+            return - this->rho* (
                       this->z - X_observer.inverse().act(B_sighted)
                 );
           }
