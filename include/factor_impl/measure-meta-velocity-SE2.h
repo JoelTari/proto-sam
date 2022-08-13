@@ -13,27 +13,27 @@ namespace details_sam::Meta::Measure{
     inline static constexpr const char vt[] = "vtheta";
     
     // the measure type
-    using VelocitySE2_t = Eigen::Vector3d;
+    using VelocitySE2_t = manif::SE2Tangentd;
     using namespace ::sam::Meta::Measure;
 
     namespace exports{
       struct VelocitySE2 : Base<VelocitySE2, VelocitySE2_t, velocity_label, vx,vy,vt>
       {
-        static constexpr std::size_t compute_kM_impl(){ return VelocitySE2_t::RowsAtCompileTime; }
+        static constexpr std::size_t compute_kM_impl(){ return VelocitySE2_t::DoF; }
 
         template <const char* COMPONENT>
         static auto get_component_impl(const VelocitySE2_t& velocity)
         {
           if constexpr (std::string_view(COMPONENT) == vx)
-            return velocity(0,0);
+            return velocity.x();
           else
           {
             if constexpr (std::string_view(COMPONENT) == vy)
-              return velocity(1,0);
+              return velocity.y();
             else
             {
                 static_assert(std::string_view(COMPONENT) == vt);
-                return velocity(2,0);
+                return velocity.angle();
             }
           }
         }
@@ -42,11 +42,11 @@ namespace details_sam::Meta::Measure{
                                          const VelocitySE2_t& velocity)
         {
           if (std::string_view(component) == vx)
-            return velocity(0,0);
+            return velocity.x();
           else if (std::string_view(component) == vy)
-            return velocity(1,0);
+            return velocity.y();
           else if (std::string_view(component) == vt)
-            return velocity(2,0);
+            return velocity.angle();
           else
             throw std::runtime_error("component requested doesnt exist in key position meta");
         }
