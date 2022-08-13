@@ -125,6 +125,7 @@ namespace details_sam::Factor{
                     );
                 return std::make_tuple( subsequent_init_point_ptr, antecedent_init_point_ptr );
             }
+            // subsequent Xi+1 doesnt exist but Xi does  NOTE: most common
             else if (!std::get<kSubsequentKeyConductIdx>(x_init_ptr_optional_tup).has_value()
                 && std::get<kAntecedentKeyConductIdx>(x_init_ptr_optional_tup).has_value())
             {
@@ -133,7 +134,7 @@ namespace details_sam::Factor{
                   = std::get<kAntecedentKeyConductIdx>(x_init_ptr_optional_tup).value();
 
               subsequent_init_point_ptr = std::make_shared<SubsequentSE2KeyConduct::Key_t>
-                (*subsequent_init_point_ptr + manif::SE2Tangentd(z));
+                (*antecedent_init_point_ptr + manif::SE2Tangentd(z));
               return std::make_tuple( subsequent_init_point_ptr ,antecedent_init_point_ptr );
             }
             else if (std::get<kSubsequentKeyConductIdx>(x_init_ptr_optional_tup).has_value()
@@ -143,7 +144,7 @@ namespace details_sam::Factor{
                       ,std::get<kAntecedentKeyConductIdx>(x_init_ptr_optional_tup).value() 
                       );
             }
-            else // unable to deduce an init point for the keys
+            else // unable to deduce any init point when no init point is available
               return std::nullopt;
           }
           
@@ -151,8 +152,8 @@ namespace details_sam::Factor{
           std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
           {
             // extract Xk (X is a tuple of 1 element...)
-            auto X_kp1 = *std::get<0>(X);
-            auto X_k = *std::get<1>(X);
+            auto X_kp1 = *std::get<kSubsequentKeyConductIdx>(X);
+            auto X_k = *std::get<kAntecedentKeyConductIdx>(X);
             // pre declaring the jacobian
             using Ai_kp1_t = std::tuple_element_t<0, matrices_Aik_t>;
             using Ai_k_t = std::tuple_element_t<1, matrices_Aik_t>;
@@ -160,8 +161,8 @@ namespace details_sam::Factor{
             Ai_k_t J_rminus_X_k;
             // compute bi = -  r(X) = - rho * ( Z (r-) X )
             // and fill the Jacobian
-            criterion_t bi = -this->rho*(this->z - X_kp1.rminus( X_k , J_rminus_X_kp1, J_rminus_X_k).coeffs());
-            // FIX: URGENT:  is ( z^  -   Xkp(r-)Xk ).coeffs() the same as ( z  -   (Xkp(r-)Xk).coeffs() ) ???
+            criterion_t bi = -this->rho*(this->z - X_kp1.rminus( X_k , J_rminus_X_kp1, J_rminus_X_k)).coeffs();
+            // NOTE: (z - Xkp1(r-)Xk ).coeffs() is same as (z.coeffs()  - Xkp1(r-)Xk .coeffs() )  <= linear operations of hat/vee
             // compute tuple of the Aiks (just one in this factor)
             Ai_kp1_t Ai_kp1 = - this->rho * J_rminus_X_kp1;
             Ai_k_t Ai_k = -this->rho * J_rminus_X_k;
@@ -171,10 +172,10 @@ namespace details_sam::Factor{
 
           criterion_t compute_r_of_x_at_impl(const composite_state_ptr_t & X) const
           {
-            auto X_kp1 = *std::get<0>(X);
-            auto X_k   = *std::get<1>(X);
-            return this->rho* (this->z - X_kp1.rminus(X_k).coeffs() );
-            // FIX: URGENT:  is ( z^  -   Xkp(r-)Xk ).coeffs() the same as ( z  -   (Xkp(r-)Xk).coeffs() ) ???
+            auto X_kp1 = *std::get<kSubsequentKeyConductIdx>(X);
+            auto X_k   = *std::get<kAntecedentKeyConductIdx>(X);
+            return this->rho* (this->z - X_kp1.rminus(X_k)) .coeffs();
+            // NOTE: (z - Xkp1(r-)Xk ).coeffs() is same as (z.coeffs()  - Xkp1(r-)Xk .coeffs() )  <= linear operations of hat/vee
           }
       };
 
