@@ -69,13 +69,87 @@ int main (int argc, char *argv[])
 
   
   cout << "\n\n Declaring a sam system:\n";
-  auto samsyst = 
+  auto sys = 
     ::sam::System::SamSystem<
                                ::sam::Factor::MotionModelSE2
                               , ::sam::Factor::AnchorSE2
                               , ::sam::Factor::LandmarkCartesianObsSE2
                             >(
       "slam system");
+  
+  cout << "\n\n factors registration:\n";
+  // covariances
+  Eigen::Array<double, 3, 1> prior_sigmas, control_sigmas;
+  Eigen::Array<double, 2, 1> landmark_meas_sigmas;
+  prior_sigmas << 0.000002, 0.000002, 0.0000005;
+  control_sigmas << 0.5, 0.0003, 0.1;
+  landmark_meas_sigmas << 0.1, 0.1;
+  ::sam::Factor::AnchorSE2::measure_cov_t cov_prior    = prior_sigmas.square().matrix().asDiagonal();
+  ::sam::Factor::MotionModelSE2::measure_cov_t  cov_control  = control_sigmas.square().matrix().asDiagonal();
+  ::sam::Factor::LandmarkCartesianObsSE2::measure_cov_t cov_landmark = landmark_meas_sigmas.square().matrix().asDiagonal();
+
+  // f0
+  {
+    auto z = ::sam::Factor::AnchorSE2::measure_t(true_poses[0]);   // or ::sam::Measure::AbsolutePosition2d is the same
+    sys.register_new_factor<::sam::Factor::AnchorSE2>("f0",z,cov_prior,{"x0"});
+  }
+  // f1
+  {
+    auto z = ::sam::Measure::LinearTranslation2d_t(4.8335, 1.7085);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f1", z , cov_landmark, {"b0","x0"});
+  }
+  // f2
+  {
+    auto z = ::sam::Measure::LinearTranslation2d_t(3.0034,-5.2488);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f2", z , cov_landmark, {"b1","x0"});
+  }
+  // f3
+  {
+    auto z = ::sam::Measure::LinearTranslation2d_t(7.3764, -2.6761);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f3", z , cov_landmark, {"b3","x0"});
+  }
+  // f4
+  {
+    auto z = ::sam::Measure::VelocitySE2(4.0623, 0.0001, -0.2979);
+    sys.register_new_factor<::sam::Factor::MotionModelSE2>("f4", z , cov_control, {"x1","x0"});
+  }
+  // f5
+  {
+    auto z = ::sam::Measure::LinearTranslation2d_t(0.8791, 2.7602);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f5", z , cov_landmark, {"b0","x1"});
+  }
+  // f6
+  {
+    auto z = ::sam::Measure::LinearTranslation2d_t(-6.1805,1.9506);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f6", z , cov_landmark, {"b2","x1"});
+  }
+  // f7
+  {
+    auto z = ::sam::Measure::LinearTranslation2d_t(-3.1906,5.5414);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f7", z , cov_landmark, {"b4","x1"});
+  }
+  // f8
+  {
+    auto z = ::sam::Measure::VelocitySE2(2.6136, -0.0002, -0.6015); // vx.t , vy.t , w.t
+    sys.register_new_factor<::sam::Factor::MotionModelSE2>("f8", z , cov_control, {"x2","x1"});
+  }
+  // f9
+  {
+    auto z = ::sam::Measure::LinearTranslation2d_t(0.3480,-3.7441);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f9", z , cov_landmark, {"b1","x2"});
+  }
+  // f10
+  {
+    auto z = ::sam::Measure::LinearTranslation2d_t(-9.2770,-1.3639);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f10", z , cov_landmark, {"b2","x2"});
+  }
+  // f11
+  {
+    auto z = ::sam::Measure::LinearTranslation2d_t(-8.0425,3.6379);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f11", z , cov_landmark, {"b4","x2"});
+  }
+
+  sys.sam_optimize();
 
   return 0;
 }
