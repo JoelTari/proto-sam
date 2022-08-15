@@ -69,7 +69,7 @@ namespace details_sam::Conduct{
      * of the full process matrix of factor \phi_i as there may be other keys k in the factor with
      * their own sub process-matrix Aik.
      */
-    key_process_matrix_t compute_Aik_at(const Key_t & Xk) const
+    key_process_matrix_t compute_Aik_at(const Key_t & Xk) const // WARNING: SRP: compute_Hik_at rather ? then it would be static
     {
       return static_cast<const DerivedKCC*>(this)->compute_Aik_at_impl(Xk);
     }
@@ -100,7 +100,7 @@ namespace details_sam::Conduct{
      */
     KeyContextualConduct(const std::string& key_id, const measure_cov_t& rho)
         : key_id(key_id)
-        , rho(rho)
+        , rho(rho)           // FIX: remove rho once SRP is fixed
     {
       // necessary (but not sufficient) condition for this ctor: the context model must be linear.
       // sufficient condition would be that the wider system be linear (enforceable at higher level)
@@ -708,16 +708,6 @@ namespace sam::Factor
      */
     std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
     {
-      // if 
-      // if constexpr (
-      //     // HACK: branch to the derived (bad pattern)
-      //           std::is_member_function_pointer_v< decltype(&DerivedEuclidianFactor::compute_Ai_bi_at_impl)>
-      //             )
-      // {
-      //   return  static_cast<const DerivedEuclidianFactor*>(this)->compute_Ai_bi_at_impl(X); 
-      // }
-      // else
-      // {
       criterion_t bi = - this->compute_r_of_x_at(X);
       // matrices_Aik_t all_Aik ;
       // double apply pattern to zip two tuples
@@ -732,7 +722,6 @@ namespace sam::Factor
           );
 
       return { bi, all_Aik };
-      // }
     }
 
 
@@ -908,6 +897,12 @@ namespace sam::Factor
      */
     std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_linear() const
     {
+      // FIX: URGENT: to prepare for the SRP enforcement, have all_Aik be a constant member (in linear factor)
+      //      KCCs can keep their Hik however (it will just not be called here).
+      //      This also lead to the design decision that Kcc.Hik will not be a const member of Hik,
+      //      but rather a statically returned func kcc.get_Hik (less memory, more CPU, but kcc.get_Hik())
+      //      It is assumed that get_Hik will (almost) never be called, except at the ctor of the linear
+      //      factor class.
       matrices_Aik_t all_Aik
         =
         std::apply(
@@ -930,6 +925,13 @@ namespace sam::Factor
      */
     std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
     {
+      // FIX: URGENT: to prepare for the SRP enforcement, have all_Aik be a constant member (in linear factor)
+      //      KCCs can keep their Hik however (it will just not be called here).
+      //      This also lead to the design decision that Kcc.Hik will not be a const member of Hik,
+      //      but rather a statically returned func kcc.get_Hik (less memory, more CPU, but kcc.get_Hik())
+      //      It is assumed that get_Hik will (almost) never be called, except at the ctor of the linear
+      //      factor class.
+      //      NOTE: all_Aik is the same whether or not the wider system is linear or NL
       matrices_Aik_t all_Aik
         =
         std::apply(
@@ -963,6 +965,7 @@ namespace sam::Factor
         return 
         std::apply([&](const auto & ... Xkptr)
             {
+              // here we need Hik unfortunately
               return std::make_tuple(kcc.Hik* *Xkptr ...);
             }
             ,X);
@@ -988,6 +991,7 @@ namespace sam::Factor
       // use double std::apply to zip-multiply tuples X and kcc.Aik 
       // then sum the elements of resulting tuple
       // then substract by b
+      // FIX: URGENT: use linear factor constant member all_Aik
       auto tuple_Aik_times_Xk =  std::apply(
           [&X](const auto & ... kcc)
           {

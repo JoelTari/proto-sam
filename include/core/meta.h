@@ -12,7 +12,6 @@ namespace sam::Meta::Key
     //------------------------------------------------------------------//
     //                         KeyMeta Template                         //
     //------------------------------------------------------------------//
-    // TODO: URGENT: use enums rather
     template <typename DerivedKeyMeta, const char* NAME, typename KEY_T, typename TANGENT_SPACE_T=KEY_T, const char... ORDERRED_COMPONENT_NAMEs[]>
     struct Base
     {
@@ -95,7 +94,6 @@ namespace sam::Meta::Measure
   //------------------------------------------------------------------//
   //                       MeasureMeta Template                       //
   //------------------------------------------------------------------//
-  // TODO: URGENT: use enums rather than const char*
   template <typename DerivedMeasureMeta,
             typename MEASURE_T,
             const char* NAME,
