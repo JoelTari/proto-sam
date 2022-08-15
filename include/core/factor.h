@@ -13,6 +13,9 @@
 #include <tuple>
 #include <utility>
 
+// WARNING: SRP
+// include a factor/utils.h with all the print function templates
+
 namespace details_sam::Conduct{
 
   /**
@@ -199,8 +202,47 @@ namespace details_sam::Conduct{
 
 namespace sam::Factor
 {
-  template<typename Tup_composite,typename Tup_keys_id>
-  void print_composite_state(const Tup_composite & X, const Tup_keys_id & keys_id);
+  // composite state
+  template <typename ...KCCs>
+  struct CompositeStatePtr
+  {
+    using type = std::tuple<std::shared_ptr<typename KCCs::Key_t>...>;
+  };
+  template <typename ...KCCs>
+  using CompositeStatePtr_t = typename CompositeStatePtr<KCCs...>::type;
+
+  // template <typename FT>
+  // struct CompositeStatePtr : CompositeStatePtr<typename FT::KeysSet_t>{};
+
+  // helper to print
+  template<typename ...KCCs>
+  std::string stringify_composite_state_blockliner(const CompositeStatePtr_t<KCCs...>& X
+      , const std::array<std::string,sizeof...(KCCs)>  & keys_id
+      , int tabulation=4
+      ,int precision=4)
+  {
+    std::stringstream ss;
+    // zip tupple pattern
+    std::apply(
+                [&](auto&&...key_id)
+                {
+                  std::apply(
+                      [&](auto&&...Xk_ptr)
+                      {
+                        ((ss << std::setw(tabulation)
+                           << "[ " << key_id << " ] : \t"
+                           << KCCs::KeyMeta_t::stringify_key_oneliner(*Xk_ptr, precision) 
+                           << '\n')
+                         , ...);  
+                      }
+                      ,X
+                      );
+                }
+                ,keys_id
+              );
+    return ss.str();
+  }
+
   //------------------------------------------------------------------//
   //                    Base Factor class template                    //
   //------------------------------------------------------------------//
@@ -254,8 +296,8 @@ namespace sam::Factor
     using measure_cov_t                  = Eigen::Matrix<double, kM, kM>;
     using factor_process_matrix_t        = Eigen::Matrix<double, kM, kN>;
     using state_vector_t                 = Eigen::Matrix<double, kN, 1>;   // { dXk , ... }
-    using composite_state_ptr_t
-        = std::tuple<std::shared_ptr<typename KCC::Key_t>, std::shared_ptr<typename KCCs::Key_t>...>;   // {*Xk ...}
+    using composite_state_ptr_t = CompositeStatePtr_t<KCC,KCCs...>;
+        // = std::tuple<std::shared_ptr<typename KCC::Key_t>, std::shared_ptr<typename KCCs::Key_t>...>;   // {*Xk ...}
     using composite_of_opt_state_ptr_t
         = std::tuple<std::optional<std::shared_ptr<typename KCC::Key_t>>,std::optional<std::shared_ptr<typename KCCs::Key_t>>...>;
     //  NOTE: Xk same type as dXk in euclidian factors
@@ -311,7 +353,8 @@ namespace sam::Factor
       if constexpr (!isLinear)  // FIX: refactor soon
       {
         std::cout << "init points : \n";
-        print_composite_state(tup_init_points_ptr, this->keys_id);
+        std::cout << 
+          stringify_composite_state_blockliner<KCC,KCCs...>(tup_init_points_ptr, this->keys_id,4,4);
       }
       std::cout << "------------ \n ";
 #endif
@@ -965,28 +1008,6 @@ namespace sam::Factor
 
   };
 
-  // helper
-  template<typename Tup_composite, typename Tup_keys_id>
-  void print_composite_state(const Tup_composite & X, const Tup_keys_id & keys_id)
-  {
-    // zip tupple pattern
-    std::stringstream ss;
-    std::apply(
-                [&ss,&X](auto&&...key_id)
-                {
-                  std::apply(
-                      [&](auto&&...Xk_ptr)
-                      {
-                          ss.width(10);
-                          ((ss << key_id << ": "<< *Xk_ptr << "\n"), ...);
-                      }
-                      ,X
-                      );
-                }
-                ,keys_id
-              );
-    std::cout << ss.str();
-  }
 
 }
 
