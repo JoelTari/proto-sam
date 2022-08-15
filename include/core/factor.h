@@ -239,30 +239,32 @@ namespace sam::Factor
   template <typename DerivedFactor,
             const char* FactorLabel,
             typename MEASURE_META,    // FIX: URGENT: no need MEASURE_META: can be access via Kcc (but s_assert its the same for all kcc)
+            typename KCC,
             typename... KCCs>  // FIX: CHORE: perhaps make it clear that you need always at least 1 KCC
   class BaseFactor
   {
     public:
     friend DerivedFactor;
-    using MeasureMeta_t = MEASURE_META;
+    using MeasureMeta_t = typename KCC::MeasureMeta_t;
     using measure_t      = typename MeasureMeta_t::measure_t;
     static constexpr const char* kFactorLabel {FactorLabel};
-    static constexpr size_t      kN      = (KCCs::kN + ...);
+    // *** the syntax:  N + (Ns + ...) has no fallback when Ns pack is empty
+    static constexpr size_t      kN      = (KCC::kN  + ... + KCCs::kN );  // ***
     static constexpr size_t      kM      = MeasureMeta_t::kM;
-    static constexpr size_t      kNbKeys = sizeof...(KCCs);
+    static constexpr size_t      kNbKeys = 1 + sizeof...(KCCs);
     using criterion_t                    = Eigen::Vector<double, kM>;
     using measure_cov_t                  = Eigen::Matrix<double, kM, kM>;
     using factor_process_matrix_t        = Eigen::Matrix<double, kM, kN>;
     using state_vector_t                 = Eigen::Matrix<double, kN, 1>;   // { dXk , ... }
     using composite_state_ptr_t
-        = std::tuple<std::shared_ptr<typename KCCs::Key_t>...>;   // {*Xk ...}
+        = std::tuple<std::shared_ptr<typename KCC::Key_t>, std::shared_ptr<typename KCCs::Key_t>...>;   // {*Xk ...}
     using composite_of_opt_state_ptr_t
-        = std::tuple<std::optional<std::shared_ptr<typename KCCs::Key_t>>...>;
+        = std::tuple<std::optional<std::shared_ptr<typename KCC::Key_t>>,std::optional<std::shared_ptr<typename KCCs::Key_t>>...>;
     //  NOTE: Xk same type as dXk in euclidian factors
     using matrix_Ai_t    = Eigen::Matrix<double, kM, kN>;
-    using matrices_Aik_t = std::tuple<typename KCCs::key_process_matrix_t...>;
-    using KeysSet_t      = std::tuple<KCCs...>;
-    using KeyMetas_t     = std::tuple<typename KCCs::KeyMeta_t...>; // not unique
+    using matrices_Aik_t = std::tuple<typename KCC::key_process_matrix_t, typename KCCs::key_process_matrix_t...>;
+    using KeysSet_t      = std::tuple<KCC,KCCs...>;
+    using KeyMetas_t     = std::tuple<typename KCC::KeyMeta_t, typename KCCs::KeyMeta_t...>; // not unique
 
     static constexpr const char*                 kMeasureName {MeasureMeta_t::kMeasureName};
     static constexpr auto kMeasureComponentsName = MeasureMeta_t::components;
@@ -273,9 +275,10 @@ namespace sam::Factor
     const std::array<std::string, kNbKeys>       keys_id;     // fill at ctor
     KeysSet_t                                    keys_set;    // fill at ctor, mutable NOTE: perhaps shouldnt be mutable
 
-    static constexpr bool isLinear = (KCCs::kLinear && ...);
+    static constexpr bool isLinear = KCC::kLinear && (KCCs::kLinear && ...);
 
-    static_assert( (std::is_same_v<MeasureMeta_t,typename KCCs::MeasureMeta_t> && ...) );
+    // check that all measure_t are the same in key contextual conduct
+    static_assert( (std::is_same_v<typename KCC::MeasureMeta_t, typename KCCs::MeasureMeta_t> && ...) );
 
     // FIX: URGENT: have a default constructor ...?
 
@@ -300,23 +303,7 @@ namespace sam::Factor
         , factor_id(factor_id)
         , rho(z_cov.inverse().llt().matrixL().transpose())  // cov^-1 =: LL^T
         , keys_id(keys_id)
-        , keys_set(sam_tuples::reduce_array_variadically(
-              keys_id, 
-              []<std::size_t... I>(const auto& my_keys_id,
-                                   const auto& rho,
-                                   const auto& tup_init_points_ptr,
-                                   std::index_sequence<I...>)
-                  ->KeysSet_t {
-                    // return std::make_tuple(KCCs(my_keys_id[I], rho)...); // original
-                    // might be possible to use perfect forwarding, by declaring an empty tuple
-                    // and next line expanding tuple_cat with an intermediary function that has
-                    // perfect forwarding ( TODO:)
-                    //  TODO: CHORE: use std::apply here
-                    //  FIX: URGENT: main point of difficulty when breaking downs the <,KCCs...> into <,KCC,...KCCs>
-                    return {KCCs(my_keys_id[I], rho, std::get<I>(tup_init_points_ptr))...};
-                  },
-              rho,
-              tup_init_points_ptr))
+        , keys_set(construct_keys_set<KCC,KCCs...>(keys_id,rho,tup_init_points_ptr))
         , keyIdToTupleIdx(map_keyid(keys_id))
     {
       // TODO: throw if cov is not a POS matrix (consistency check enabled ?)
@@ -363,9 +350,9 @@ namespace sam::Factor
       return DerivedFactor::guess_init_key_points_impl(x_init_ptr_optional_tup, z);
     }
 
-    static composite_state_ptr_t make_composite(typename KCCs::Key_t... keys)
+    static composite_state_ptr_t make_composite(typename KCC::Key_t key, typename KCCs::Key_t... keys)
     {
-      return {std::make_shared<typename KCCs::Key_t>(keys)...};
+      return std::make_tuple(std::make_shared<typename KCC::Key_t>(key), std::make_shared<typename KCCs::Key_t>(keys) ...);
     }
 
     /**
@@ -376,11 +363,13 @@ namespace sam::Factor
      */
     std::array<std::string, kNbKeys> get_array_keys_id() const
     {
-      return sam_tuples::reduce_array_variadically(
-          this->keys_set,
-          [this]<std::size_t... J>(const auto& keyset, std::index_sequence<J...>) {
-            return std::array<std::string, kNbKeys> {std::get<J>(keyset).key_id...};
-          });
+      return 
+        std::apply([](const auto & ...key_set)
+                    {
+                      return std::array<std::string, kNbKeys>{key_set.key_id ... }; 
+                    }
+                    ,this->keys_set
+                  );
     }
 
 
@@ -457,7 +446,7 @@ namespace sam::Factor
       return compute_r_of_x_at_current_lin_point().norm();
     }
 
-    protected:
+    private:
     /**
      * @brief  constructor helper that creates a map that associated a key id to its index in the
      * input array of keys
@@ -496,6 +485,40 @@ namespace sam::Factor
           , this->keys_set
           );
       return current_lin_points_ptr;
+    }
+    
+    /**
+     * @brief construct keys set (tuple of key contextual conducts objects)
+     *
+     * @tparam allKCCs types of all key contextual conducts (KCC and KCCs into one expansion)
+     *   HACK: cheap trick so that my pack allKCCs has same size as keys_id & init_points, allowing valid expansion in std::apply
+     * @param keys_id keys_id
+     * @param rho square root matrix (upper triangular) of the measurement covariance
+     * @param init_points composite state of initial points
+     * @return keys set of contextual conduct (tuple)
+     */
+    template <typename ...allKCCs>
+    KeysSet_t construct_keys_set( const std::array<std::string, kNbKeys> & keys_id, const measure_cov_t & rho, const composite_state_ptr_t & init_points )
+    {
+      // the other interesting thing in this is the usage of zip tuple pattern between array
+      // keys_id and tuple init_points (nested apply)
+      KeysSet_t keys_set = 
+        std::apply
+        (
+          [&](const auto & ... init_point)
+          {
+            return std::apply([&](const auto & ...key_id)
+                      {
+                          // std::tuple<KCC> key_set0 = { KCC(key_id, rho, init_point) };     
+                          // auto kss =std::make_tuple( KCCs(key_id,rho,init_point) ... );           
+                         return std::make_tuple( allKCCs(key_id,rho,init_point) ... );           
+                      }
+                      ,keys_id
+                    ); 
+          }
+          , init_points  
+        );
+      return keys_set;
     }
   };
 
