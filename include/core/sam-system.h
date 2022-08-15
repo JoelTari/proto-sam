@@ -474,22 +474,6 @@ namespace sam::System
         nIter++;
       }
 
-#if ENABLE_DEBUG_TRACE
-      // print MaP (Xmap, not dX) once all iterations are done
-      std::cout << std::fixed << std::setprecision(3) << std::showpos;
-      sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,
-          [](const auto & map_marginals, auto NIET)
-          {
-            for (const auto & pair : map_marginals)
-            {
-              std::string key_id = pair.first;
-              auto marg_ptr = pair.second;
-              std::cout << "key " << key_id << '\n';
-              std::cout << *(marg_ptr->mean_ptr) << '\n';
-            }
-          }
-          );
-#endif
       // declare the json graph
       Json::Value json_graph;
       json_graph["header"] = write_header(this->bookkeeper_.getSystemInfos());
@@ -627,6 +611,12 @@ namespace sam::System
       return true;
     }
 #endif
+
+    // get all marginals
+    auto get_marginals()
+    {
+      return all_marginals_.data_map_tuple;
+    }
 
     private:
     /**

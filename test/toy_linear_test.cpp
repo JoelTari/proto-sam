@@ -6,33 +6,18 @@
 #include "core/marginal.h"
 
 
-// template <typename... Ts>
-// struct cat_tuple_in_depth;
-// template <typename T>
-// struct cat_tuple_in_depth<T>
-// {
-//   using type = std::tuple<typename T::KeyMeta_t>;   // WARNING: weakness here: use macro ?
-// };
-// template <typename T, typename... Ts>
-// struct cat_tuple_in_depth<T, Ts...>
-// {
-//   using type = sam_tuples::tuple_cat_t<std::tuple<typename T::KeyMeta_t>,
-//                                           typename cat_tuple_in_depth<Ts...>::type>;
-// };
-// // extract tuple template argument specialisation
-// template <typename... Ts>
-// struct cat_tuple_in_depth<std::tuple<Ts...>> : cat_tuple_in_depth<Ts...>
-// {
-// };
-// template <typename... Ts, typename... Tss>
-// struct cat_tuple_in_depth<std::tuple<Ts...>, std::tuple<Tss...>> : cat_tuple_in_depth<Ts..., Tss...>
-// {
-// };
-// template <typename T>
-// struct cat_tuple_in_depth<std::tuple<T>> : cat_tuple_in_depth<T>
-// {
-// };
-
+// Ground truth:
+// x0: 0, 0
+// x1: 1, 0 
+// x2: 1, 1
+// x3: 0, 1
+//
+// x3  ───────x2
+//  │          │
+//  │          │
+//  │          │
+// x0 ────────x1
+//  ┼
 
 //------------------------------------------------------------------//
 //                               MAIN                               //
@@ -50,56 +35,45 @@ int main(int argc, char* argv[])
   std::cout << "\n\n Declaring a sam system:\n";
 
   auto syst = ::sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::LinearTranslation2d>("A");
-  // test cat_tuple_in_depth
-  // using aggrkeymeta_t
-  //     = cat_tuple_in_depth<AnchorFactor::KeysSet_t, LinearTranslationFactor::KeysSet_t>::type;
 
-  // std::cout << "number of element in the tuple aggrkeymeta_t (exp. 3) : "
-  //           << std::tuple_size<aggrkeymeta_t>::value << '\n';
-  // std::cout << "number of unique element in the tuple aggrkeymeta_t (exp. 1) : "
-  //           << sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::size << '\n';
-  //
-  // using uniq_keymeta_set_t = sam_tuples::tuple_filter_duplicate<aggrkeymeta_t>::type ;
-  //
-  // using marginals_t = MarginalsContainer<uniq_keymeta_set_t> ;
-  
-
-  ::sam::Factor::Anchor2d::criterion_t z {0, 0};
+  ::sam::Factor::Anchor2d::measure_t z {0, 0};
   ::sam::Factor::Anchor2d::measure_cov_t      Sigma {{0.2, 0}, {0, 0.2}};
 
   syst.register_new_factor<::sam::Factor::Anchor2d>("f0", z, Sigma, {"x0"});
   syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f1",
-      ::sam::Factor::LinearTranslation2d::criterion_t {-0.95, 0.1},
+      ::sam::Factor::LinearTranslation2d::measure_t {-0.95, 0.1},
       ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.1, 0}, {0, 0.1}},
       {"x0", "x1"});
 
   syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f2",
-      ::sam::Factor::LinearTranslation2d::criterion_t {-0.01654, -1.21},
+      ::sam::Factor::LinearTranslation2d::measure_t {-0.01654, -1.21},
       ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.02, 0}, {0, 0.3}},
       {"x1", "x2"});
 
   syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f3",
-      ::sam::Factor::LinearTranslation2d::criterion_t {1.01654, -.11},
+      ::sam::Factor::LinearTranslation2d::measure_t {1.01654, -.11},
       ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.32, 0}, {0, 0.1}},
       {"x2", "x3"});
 
   // loop-closure
   syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
       "f4",
-      ::sam::Factor::LinearTranslation2d::criterion_t {0.01654, 1.181},
-      ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.002, 0}, {0, 0.173}},
+      ::sam::Factor::LinearTranslation2d::measure_t {0.0, 1},
+      ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.002, 0}, {0, 0.002}},
       {"x3", "x0"});
-  syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
-      "f5",
-      ::sam::Factor::LinearTranslation2d::criterion_t {-1.01654, -0.8},
-      ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.2, 0}, {0, 0.17}},
-      {"x0", "x2"});
+  // syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
+  //     "f5",
+  //     ::sam::Factor::LinearTranslation2d::measure_t {-1.01654, -0.8},
+  //     ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.2, 0}, {0, 0.17}},
+  //     {"x0", "x2"});
 
   // std::this_thread::sleep_for(std::chrono::seconds(1));
-
+  std::cout << " Pre Optimized points: \n";
+  auto sys_marginals = syst.get_marginals();
+  std::cout << ::sam::Marginal::stringify_marginal_container(sys_marginals);
   try
   {
     syst.sam_optimize();
@@ -110,6 +84,9 @@ int main(int argc, char* argv[])
     std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
 #endif
   }
+  std::cout << " After optimization: \n";
+  sys_marginals = syst.get_marginals();
+  std::cout << ::sam::Marginal::stringify_marginal_container(sys_marginals);
 
   return 0;
 }

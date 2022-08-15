@@ -149,7 +149,15 @@ int main (int argc, char *argv[])
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f11", z , cov_landmark, {"b4","x2"});
   }
 
+  // get init point before optimization
+  auto sys_marginals = sys.get_marginals();
+  std::cout << ::sam::Marginal::stringify_marginal_container(sys_marginals);
+
   sys.sam_optimize();
+
+  // get Keys after optimization
+  sys_marginals = sys.get_marginals();
+  std::cout << ::sam::Marginal::stringify_marginal_container(sys_marginals);
 
   return 0;
 }

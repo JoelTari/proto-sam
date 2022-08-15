@@ -4,6 +4,7 @@
 #include <array>
 // #include <cstring>
 #include <string>
+#include <sstream>
 #include <string_view>
 
 namespace sam::Meta::Key
@@ -55,10 +56,21 @@ namespace sam::Meta::Key
       }
 
       // dynamic version
-      // TODO: actually, remvoe the dynamic access because the return type can't be auto
+      // TODO: remvoe the dynamic access, keep only the static
       static double get_component(const char* component, const key_t & keyvalue)
       {
         return DerivedKeyMeta::get_component_impl(component,keyvalue);
+      }
+
+      // lets print all the components one-by-one in one line
+      static std::string stringify_key_oneliner(const key_t & keyvalue)
+      {
+        std::stringstream ss;
+        ss << "( ";
+        ((ss << ORDERRED_COMPONENT_NAMEs << ": " << get_component<ORDERRED_COMPONENT_NAMEs>(keyvalue) << ", "), ... );
+        ss.seekp(-2, ss.cur); // this removes the last space & comma
+        ss << " )";
+        return ss.str();
       }
 
       // NL opt 

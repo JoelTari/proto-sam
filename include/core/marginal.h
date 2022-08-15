@@ -1,6 +1,7 @@
 #ifndef SAM_MARGINAL_H_
 #define SAM_MARGINAL_H_
 
+#include "core/config.h"
 #include "core/meta.h"
 #include "utils/tuple_patterns.h"
 
@@ -207,11 +208,11 @@ namespace sam::Marginal
     public:
     using type = MarginalsContainer<KEYMETA_T, KEYMETA_Ts...>;
 
-    using marginals_containers_t
+    using marginals_data_t
         = std::tuple<std::unordered_map<std::string, std::shared_ptr<BaseMarginal<KEYMETA_T>>>,
                      std::unordered_map<std::string, std::shared_ptr<BaseMarginal<KEYMETA_Ts>>>...>;
 
-    static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_containers_t>};
+    static constexpr const std::size_t kNbMarginals { std::tuple_size_v<marginals_data_t>};
 
     /**
      * @brief find a marginal ptr in this container.
@@ -282,7 +283,7 @@ namespace sam::Marginal
     }
 
     // main structure
-    marginals_containers_t data_map_tuple;
+    marginals_data_t data_map_tuple;
 
     protected:
     /**
@@ -298,7 +299,7 @@ namespace sam::Marginal
     {
       static_assert(I < kNbMarginals);
       // template metaprogramming is still horrible (written in the times of cpp17)
-      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_containers_t>::mapped_type::element_type::KeyMeta_t,
+      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_data_t>::mapped_type::element_type::KeyMeta_t,
                                    Q_KEYMETA_T>)
       { return I; }
       else
@@ -318,7 +319,7 @@ namespace sam::Marginal
     static constexpr std::size_t get_correct_tuple_idx_by_marg()
     {
       static_assert(I < kNbMarginals);
-      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_containers_t>::
+      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_data_t>::
                                        mapped_type::element_type,
                                    Q_MARG_T>)   // maybe thats the keymeta that need compare
       { return I; }
@@ -331,6 +332,43 @@ namespace sam::Marginal
     // static assert that all KEYMETA are unique  TODO:
     // static_assert( !std::is_same_v<> )
   };
+
+
+  // print all marginals in the marginal container
+  template <typename TUPLE_MAP_MARGINAL_T>
+  std::string stringify_marginal_container(const TUPLE_MAP_MARGINAL_T & marginals_data)
+  {
+    std::stringstream ss;
+    std::apply(
+                [&ss](const auto & ...map_of_marginals)
+                {
+                    // declaring the function
+                    auto loop_map = [&ss](const auto & my_map)
+                    {
+                      for(const auto & [key_id, marginal] : my_map)
+                      {
+                        ss << "[ " << key_id << " ] : \t"
+                           << stringify_marginal(*marginal) << '\n';  // need to specify template ?
+                      }
+                    };
+                    (loop_map(map_of_marginals),...);
+                }
+                , marginals_data
+              );
+    // std::cout << ss.str();
+    return ss.str();
+  }
+
+  // print marginal
+  template <typename MARGINAL_T>
+  std::string stringify_marginal(const MARGINAL_T & Xmarg)
+  {
+    using keymeta_t = typename MARGINAL_T::KeyMeta_t;
+    std::stringstream ss;
+    ss << keymeta_t::stringify_key_oneliner(*(Xmarg.mean_ptr));
+    // TODO: print the covariance (or with an option)
+    return ss.str(); 
+  }
 
   //------------------------------------------------------------------//
   //                     METAPROGRAMING UTILITIES                     //
