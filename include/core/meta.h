@@ -146,13 +146,23 @@ namespace sam::Meta::Measure
     }
     
     // lets print all the components one-by-one in one line
-    static std::string stringify_measure_oneliner(const key_t & keyvalue)
+    static std::string stringify_measure_oneliner(const measure_t & z)
     {
       std::stringstream ss;
       ss << "( ";
-      ((ss << ORDERRED_COMPONENT_NAMEs << ": " << get_component<ORDERRED_COMPONENT_NAMEs>(keyvalue) << ", "), ... );
+      ((ss << ORDERRED_COMPONENT_NAMEs << ": " << get_component<ORDERRED_COMPONENT_NAMEs>(z) << ", "), ... );
       ss.seekp(-2, ss.cur); // this removes the last space & comma
       ss << " )";
+      return ss.str();
+    }
+    // without measurement value (can't be constexpr due to stringstream)
+     static std::string stringify_measure_oneliner()
+    {
+      std::stringstream ss;
+      ss << "{ ";
+      ((ss << ORDERRED_COMPONENT_NAMEs  << ", "), ... );
+      ss.seekp(-2, ss.cur); // this removes the last space & comma
+      ss << " }";
       return ss.str();
     }
   };

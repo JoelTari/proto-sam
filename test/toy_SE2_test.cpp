@@ -27,9 +27,9 @@ int main (int argc, char *argv[])
     // WARNING: not the proper way: use make_composite() method
     auto FA = ::sam::Factor::AnchorSE2("f0",z,cov_z,{"x0"},init_point_ptr );
     std::cout << "Printing the factor: \n";
-    factor_print(FA) ;
+    std::cout <<::sam::Factor::stringify_factor_blockliner(FA) ;
     std::cout << "Printing any anchor SE2 factor: \n";
-    factor_print<::sam::Factor::AnchorSE2>();
+    std::cout << sam::Factor::stringify_factor_blockliner<::sam::Factor::AnchorSE2>();
 
     auto Xq =   ::sam::Factor::AnchorSE2::make_composite({4,-5,0}) ;
     double norm_value = FA.factor_norm_at(Xq);
@@ -64,9 +64,9 @@ int main (int argc, char *argv[])
     auto tup_bi_Ai_f1 = factor_motion_model.compute_Ai_bi_at(query_factor_point);
 
     std::cout << "Printing the factor: \n";
-    factor_print(factor_motion_model) ;
+    std::cout << sam::Factor::stringify_factor_blockliner(factor_motion_model) ;
     std::cout << "Printing any Motion Model SE2 factor: \n";
-    factor_print<::sam::Factor::MotionModelSE2>();
+    std::cout << sam::Factor::stringify_factor_blockliner<::sam::Factor::MotionModelSE2>();
 
     std::cout << "Norm of motion model factor at Xq: " << // Xq << '\n';
               norm_value2 << "\n";
@@ -90,9 +90,9 @@ int main (int argc, char *argv[])
     auto Xq = sam::Factor::PoseMatcherSE2::make_composite( {0,0,0}, {3.1,-0.6,2.2} );
     auto factor = ::sam::Factor::PoseMatcherSE2("f2",z,cov_z,{"x1","x2"},Xq );
     std::cout << "Printing the factor: \n";
-    factor_print(factor) ;
+    std::cout << sam::Factor::stringify_factor_blockliner(factor) ;
     std::cout << "Printing any Pose Matcher SE2 factor: \n";
-    factor_print<::sam::Factor::PoseMatcherSE2>();
+    std::cout << sam::Factor::stringify_factor_blockliner<::sam::Factor::PoseMatcherSE2>();
 
     double norm_value = factor.factor_norm_at(Xq);
 
@@ -119,9 +119,9 @@ int main (int argc, char *argv[])
     auto Xq = sam::Factor::LandmarkCartesianObsSE2::make_composite( {-0.7,5.5}, {3.1,-0.6,2.2} );
     auto factor = ::sam::Factor::LandmarkCartesianObsSE2("f2",z,cov_z,{"b0","x2"},Xq );
     std::cout << "Printing the factor: \n";
-    factor_print(factor) ;
+    std::cout << sam::Factor::stringify_factor_blockliner(factor) ;
     std::cout << "Printing any Landmark Cartesian Observation factor: \n";
-    factor_print<::sam::Factor::LandmarkCartesianObsSE2>();
+    std::cout << sam::Factor::stringify_factor_blockliner<::sam::Factor::LandmarkCartesianObsSE2>();
 
     double norm_value = factor.factor_norm_at(Xq);
 

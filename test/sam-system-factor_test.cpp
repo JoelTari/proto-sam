@@ -26,13 +26,9 @@ int main(int argc, char* argv[])
   auto FB = ::sam::Factor::LinearTranslation2d("f1", m2, cov2, {"x0", "x1"},{});
 
   std::cout << "Printing runtime infos of a factor : \n\n";
-  // factor_print(FA);
-  // factor_print(FB);
 
   std::cout << "\nPrinting infos of a factor type (only static infos since it "
                "is just a type) : \n\n";
-  // factor_print<::sam::Factor::Anchor2d>();
-  // factor_print<::sam::Factor::LinearTranslation2d>();
 
 
   std::cout << "\n\n Declaring a sam system:\n";

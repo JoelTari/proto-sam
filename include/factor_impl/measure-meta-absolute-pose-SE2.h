@@ -33,7 +33,7 @@ namespace details_sam::Meta::Measure{
               return SE2_element.y();
             else
             {
-                static_assert(std::string_view(COMPONENT) == y);
+                static_assert(std::string_view(COMPONENT) == t);
                 return SE2_element.angle();
             }
           }

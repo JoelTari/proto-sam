@@ -71,14 +71,16 @@ int main(int argc, char* argv[])
   //------------------------------------------------------------------//
   FB.get_array_keys_id();
 
-  std::cout << "Printing runtime infos of a factor : \n";
-  factor_print(FA);
-  factor_print(FB);
+  std::cout << "Printing runtime infos of a factor : \n ---- \n";
+  std::cout << sam::Factor::stringify_factor_blockliner(FA);
+  std::cout << " ---- \n";
+  std::cout << sam::Factor::stringify_factor_blockliner(FB);
+  std::cout << " ---- \n";
 
   std::cout << "\nPrinting infos of a factor type (only static infos since it "
                "is just a type) : \n\n";
-  factor_print<sam::Factor::Anchor2d>();
-  factor_print<sam::Factor::LinearTranslation2d>();
+  std::cout << sam::Factor::stringify_factor_blockliner<sam::Factor::Anchor2d>();
+  std::cout << sam::Factor::stringify_factor_blockliner<sam::Factor::LinearTranslation2d>();
 
 
   std::cout << "\nAccess the 2nd component of the measurement embedded in the factor \n -> measure "

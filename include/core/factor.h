@@ -9,6 +9,7 @@
 #include <iostream>
 #include <map>
 #include <optional>
+#include <sstream>
 #include <string_view>
 #include <tuple>
 #include <utility>
@@ -1012,6 +1013,86 @@ namespace sam::Factor
 
   };
 
+  //------------------------------------------------------------------//
+  //                      Helper print functions                      //
+  //------------------------------------------------------------------//
+  // TODO: move them in factor utils
+
+  // static version
+  template <typename KC>
+  std::string stringify_keyconduct_oneliner()
+  {
+    std::stringstream ss;
+    ss << KC::kRole << " ( " << KC::kKeyName<< " ) \n";
+    return ss.str();
+  }
+
+  template <typename KC>
+  std::string stringify_keyconduct_oneliner(const KC& kcc)
+  {
+    std::stringstream ss;
+
+    ss << kcc.key_id << " <- " << KC::kRole << " ( " << KC::kKeyName<< " ) \n";
+    return ss.str();
+  }
+
+
+  // print static information of a factor label (cant be constexpr)
+  template <typename FT>
+  std::string stringify_factor_blockliner(int tab = 4, int precision = 4)
+  {
+    std::stringstream ss;
+    ss << std::setw(tab) << " "
+       << FT::kFactorLabel 
+       << ". M: " << FT::kM << ", N: " << FT::kN 
+       << '\n';
+    ss << std::setw(tab+2) << " "
+       << "Keys :\n";
+    // FIX: find a way to extract the KCC static info
+    // std::apply([&](auto&... kcc) 
+    //             { 
+    //               ((ss << std::setw(tab+4) << "+ " << stringify_keyconduct_oneliner(kcc) ), ...);
+    //             }
+    //           , fact.keys_set);
+
+    ss << std::setw(tab+2) << " "
+       << "Measurement: " << FT::kMeasureName << '\n';
+    ss << std::setw(tab+4) << " "
+       << "z   : " << FT::MeasureMeta_t::stringify_measure_oneliner() << '\n';
+
+    return ss.str();
+  }
+
+  // pretty print factor
+  template <typename FT>
+  std::string stringify_factor_blockliner(const FT& fact, int tab = 4, int precision = 4)
+  {
+    std::stringstream ss;
+
+    Eigen::IOFormat
+        CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "  ", ";");
+
+    ss << std::setw(tab) << " "
+       << "f0 : " << FT::kFactorLabel 
+       << ". M: " << FT::kM << ", N: " << FT::kN 
+       << '\n';
+    ss << std::setw(tab+2) << " "
+       << "Keys :\n";
+    std::apply([&](auto&... kcc) 
+                { 
+                  ((ss << std::setw(tab+4) << "+" << " " << stringify_keyconduct_oneliner(kcc) ), ...);
+                }
+              , fact.keys_set);
+
+    ss << '\n' << std::setw(tab+2) << " "
+       << "Measurement: " << FT::kMeasureName << '\n';
+    ss << std::setw(tab+4) << " "
+       << "z   : " << FT::MeasureMeta_t::stringify_measure_oneliner(fact.z) << '\n';
+    ss << std::setw(tab+4) << " "
+       << "cov : [ " << fact.z_cov.format(CommaInitFmt) << " ] \n";
+
+    return ss.str();
+  }
 
 }
 
@@ -1128,108 +1209,6 @@ struct FactorsHistoriesContainer
 };
 
 
-//------------------------------------------------------------------//
-//                      Helper print functions                      //
-//------------------------------------------------------------------//
-// TODO:  refactor those method in a class template associated with
-//        a factor class tempalte
-
-/**
- * @brief Traverse a tuple and print
- *
- */
-template <typename TUP, size_t I = 0>
-constexpr void traverse_tup()
-{
-  if constexpr (I == std::tuple_size<TUP>::value) { return; }
-  else
-  {
-    using KT = std::tuple_element_t<I, TUP>;
-    std::cout << "\t\t+ Key Nature: " << KT::kKeyName << ".  Role: " << KT::kRole << '\n';
-
-    // recursive call
-    traverse_tup<TUP, I + 1>();
-  }
-}
-
-// runtime traverse of the KeySet tuple
-template <typename TUP, size_t I = 0>
-void traverse_tup(const TUP& tup)
-{
-  if constexpr (I == std::tuple_size<TUP>::value) { return; }
-  else
-  {
-    using KT = std::tuple_element_t<I, TUP>;
-    std::cout << "\t\t+ Key Nature: " << KT::kKeyName << ".  Role: " << KT::kRole
-              << ". Id: " << std::get<I>(tup).key_id << '\n';
-    // std::cout << "\t\t\t A:\n" << std::get<I>(tup).A << '\n';
-
-    // recursive call
-    traverse_tup<TUP, I + 1>(tup);
-  }
-}
-
-template <typename KC>
-void print_KeyContextConduct(const KC& kcc)
-{
-  std::cout << "\t\t+ Key Name: " << KC::kKeyName << ".  Role: " << KC::kRole
-            << ". Id: " << kcc.key_id << '\n';
-}
-
-
-// print static information of a factor label
-template <typename FT>
-constexpr void factor_print()
-{
-  std::cout << FT::kFactorLabel << '\n';
-  std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n' << "\tKeys (in order):\n";
-
-  // traverse statically the tuple of keys data
-  traverse_tup<typename FT::KeysSet_t>();
-
-  std::cout << "\t Measure: " << FT::kMeasureName;
-  std::cout << " { ";
-  for (const auto& comp : FT::kMeasureComponentsName) std::cout << comp << " ";
-  std::cout << "}\n";
-
-  std::cout << "\t----- \n";
-}
-
-// This is the non static version
-template <typename FT>
-void factor_print(const FT& fact)
-{
-  // TODO: use stringstream for formatting, and return the string (or ss, doesnt matter, the point is that cout<< should be called elsewhere)
-  Eigen::IOFormat
-      CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "  ", ";");
-
-  std::cout << FT::kFactorLabel << " - id : " << fact.factor_id << '\n';
-  std::cout << "\tM: " << FT::kM << " ,  N: " << FT::kN << '\n' << "\tKeys (in order):\n";
-
-  // traverse_tup(fact.keys_set);
-  // for_each_in_tuple(fact.keys_set, [](const auto& kcc){
-  //   // using KT = ;
-  //   std::cout << "\t\t+ Key Nature: " << decltype(kcc)::kKeyName << ".  Role: " <<
-  //   decltype(kcc)::kRole
-  //             << ". Id: " << kcc.key_id << '\n';
-  // });
-  // for_each_in_tuple(fact.keys_set, &printtupelem);
-  std::apply([](auto... kcc) { ((print_KeyContextConduct(kcc)), ...); }, fact.keys_set);
-
-
-  std::cout << "\t Measure: " << FT::kMeasureName;
-  std::cout << "\n\t\tz: { ";
-  for (int i = 0; i < FT::kMeasureComponentsName.size(); i++)
-  {
-    std::cout << FT::kMeasureComponentsName[i] << ": " // this could use the constexpr get_component version
-              << FT::MeasureMeta_t::get_component(FT::kMeasureComponentsName[i], fact.z)
-              << "  ";
-  }
-  std::cout << "}\n\t\t Cov: [ " << fact.z_cov.format(CommaInitFmt) << " ] \n";
-
-
-  std::cout << "\t----- \n";
-}
 
 
 // TODO: URGENT: print tup_bi_Aiks
