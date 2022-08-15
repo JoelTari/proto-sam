@@ -56,16 +56,17 @@ namespace sam::Meta::Key
       }
 
       // dynamic version
-      // TODO: remvoe the dynamic access, keep only the static
+      // TODO: remvoe the dynamic access, keep only the static (still used in sam-system atm)
       static double get_component(const char* component, const key_t & keyvalue)
       {
         return DerivedKeyMeta::get_component_impl(component,keyvalue);
       }
 
       // lets print all the components one-by-one in one line
-      static std::string stringify_key_oneliner(const key_t & keyvalue)
+      static std::string stringify_key_oneliner(const key_t & keyvalue, int precision=4)
       {
         std::stringstream ss;
+        ss.precision(precision);
         ss << "( ";
         ((ss << ORDERRED_COMPONENT_NAMEs << ": " << get_component<ORDERRED_COMPONENT_NAMEs>(keyvalue) << ", "), ... );
         ss.seekp(-2, ss.cur); // this removes the last space & comma
@@ -130,8 +131,6 @@ namespace sam::Meta::Measure
     template <const char* COMPONENT>
     static auto get_component(const measure_t & measure)
     {
-      // NOTE: not tested yet
-      // std::format("a");
       static_assert( 
           (
            (*COMPONENT == *ORDERRED_COMPONENT_NAMEs)  || 
@@ -146,6 +145,17 @@ namespace sam::Meta::Measure
     static double get_component(const char* component, const measure_t & keyvalue)
     {
       return DerivedMeasureMeta::get_component_impl(component,keyvalue);
+    }
+    
+    // lets print all the components one-by-one in one line
+    static std::string stringify_measure_oneliner(const key_t & keyvalue)
+    {
+      std::stringstream ss;
+      ss << "( ";
+      ((ss << ORDERRED_COMPONENT_NAMEs << ": " << get_component<ORDERRED_COMPONENT_NAMEs>(keyvalue) << ", "), ... );
+      ss.seekp(-2, ss.cur); // this removes the last space & comma
+      ss << " )";
+      return ss.str();
     }
   };
 }   // namespace

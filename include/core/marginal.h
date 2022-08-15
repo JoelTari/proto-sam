@@ -45,9 +45,6 @@ namespace sam::Marginal
     // visual covariance 
     VisualCovariance_t get_visual_2d_covariance() const // WARNING: works only for 2d
     {
-      // true = compute the eigenvectors too (default is true anyway)
-      // Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, KEYMETA::kN, KEYMETA::kN>>    es(covariance, true);   
-      // std::cout << " The marginal cov:\n" << covariance << '\n';
       Eigen::SelfAdjointEigenSolver<Covariance_t>    es(covariance);   
       std::array<double, 2> sigma {sqrt(es.eigenvalues()[0]), sqrt(es.eigenvalues()[1])};
       auto                  R = es.eigenvectors();
@@ -56,16 +53,6 @@ namespace sam::Marginal
 
       return {sigma, rot};
     }
-
-    // FIX: add method, or the DerivedMarginal doesnot work, so maybe overide the '+' operator
-    // FIX: overloading the + operator must be done at implementation level
-    // FIX: OR, one must declare a derivation such as class SEnMarginal : Marginal { /* overload '+' here */ }
-    // FIX: We will also have to assume that a SEn marginal mean's is represented as vector in its Lie Algebra
-    // add an increment from the tangent space to the mean following NL opt, in R^n this is trivial.
-    // void add (const Tangent_Space_t & increment)
-    // {
-    //   static_cast<DerivedMarginal*>(this)->add(increment);
-    // }
   };
 
   /**
@@ -336,36 +323,36 @@ namespace sam::Marginal
 
   // print all marginals in the marginal container
   template <typename TUPLE_MAP_MARGINAL_T>
-  std::string stringify_marginal_container(const TUPLE_MAP_MARGINAL_T & marginals_data)
+  std::string stringify_marginal_container_block(const TUPLE_MAP_MARGINAL_T & marginals_data, int tabulation=4, int precision=4)
   {
     std::stringstream ss;
     std::apply(
-                [&ss](const auto & ...map_of_marginals)
+                [&](const auto & ...map_of_marginals)
                 {
                     // declaring the function
-                    auto loop_map = [&ss](const auto & my_map)
+                    auto loop_map = [&](const auto & my_map)
                     {
                       for(const auto & [key_id, marginal] : my_map)
                       {
-                        ss << "[ " << key_id << " ] : \t"
-                           << stringify_marginal(*marginal) << '\n';  // need to specify template ?
+                        ss << std::setw(tabulation)
+                           << "[ " << key_id << " ] : \t"
+                           << stringify_marginal_oneliner(*marginal, precision) << '\n';  // need to specify template ?
                       }
                     };
                     (loop_map(map_of_marginals),...);
                 }
                 , marginals_data
               );
-    // std::cout << ss.str();
     return ss.str();
   }
 
   // print marginal
   template <typename MARGINAL_T>
-  std::string stringify_marginal(const MARGINAL_T & Xmarg)
+  std::string stringify_marginal_oneliner(const MARGINAL_T & Xmarg, int precision=4)
   {
     using keymeta_t = typename MARGINAL_T::KeyMeta_t;
     std::stringstream ss;
-    ss << keymeta_t::stringify_key_oneliner(*(Xmarg.mean_ptr));
+    ss << keymeta_t::stringify_key_oneliner(*(Xmarg.mean_ptr),  precision);
     // TODO: print the covariance (or with an option)
     return ss.str(); 
   }

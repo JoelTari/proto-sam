@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
   // std::this_thread::sleep_for(std::chrono::seconds(1));
   std::cout << " Pre Optimized points: \n";
   auto sys_marginals = syst.get_marginals();
-  std::cout << ::sam::Marginal::stringify_marginal_container(sys_marginals);
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
   try
   {
     syst.sam_optimize();
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
   }
   std::cout << " After optimization: \n";
   sys_marginals = syst.get_marginals();
-  std::cout << ::sam::Marginal::stringify_marginal_container(sys_marginals);
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
 
   return 0;
 }

@@ -13,6 +13,7 @@
 
 #if ENABLE_DEBUG_TRACE
 #include <iostream>
+#include <iomanip>
 #endif
 
 #if ENABLE_TIMER > 0

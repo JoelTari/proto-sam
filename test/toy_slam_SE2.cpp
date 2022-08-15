@@ -151,13 +151,13 @@ int main (int argc, char *argv[])
 
   // get init point before optimization
   auto sys_marginals = sys.get_marginals();
-  std::cout << ::sam::Marginal::stringify_marginal_container(sys_marginals);
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
 
   sys.sam_optimize();
 
   // get Keys after optimization
   sys_marginals = sys.get_marginals();
-  std::cout << ::sam::Marginal::stringify_marginal_container(sys_marginals);
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
 
   return 0;
 }
