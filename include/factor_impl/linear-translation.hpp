@@ -31,7 +31,6 @@ namespace details_sam::Factor{
             <
               LinearTranslation2d,
               LinearTranslationLabel,
-              Measure::LinearTranslation2d,
               SightedKeyConduct,
               ObserverKeyConduct
             >
@@ -40,7 +39,6 @@ namespace details_sam::Factor{
                               <
                                 LinearTranslation2d,
                                 LinearTranslationLabel,
-                                Measure::LinearTranslation2d,
                                 SightedKeyConduct,
                                 ObserverKeyConduct
                               >;

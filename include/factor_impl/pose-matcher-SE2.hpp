@@ -65,11 +65,11 @@ namespace details_sam::Factor{
     namespace exports{
 
       class PoseMatcherSE2 :
-        public ::sam::Factor::BaseFactor<PoseMatcherSE2, pose_matcher_label, Measure::RigidBodyMotionSE2, SightedSE2KeyConduct, ObserverSE2KeyConduct>
+        public ::sam::Factor::BaseFactor<PoseMatcherSE2, pose_matcher_label, SightedSE2KeyConduct, ObserverSE2KeyConduct>
       {
 
           public:
-          using BaseFactor_t = BaseFactor<PoseMatcherSE2, pose_matcher_label, Measure::RigidBodyMotionSE2, SightedSE2KeyConduct, ObserverSE2KeyConduct>;
+          using BaseFactor_t = BaseFactor<PoseMatcherSE2, pose_matcher_label, SightedSE2KeyConduct, ObserverSE2KeyConduct>;
           friend BaseFactor_t;
           static_assert( factor_process_matrix_t::ColsAtCompileTime 
               == 

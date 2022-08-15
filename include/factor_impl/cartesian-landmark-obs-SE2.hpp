@@ -65,11 +65,11 @@ namespace details_sam::Factor{
     namespace exports{
 
       class LandmarkCartesianObsSE2 :
-        public ::sam::Factor::BaseFactor<LandmarkCartesianObsSE2, cartesian_obs_SE2_label, Measure::LinearTranslation2d, SightedLandmarkKeyConduct, ObserverSE2KeyConduct>
+        public ::sam::Factor::BaseFactor<LandmarkCartesianObsSE2, cartesian_obs_SE2_label, SightedLandmarkKeyConduct, ObserverSE2KeyConduct>
       {
 
           public:
-          using BaseFactor_t = BaseFactor<LandmarkCartesianObsSE2, cartesian_obs_SE2_label, Measure::LinearTranslation2d, SightedLandmarkKeyConduct, ObserverSE2KeyConduct>;
+          using BaseFactor_t = BaseFactor<LandmarkCartesianObsSE2, cartesian_obs_SE2_label, SightedLandmarkKeyConduct, ObserverSE2KeyConduct>;
           friend BaseFactor_t;
           // static_assert( factor_process_matrix_t::ColsAtCompileTime 
           //     == 

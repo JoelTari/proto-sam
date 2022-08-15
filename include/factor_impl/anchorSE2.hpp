@@ -42,11 +42,11 @@ namespace details_sam::Factor{
     namespace exports{
 
       class AnchorSE2 :
-        public sam::Factor::BaseFactor<AnchorSE2, anchor_label, Measure::AbsolutePoseSE2, PriorSE2KeyConduct>
+        public sam::Factor::BaseFactor<AnchorSE2, anchor_label, PriorSE2KeyConduct>
       {
 
           public:
-          using BaseFactor_t = BaseFactor<AnchorSE2, anchor_label, Measure::AbsolutePoseSE2, PriorSE2KeyConduct >;
+          using BaseFactor_t = BaseFactor<AnchorSE2, anchor_label, PriorSE2KeyConduct >;
           friend BaseFactor_t;
           static_assert(std::is_same_v<PriorSE2KeyConduct::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
 

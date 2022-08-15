@@ -33,10 +33,10 @@ namespace details_sam::Factor {
     namespace exports{
 
       class Anchor2d
-          : public sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, Measure::AbsolutePosition2d, UniqueKeyConduct>
+          : public sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, UniqueKeyConduct>
       {
         public:
-        using BaseFactor_t = sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, Measure::AbsolutePosition2d, UniqueKeyConduct>;
+        using BaseFactor_t = sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, UniqueKeyConduct>;
         friend BaseFactor_t;
         static_assert(std::is_same_v<UniqueKeyConduct::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
         static_assert(std::is_same_v<UniqueKeyConduct::Key_t, criterion_t>); // because linear factor &&  size M = size N

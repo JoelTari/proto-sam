@@ -66,11 +66,11 @@ namespace details_sam::Factor{
     namespace exports{
 
       class MotionModelSE2 :
-        public ::sam::Factor::BaseFactor<MotionModelSE2, motion_model_label, Measure::VelocitySE2, SubsequentSE2KeyConduct, AntecedentSE2KeyConduct>
+        public ::sam::Factor::BaseFactor<MotionModelSE2, motion_model_label, SubsequentSE2KeyConduct, AntecedentSE2KeyConduct>
       {
 
           public:
-          using BaseFactor_t = BaseFactor<MotionModelSE2, motion_model_label, Measure::VelocitySE2, SubsequentSE2KeyConduct, AntecedentSE2KeyConduct>;
+          using BaseFactor_t = BaseFactor<MotionModelSE2, motion_model_label, SubsequentSE2KeyConduct, AntecedentSE2KeyConduct>;
           friend BaseFactor_t;
           static_assert( factor_process_matrix_t::ColsAtCompileTime 
               == 

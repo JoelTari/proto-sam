@@ -227,7 +227,6 @@ namespace sam::Factor
    * @tparam DerivedFactor derived class that implements all of or part of the API specific to a
    * factor type
    * @tparam FactorLabel labelization of the factor type
-   * @tparam MEASURE_META meta data of the measurement (dimensions, components name ...)
    * @tparam KCCs Contextual Conduct of a Key inside this factor type. See KeyContextualConduct
    * class template.
    * @param factor_id identifier (string) of the factor (e.g. 'f0')
@@ -238,9 +237,8 @@ namespace sam::Factor
    */
   template <typename DerivedFactor,
             const char* FactorLabel,
-            typename MEASURE_META,    // FIX: URGENT: no need MEASURE_META: can be access via Kcc (but s_assert its the same for all kcc)
             typename KCC,
-            typename... KCCs>  // FIX: CHORE: perhaps make it clear that you need always at least 1 KCC
+            typename... KCCs>
   class BaseFactor
   {
     public:
@@ -559,7 +557,6 @@ namespace sam::Factor
    * @tparam DerivedEuclidianFactor derived class that implements all of or part of the API specific
    * to a factor type
    * @tparam FactorLabel labelization of the factor type
-   * @tparam MEASURE_META meta data of the measurement (dimensions, components name ...)
    * @tparam KCCs Contextual Conduct of a Key inside this factor type. See KeyContextualConduct
    * class template.
    * @param factor_id identifier (string) of the factor (e.g. 'f0')
@@ -570,22 +567,22 @@ namespace sam::Factor
    */
   template <typename DerivedEuclidianFactor,
             const char* FactorLabel,
-            typename MEASURE_META,
+            typename KCC,
             typename... KCCs>
   class EuclidianFactor
       : public BaseFactor<
-            EuclidianFactor<DerivedEuclidianFactor, FactorLabel, MEASURE_META, KCCs...>,
+            EuclidianFactor<DerivedEuclidianFactor, FactorLabel, KCC, KCCs...>,
             FactorLabel,
-            MEASURE_META,
+            KCC,
             KCCs...>
   {
     friend DerivedEuclidianFactor;
 
     public:
     using BaseFactor_t = BaseFactor<
-        EuclidianFactor<DerivedEuclidianFactor, FactorLabel, MEASURE_META, KCCs...>,
+        EuclidianFactor<DerivedEuclidianFactor, FactorLabel, KCC, KCCs...>,
         FactorLabel,
-        MEASURE_META,
+        KCC,
         KCCs...>;
     // declares friendlies so that they get to protected impl methods of this class
     friend DerivedEuclidianFactor;
@@ -764,26 +761,26 @@ namespace sam::Factor
    */
   template <typename DerivedLinearEuclidianFactor,
             const char* FactorLabel,
-            typename MEASURE_META,
+            typename KCC,
             typename... LinearKCCs>
   class LinearEuclidianFactor   // the measure is euclidian and the keys are expressed in Euclidian
                                  // space too
       : public BaseFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
                                                       FactorLabel,
-                                                      MEASURE_META,
+                                                      KCC,
                                                       LinearKCCs...>,
                                FactorLabel,
-                               MEASURE_META,
+                               KCC,
                                LinearKCCs...>
   {
     public:
     using BaseFactor_t
         = BaseFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
                                                  FactorLabel,
-                                                 MEASURE_META,
+                                                 KCC,
                                                  LinearKCCs...>,
                           FactorLabel,
-                          MEASURE_META,
+                          KCC,
                           LinearKCCs...>;
     // declares friendlies so that they get to protected impl methods of this class
     friend DerivedLinearEuclidianFactor;
