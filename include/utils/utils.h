@@ -171,7 +171,7 @@ struct ScopedTimer
 
     logger.writeEndProfile(duration.count(),spanIdx);
 
-#if ENABLE_DEBUG_TRACE
+#if ENABLE_DEBUG_TRACE && 0 //     
     // add a cout or an I/O here
     std::cout << "Timer for " << name << " : " << duration.count()
               << get_unit_str() <<"\n"; 
