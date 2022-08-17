@@ -1,116 +1,71 @@
 #include "factor_impl/anchor.hpp"
-#include "factor_impl/key-meta-position.h"
 #include "factor_impl/linear-translation.hpp"
 
+#include <gtest/gtest.h>
 
-//------------------------------------------------------------------//
-//                               MAIN                               //
-//------------------------------------------------------------------//
-int main(int argc, char* argv[])
-{
-  // test key, measures
-  sam::Key::Position2d_t X;
-  sam::Measure::AbsolutePosition2d_t Z1;
-  sam::Measure::LinearTranslation2d_t Z2;
-  //------------------------------------------------------------------//
-  //                     TEST Factor Constructors                     //
-  //------------------------------------------------------------------//
-  // sam::Factor::Anchor2d A;
-  sam::Factor::Anchor2d::criterion_t              m    = {2.0, -1};
-  sam::Factor::Anchor2d::measure_cov_t            cov  = sam::Factor::Anchor2d::measure_cov_t::Identity()*2; 
+
+TEST(HelloTest, BasicAssertions) {
+  EXPECT_STRNE("hello","world");
+  EXPECT_EQ(7*6,42);
+}
+
+
+TEST(Factors, Anchor2d){
+  using TestedFactor_t = ::sam::Factor::Anchor2d;
+
+  TestedFactor_t::criterion_t              m    = {2.0, -1};
+  TestedFactor_t::measure_cov_t            cov  = TestedFactor_t::measure_cov_t::Identity()*2; 
+  auto F = TestedFactor_t("f0", m, cov, {"x0"}, {});
+  auto proposalF = TestedFactor_t::make_composite({1, 0});
+
+  double norm_F = F.factor_norm_at(proposalF);   // expected sqrt( (2-1)^2 + (-1-0)^2 ) = 1.41
+  EXPECT_DOUBLE_EQ(norm_F, 1);
+  
+  F.compute_Ai_bi_linear();
+  F.compute_Ai_bi_at(proposalF);
+  std::cout << sam::Factor::stringify_factor_blockliner(F);
+  std::cout << " ---- \n";
+  std::cout << sam::Factor::stringify_factor_blockliner<TestedFactor_t>();
+  std::cout << " ---- \n";
+
+  // static constexpr char y[] = "y";
+  // static constexpr const char *x = TestedFactor_t::kMeasureComponentsName[0] ;
+  // std::cout << TestedFactor_t::MeasureMeta_t::get_component<x>(m) << '\n';
+  // std::cout << TestedFactor_t::MeasureMeta_t::get_component<y>(m) << '\n';
+  // // dynamic version
+  // std::cout << TestedFactor_t::MeasureMeta_t::get_component(x,m) << '\n';
+  // std::cout << TestedFactor_t::MeasureMeta_t::get_component(y,m) << '\n';
+  F.get_array_keys_id();
+}
+
+TEST(Factors, LinearTranslation2d) {
+  using TestedFactor_t = ::sam::Factor::LinearTranslation2d;
   // note the *2 in the measure cov, when the measure cov eigenvalues increases, the factor norm at a given point will decrease
   // as it is proportional to the composite
-  sam::Factor::LinearTranslation2d::criterion_t   m2   = {-1.0, 1.0};
-  sam::Factor::LinearTranslation2d::measure_cov_t cov2 = sam::Factor::LinearTranslation2d::measure_cov_t::Identity()/2;
+  TestedFactor_t::criterion_t   m   = {-1.0, 1.0};
+  auto cov = TestedFactor_t::measure_cov_t::Identity()/2;
 
-  auto FA = sam::Factor::Anchor2d("f0", m, cov, {"x0"}, {});
-  auto FB = sam::Factor::LinearTranslation2d("f1", m2, cov2, {"x0", "x1"}, {});   // x0 sighted from x1
-  // TODO: FA_NL FB_NL
-  // TODO: more factor types
+  auto F = TestedFactor_t("f1", m, cov, {"x0", "x1"}, {});   // x0 sighted from x1
+  auto proposalF = TestedFactor_t::make_composite({-3, -1}, {-2, -2});
 
-  //------------------------------------------------------------------//
-  //           TEST query the factor norm at a given point            //
-  //------------------------------------------------------------------//
-  // make a tuple of X points (ptr to be precise) for the factors
-  sam::Factor::Anchor2d::composite_state_ptr_t proposalFA = sam::Factor::Anchor2d::make_composite({1, 0});
-  auto proposalFB = sam::Factor::LinearTranslation2d::make_composite({-3, -1}, {-2, -2});
-
-  // this tests the methods : compute_h_at_x compute_r_at_x
-  double norm_FA = FA.factor_norm_at(proposalFA);   // expected sqrt( (2-1)^2 + (-1-0)^2 ) = 1.41
-  std::cout << "norm of FA at proposal {1, 0} ( result expected 1 ): " << norm_FA << '\n';
-  double norm_FB = FB.factor_norm_at(proposalFB);   // expected 0, here the measure cov have no effect since H.X = z
-  std::cout << "norm of FB at proposal (  {-3, -1}, {-2, -2} ), (exp: 0) : " << norm_FB << '\n';
-  // TODO: test the other factors
-  
-  
-  //------------------------------------------------------------------//
-  //                       TEST compute Ai & bi                       //
-  //------------------------------------------------------------------//
-  FA.compute_Ai_bi_linear();
-  FB.compute_Ai_bi_linear();
-  FA.compute_Ai_bi_at(proposalFA);
-  FB.compute_Ai_bi_at(proposalFB);
-
-  std::cout << "compute Ai bi completed\n";
-
-  //------------------------------------------------------------------//
-  //         TEST query the factor at their current lin point         //
-  //                       (stored internally)                        //
-  //------------------------------------------------------------------//
-  // TODO: - see what happens for linear FA / FB
-  // TODO: - test the Factor::get_key_points() method
-
-
-  //------------------------------------------------------------------//
-  //                   TEST Initial guess deduction                   //
-  //------------------------------------------------------------------//
-  // TODO: test the variations of initial guess deduction
-
-  //------------------------------------------------------------------//
-  //                       TEST OF PRETTY PRINT                       //
-  //------------------------------------------------------------------//
-  FB.get_array_keys_id();
-
-  std::cout << "Printing runtime infos of a factor : \n ---- \n";
-  std::cout << sam::Factor::stringify_factor_blockliner(FA);
+  double norm_F = F.factor_norm_at(proposalF);   // expected 0, here the measure cov have no effect since H.X = z
   std::cout << " ---- \n";
-  std::cout << sam::Factor::stringify_factor_blockliner(FB);
+  EXPECT_NEAR(norm_F, 0, 1e-4);
   std::cout << " ---- \n";
 
-  std::cout << "\nPrinting infos of a factor type (only static infos since it "
-               "is just a type) : \n\n";
-  std::cout << sam::Factor::stringify_factor_blockliner<sam::Factor::Anchor2d>();
-  std::cout << sam::Factor::stringify_factor_blockliner<sam::Factor::LinearTranslation2d>();
+  F.compute_Ai_bi_linear();
+  F.compute_Ai_bi_at(proposalF);
+  std::cout << sam::Factor::stringify_factor_blockliner(F);
+  std::cout << " ---- \n";
+  std::cout << sam::Factor::stringify_factor_blockliner<TestedFactor_t>();
+  std::cout << " ---- \n";
 
-
-  std::cout << "\nAccess the 2nd component of the measurement embedded in the factor \n -> measure "
-            << sam::Factor::Anchor2d::kMeasureComponentsName[1] << " = "
-            << sam::Factor::Anchor2d::MeasureMeta_t::get_component<sam::Factor::Anchor2d::kMeasureComponentsName[1]>(
-                   m)
-            << "\n";
-
-  // this also works (the constexpr is necessary, but then makes the const redundant)
-  static constexpr char y[] = "y", x[]= "x";
-  std::cout << "Get " << "y" << " component of measurement m : " 
-            <<  sam::Factor::Anchor2d::MeasureMeta_t::get_component<y>(m) << '\n';
-  sam::Factor::Anchor2d::MeasureMeta_t::get_component<x>(m);
-  // this wouldnt pass static assertion
-  // static constexpr char fake_comp[] = "zzz";
-  // std::cout << sam::Factor::Anchor2d::MeasureMeta_t::get_component<fake_comp>(m) << '\n';
-
-  // TODO: test the runtime versions of get_component
-  //------------------------------------------------------------------//
-  //                     TEST history management                      //
-  //------------------------------------------------------------------//
-  auto factors_histories_container
-      = FactorsHistoriesContainer<sam::Factor::Anchor2d, sam::Factor::LinearTranslation2d>();
-  auto factor_FA_history = FactorHistory<decltype(FA)>(FA.factor_id, {"x0"}, FA.z);
-  FactorHistory<decltype(FA)> factor_FA_history_assignment_test = factor_FA_history;
-  // auto cc_factor_FA_history = std::move(factor_FA_history); // OK
-  factors_histories_container.insert_new_factor_history(FA.factor_id, FA);
-
-  // std::cout << sam::Factor::Anchor2d::kN << '\n';
-  // std::cout << LinearTranslationMetaFactor::kN << '\n';
-
-  return 0;
+  // static constexpr char y[] = "y";
+  // static constexpr const char *x = TestedFactor_t::kMeasureComponentsName[0] ;
+  // std::cout << TestedFactor_t::MeasureMeta_t::get_component<x>(m) << '\n';
+  // std::cout << TestedFactor_t::MeasureMeta_t::get_component<y>(m) << '\n';
+  // // dynamic version
+  // std::cout << TestedFactor_t::MeasureMeta_t::get_component(x,m) << '\n';
+  // std::cout << TestedFactor_t::MeasureMeta_t::get_component(y,m) << '\n';
+  F.get_array_keys_id();
 }
