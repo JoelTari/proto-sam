@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 project(proto-sam)
 
-set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE Release) # defer to command line
 # add_definitions("-Wfatal-errors")
 
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
