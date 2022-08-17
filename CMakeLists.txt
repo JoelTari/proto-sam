@@ -8,7 +8,12 @@ set(CMAKE_BUILD_TYPE Debug)
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(manif REQUIRED)
 find_package(jsoncpp 1.9.4 REQUIRED CONFIG)  # this sets 'jsoncpp_lib'
-find_package(OpenMP REQUIRED)
+find_package(OpenMP)
+
+set(BLA_STATIC on)
+set(BLA_VENDOR Intel10_64lp) # TODO: vendor should be flexible
+find_package(BLAS)
+find_package(LAPACK)
 
 set(CMAKE_CXX_STANDARD 20) # ISSUE: not reflected in compile_commands.json, which makes clangd still thinks its c++14 (it does when it's clang actually)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
@@ -32,15 +37,46 @@ target_include_directories(toy_slam_SE2 PUBLIC include ${manif_INCLUDE_DIRS} ${E
 target_include_directories(mainstdin PUBLIC include)
 
 # TODO: try jsoncpp_static and compare size of binaries
-target_link_libraries(sam-system-factor_test jsoncpp_lib)
-target_link_libraries(factor_test jsoncpp_lib)
-target_link_libraries(toy_linear_test jsoncpp_lib)
-target_link_libraries(toy_pose_graph_SE2_test jsoncpp_lib)
-target_link_libraries(toy_slam_SE2 jsoncpp_lib)
-if(OpenMP_CXX_FOUND)
-    message("openMP found !")
+if(BLAS_FOUND)
+  # check that iomp5 goes with it
+  message(STATUS "Linking targets to BLAS libraries...")
+  # add some test executable
+  add_executable(eigen_blas_routine_test test/eigen_blas_routine_test.cpp)
+  target_compile_definitions(eigen_blas_routine_test PUBLIC EIGEN_USE_MKL_ALL)
+  target_link_libraries(eigen_blas_routine_test BLAS::BLAS)
+  target_include_directories(eigen_blas_routine_test SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIRS})
+  target_compile_features(eigen_blas_routine_test PUBLIC cxx_std_20)
+  # definitions
+  target_compile_definitions(sam-system-factor_test PUBLIC EIGEN_USE_MKL_ALL)
+  target_compile_definitions(factor_test PUBLIC EIGEN_USE_MKL_ALL)
+  target_compile_definitions(toy_linear_test PUBLIC EIGEN_USE_MKL_ALL)
+  target_compile_definitions(toy_pose_graph_SE2_test PUBLIC EIGEN_USE_MKL_ALL)
+  target_compile_definitions(toy_slam_SE2 PUBLIC EIGEN_USE_MKL_ALL)
+  target_compile_definitions(mainstdin PUBLIC EIGEN_USE_MKL_ALL)
+  # links
+  target_link_libraries(sam-system-factor_test jsoncpp_lib BLAS::BLAS)
+  target_link_libraries(factor_test jsoncpp_lib BLAS::BLAS)
+  target_link_libraries(toy_linear_test jsoncpp_lib BLAS::BLAS)
+  target_link_libraries(toy_pose_graph_SE2_test jsoncpp_lib BLAS::BLAS)
+  target_link_libraries(toy_slam_SE2 jsoncpp_lib BLAS::BLAS)
+  target_link_libraries(mainstdin PUBLIC jsoncpp_lib BLAS::BLAS)
+elseif(OpenMP_CXX_FOUND)
+    message(STATUS "OpenMP found !")
+    target_link_libraries(sam-system-factor_test jsoncpp_lib OpenMP::OpenMP_CXX)
+    target_link_libraries(factor_test jsoncpp_lib OpenMP::OpenMP_CXX)
+    target_link_libraries(toy_linear_test jsoncpp_lib OpenMP::OpenMP_CXX)
+    target_link_libraries(toy_pose_graph_SE2_test jsoncpp_lib OpenMP::OpenMP_CXX)
+    target_link_libraries(toy_slam_SE2 jsoncpp_lib OpenMP::OpenMP_CXX)
+    target_link_libraries(mainstdin PUBLIC jsoncpp_lib OpenMP::OpenMP_CXX)
     target_link_libraries(mainstdin PUBLIC OpenMP::OpenMP_CXX jsoncpp_lib)
 else()
+    message(WARNING "No blas found, no openMP found, might not be ")
+    target_link_libraries(sam-system-factor_test jsoncpp_lib )
+    target_link_libraries(factor_test jsoncpp_lib )
+    target_link_libraries(toy_linear_test jsoncpp_lib )
+    target_link_libraries(toy_pose_graph_SE2_test jsoncpp_lib )
+    target_link_libraries(toy_slam_SE2 jsoncpp_lib )
+    target_link_libraries(mainstdin PUBLIC jsoncpp_lib )
     target_link_libraries(mainstdin PUBLIC jsoncpp_lib)
 endif()
 
@@ -54,7 +90,6 @@ target_compile_features(toy_pose_graph_SE2_test PUBLIC cxx_std_20)
 target_compile_features(toy_slam_SE2 PUBLIC cxx_std_20)
 # mainstding
 target_compile_features(mainstdin PUBLIC cxx_std_20)
-# target_compile_options(mainstdin PUBLIC "-O3" "-std=c++20") # "-fopt-info")
 
 # NOTE: to manage some definitions
 # target_compile_definitions(mainstdin PUBLIC ENABLE_DEBUG_TRACE=1 ENABLE_TIMER=1)
