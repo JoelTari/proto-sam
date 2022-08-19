@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
+# add those target compile definitionns: 
+# BLAS 
+# OMP 
+# AGGRESSIVELY_OPTIMIZED
+
 project(proto-sam)
 
 # set(CMAKE_BUILD_TYPE Release) # defer to command line
@@ -35,7 +40,7 @@ target_include_directories(toy_pose_graph_SE2_test PUBLIC include ${manif_INCLUD
 target_include_directories(toy_slam_SE2 PUBLIC include ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS})
 target_include_directories(mainstdin PUBLIC include)
 
-# TODO: try jsoncpp_static and compare size of binaries
+# NOTE: jsoncpp_static vs jsoncpp_lib (.so)  => 200 kB difference on binary size
 if(BLAS_FOUND)
   # check that iomp5 goes with it
   message(STATUS "Linking targets to BLAS libraries...")

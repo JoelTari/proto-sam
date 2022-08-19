@@ -48,6 +48,16 @@ TEST(Factors, LinearTranslation2d) {
   F.get_array_keys_id();
 }
 
+// WARNING: temporary, remove
+TEST(Factors, eigen_matrices_equality) {
+  Eigen::Matrix3d M1;
+  M1.setIdentity()*2.5;
+  Eigen::Matrix3d M2;
+  M2.setIdentity()*2.5;
+
+  EXPECT_TRUE(M1.isApprox(M2));
+}
+
 // TODO: do the same for all instanciated factor types
 // - pose matcher SE2
 // - motion model SE2
