@@ -351,11 +351,25 @@ namespace sam::Factor
 #if ENABLE_DEBUG_TRACE
       std::cout << "------------ \n ";
       std::cout << "factor " << factor_id << " rho: \n" << this->rho << '\n';
-      if constexpr (!isLinear)  // FIX: refactor soon
+      if constexpr (!isLinear)  // FIX: refactor soon, this will not be relevant
       {
-        std::cout << "init points : \n";
-        std::cout << 
-          stringify_composite_state_blockliner<KCC,KCCs...>(tup_init_points_ptr, this->keys_id,4,4);
+        // if all the state of the init pointer are VALID pointers
+        if (   
+            std::apply(
+              [&tup_init_points_ptr](auto &&...Xptr )
+              {
+                return ( (Xptr != nullptr) && ...);
+              }
+              ,tup_init_points_ptr
+            )
+          )
+        {
+          std::cout << "init point(s) : \n";
+          std::cout << 
+            stringify_composite_state_blockliner<KCC,KCCs...>(tup_init_points_ptr, this->keys_id,4,4);
+        }
+        else
+          std::cout << "no init point(s) given. \n";
       }
       std::cout << "------------ \n ";
 #endif
