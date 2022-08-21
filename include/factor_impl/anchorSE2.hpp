@@ -10,7 +10,7 @@
 
 namespace details_sam::Factor{
   namespace AnchorSE2Impl{
-    inline static constexpr const char anchor_role_str[] = "prior";
+    inline static constexpr const char anchor_role_str[] = "anchored";
 
     using namespace ::sam::Meta;
     using namespace ::details_sam::Conduct;

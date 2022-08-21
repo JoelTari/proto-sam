@@ -10,7 +10,7 @@ namespace details_sam::Factor {
   namespace Anchor2dImpl{
     // factor instantiation from templates
     // instantiate the (unique) key conduct
-    inline static constexpr const char anchor_role_str[] = "prior";
+    inline static constexpr const char anchor_role_str[] = "anchored";
     
     // the matrix Hik, an improvement would be to use constexpr raw array and then transform in Matrix in the class, somehow.
     inline static const Eigen::Matrix<double,2,2> Hik_UniqueKeyConduct {{1,0},{0,1}};
