@@ -406,7 +406,9 @@ namespace sam::System
             // std::cout << "keymeanview :" << *(std::get<0>(factor.keys_set).key_mean_view) // OK: proper
             //   << '\n';
             double norm_factor = factor.factor_norm_at_current_lin_point();
+#if ENABLE_DEBUG_TRACE
             std::cout << "norm factor : " << norm_factor << '\n';
+#endif
             accumulated_syst_squared_norm += norm_factor*norm_factor; // WARNING: race condition if parallel policy
 
             constexpr int mesdim= factor_t::kM;
