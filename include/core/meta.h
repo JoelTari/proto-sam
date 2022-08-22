@@ -66,7 +66,7 @@ namespace sam::Meta::Key
       {
         std::stringstream ss;
         ss.precision(precision);
-        ss << "( ";
+        ss << kKeyName << "  --  ( ";
         ((ss << ORDERRED_COMPONENT_NAMEs << ": " << get_component<ORDERRED_COMPONENT_NAMEs>(keyvalue) << ", "), ... );
         ss.seekp(-2, ss.cur); // this removes the last space & comma
         ss << " )";

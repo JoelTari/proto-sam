@@ -1,33 +1,39 @@
-#include "core/sam-system.h"
 #include "factor_impl/anchor.hpp"
-#include "factor_impl/key-meta-position.h"
 #include "factor_impl/linear-translation.hpp"
-#include "utils/tuple_patterns.h"
-#include "core/marginal.h"
+#include "core/sam-system.h"
+
+#include <gtest/gtest.h>
 
 
-// Ground truth:
-// x0: 0, 0
-// x1: 1, 0 
-// x2: 1, 1
-// x3: 0, 1
-//
-// x3  ───────x2
-//  │          │
-//  │          │
-//  │          │
-// x0 ────────x1
-//  ┼
+
+template<typename Key_t>
+void EXPECT_KEY_APPROX(const std::string & id, const Key_t & exp , const Key_t & val, double p=1e-3)
+{
+  EXPECT_TRUE( exp.isApprox(val, p)  );
+}
+
+
 
 //------------------------------------------------------------------//
-//                               MAIN                               //
-//------------------------------------------------------------------//
-int main(int argc, char* argv[])
+TEST(ToyLinearSystem, Square)
 {
   // logger
   std::string result_filename
       = sam_utils::currentDateTime() + "_results_toy_linear_test.json";
   sam_utils::JSONLogger::Instance().beginSession("toy_linear_test.cpp", result_filename);
+
+  // Ground truth:
+  // x0: 0, 0
+  // x1: 1, 0 
+  // x2: 1, 1
+  // x3: 0, 1
+  //
+  // x3  ───────x2
+  //  │          │
+  //  │          │
+  //  │          │
+  // x0 ────────x1
+  //  ┼
 
   // scoped Timer
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
@@ -85,8 +91,25 @@ int main(int argc, char* argv[])
 #endif
   }
   std::cout << " After optimization: \n";
-  sys_marginals = syst.get_marginals();
+  sys_marginals = syst.get_marginals();  // map {keyid : marginal} (tuple of maps, because marginals are not all the same type)
   std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
 
-  return 0;
+  // test: print all marginals, register values, hardcode them, and google test them
+  // after optim
+  auto expected_x3map =  ::sam::Key::Position2d_t(  -0.0002262,  1.001 );
+  auto expected_x2map = ::sam::Key::Position2d_t( 0.9801,  0.9347 );
+  auto expected_x1map = ::sam::Key::Position2d_t(  0.9613,  -0.1438 );
+  auto expected_x0map = ::sam::Key::Position2d_t(  4.717e-16,  1.862e-16 );
+
+  // sys_marginals is a 1-uple, let's simplify
+  auto all_position2d = std::get<0>(sys_marginals);
+
+
+  std::cout << ::sam::Meta::Key::Position2d::stringify_key_oneliner( *all_position2d.find("x3")->second->mean_ptr ) << '\n';
+
+  EXPECT_KEY_APPROX("x0", expected_x0map, *all_position2d.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX("x1", expected_x1map, *all_position2d.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX("x2", expected_x2map, *all_position2d.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX("x3", expected_x3map, *all_position2d.find("x3")->second->mean_ptr);
+
 }
