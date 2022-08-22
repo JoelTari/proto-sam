@@ -7,49 +7,7 @@
 
 #include <gtest/gtest.h>
 
-// TODO: move this to some sort of test utils
-template <typename TUP_Aiks>
-void EXPECT_TUPLE_OF_MATRIX_APPROX(const TUP_Aiks& expected, const TUP_Aiks& value, double p)
-{
-  // tup zip pattern
-  std::apply(
-      [&](const auto&... val)
-      {
-        std::apply(
-            [&](const auto&... exp)
-            {
-              //  (EXPECT_TRUE(exp.isApprox(val,p)) , ...  ) ;
-              EXPECT_TRUE((exp.isApprox(val, p) && ...));
-            },
-            expected);
-      },
-      value);
-}
-
-// TODO: move this to some sort of test utils
-template <typename VEC_bi, typename TUP_Aiks>
-void EXPECT_bi_Aiks(const std::tuple<VEC_bi, TUP_Aiks>& expected,
-                    const std::tuple<VEC_bi, TUP_Aiks>& value,
-                    double                              p)
-{
-  auto expected_bi   = std::get<0>(expected);
-  auto value_bi      = std::get<0>(value);
-  auto expected_Aiks = std::get<1>(expected);
-  auto value_Aiks    = std::get<1>(value);
-  EXPECT_TRUE(value_bi.isApprox(expected_bi, p));
-  EXPECT_TUPLE_OF_MATRIX_APPROX(expected_Aiks, value_Aiks, p);
-}
-
-
-template <typename VEC_bi, typename TUP_Aiks>
-void print(const std::tuple<VEC_bi, TUP_Aiks>& biAiks)
-{
-  std::cout << "bi : \n" << std::get<0>(biAiks).transpose() << '\n';
-  std::apply([](const auto&... Aik) { ((std::cout << "Ai_k:\n"
-                                                  << Aik << '\n'),
-                                       ...); },
-             std::get<1>(biAiks));
-}
+#include "test_utils.h"
 
 //------------------------------------------------------------------//
 //                            Anchor 2d                             //

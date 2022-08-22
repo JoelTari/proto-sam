@@ -3,15 +3,7 @@
 #include "core/sam-system.h"
 
 #include <gtest/gtest.h>
-
-
-
-template<typename Key_t>
-void EXPECT_KEY_APPROX(const std::string & id, const Key_t & exp , const Key_t & val, double p=1e-3)
-{
-  EXPECT_TRUE( exp.isApprox(val, p)  );
-}
-
+#include "test_utils.h"
 
 
 //------------------------------------------------------------------//

@@ -1,4 +1,4 @@
-#define ENABLE_DEBUG_TRACE 1
+#define ENABLE_DEBUG_TRACE 0
 
 #include <iomanip> // std::precision
 #include <iostream>
@@ -7,9 +7,12 @@
 #include "factor_impl/cartesian-landmark-obs-SE2.hpp"
 #include "factor_impl/motion-model-SE2.hpp"
 
+#include <gtest/gtest.h>
+#include "test_utils.h"
+
 using std::cout, std::endl;
 
-int main (int argc, char *argv[])
+TEST(ToySLAMSE2System, Manif)
 {
   // logger
   sam_utils::JSONLogger::Instance().beginSession("toy_pose_graph_SE2_test.cpp");
@@ -150,14 +153,53 @@ int main (int argc, char *argv[])
   }
 
   // get init point before optimization
+  std::cout << "Before Optimization:\n";
   auto sys_marginals = sys.get_marginals();
   std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
+  auto expected_b4_init = ::sam::Key::Position2d_t(15.05, 4.589 );
+  auto expected_b2_init = ::sam::Key::Position2d_t(10.38, 4.332 );
+  auto expected_b3_init = ::sam::Key::Position2d_t(15.05, -5.006 );
+  auto expected_b1_init = ::sam::Key::Position2d_t(9.977, -5.047 );
+  auto expected_b0_init = ::sam::Key::Position2d_t(15.04, 0.06285 );
+  auto expected_x2_init = ::sam::Key::PoseSE2_t(14.28, -3.841, -1.423 );
+  auto expected_x1_init = ::sam::Key::PoseSE2_t(13.17, -1.521, -0.8215 );
+  auto expected_x0_init = ::sam::Key::PoseSE2_t(10, 1, -0.5236 );
+
+  // auto all_positionSE2 =
+  auto all_positionSE2 = std::get<1>(sys_marginals);
+  auto all_positionLandmark = std::get<0>(sys_marginals);
+  EXPECT_KEY_APPROX("x0", expected_x0_init, *all_positionSE2.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX("x1", expected_x1_init, *all_positionSE2.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX("x2", expected_x2_init, *all_positionSE2.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b0", expected_b0_init, *all_positionLandmark.find("b0")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b1", expected_b1_init, *all_positionLandmark.find("b1")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b2", expected_b2_init, *all_positionLandmark.find("b2")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b3", expected_b3_init, *all_positionLandmark.find("b3")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b4", expected_b4_init, *all_positionLandmark.find("b4")->second->mean_ptr);
 
   sys.sam_optimize();
 
   // get Keys after optimization
+  std::cout << "After Optimization:\n";
   sys_marginals = sys.get_marginals();
-  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
+  auto expected_b4_map = ::sam::Key::Position2d_t(14.89, 4.983 );
+  auto expected_b2_map = ::sam::Key::Position2d_t(9.981, 5.01 );
+  auto expected_b3_map = ::sam::Key::Position2d_t(15.05, -5.006 );
+  auto expected_b1_map = ::sam::Key::Position2d_t(10.04, -5 );
+  auto expected_b0_map = ::sam::Key::Position2d_t(15.04, 0.02159 );
+  auto expected_x2_map = ::sam::Key::PoseSE2_t(13.62, -3.645, -1.308 );
+  auto expected_x1_map = ::sam::Key::PoseSE2_t(12.32, -1.019, -0.9104 );
+  auto expected_x0_map = ::sam::Key::PoseSE2_t(10, 1, -0.5236 );
 
-  return 0;
+  all_positionSE2 = std::get<1>(sys_marginals);
+  all_positionLandmark = std::get<0>(sys_marginals);
+  EXPECT_KEY_APPROX("x0", expected_x0_map, *all_positionSE2.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX("x1", expected_x1_map, *all_positionSE2.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX("x2", expected_x2_map, *all_positionSE2.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b0", expected_b0_map, *all_positionLandmark.find("b0")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b1", expected_b1_map, *all_positionLandmark.find("b1")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b2", expected_b2_map, *all_positionLandmark.find("b2")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b3", expected_b3_map, *all_positionLandmark.find("b3")->second->mean_ptr);
+  EXPECT_KEY_APPROX("b4", expected_b4_map, *all_positionLandmark.find("b4")->second->mean_ptr);
+
 }
