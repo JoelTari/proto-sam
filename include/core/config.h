@@ -5,24 +5,24 @@
 #define ENABLE_DEBUG_TRACE 1
 #endif
 #ifndef ENABLE_RUNTIME_CONSISTENCY_CHECKS
-#define ENABLE_RUNTIME_CONSISTENCY_CHECKS 1
+#define ENABLE_RUNTIME_CONSISTENCY_CHECKS 0
 #endif
 #ifndef ENABLE_TIMER
 #define ENABLE_TIMER 1
 #endif
 
-#if ENABLE_DEBUG_TRACE
+// #if ENABLE_DEBUG_TRACE // no let's include them anyway, no big deal
 #include <iostream>
 #include <iomanip>
-#endif
+// #endif
 
 #if ENABLE_TIMER > 0
 #include<chrono>
     #define PROFILE_SCOPE(name,logger) sam_utils::ScopedTimer timer##__LINE__( (name) ,logger)
     #define PROFILE_FUNCTION(logger)  PROFILE_SCOPE(__FUNCTION__,logger)
 #else
-    #define PROFILE_SCOPE(name)  // nada
-    #define PROFILE_FUNCTION()   // nada
+    #define PROFILE_SCOPE(name,logger)  // nada
+    #define PROFILE_FUNCTION(logger)   // nada
 #endif
 
 #endif
