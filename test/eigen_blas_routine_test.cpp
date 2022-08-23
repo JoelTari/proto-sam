@@ -1,13 +1,15 @@
 #include <iostream>
 #include <Eigen/Dense>
 
+#include <gtest/gtest.h>
+
 // Various calls to Eigen
 // Before running this code, set the environment variable
 //       export MKL_VERBOSE=1
 // if you expect the MKL calls, then they should appear 
 // in the traces.
 
-int main (int argc, char *argv[])
+TEST(EigenBLASSuite, BasicBLASTest)
 {
 
   auto m1 = Eigen::Matrix<double, 10, 10>::Random();
@@ -34,6 +36,4 @@ int main (int argc, char *argv[])
     << std::endl;
 
   // TODO:  PardisoLLT
-
-  return 0;
 }

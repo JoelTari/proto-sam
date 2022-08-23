@@ -1,6 +1,3 @@
-#define ENABLE_DEBUG_TRACE 1
-
-
 #include "core/sam-system.h"
 #include "factor_impl/anchorSE2.hpp"
 #include "factor_impl/pose-matcher-SE2.hpp"

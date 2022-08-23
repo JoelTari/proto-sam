@@ -1,5 +1,3 @@
-#define ENABLE_DEBUG_TRACE 0
-
 #include <iomanip> // std::precision
 #include <iostream>
 #include "core/sam-system.h"
