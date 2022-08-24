@@ -27,6 +27,7 @@ int main(int argc, char* argv[])
   std::stringstream session_name;
   session_name << "mainstdin.cpp_sam_" << argId;   // TODO: get date, time
   // logger
+  // FIX: add static definitions, in name & header: BLAS, OMP, TIMER, DEBUG TRACE, OPTIM LEVEL
   std::string result_filename
       = sam_utils::currentDateTime() + "_results_" + argId + ".json";   // + to_string( ... )
   sam_utils::JSONLogger::Instance().beginSession(session_name.str(), result_filename);
@@ -109,5 +110,6 @@ int main(int argc, char* argv[])
     std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
 #endif
   }
+  // FIX: end json session here
   return 0;
 }

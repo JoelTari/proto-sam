@@ -15,7 +15,7 @@
 namespace sam_utils
 {
 
-// TODO: move all implementations in cpp (has implications on the cmakelist)
+// FIX: URGENT: move to some user_utils
 // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
 inline const std::string currentDateTime() {
     time_t     now = time(0);
@@ -29,10 +29,11 @@ inline const std::string currentDateTime() {
     return buf;
 }
 
+#if ENABLE_JSON_OUTPUT
 class JSONLogger
 {
     std::string     m_sessionName   = "None";
-    std::ofstream   m_outputStream;
+    std::ofstream   m_outputStream; // FIX: URGENT: no file
     uint            m_spanCount=0;
     std::mutex      m_lock;
     bool            m_activeSession = false;
@@ -53,13 +54,17 @@ public:
         endSession();
     }
 
+
+    // WARNING: (TODO) make the distinction between an optimization session and a run session (may contain several optimizations)
+    // Each optimization session should be a complete graph by itself
  
-    void beginSession(const std::string& name, const std::string& filepath = "results.json")
+    void beginSession(const std::string& name, const std::string& filepath = "results.json") // FIX: pass a stringstream
     {
        // if session already, start a new session
         if (m_activeSession) { endSession(); }
         
         m_activeSession = true;
+        // FIX: URGENT: no file
         m_outputStream.open(filepath);
         // writeHeader();
         m_sessionName = name;
@@ -69,9 +74,10 @@ public:
     {
         if (!m_activeSession) { return; }
         m_activeSession = false;
-        m_outputStream << m_JsonRoot;
+        m_outputStream << m_JsonRoot; // FIX: URGENT: return stringstream
         m_outputStream.close();
         // m_profileCount = 0;
+        // WARNING: lifecycle: should this reset ? 
     }
 
     /**
@@ -84,6 +90,7 @@ public:
     * @return  spanIdx
     */
     uint writeInitProfile(const std::string &name,const uint32_t threadID,const long long start)
+      // FIX: has no purpose if ENABLE_TIME is 0
     {
         std::lock_guard<std::mutex> lock(m_lock);
 
@@ -101,6 +108,7 @@ public:
     }
  
     void writeEndProfile(const long long duration,const int spanIdx)
+      // FIX: has no purpose if ENABLE_TIME is 0
     {
         std::lock_guard<std::mutex> lock(m_lock);
         m_JsonRoot["traceEvents"][spanIdx]["dur"]=std::to_string(duration);
@@ -117,13 +125,15 @@ public:
         m_JsonRoot["marginals"] = graph["marginals"];
     }
 };
+#endif
 
 #if ENABLE_TIMER
 //------------------------------------------------------------------//
 //                           Scope Timer                            //
 //------------------------------------------------------------------//
 /**
-* @brief 
+* @brief ScopedTimer is a timer that destroys itself at the end of 
+* scope and writes its value to the json logger
 *
 * @tparam TIME_UNIT an std::chrono::duration<{{representation}},{{period}}>
 *         where representation could be int64, int32 , float etc...
