@@ -114,7 +114,7 @@ namespace sam::System
       //  OPTIMIZE: EXPECTED PERFORMANCE GAIN : low to medium 
       sam_tuples::for_each_in_tuple(
         this->all_factors_tuple_,
-        [this,&sparseA_triplets,&b,&line_counter](auto& vect_of_f, auto I) // NOTE: I unusable (not constexpr-able)
+        [this,&sparseA_triplets,&b,&line_counter](auto& vect_of_f, auto NIET) // NOTE: I unusable (not constexpr-able)
         {
           using factor_t =typename std::decay_t<decltype(vect_of_f)>::value_type;
           // OPTIMIZE: parallel loop
@@ -213,7 +213,7 @@ namespace sam::System
       //  OPTIMIZE: EXPECTED PERFORMANCE GAIN : low to medium 
       sam_tuples::for_each_in_tuple(
         this->all_factors_tuple_,
-        [this,&sparseA_triplets,&b,&line_counter](auto& vect_of_f, auto I) // NOTE: I unusable (not constexpr-able)
+        [this,&sparseA_triplets,&b,&line_counter](auto& vect_of_f, auto NIET) // NOTE: I unusable (not constexpr-able)
         {
           using factor_t =typename std::decay_t<decltype(vect_of_f)>::value_type;
           // OPTIMIZE: parallel loop
@@ -650,19 +650,19 @@ namespace sam::System
      * @param keys
      * @param args
      */
-    template <std::size_t I = 0, typename FT>
+    template <std::size_t TUPLE_IDX = 0, typename FT>
     void place_factor_in_container(const std::string&                          factor_id,
                                    const typename FT::measure_t&          mes_vect,
                                    const typename FT::measure_cov_t&           measure_cov,
                                    const std::array<std::string, FT::kNbKeys>& keys_id)
     {
       // beginning of static recursion (expanded at compile time)
-      if constexpr (I == S_)
+      if constexpr (TUPLE_IDX == S_)
         return;
       else
       {
         // if this is the type we are looking for, emplace back in
-        if constexpr (std::is_same_v<FT, factor_type_in_tuple_t<I>>)
+        if constexpr (std::is_same_v<FT, factor_type_in_tuple_t<TUPLE_IDX>>)
         {
           add_keys_to_bookkeeper<FT>(keys_id, factor_id);
           // add the factor_id with its infos in the bookkeeper
@@ -723,7 +723,7 @@ namespace sam::System
             // TODO: more detail (which key.s failed etc..)
             throw std::runtime_error("Unable to determine all init points for this factor");
           }
-          std::get<I>(this->all_factors_tuple_).emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
+          std::get<TUPLE_IDX>(this->all_factors_tuple_).emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
               
 // Debug consistency check of everything
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
@@ -739,7 +739,7 @@ namespace sam::System
         else
         {
           // recursion :  compile time call
-          place_factor_in_container<I + 1, FT>(factor_id, mes_vect, measure_cov, keys_id);
+          place_factor_in_container<TUPLE_IDX + 1, FT>(factor_id, mes_vect, measure_cov, keys_id);
         }
       }
     }
@@ -761,12 +761,12 @@ namespace sam::System
       add_keys_to_bookkeeper_impl<FT>(factor_id, keys_id, std::make_index_sequence<FT::kNbKeys> {});
     }
 
-    template <typename FT, std::size_t... I>
+    template <typename FT, std::size_t... INDEX_S>
     void add_keys_to_bookkeeper_impl(const std::string&                          factor_id,
                                      const std::array<std::string, FT::kNbKeys>& keys_id,
-                                     std::index_sequence<I...>)
+                                     std::index_sequence<INDEX_S...>)
     {
-      (add_in_bookkeeper_in_once(factor_id, keys_id[I], std::tuple_element_t<I, typename FT::KeysSet_t>::kN),
+      (add_in_bookkeeper_in_once(factor_id, keys_id[INDEX_S], std::tuple_element_t<INDEX_S, typename FT::KeysSet_t>::kN),
        ...);
     }
 
@@ -863,9 +863,9 @@ namespace sam::System
      *
      * @tparam I
      */
-    template <size_t I>
+    template <size_t TUPLE_IDX>
     using factor_type_in_tuple_t =
-        typename std::tuple_element<I, decltype(all_factors_tuple_)>::type::value_type;
+        typename std::tuple_element<TUPLE_IDX, decltype(all_factors_tuple_)>::type::value_type;
   };
 
 };   // namespace SAM

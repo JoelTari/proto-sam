@@ -3,7 +3,7 @@
 
 // compile definitions and their respective default values
 #ifndef ENABLE_DEBUG_TRACE
-#define ENABLE_DEBUG_TRACE 1
+#define ENABLE_DEBUG_TRACE 0
 #endif
 #ifndef ENABLE_RUNTIME_CONSISTENCY_CHECKS
 #define ENABLE_RUNTIME_CONSISTENCY_CHECKS 0
@@ -14,7 +14,7 @@
 // enable timer -- only makes sense if ENABLE_JSON_OUTPUT is enabled
 #ifndef ENABLE_TIMER
 static_assert(ENABLE_JSON_OUTPUT,"JSON output must be enabled for timer to work");
-#define ENABLE_TIMER 1
+#define ENABLE_TIMER ENABLE_JSON_OUTPUT // enabled if JSON OUPUT if itself enabled, disabled othws
 #else
 #if ENABLE_TIMER
   static_assert(ENABLE_JSON_OUTPUT,"JSON output must be enabled for timer to work");

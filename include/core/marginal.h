@@ -117,7 +117,7 @@ namespace sam::Marginal
       static_assert(std::is_same_v<KM_T,KEYMETA_T> || (std::is_same_v<KM_T,KEYMETA_Ts> || ...)  );
 
       // template programming magic to get the tuple index
-      constexpr std::size_t I = get_correct_tuple_idx_by_marg<KM_T>();
+      constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx_by_marg<KM_T>();
 
       // Create object marginal history object
       // The first item is of the history is its current value (mean and cov)
@@ -128,7 +128,7 @@ namespace sam::Marginal
                                                        );
 
       // select the correct map structure, and insert/assign the marginal history
-      std::get<I>(this->marginal_history_tuple).insert_or_assign(key_id, marginal_history ); // TODO: manage failure
+      std::get<TUPLE_IDX>(this->marginal_history_tuple).insert_or_assign(key_id, marginal_history ); // TODO: manage failure
     }
     
     /**
@@ -146,10 +146,10 @@ namespace sam::Marginal
       static_assert(std::is_same_v<KM_T,KEYMETA_T> || (std::is_same_v<KM_T,KEYMETA_Ts> || ...)  );
 
       // template programming magic to get the tuple index
-      constexpr std::size_t I = get_correct_tuple_idx_by_marg<KM_T>();
+      constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx_by_marg<KM_T>();
 
       // get marginal history ref
-      auto marginal_history_it = std::get<I>(this->marginal_history_tuple).find(key_id);
+      auto marginal_history_it = std::get<TUPLE_IDX>(this->marginal_history_tuple).find(key_id);
       // TODO: assert (run time) that the marginal key exists in the map
       // TODO: assert(marginal_history_it != std::get<I>(this->marginal_history_tuple).end() );
       // push new data
@@ -164,16 +164,16 @@ namespace sam::Marginal
      * @tparam KM_T keymeta type
      * @return index in tuple
      */
-    template <typename KM_T, std::size_t I = 0>
+    template <typename KM_T, std::size_t TUPLE_IDX = 0>
     static constexpr std::size_t get_correct_tuple_idx_by_marg()
     {
-      static_assert(I < kNbMarginals);
-      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_histories_t>::
+      static_assert(TUPLE_IDX < kNbMarginals);
+      if constexpr (std::is_same_v<typename std::tuple_element_t<TUPLE_IDX, marginals_histories_t>::
                                        mapped_type::Marginal_t::KeyMeta_t, KM_T>)
-      { return I; }
+      { return TUPLE_IDX; }
       else
       {
-        return get_correct_tuple_idx_by_marg<KM_T,I + 1>();
+        return get_correct_tuple_idx_by_marg<KM_T,TUPLE_IDX + 1>();
       }
     }
 
@@ -218,10 +218,10 @@ namespace sam::Marginal
                                    KEYMETA_T> || (std::is_same_v<Q_KEYMETA_T, KEYMETA_Ts> || ...));
 
       // get the correct tuple element
-      constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
+      constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx<Q_KEYMETA_T>();
 
-      if (auto it {std::get<I>(this->data_map_tuple).find(key_id)};
-          it != std::end(std::get<I>(this->data_map_tuple)))
+      if (auto it {std::get<TUPLE_IDX>(this->data_map_tuple).find(key_id)};
+          it != std::end(std::get<TUPLE_IDX>(this->data_map_tuple)))
       { return it->second; }
       else
         return std::nullopt;
@@ -243,10 +243,10 @@ namespace sam::Marginal
                                    KEYMETA_T> || (std::is_same_v<Q_KEYMETA_T, KEYMETA_Ts> || ...));
 
       // get the correct tuple element
-      constexpr std::size_t I = get_correct_tuple_idx<Q_KEYMETA_T>();
+      constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx<Q_KEYMETA_T>();
 
-      if (auto it {std::get<I>(this->data_map_tuple).find(key_id)};
-          it != std::end(std::get<I>(this->data_map_tuple)))
+      if (auto it {std::get<TUPLE_IDX>(this->data_map_tuple).find(key_id)};
+          it != std::end(std::get<TUPLE_IDX>(this->data_map_tuple)))
       { return it->second->mean_ptr; } // TODO: ACTION: use the distribution mean
       else
         return std::nullopt;
@@ -264,8 +264,8 @@ namespace sam::Marginal
     template <typename Q_MARG_T>
     void insert_in_marginal_container(const std::string & key_id, std::shared_ptr<Q_MARG_T> marg_ptr)
     {
-      constexpr std::size_t I = get_correct_tuple_idx_by_marg<Q_MARG_T>();
-      std::get<I>(this->data_map_tuple).insert_or_assign(key_id, marg_ptr);
+      constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx_by_marg<Q_MARG_T>();
+      std::get<TUPLE_IDX>(this->data_map_tuple).insert_or_assign(key_id, marg_ptr);
       // TODO: run time assertion: verify that the key_id does not exist in other marginal type (e.g. having "x0" as a pose and "x0" as something else in another part of the tuple)
     }
 
@@ -281,17 +281,17 @@ namespace sam::Marginal
      *
      * @return
      */
-    template <typename Q_KEYMETA_T, std::size_t I = 0>
+    template <typename Q_KEYMETA_T, std::size_t TUPLE_IDX = 0>
     static constexpr std::size_t get_correct_tuple_idx()
     {
-      static_assert(I < kNbMarginals);
+      static_assert(TUPLE_IDX < kNbMarginals);
       // template metaprogramming is still horrible (written in the times of cpp17)
-      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_data_t>::mapped_type::element_type::KeyMeta_t,
+      if constexpr (std::is_same_v<typename std::tuple_element_t<TUPLE_IDX, marginals_data_t>::mapped_type::element_type::KeyMeta_t,
                                    Q_KEYMETA_T>)
-      { return I; }
+      { return TUPLE_IDX; }
       else
       {
-        return get_correct_tuple_idx<Q_KEYMETA_T,I + 1>();
+        return get_correct_tuple_idx<Q_KEYMETA_T,TUPLE_IDX + 1>();
       }
     }
     /**
@@ -302,17 +302,17 @@ namespace sam::Marginal
      *
      * @return
      */
-    template <typename Q_MARG_T, std::size_t I = 0>
+    template <typename Q_MARG_T, std::size_t TUPLE_IDX = 0>
     static constexpr std::size_t get_correct_tuple_idx_by_marg()
     {
-      static_assert(I < kNbMarginals);
-      if constexpr (std::is_same_v<typename std::tuple_element_t<I, marginals_data_t>::
+      static_assert(TUPLE_IDX < kNbMarginals);
+      if constexpr (std::is_same_v<typename std::tuple_element_t<TUPLE_IDX, marginals_data_t>::
                                        mapped_type::element_type,
                                    Q_MARG_T>)   // maybe thats the keymeta that need compare
-      { return I; }
+      { return TUPLE_IDX; }
       else
       {
-        return get_correct_tuple_idx_by_marg<Q_MARG_T,I + 1>();
+        return get_correct_tuple_idx_by_marg<Q_MARG_T,TUPLE_IDX + 1>();
       }
     }
 
