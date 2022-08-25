@@ -35,4 +35,47 @@ static_assert(ENABLE_JSON_OUTPUT,"JSON output must be enabled for timer to work"
     #define PROFILE_FUNCTION(logger)   // nada
 #endif
 
+//------------------------------------------------------------------//
+//                         Compile options                          //
+//------------------------------------------------------------------//
+// # BLAS 
+// # OpenMP
+// # BLA_VENDOR_MKL / BLA_VENDOR_GENERIC
+// # AGGRESSIVE_OPTIMISATION
+// # CUDA (later)
+#ifndef COMPILED_WITH_BLAS
+#define COMPILED_WITH_BLAS 0
+#endif
+#ifndef COMPILED_WITH_OPEN_MP
+#define COMPILED_WITH_OPEN_MP 0
+#endif
+#ifndef COMPILED_WITH_BLAS
+#define COMPILED_WITH_BLAS 0
+#endif
+#ifndef COMPILED_WITH_BLA_VENDOR_MKL
+#define COMPILED_WITH_BLA_VENDOR_MKL 0
+#endif
+// #ifndef BLA_VENDOR_GENERIC
+// #define BLA_VENDOR_GENERIC 0
+// #endif
+#ifndef COMPILED_WITH_AGGRESIVE_OPTIMISATION
+#define COMPILED_WITH_AGGRESIVE_OPTIMISATION 0
+#endif
+// later: CUDA
+
+static_assert( (COMPILED_WITH_BLA_VENDOR_MKL && COMPILED_WITH_BLAS ) || (!COMPILED_WITH_BLAS && !COMPILED_WITH_BLA_VENDOR_MKL), 
+    "Compile definitions are wrong : can't be compiled with MKL blas if not compiled with blas"
+    );
+
+// since these doesn't implies any branching in this library (only at the lower level for ext dependencies)
+// Lets put that in a structure
+struct CompiledDefinitions
+{
+  static constexpr bool blas = COMPILED_WITH_BLAS;
+  static constexpr bool openmp = COMPILED_WITH_OPEN_MP;
+  static constexpr bool bla_vendor_mkl = COMPILED_WITH_BLA_VENDOR_MKL;
+  static constexpr bool optimized = COMPILED_WITH_AGGRESIVE_OPTIMISATION;
+  // later : CUDA
+};
+  
 #endif

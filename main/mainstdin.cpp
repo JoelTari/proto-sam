@@ -25,12 +25,13 @@ int main(int argc, char* argv[])
     argId = "unnamed";
   }
   std::stringstream session_name;
-  session_name << "mainstdin.cpp_sam_" << argId;   // TODO: get date, time
+  session_name << "mainstdin.cpp_sam_" << argId; 
+  //  FIX: add static definitions, in name & header: BLAS, OMP, TIMER, DEBUG TRACE, OPTIM LEVEL and put it in the header of json (pass via 3rd argument)
   // logger
-  // FIX: add static definitions, in name & header: BLAS, OMP, TIMER, DEBUG TRACE, OPTIM LEVEL
   std::string result_filename
-      = sam_utils::currentDateTime() + "_results_" + argId + ".json";   // + to_string( ... )
-  sam_utils::JSONLogger::Instance().beginSession(session_name.str(), result_filename);
+      = sam_utils::currentDateTime() + "_results_" + argId + ".json";
+  std::stringstream json_output_stream;
+  sam_utils::JSONLogger::Instance().beginSession(session_name.str(), result_filename); // third argument => compile options
 
   Json::Value rootJson;   // the desired 'container' (to be filled)
                           // initialized as null
@@ -110,6 +111,6 @@ int main(int argc, char* argv[])
     std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
 #endif
   }
-  // FIX: end json session here
+  // FIX: end json session here: put json_output_stream into an ouput (cout's iostream, or ofstream)
   return 0;
 }
