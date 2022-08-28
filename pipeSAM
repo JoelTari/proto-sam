@@ -14,4 +14,4 @@ else
   flag_db=""
 fi
 
-cat examples/mes_"$pb_id".json | $flag_db build/mainstdin $pb_id && ./graph_publish.py *_results_"$pb_id".json
+cat examples/mes_"$pb_id".json | $flag_db build/mainstdin $pb_id | tee "$(date '+%Y%m%d_%H-%M-%S')"_"$pb_id".json | ./graph_publish.py #*_results_"$pb_id".json

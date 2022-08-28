@@ -10,9 +10,9 @@
 TEST(ToyLinearSystem, Square)
 {
   // logger
-  std::string result_filename
-      = sam_utils::currentDateTime() + "_results_toy_linear_test.json";
-  sam_utils::JSONLogger::Instance().beginSession("toy_linear_test.cpp", result_filename);
+  // std::string result_filename
+  //     = sam_utils::currentDateTime() + "_results_toy_linear_test.json";
+  sam_utils::JSONLogger::Instance().beginSession("gtest_2d", "toy_square_linear_2d");
 
   // Ground truth:
   // x0: 0, 0

@@ -5,7 +5,7 @@
 #include <json/value.h>
 #include <ratio>
 #include <sstream>
-#include <fstream>
+// #include <fstream>
 #include <mutex>
 #include <thread>
 #include <json/json.h>
@@ -15,7 +15,6 @@
 namespace sam_utils
 {
 
-// FIX: URGENT: move to some user_utils
 // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
 inline const std::string currentDateTime() {
     time_t     now = time(0);
@@ -32,54 +31,77 @@ inline const std::string currentDateTime() {
 #if ENABLE_JSON_OUTPUT
 class JSONLogger
 {
-    std::string     m_sessionName   = "None";
-    std::ofstream   m_outputStream; // FIX: URGENT: no file
+    std::string     m_program_name   = "None";
+    std::string     m_pb_id;
+    std::string     m_launch_time_point;
     uint            m_spanCount=0;
     std::mutex      m_lock;
-    bool            m_activeSession = false;
+    // bool            m_activeSession = false;
     Json::Value     m_JsonRoot; // init as null
  
-    JSONLogger() { }
+    // JSONLogger() { }
  
 public:
+    // std::stringstream   m_outputStream;
  
     static JSONLogger& Instance()
     {
         static JSONLogger instance;
         return instance;
     }
- 
-    ~JSONLogger()
+
+    std::string out()
     {
-        endSession();
+      std::stringstream ss;
+      ss << m_JsonRoot;
+      return ss.str();
     }
+
+ //    std::ostream& operator<<(std::ostream& os)
+ //    {
+ //      os << m_JsonRoot;
+ //      return os;
+ //    }
+ // //    std::string out()
+ // //    {
+ // //      std::lock_guard<std::mutex> lock(m_lock);
+ // //      return m_JsonRoot.str();
+ // //    }
+ // // 
+ // //    ~JSONLogger()
+ // //    {
+ // //        endSession();
+ // //    }
 
 
     // WARNING: (TODO) make the distinction between an optimization session and a run session (may contain several optimizations)
     // Each optimization session should be a complete graph by itself
  
-    void beginSession(const std::string& name, const std::string& filepath = "results.json") // FIX: pass a stringstream
+    void beginSession(const std::string& program_name, const std::string & pb_id, const std::string & time_point = sam_utils::currentDateTime()) 
     {
+      std::lock_guard<std::mutex> lock(m_lock);
        // if session already, start a new session
-        if (m_activeSession) { endSession(); }
+        // if (m_activeSession) { endSession(); }
         
-        m_activeSession = true;
-        // FIX: URGENT: no file
-        m_outputStream.open(filepath);
+        // m_activeSession = true;
+        // m_outputStream = ss;
         // writeHeader();
-        m_sessionName = name;
+        m_program_name = program_name;
+        m_pb_id  = pb_id;
+        m_launch_time_point = time_point;
     }
  
-    void endSession()
-    {
-        if (!m_activeSession) { return; }
-        m_activeSession = false;
-        m_outputStream << m_JsonRoot; // FIX: URGENT: return stringstream
-        m_outputStream.close();
-        // m_profileCount = 0;
-        // WARNING: lifecycle: should this reset ? 
-    }
-
+    // void endSession()
+    // {
+    //     // if (!m_activeSession) { return; }
+    //     // m_activeSession = false;
+    //     m_outputStream << m_JsonRoot;
+    //     // m_outputStream.close();
+    //     // m_profileCount = 0;
+    //     // WARNING: lifecycle: should this reset ? 
+    // }
+    //
+#if ENABLE_TIMER
     /**
     * @brief return a spanIdx so that when the duration information can be added later in this same span (other span might be added to the list in the interval)
     *
@@ -90,7 +112,6 @@ public:
     * @return  spanIdx
     */
     uint writeInitProfile(const std::string &name,const uint32_t threadID,const long long start)
-      // FIX: has no purpose if ENABLE_TIME is 0
     {
         std::lock_guard<std::mutex> lock(m_lock);
 
@@ -98,7 +119,7 @@ public:
         span["cat"]="function";
         span["name"]=name;
         span["ph"]="X";
-        span["pid"]=m_sessionName;
+        span["pid"]=m_program_name;
         span["tid"]=threadID;
         span["ts"]= std::to_string(start);
 
@@ -108,18 +129,18 @@ public:
     }
  
     void writeEndProfile(const long long duration,const int spanIdx)
-      // FIX: has no purpose if ENABLE_TIME is 0
     {
         std::lock_guard<std::mutex> lock(m_lock);
         m_JsonRoot["traceEvents"][spanIdx]["dur"]=std::to_string(duration);
         // if(m_JsonRoot["traceEvents"][spanIdx]["name"] == "main")
         //   std::cout << duration << '\n';
     }
+#endif
 
     void writeGraph(const Json::Value & graph)
     {
+      // note: this also erases previous content of jsonRoot
         std::lock_guard<std::mutex> lock(m_lock);
-        // m_JsonRoot["graph"] = graph;
         m_JsonRoot["header"] = graph["header"];
         m_JsonRoot["factors"] = graph["factors"];
         m_JsonRoot["marginals"] = graph["marginals"];

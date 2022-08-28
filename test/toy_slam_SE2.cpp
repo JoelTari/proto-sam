@@ -13,7 +13,7 @@ using std::cout, std::endl;
 TEST(ToySLAMSE2System, Manif)
 {
   // logger
-  sam_utils::JSONLogger::Instance().beginSession("toy_pose_graph_SE2_test.cpp");
+  sam_utils::JSONLogger::Instance().beginSession("gtest_slam_SE2","manif_example_slam_SE2");
   // scoped Timer
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 

@@ -9,7 +9,7 @@ using std::cout;
 
 TEST(ToyPoseGraphSE2System, Square){
   // logger
-  sam_utils::JSONLogger::Instance().beginSession("toy_pose_graph_SE2_test.cpp");
+  sam_utils::JSONLogger::Instance().beginSession("gtest_pose_graph","toy_square_pose_graph_SE2");
   // scoped Timer
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 

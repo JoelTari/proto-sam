@@ -5,12 +5,8 @@
 #include "factor_impl/linear-translation.hpp"
 #include "utils/tuple_patterns.h"
 
-#include <exception>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <system_error>
-
+#include<iostream>
+#include<fstream>
 
 //------------------------------------------------------------------//
 //                               MAIN                               //
@@ -25,23 +21,23 @@ int main(int argc, char* argv[])
     argId = "unnamed";
   }
   std::stringstream session_name;
-  session_name << "mainstdin.cpp_sam_" << argId; 
-  //  FIX: add static definitions, in name & header: BLAS, OMP, TIMER, DEBUG TRACE, OPTIM LEVEL and put it in the header of json (pass via 3rd argument)
-  // logger
-  std::string result_filename
-      = sam_utils::currentDateTime() + "_results_" + argId + ".json";
-  std::stringstream json_output_stream;
-  sam_utils::JSONLogger::Instance().beginSession(session_name.str(), result_filename); // third argument => compile options
+  // session_name << "mainstdin.cpp_sam_" << argId; 
+  // std::string result_filename
+  //     = sam_utils::currentDateTime() + "_results_" + argId + ".json";
+  sam_utils::JSONLogger::Instance().beginSession("mainstdin", argId, sam_utils::currentDateTime()); // second argument: some sort of runtime prefix: date, dataset ID etc..
+                                                                                       // program name
+                                                                                       // pb_id (e.g. M3500)
+                                                                                       // date
 
   Json::Value rootJson;   // the desired 'container' (to be filled)
                           // initialized as null
-
+  
   // read measurements inputs
   if (argc > 2)
   {
     PROFILE_SCOPE("read file", sam_utils::JSONLogger::Instance());
     // getting a filename as argument
-    std::ifstream file(argv[2]);
+    std::ifstream file = std::ifstream(argv[2]);
     file >> rootJson;
     // Json::CharReaderBuilder rbuilder;
     // std::unique_ptr<Json::CharReader> const reader(rbuilder.newCharReader());
@@ -107,10 +103,9 @@ int main(int argc, char* argv[])
   }
   catch (const char* e)
   {
-#if ENABLE_DEBUG_TRACE
     std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
-#endif
   }
-  // FIX: end json session here: put json_output_stream into an ouput (cout's iostream, or ofstream)
+  // sam_utils::JSONLogger::Instance().endSession();
+  std::cout << sam_utils::JSONLogger::Instance().out();
   return 0;
 }
