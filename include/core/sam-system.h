@@ -595,6 +595,16 @@ namespace sam::System
       json_header["quadratic_errors"] = quadratic_errors;
       json_header["Rnnz"] = sysinfo.Rnnz;
       json_header["Hnnz"] = sysinfo.Hnnz;
+      // some compile time information
+      using def_t = sam::definitions::CompiledDefinitions;
+      json_header["bla"] = def_t::blas;
+      json_header["bla_vendor_mkl"] = def_t::bla_vendor_mkl;
+      json_header["aggressively_optimized"] = def_t::optimized;
+      json_header["openmp"] = def_t::openmp;
+      json_header["timer"] = def_t::timer;
+      json_header["json_output"] = def_t::json_output;
+      json_header["runtime_checks"] = def_t::runtime_checks;
+      json_header["debug_trace"] = def_t::debug_trace;
       // TODO: variable order  :  "variable_order"
       return json_header;
     }

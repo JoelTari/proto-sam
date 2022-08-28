@@ -58,8 +58,8 @@ static_assert(ENABLE_JSON_OUTPUT,"JSON output must be enabled for timer to work"
 // #ifndef BLA_VENDOR_GENERIC
 // #define BLA_VENDOR_GENERIC 0
 // #endif
-#ifndef COMPILED_WITH_AGGRESIVE_OPTIMISATION
-#define COMPILED_WITH_AGGRESIVE_OPTIMISATION 0
+#ifndef COMPILED_WITH_AGGRESSIVE_OPTIMISATION
+#define COMPILED_WITH_AGGRESSIVE_OPTIMISATION 0
 #endif
 // later: CUDA
 
@@ -67,15 +67,22 @@ static_assert( (COMPILED_WITH_BLA_VENDOR_MKL && COMPILED_WITH_BLAS ) || (!COMPIL
     "Compile definitions are wrong : can't be compiled with MKL blas if not compiled with blas"
     );
 
-// since these doesn't implies any branching in this library (only at the lower level for ext dependencies)
-// Lets put that in a structure
+namespace sam::definitions
+{
 struct CompiledDefinitions
 {
   static constexpr bool blas = COMPILED_WITH_BLAS;
   static constexpr bool openmp = COMPILED_WITH_OPEN_MP;
   static constexpr bool bla_vendor_mkl = COMPILED_WITH_BLA_VENDOR_MKL;
-  static constexpr bool optimized = COMPILED_WITH_AGGRESIVE_OPTIMISATION;
+  static constexpr bool optimized = COMPILED_WITH_AGGRESSIVE_OPTIMISATION;
+  static constexpr bool timer = ENABLE_TIMER;
+  static constexpr bool json_output = ENABLE_JSON_OUTPUT;
+  static constexpr bool runtime_checks = ENABLE_RUNTIME_CONSISTENCY_CHECKS;
+  static constexpr bool debug_trace= ENABLE_DEBUG_TRACE;
   // later : CUDA
 };
+}
+// since these doesn't implies any branching in this library (only at the lower level for ext dependencies)
+// Lets put that in a structure
   
 #endif
