@@ -73,10 +73,15 @@ if __name__ == '__main__':
 
     # For this example, we assume the data to publish is given in a file
     try:
-        filename=str(sys.argv[len(sys.argv)-1])
-        with open(filename) as f:
-            # read all lines and join in a string
-            json_content="".join(f.readlines())
+        if len(sys.argv) > 1:
+            filename=str(sys.argv[len(sys.argv)-1])
+            with open(filename) as f:
+                # read all lines and join in a string
+                json_content="".join(f.readlines())
+        elif not sys.stdin.isatty():
+            json_content="".join(sys.stdin.readlines()) 
+        else:
+            sys.exit(1)
     except IndexError:
         try:
             input = sys.stdin
