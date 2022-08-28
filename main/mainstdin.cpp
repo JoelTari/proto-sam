@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 
   try
   {
-    syst.sam_optimize();
+    syst.sam_optimise();
   }
   catch (const char* e)
   {

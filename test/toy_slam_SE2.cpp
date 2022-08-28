@@ -150,8 +150,8 @@ TEST(ToySLAMSE2System, Manif)
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f11", z , cov_landmark, {"b4","x2"});
   }
 
-  // get init point before optimization
-  std::cout << "Before Optimization:\n";
+  // get init point before optimisation
+  std::cout << "Before Optimisation:\n";
   auto sys_marginals = sys.get_marginals();
   std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
   auto expected_b4_init = ::sam::Key::Position2d_t(15.05, 4.589 );
@@ -175,10 +175,10 @@ TEST(ToySLAMSE2System, Manif)
   EXPECT_KEY_APPROX("b3", expected_b3_init, *all_positionLandmark.find("b3")->second->mean_ptr);
   EXPECT_KEY_APPROX("b4", expected_b4_init, *all_positionLandmark.find("b4")->second->mean_ptr);
 
-  sys.sam_optimize();
+  sys.sam_optimise();
 
-  // get Keys after optimization
-  std::cout << "After Optimization:\n";
+  // get Keys after optimisation
+  std::cout << "After Optimisation:\n";
   sys_marginals = sys.get_marginals();
   auto expected_b4_map = ::sam::Key::Position2d_t(14.89, 4.983 );
   auto expected_b2_map = ::sam::Key::Position2d_t(9.981, 5.01 );

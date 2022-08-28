@@ -120,7 +120,7 @@ TEST(ToyPoseGraphSE2System, Square){
   }
 
 
-  std::cout << "Before Optimization:\n";
+  std::cout << "Before Optimisation:\n";
   auto sys_marginals = sys.get_marginals();
   auto expected_x5_init = ::sam::Key::PoseSE2_t(1.111, -2.229, -0.6704 );
   auto expected_x4_init = ::sam::Key::PoseSE2_t(0.5155, 2.916, -1.474 );
@@ -141,11 +141,11 @@ TEST(ToyPoseGraphSE2System, Square){
   // std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
   // test map points
 
-  sys.sam_optimize();
+  sys.sam_optimise();
 
   all_positionSE2 = std::get<0>(sys_marginals);
 
-  std::cout << "After Optimization:\n";
+  std::cout << "After Optimisation:\n";
   sys_marginals = sys.get_marginals();
   auto expected_x5_map = ::sam::Key::PoseSE2_t(0.03214, 0.2128, -0.8544 );
   auto expected_x4_map = ::sam::Key::PoseSE2_t(0.4438, 5.26, -1.675 );

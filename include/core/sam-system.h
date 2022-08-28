@@ -167,11 +167,11 @@ namespace sam::System
     }
 
     /**
-    * @brief QR optimization method
+    * @brief QR optimisation method
     *
     * @param logger the log
     */
-    void sam_optimize(sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance())
+    void sam_optimise(sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance())
     {
       // FIX: uncontrolled failure if the system is empty (no factors)
 
@@ -190,7 +190,7 @@ namespace sam::System
 #if ENABLE_DEBUG_TRACE
       {
         PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
-        std::cout << "### Syst: Starting an optimization \n";
+        std::cout << "### Syst: Starting an optimisation \n";
         std::cout << "### Syst: size " << M << " * " << N << '\n';
         // TODO: URGENT: print init point on NL systems
         // loop over marginals, and print current mean
@@ -599,7 +599,7 @@ namespace sam::System
       using def_t = sam::definitions::CompiledDefinitions;
       json_header["bla"] = def_t::blas;
       json_header["bla_vendor_mkl"] = def_t::bla_vendor_mkl;
-      json_header["aggressively_optimized"] = def_t::optimized;
+      json_header["aggressively_optimised"] = def_t::optimised;
       json_header["openmp"] = def_t::openmp;
       json_header["timer"] = def_t::timer;
       json_header["json_output"] = def_t::json_output;

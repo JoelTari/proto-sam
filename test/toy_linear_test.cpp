@@ -69,12 +69,12 @@ TEST(ToyLinearSystem, Square)
   //     {"x0", "x2"});
 
   // std::this_thread::sleep_for(std::chrono::seconds(1));
-  std::cout << " Pre Optimized points: \n";
+  std::cout << " Pre Optimised points: \n";
   auto sys_marginals = syst.get_marginals();
   std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
   try
   {
-    syst.sam_optimize();
+    syst.sam_optimise();
   }
   catch (const char* e)
   {
@@ -82,7 +82,7 @@ TEST(ToyLinearSystem, Square)
     std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
 #endif
   }
-  std::cout << " After optimization: \n";
+  std::cout << " After optimisation: \n";
   sys_marginals = syst.get_marginals();  // map {keyid : marginal} (tuple of maps, because marginals are not all the same type)
   std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
 

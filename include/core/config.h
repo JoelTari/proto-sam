@@ -74,7 +74,7 @@ struct CompiledDefinitions
   static constexpr bool blas = COMPILED_WITH_BLAS;
   static constexpr bool openmp = COMPILED_WITH_OPEN_MP;
   static constexpr bool bla_vendor_mkl = COMPILED_WITH_BLA_VENDOR_MKL;
-  static constexpr bool optimized = COMPILED_WITH_AGGRESSIVE_OPTIMISATION;
+  static constexpr bool optimised = COMPILED_WITH_AGGRESSIVE_OPTIMISATION;
   static constexpr bool timer = ENABLE_TIMER;
   static constexpr bool json_output = ENABLE_JSON_OUTPUT;
   static constexpr bool runtime_checks = ENABLE_RUNTIME_CONSISTENCY_CHECKS;
