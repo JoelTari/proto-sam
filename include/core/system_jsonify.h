@@ -17,9 +17,6 @@ class SystemJsonify
       json_graph["factors"] = jsonify_factors(sys.get_factors_histories());
       json_graph["marginals"] = jsonify_marginals(sys.get_marginals_histories());
 
-      // std::cout << jsonify_factors(sys.get_factors_histories()) << std::endl;
-      // std::cout << jsonify_header(sys.get_system_infos()) << std::endl;
-
       return json_graph;
     }
 
@@ -54,55 +51,40 @@ class SystemJsonify
     static Json::Value jsonify_factors(const typename SAM_SYS::factors_histories_t & factors_histories_list)
     {
       // input: a tuple of vectors of factors
-      // TODO: use std::apply
 
-      Json::Value json_factors;
-      sam_tuples::for_each_in_const_tuple(
-      factors_histories_list.factors_histories_container, 
-      [&json_factors](const auto & map_factor_history, auto NIET)
-      {
-        using factor_history_t = typename std::remove_const_t<std::decay_t<decltype(map_factor_history)>>::mapped_type;
-        using factor_t = typename factor_history_t::Factor_t;
-        
-        for (const auto & pair : map_factor_history)
-        {
-          const auto & factor_h = pair.second;
-          Json::Value json_factor;
-          json_factor["factor_id"] = factor_h.factor_id;
-          json_factor["type"]      = factor_history_t::kFactorLabel; // TODO: rename type to label
-          json_factor["measure"]   = factor_history_t::kMeasureName;
-          // vars_id
-          Json::Value json_vars_id;
-          for (const auto & key_id : factor_h.vars_id) json_vars_id.append(key_id);
-          json_factor["vars_id"] = json_vars_id;
-          json_factor["MAPerror"] = factor_h.norms.back();           // TODO: rename norm
-          Json::Value json_norms;
-          for (const auto & norm: factor_h.norms) json_norms.append(norm);
-          json_factor["norms"]= json_norms;
-          // report the measurement value, component by component
-          Json::Value json_measure; // TODO: component name could be given statically so that the string comparaison would occur at compile time (micro opt)
-          for (std::size_t i=0;i< factor_t::kMeasureComponentsName.size(); i++ )
-          {
-            json_measure[factor_t::kMeasureComponentsName[i]] 
-              = factor_t::MeasureMeta_t::get_component(factor_t::kMeasureComponentsName[i],factor_h.z);
-          }
-          json_factor["measure"] = json_measure;
-          // Append at the json list of factors
-          json_factors.append(json_factor);
-        }
-      });
-
-      return json_factors;
+      return 
+        std::apply(
+                  [](const auto & ...map_factor_history)
+                  {
+                      Json::Value json_factors;
+                      // jsonify one type after another, append the result in json_factor
+                      (jsonify_map_of_factors(map_factor_history, json_factors) , ...);
+                      return json_factors;
+                  }
+                  , factors_histories_list.factors_histories_container
+                  );
     }
 
     static Json::Value jsonify_marginals(const typename SAM_SYS::marginals_histories_container_t & marginals_history_list)
     {
-      // TODO: std::apply
-      Json::Value json_marginals;
-      sam_tuples::for_each_in_const_tuple(
-      marginals_history_list.marginal_history_tuple,
-      [&json_marginals](const auto & map_marginal_histories, auto NIET)
-      {
+      return std::apply(
+          [](const auto & ...map_marginal_histories)
+          {
+            Json::Value json_marginals;
+            // jsonify one type after another, append the result in json_marginals
+            ( jsonify_map_of_marginals(map_marginal_histories,json_marginals) ,...);
+            return json_marginals;
+          }
+          ,marginals_history_list.marginal_history_tuple);
+    }
+
+
+    //------------------------------------------------------------------//
+    //                           lower level                            //
+    //------------------------------------------------------------------//
+    template <typename MARGINAL_HISTORY_T>
+    static void jsonify_map_of_marginals(const MARGINAL_HISTORY_T & map_marginal_histories, Json::Value & json_marginals_out)
+    {
         using marginal_history_t = typename std::remove_const_t<std::decay_t<decltype(map_marginal_histories)>>::mapped_type;
         using marginal_t = typename marginal_history_t::Marginal_t;
         using keymeta_t = typename marginal_t::KeyMeta_t;
@@ -147,10 +129,43 @@ class SystemJsonify
             iterative_covariances.append(covariance);
           }
           json_marginal["iterative_covariances"] = iterative_covariances;
-          json_marginals.append(json_marginal);
+          // put in result
+          json_marginals_out.append(json_marginal);
         }
-      });
-      return json_marginals;
+    }
+
+    template <typename FT_HISTORY_T>
+    static void jsonify_map_of_factors(const FT_HISTORY_T & map_factor_history, Json::Value & json_factors_out)
+    {
+      using factor_history_t = typename std::remove_const_t<std::decay_t<decltype(map_factor_history)>>::mapped_type;
+      using factor_t = typename factor_history_t::Factor_t;
+    
+      for (const auto & pair : map_factor_history)
+      {
+        const auto & factor_h = pair.second;
+        Json::Value json_factor;
+        json_factor["factor_id"] = factor_h.factor_id;
+        json_factor["type"]      = factor_history_t::kFactorLabel; // TODO: rename type to label
+        json_factor["measure"]   = factor_history_t::kMeasureName;
+        // vars_id
+        Json::Value json_vars_id;
+        for (const auto & key_id : factor_h.vars_id) json_vars_id.append(key_id);
+        json_factor["vars_id"] = json_vars_id;
+        json_factor["MAPerror"] = factor_h.norms.back();           // TODO: rename norm
+        Json::Value json_norms;
+        for (const auto & norm: factor_h.norms) json_norms.append(norm);
+        json_factor["norms"]= json_norms;
+        // report the measurement value, component by component
+        Json::Value json_measure; // TODO: component name could be given statically so that the string comparaison would occur at compile time (micro opt)
+        for (std::size_t i=0;i< factor_t::kMeasureComponentsName.size(); i++ )
+        {
+          json_measure[factor_t::kMeasureComponentsName[i]] 
+            = factor_t::MeasureMeta_t::get_component(factor_t::kMeasureComponentsName[i],factor_h.z);
+        }
+        json_factor["measure"] = json_measure;
+        // Append at the json list of factors
+        json_factors_out.append(json_factor);
+      }
     }
 
 
