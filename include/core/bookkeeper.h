@@ -35,6 +35,7 @@ struct FactorInfo
  */
 struct SystemInfo
 {
+  std::string agent_id;
   uint aggr_dim_keys = 0;
   uint aggr_dim_mes = 0;
   uint number_of_keys = 0;
@@ -43,11 +44,17 @@ struct SystemInfo
   uint Rnnz = 0;
   uint Hnnz = 0;
   std::vector<double> quadratic_error;
+
+  SystemInfo(const std::string & agent_id = std::string() ): agent_id(agent_id){}
 };
 
 class Bookkeeper
 {
   public:
+
+  Bookkeeper(const std::string & agent_id = std::string()): system_info_(agent_id)
+  {}
+
   void add_key(const std::string& key, int key_dimension)
   {
     KeyInfo new_key_info;

@@ -54,6 +54,7 @@ int main(int argc, char* argv[])
 #endif
 
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());   // TODO: remove those calls
+  using system_t = typename sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::LinearTranslation2d>;
   auto syst   = sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::LinearTranslation2d>(argId);
   int  fcount = 0;
 
@@ -105,6 +106,10 @@ int main(int argc, char* argv[])
   {
     std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
   }
+  
+  Json::Value json_graph = SystemJsonify<system_t>::jsonify_graph(syst);
+  sam_utils::JSONLogger::Instance().writeGraph(json_graph);
+
   // sam_utils::JSONLogger::Instance().endSession();
   std::cout << sam_utils::JSONLogger::Instance().out();
   return 0;
