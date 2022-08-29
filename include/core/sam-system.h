@@ -182,6 +182,7 @@ namespace sam::System
     void sam_optimise(sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance())
     {
       // FIX: uncontrolled failure if the system is empty (no factors)
+      if (this->bookkeeper_.getSystemInfos().number_of_factors == 0) return;
 
       // scoped timer
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());

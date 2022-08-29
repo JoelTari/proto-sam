@@ -87,7 +87,7 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_executable(aggregate_tests test/factor_test.cpp test/toy_pose_graph_SE2_test.cpp test/toy_slam_SE2.cpp test/toy_linear_test.cpp test/eigen_blas_routine_test.cpp)
+add_executable(aggregate_tests test/factor_test.cpp test/toy_pose_graph_SE2_test.cpp test/toy_slam_SE2.cpp test/toy_linear_test.cpp test/eigen_blas_routine_test.cpp test/system_fail_test.cpp)
 target_include_directories(aggregate_tests PUBLIC include ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS})
 target_link_libraries(aggregate_tests jsoncpp_static ${LOW_LEVEL_LIBRARIES} gtest gmock gtest_main)
 target_compile_definitions(aggregate_tests PUBLIC ENABLE_DEBUG_TRACE=0 ENABLE_TIMER=0 ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
