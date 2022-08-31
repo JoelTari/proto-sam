@@ -13,19 +13,18 @@ namespace details_sam::Factor {
     inline static constexpr const char anchor_role_str[] = "anchored";
     
     // the matrix Hik, an improvement would be to use constexpr raw array and then transform in Matrix in the class, somehow.
-    inline static const Eigen::Matrix<double,2,2> Hik_UniqueKeyConduct {{1,0},{0,1}};
-    // HACK: matrix is passed in-template as the address of the above declaration
+    inline static const Eigen::Matrix<double,2,2> Hik_prior {{1,0},{0,1}};
 
     using namespace ::sam::Meta;
     using namespace ::details_sam::Conduct;
 
-    using UniqueKeyConduct = 
+    using PriorKeyConduct = 
       LinearKeyContextualConduct
           < 
             Key::Position2d
             ,Measure::AbsolutePosition2d
             ,anchor_role_str
-            ,&Hik_UniqueKeyConduct
+            ,&Hik_prior
           >;
 
     inline static constexpr const char anchorLabel[] = "anchor 2d";
@@ -33,18 +32,25 @@ namespace details_sam::Factor {
     namespace exports{
 
       class Anchor2d
-          : public sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, UniqueKeyConduct>
+          : public 
+              ::sam::Factor::LinearEuclidianFactor
+                <
+                  Anchor2d
+                  , anchorLabel
+                  , PriorKeyConduct
+                >
       {
-        using BaseFactor_t = sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, UniqueKeyConduct>;
+        using BaseFactor_t = ::sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, PriorKeyConduct>;
         friend BaseFactor_t;
-        static_assert(std::is_same_v<UniqueKeyConduct::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
-        static_assert(std::is_same_v<UniqueKeyConduct::Key_t, criterion_t>); // because linear factor &&  size M = size N
+        static_assert(std::is_same_v<PriorKeyConduct::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
+        static_assert(std::is_same_v<PriorKeyConduct::Key_t, criterion_t>); // because linear factor &&  size M = size N
+        static_assert(std::is_same_v<std::tuple<PriorKeyConduct::key_process_matrix_t>, matrices_Aik_t>);
 
         public:
 
         // ctor
         Anchor2d(const std::string&                                    factor_id,
-                     const criterion_t&                                 mes_vect,
+                     const measure_t&                                 mes_vect,
                      const measure_cov_t&                               measure_cov,
                      const std::array<std::string, kNbKeys>& keys_id)
             : BaseFactor_t(factor_id, mes_vect, measure_cov, keys_id)
@@ -55,7 +61,7 @@ namespace details_sam::Factor {
         }
 
         // init point guesser
-        static std::optional<std::tuple< std::shared_ptr<UniqueKeyConduct::Key_t> >>
+        static std::optional<std::tuple< std::shared_ptr<PriorKeyConduct::Key_t> >>
             guess_init_key_points_impl( const composite_of_opt_state_ptr_t &
                 // std::tuple<std::optional<  std::shared_ptr<UniqueKeyConduct_t::Key_t> >>
                                       x_init_ptr_optional_tup,
@@ -67,7 +73,7 @@ namespace details_sam::Factor {
             return std::make_tuple(std::get<0>(x_init_ptr_optional_tup).value());
           else   // make a new state in the heap from the measurement
           {
-            auto xinit_ptr = std::make_shared<UniqueKeyConduct::Key_t>(z);
+            auto xinit_ptr = std::make_shared<PriorKeyConduct::Key_t>(z);
             return std::make_tuple(xinit_ptr);
           }
           // NOTE: it never returns std::nullopt, that's normal in this situation
