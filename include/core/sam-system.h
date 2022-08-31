@@ -176,6 +176,8 @@ namespace sam::System
       // set A from triplets, clear the triplets
       A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
       sparseA_triplets.clear(); // doesnt alter the capacity, so the .reserve( N ) is still valid 
+
+      return {b,A};
     }
 
     /**
