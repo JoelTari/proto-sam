@@ -4,7 +4,7 @@
 #include <vector>
 #include "core/factor.h"
 
-namespace Factor
+namespace sam::Factor
 {
 
 // all the factor data at one specefic point
@@ -18,7 +18,7 @@ struct PersistentFactorData
   vector_bi_t bi;
   double norm;
 
-  PersistentFactorData(const matrices_Aik_t & Aiks, const criterion_t & bi,
+  PersistentFactorData(const matrices_Aik_t & Aiks, const vector_bi_t & bi,
       double norm)
     : Aiks(Aiks), bi(bi), norm(norm)
   {
@@ -38,6 +38,7 @@ struct PersistentFactorData
 template <typename FACTOR_T>
 class WrapperPersistentFactor
 {
+  public:
   using Factor_t = FACTOR_T;
   using composite_state_ptr_t = typename FACTOR_T::composite_state_ptr_t;
   using composite_of_opt_state_ptr_t = typename FACTOR_T::composite_of_opt_state_ptr_t;
@@ -45,17 +46,16 @@ class WrapperPersistentFactor
   using measure_cov_t = typename FACTOR_T::measure_cov_t; 
   using matrices_Aik_t = typename FACTOR_T::matrices_Aik_t;
 
-  public:
 
   WrapperPersistentFactor(const std::string&                      factor_id,
                const measure_t&                        z,
                const measure_cov_t&                    z_cov,
-               const std::array<std::string, FACTOR_T::kNbKeys>& keys_id
-               ,composite_state_ptr_t tup_init_points_ptr)
+               const std::array<std::string, FACTOR_T::kNbKeys>& keys_id,
+               const composite_state_ptr_t & tup_init_points_ptr)
     : factor(FACTOR_T(factor_id,z,z_cov,keys_id))
       ,state_point_view(tup_init_points_ptr)
+      ,persistentData_(this->compute_persistent_data())
   {
-    this->update_persistent_data();
     // print init state
 #if ENABLE_DEBUG_TRACE
       if constexpr (!FACTOR_T::isLinear)
@@ -91,9 +91,9 @@ class WrapperPersistentFactor
   FACTOR_T factor;
 
   // state point has changed (e.g. the system updates it), the data must be updated
-  void update_persistent_data()
+  auto compute_persistent_data() const
   {
-    // TODO: rename the timer title of this scope
+    // TODO: rename the timer title of this scope URGENT:
     PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
     // WARNING: not protected against race condition on the current state X
     // TODO:  dont recompute if factor AND system are linear (syst linear => template argument)
@@ -102,7 +102,7 @@ class WrapperPersistentFactor
 
     // Possibly later compute r(X) too. 
     // But note that it norm_at(X) computes r(X) first, which is redundant
-    persistentData_ = PersistentFactorData<FACTOR_T>(Ajks,bj,norm);
+    return PersistentFactorData<FACTOR_T>(Ajks,bj,norm);
   }
 
   PersistentFactorData<FACTOR_T> get_current_point_data() const
@@ -110,7 +110,7 @@ class WrapperPersistentFactor
     return persistentData_;
   }
 
-    std::vector<double> norm_history;
+  std::vector<double> norm_history;
 
     // // copy the current point, push it in history
     // // (do this before the current point gets changed/replaced)
@@ -130,11 +130,16 @@ class WrapperPersistentFactor
 
     void clear_history()
     {
-      history.clear();
+      this->norm_history.clear();
+    }
+
+    void set_persistent_data(const PersistentFactorData<FACTOR_T> & persistent_data)
+    {
+      persistentData_ = persistent_data;
     }
 
   private:
-   PersistentFactorData persistentData_;
+   PersistentFactorData<FACTOR_T> persistentData_;
 
 };
 

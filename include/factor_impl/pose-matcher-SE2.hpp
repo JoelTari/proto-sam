@@ -25,7 +25,7 @@ namespace details_sam::Factor{
       using BaseKeyCC_t::BaseKeyCC_t;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;
 
-      key_process_matrix_t compute_Hik_at(const Key_t & Xk) const
+      key_process_matrix_t compute_Hik_at_impl(const Key_t & Xk) const
       {
         // non sequitur
         // FIX: add the computations here anyway. Optionaly raise some errors if called

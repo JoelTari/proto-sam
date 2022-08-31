@@ -706,12 +706,13 @@ namespace sam::Factor
       criterion_t bi = - this->compute_r_of_x_at(X);
       // matrices_Aik_t all_Aik ;
       // double apply pattern to zip two tuples
-      auto all_Aik = std::apply([this,&X](const auto& ... kcc)
+      matrices_Aik_t all_Aik = std::apply([this,&X](const auto& ... kcc)
           {
-            return std::apply([&](const auto & ... Xkptr)
-                {
-                  return std::make_tuple(this->rho*kcc.compute_Hik_at(*Xkptr) ...);
-                },X);
+            return 
+              std::apply([&](const auto & ... Xkptr)
+                  {
+                    return std::make_tuple(this->rho*kcc.compute_Hik_at(*Xkptr) ...);
+                  },X);
           }
           ,this->keys_set
           );
@@ -825,8 +826,8 @@ namespace sam::Factor
     // measurement generative model wrt X is linear
     static_assert((LinearKCCs::kLinear && ...));
 
-    // // rosie is a precious name for rho*z // FIX: was already declared in EuclidianFactor<>
-    // const criterion_t rosie = this->rho * this->z;
+    // rosie is a precious name for rho*z
+    const criterion_t rosie = this->rho * this->z;
 
     const matrices_Aik_t all_Aik;
 
@@ -847,10 +848,14 @@ namespace sam::Factor
                            const std::array<std::string, BaseFactor_t::kNbKeys>& keys_id)
                            // const composite_state_ptr_t& tup_init_points_ptr)
         : BaseFactor_t(factor_id, z, z_cov, keys_id),
-        all_Aik(std::apply([this](const auto& ...kcc)
+        all_Aik(
+            std::apply(
+              [this](const auto& ...kcc)
               {
                 return std::make_tuple( this->rho * kcc.Hik ... );
-              },this->keys_set))
+              }
+              ,this->keys_set)
+            )
     {
     }
 

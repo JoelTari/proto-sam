@@ -95,7 +95,7 @@ namespace sam::System
         throw std::runtime_error("Factor id already exists");
 
       // emplace a factor in the correct container
-      place_factor_in_container<0, ::sam::Factor::PersistentFactor<FT>>(factor_id, mes_vect, measure_cov, keys_id);
+      place_factor_in_container<0, ::sam::Factor::WrapperPersistentFactor<FT>>(factor_id, mes_vect, measure_cov, keys_id);
     }
 
     /**
@@ -103,7 +103,7 @@ namespace sam::System
      *
      * @param system_infos system information (dimensions, indexes, graph connectivity ...)
      */
-    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(const SystemInfo & system_infos) const
+    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(const SystemInfo & system_infos)// const
     {
       uint nnz = system_infos.nnz;
       int        M            = system_infos.aggr_dim_mes;
@@ -152,7 +152,7 @@ namespace sam::System
             [this, &mesdim, &line_counter, &Ai_triplets, &k, &factor](auto & Aik, auto NIET)
             {
                 int Nk = Aik.cols();
-                auto key_id = factor.keys_id[k] ; k++; // WARNING: race condition if parallel policy
+                auto key_id = factor.get_array_keys_id()[k] ; k++; // WARNING: race condition if parallel policy
                 int colIdxInSystemA = this->bookkeeper_.getKeyInfos(key_id).sysidx;
                 auto spaghetti_Aik = Aik.reshaped(); // make it one dimension
                 for (int i=0; i< Nk*mesdim; i++)
@@ -231,7 +231,7 @@ namespace sam::System
         std::string timer_name = "iter" + std::to_string(nIter);
         PROFILE_SCOPE(timer_name.c_str(),sam_utils::JSONLogger::Instance());
 
-        auto [b,A] = compute_A_b( tuple_of_factor_list, system_infos ); // later one more argument: lin point ??
+        auto [b,A] = compute_b_A( system_infos ); // later one more argument: lin point ??
         // set A from the triplets (alrea)
         // if(nIter > 0)
         // {
@@ -326,20 +326,27 @@ namespace sam::System
         double accumulated_syst_squared_norm = 0;
         // push in history & update data (Ai, bi, norm) in factors
         std::apply(
-            [](auto & ...vec_of_wfactors)
+            [&accumulated_syst_squared_norm](auto & ...vec_of_wfactors)
             {
+              // (std::for_each(vec_of_wfactors.begin(),vec_of_wfactors.end(),
+              //               [](const auto & wf)
+              //               { 1; })
+              //               , ...
+              // );
               (
                std::for_each(
-                 vec_of_wfactors.begin()),vec_of_wfactors.end(),
-                  [&accumulated_syst_squared_norm](const auto & wfactor)
+                 vec_of_wfactors.begin(),vec_of_wfactors.end(),
+                  [&accumulated_syst_squared_norm](auto & wfactor)
                   {
                     // push the former norm
                     wfactor.norm_history.push_back(wfactor.get_current_point_data().norm);
                     // enforce new linearisation point on data (Ai)
-                    wfactor.update_persistent_data();
-                    accumulated_syst_squared_norm += wfactor.get_current_point_data().norm;
-                  }
-               ,...);
+                    auto new_data_at_lin_point = wfactor.compute_persistent_data();
+                    wfactor.set_persistent_data(new_data_at_lin_point);
+                    accumulated_syst_squared_norm += new_data_at_lin_point.norm;
+                  })
+               ,...
+              );
 
             }
             , this->all_factors_tuple_
@@ -444,7 +451,7 @@ namespace sam::System
     marginals_t all_marginals_;
 
     // there's at least one factor, the rest are expanded
-    std::tuple<std::vector<::sam::WrapperPersistentFactor<FACTOR_T>>, std::vector<::sam::WrapperPersistentFactor<FACTORS_Ts>>...> all_factors_tuple_;
+    std::tuple<std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T>>, std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts>>...> all_factors_tuple_;
 
     /**
      * @brief how many different types of factor there are
@@ -464,9 +471,9 @@ namespace sam::System
      */
     template <std::size_t TUPLE_IDX = 0, typename WFT>
     void place_factor_in_container(const std::string&                          factor_id,
-                                   const typename FT::measure_t&          mes_vect,
-                                   const typename FT::measure_cov_t&           measure_cov,
-                                   const std::array<std::string, FT::kNbKeys>& keys_id)
+                                   const typename WFT::Factor_t::measure_t&          mes_vect,
+                                   const typename WFT::Factor_t::measure_cov_t&           measure_cov,
+                                   const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id)
     {
       using FT = typename WFT::Factor_t;
       // beginning of static recursion (expanded at compile time)
@@ -552,7 +559,7 @@ namespace sam::System
         else
         {
           // recursion :  compile time call
-          place_factor_in_container<TUPLE_IDX + 1, FT>(factor_id, mes_vect, measure_cov, keys_id);
+          place_factor_in_container<TUPLE_IDX + 1, WFT>(factor_id, mes_vect, measure_cov, keys_id);
         }
       }
     }

@@ -35,15 +35,17 @@ namespace details_sam::Factor {
       class Anchor2d
           : public sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, UniqueKeyConduct>
       {
-        public:
         using BaseFactor_t = sam::Factor::LinearEuclidianFactor<Anchor2d, anchorLabel, UniqueKeyConduct>;
         friend BaseFactor_t;
         static_assert(std::is_same_v<UniqueKeyConduct::key_process_matrix_t, factor_process_matrix_t>  ); // because only 1 key
         static_assert(std::is_same_v<UniqueKeyConduct::Key_t, criterion_t>); // because linear factor &&  size M = size N
 
+        public:
+
+        // ctor
         Anchor2d(const std::string&                                    factor_id,
                      const criterion_t&                                 mes_vect,
-                     const measure_cov_t&                                  measure_cov,
+                     const measure_cov_t&                               measure_cov,
                      const std::array<std::string, kNbKeys>& keys_id)
             : BaseFactor_t(factor_id, mes_vect, measure_cov, keys_id)
         {

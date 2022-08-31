@@ -24,7 +24,6 @@ find_package(jsoncpp 1.9.4 REQUIRED CONFIG)  # this sets 'jsoncpp_lib' and 'json
 find_package(OpenMP)
 # set(BLA_STATIC on)
 set(BLA_VENDOR Intel10_64lp)
-list(APPEND "COMPILED_WITH" "COMPILED_WITH_BLA_VENDOR_MKL")
 # set(BLA_VENDOR Generic)
 find_package(BLAS)
 find_package(LAPACK)
@@ -34,6 +33,7 @@ find_package(LAPACK)
 if (BLAS_FOUND)
   list(APPEND "COMPILED_WITH" "COMPILED_WITH_BLAS")
   if ("${BLAS_LIBRARIES}" MATCHES ".*intel.*") # if BLAS vendor is intel's mkl
+    list(APPEND "COMPILED_WITH" "COMPILED_WITH_BLA_VENDOR_MKL")
     set(LOW_LEVEL_DEFINITIONS "EIGEN_USE_BLAS;EIGEN_USE_LAPACKE;EIGEN_USE_MKL_VML")# equivalent to EIGEN_USE_MKL_ALL
     set(LOW_LEVEL_LIBRARIES "BLAS::BLAS;LAPACK::LAPACK") # no openMP with intel, see if another BLAS lib
   else()
