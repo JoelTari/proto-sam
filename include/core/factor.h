@@ -847,15 +847,17 @@ namespace sam::Factor
                            const measure_cov_t&                                           z_cov,
                            const std::array<std::string, BaseFactor_t::kNbKeys>& keys_id)
                            // const composite_state_ptr_t& tup_init_points_ptr)
-        : BaseFactor_t(factor_id, z, z_cov, keys_id),
-        all_Aik(
-            std::apply(
-              [this](const auto& ...kcc)
-              {
-                return std::make_tuple( this->rho * kcc.Hik ... );
-              }
-              ,this->keys_set)
-            )
+        : BaseFactor_t(factor_id, z, z_cov, keys_id)
+          , all_Aik(
+              std::apply(
+                [this](const auto& ...kcc)
+                {
+                  // HACK: it seems I must cast otherwise I get Eigen::Product< T1, T2> whichh doesn't cast automatically (somehow) into Eigen< T3> where T3 is the matrix type of T1*T2
+                  // return std::make_tuple( std::decay_t<std::remove_const_t<decltype(kcc.Hik)>>(this->rho * kcc.Hik) ... );
+                  return std::make_tuple( typename std::decay_t<std::remove_const_t<decltype(kcc)>>::key_process_matrix_t(this->rho * kcc.Hik) ... );
+                }
+                ,this->keys_set)
+              )
     {
     }
 
