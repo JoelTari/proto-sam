@@ -789,26 +789,27 @@ namespace sam::Factor
    */
   template <typename DerivedLinearEuclidianFactor,
             const char* FactorLabel,
-            typename KCC,
+            typename LinearKCC,
             typename... LinearKCCs>
   class LinearEuclidianFactor   // the measure is euclidian and the keys are expressed in Euclidian
                                  // space too
       : public BaseFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
                                                       FactorLabel,
-                                                      KCC,
+                                                      LinearKCC,
                                                       LinearKCCs...>,
                                FactorLabel,
-                               KCC,
+                               LinearKCC,
                                LinearKCCs...>
   {
     public:
+
     using BaseFactor_t
         = BaseFactor<LinearEuclidianFactor<DerivedLinearEuclidianFactor,
                                                  FactorLabel,
-                                                 KCC,
+                                                 LinearKCC,
                                                  LinearKCCs...>,
                           FactorLabel,
-                          KCC,
+                          LinearKCC,
                           LinearKCCs...>;
     // declares friendlies so that they get to protected impl methods of this class
     friend DerivedLinearEuclidianFactor;
