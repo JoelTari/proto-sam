@@ -17,6 +17,7 @@
 #include <iomanip>
 
 #include "core/system_jsonify.h"
+#include "core/PersistentFactor.h"
 
 namespace sam::System
 {
@@ -94,7 +95,7 @@ namespace sam::System
         throw std::runtime_error("Factor id already exists");
 
       // emplace a factor in the correct container
-      place_factor_in_container<0, FT>(factor_id, mes_vect, measure_cov, keys_id);
+      place_factor_in_container<0, ::sam::Factor::PersistentFactor<FT>>(factor_id, mes_vect, measure_cov, keys_id);
     }
 
     /**
@@ -124,16 +125,20 @@ namespace sam::System
         this->all_factors_tuple_,
         [this,&sparseA_triplets,&b,&line_counter](auto& vect_of_f, auto NIET) // NOTE: I unusable (not constexpr-able)
         {
-          using factor_t =typename std::decay_t<decltype(vect_of_f)>::value_type;
+          using wrapped_factor_t = typename std::decay_t<decltype(vect_of_f)>::value_type;
+          using factor_t = typename wrapped_factor_t::Factor_t;
           // OPTIMIZE: parallel loop
           // OPTIMIZE: race: sparseA_triplets, b ; potential race : vector of factors (check)
           // https://stackoverflow.com/a/45773308
-          for(auto & factor : vect_of_f)
+          for(auto & wfactor : vect_of_f)
           {
-            PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
+            auto factor = wfactor.factor;
+            PROFILE_SCOPE( wfactor.factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
             // compute Ai and bi 
             // // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
-            auto [bi, matrices_Aik] = compute_Ai_bi<factor_t>(factor);
+            // auto [bi, matrices_Aik] = compute_Ai_bi<wrapped_factor_t>(wfactor);
+            auto matrices_Aik = wfactor.get_current_point_data().Aiks;
+            auto bi = wfactor.get_current_point_data().bi;
 
             // declaring a triplets for matrices_Aik values to be associated with their
             // row/col indexes in view of its future integration into the system matrix A
@@ -157,7 +162,6 @@ namespace sam::System
                   Ai_triplets.emplace_back(row,col,spaghetti_Aik[i]);
                 }
             });
-
              
             // put Ai and bi into sparseA_triplets and b
             // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
@@ -204,77 +208,6 @@ namespace sam::System
         // loop over marginals, and print current mean
       }
 #endif
-      // auto [b,A] = compute_A_b( tuple_of_factor_list, system_infos ); // later one more argument: lin point ??
-
-      // declare A & b
-      Eigen::SparseMatrix<double> A(M,N);
-      Eigen::VectorXd b(M);
-
-      // start compute_b_A
-      std::vector<Eigen::Triplet<double>> sparseA_triplets;
-      sparseA_triplets.reserve(nnz); // expected number of nonzeros elements
-      uint64_t line_counter = 0;
-      //------------------------------------------------------------------//
-      //                fill triplets of A and vector of b                //
-      //------------------------------------------------------------------//
-      //  OPTIMIZE: the computation of {partAi...} & bi for each factor could be assumed to be already done (at factor ctor, or after the lin point is analysed)
-      //  OPTIMIZE: EXPECTED PERFORMANCE GAIN : low to medium 
-      sam_tuples::for_each_in_tuple(
-        this->all_factors_tuple_,
-        [this,&sparseA_triplets,&b,&line_counter](auto& vect_of_f, auto NIET) // NOTE: I unusable (not constexpr-able)
-        {
-          using factor_t =typename std::decay_t<decltype(vect_of_f)>::value_type;
-          // OPTIMIZE: parallel loop
-          // OPTIMIZE: race: sparseA_triplets, b ; potential race : vector of factors (check)
-          // https://stackoverflow.com/a/45773308
-          for(auto & factor : vect_of_f)
-          {
-            PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
-            // compute Ai and bi 
-            // // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
-            auto [bi, matrices_Aik] = compute_Ai_bi<factor_t>(factor);
-
-            // declaring a triplets for matrices_Aik values to be associated with their
-            // row/col indexes in view of its future integration into the system matrix A
-            std::vector<Eigen::Triplet<double>> Ai_triplets; 
-            Ai_triplets.reserve(factor_t::kN*factor_t::kM);
-            constexpr int mesdim = factor_t::kM;
-            
-            // placing those matrices in Ai_triplets
-            int k = 0; // tuple idx
-            sam_tuples::for_each_in_const_tuple( matrices_Aik,
-            [this, &mesdim, &line_counter, &Ai_triplets, &k, &factor](auto & Aik, auto NIET)
-            {
-                int Nk = Aik.cols();
-                auto key_id = factor.keys_id[k] ; k++; // WARNING: race condition if parallel policy
-                int colIdxInSystemA = this->bookkeeper_.getKeyInfos(key_id).sysidx;
-                auto spaghetti_Aik = Aik.reshaped(); // make it one dimension
-                for (int i=0; i< Nk*mesdim; i++)
-                {
-                  int row = line_counter + (i%mesdim);
-                  int col = colIdxInSystemA + i /mesdim;
-                  Ai_triplets.emplace_back(row,col,spaghetti_Aik[i]);
-                }
-            });
-
-             
-            // put Ai and bi into sparseA_triplets and b
-            // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
-            b.block<mesdim,1>(line_counter,0) = bi;
-            line_counter += mesdim;
-            // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
-            sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
-          }
-        }
-      );
-
-      // set A from triplets, clear the triplets
-      A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
-      sparseA_triplets.clear(); // doesnt alter the capacity, so the .reserve( N ) is still valid 
-      // end compute_A_b
-
-      // TODO: declare the eigen SPQR solver here, and analyse the pattern (because A pattern will not change in the loop)
-
 
       //------------------------------------------------------------------//
       //                      PRE LOOP DECLARATIONS                       //
@@ -285,7 +218,7 @@ namespace sam::System
       else maxIter = 3; // NOTE: start the tests with maxIter of 1
       // history OPTIMIZE: could be class member that would be reset here ? Expected gain almost none
       marginals_histories_container_t marginals_histories_container;
-      factors_histories_t factors_histories;
+      // factors_histories_t factors_histories;
       
 
       //------------------------------------------------------------------//
@@ -298,19 +231,21 @@ namespace sam::System
         std::string timer_name = "iter" + std::to_string(nIter);
         PROFILE_SCOPE(timer_name.c_str(),sam_utils::JSONLogger::Instance());
 
+        auto [b,A] = compute_A_b( tuple_of_factor_list, system_infos ); // later one more argument: lin point ??
         // set A from the triplets (alrea)
-        if(nIter > 0)
-        {
-          A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
-          sparseA_triplets.clear();
-        }
+        // if(nIter > 0)
+        // {
+        //   A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
+        //   sparseA_triplets.clear();
+        // }
 
         // number of nnz elements in R
         double rnnz;
        // maximum a posteriori, may represent a \hat X or \delta \hat X (NL)
         Eigen::VectorXd MaP; 
         // give A and b to the solver
-        std::tie(MaP,rnnz) = solveQR(A,b); // TODO: split the compute() step with the analyse pattern (can be set before the loop)
+        std::tie(MaP,rnnz) = solveQR(A,b); 
+        // TODO: split the compute() step with the analyse pattern (can be set before the loop)
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
         this->bookkeeper_.set_syst_Rnnz(rnnz);
 
@@ -320,7 +255,6 @@ namespace sam::System
         std::tie(SigmaCovariance,Hnnz) = compute_covariance(A);
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
         this->bookkeeper_.set_syst_Hnnz(Hnnz);
-        // OPTIMIZE: easier (on memory? on cpu?) to compute each block covariance separately ? (and in parallel ?) 
 
 #if ENABLE_DEBUG_TRACE
       {
@@ -328,11 +262,11 @@ namespace sam::System
         std::cout << "#### Iteration : " << nIter << '\n';
         std::cout << "#### Syst: A("<< A.rows() <<","<< A.cols() <<") computed :\n";
         // only display if matrix not too big
-        if ( A.rows() < 30 && nIter ==0) std::cout << Eigen::MatrixXd(A) << "\n\n";
+        if ( A.rows() < 22 && nIter ==0) std::cout << Eigen::MatrixXd(A) << "\n\n";
         // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
         // "\n\n";
         std::cout << "#### Syst: b computed :\n";
-        if ( b.rows() < 30 && nIter ==0) std::cout << b << "\n";
+        if ( b.rows() < 22 && nIter ==0) std::cout << b << "\n";
         std::cout << "#### Syst: MAP computed :\n" << MaP << '\n';
         std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
         if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
@@ -365,12 +299,15 @@ namespace sam::System
             auto marginal_MaP = MaP.block<kN,1>(sysidx, 0);
             // writes the new mean (or increment in NL systems) and the new covariance in the marginal
             if constexpr (isSystFullyLinear) 
+            {
               // replace the eman
               *(marginal_ptr->mean_ptr) =  marginal_MaP;
+            }
             else
+            {
               // increment the mean
-              // BUG: URGENT: update in not the same for R^n,SE(n) and SO(n). For SE(n), it should be += manif::SE2Tangentd(marginalMaP)
               *(marginal_ptr->mean_ptr) += tangent_space_t(marginal_MaP);
+            }
                                                                        //
             marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
             // fill/complete the history
@@ -386,81 +323,27 @@ namespace sam::System
           }
         });
 
-        //------------------------------------------------------------------//
-        //                    POST SOLVER LOOP ON FACTOR                    //
-        //          compute norm and accumulate norm, push norm in          //
-        //           history, fill the new b vector, fill the new           //
-        //                         sparseAtriplets                          //
-        //------------------------------------------------------------------//
-        sparseA_triplets.clear();
-        int line_counter = 0;  // NOTE: the line counter makes the whole thing difficult to parallelize
-        double accumulated_syst_squared_norm (0); // TODO: atomic<double> (but atomic increment is supported only since c++20)
-        // for every factor list in the tuple
-        sam_tuples::for_each_in_tuple(this->all_factors_tuple_,[this,&line_counter, &accumulated_syst_squared_norm,&b,&sparseA_triplets,&nIter,&factors_histories]
-        (auto & factors, auto factTypeIdx)
-        {
-          using factor_t = typename std::remove_const_t<std::decay_t<decltype(factors)>>::value_type;
-          PROFILE_SCOPE( factor_t::kFactorLabel ,sam_utils::JSONLogger::Instance());
-          // for every factor in the list
-          for (auto & factor : factors) // OPTIMIZE: make parallel for_each. Races: syst_norm, line_counter
-          {
-            PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
-            // OPTIMIZE: these steps could (independently whether or not the loop is parallel)
-            // OPTIMIZE: 1st thread: norm computing and accumulation
-            // OPTIMIZE: 2nd thread: Ai bi compute and incorporation on 
-            // OPTIMIZE: medium gain, but improved readability
-            // norm of the factor: \|h(xmap)-z\|_R (no square)
-            //  at the current map
-            // std::cout << "keymeanview :" << *(std::get<0>(factor.keys_set).key_mean_view) // OK: proper
-            //   << '\n';
-            double norm_factor = factor.factor_norm_at_current_lin_point();
-#if ENABLE_DEBUG_TRACE
-            std::cout << "norm factor : " << norm_factor << '\n';
-#endif
-            accumulated_syst_squared_norm += norm_factor*norm_factor; // WARNING: race condition if parallel policy
-
-            constexpr int mesdim= factor_t::kM;
-
-            // bi is factor_t::criterion_t, matrices_Aik is tuple( Ai1, Ai2 ,... ) i.e. submatrices of row length = factor_t::kM and sum of their columns is factor_t::kN
-            auto [bi, matrices_Aik] = compute_Ai_bi<factor_t>(factor);
-
-            // declaring a triplets for matrices_Aik values to be associated with their
-            // row/col indexes in view of its future integration into the system matrix A
-            std::vector<Eigen::Triplet<double>> Ai_triplets; 
-            Ai_triplets.reserve(factor_t::kN*factor_t::kM);
-            
-            // placing those matrices in Ai_triplets
-            int k = 0; // tuple idx
-            sam_tuples::for_each_in_const_tuple( matrices_Aik,
-            [this, &mesdim, &line_counter, &Ai_triplets, &k, &factor](auto & Aik, auto NIET)
+        double accumulated_syst_squared_norm = 0;
+        // push in history & update data (Ai, bi, norm) in factors
+        std::apply(
+            [](auto & ...vec_of_wfactors)
             {
-                int Nk = Aik.cols();
-                auto key_id = factor.keys_id[k] ; k++; // WARNING: race condition if parallel policy
-                int colIdxInSystemA = this->bookkeeper_.getKeyInfos(key_id).sysidx;
-                auto spaghetti_Aik = Aik.reshaped(); // make it one dimension
-                for (int i=0; i< Nk*mesdim; i++)
-                {
-                  int row = line_counter + (i%mesdim);
-                  int col = colIdxInSystemA + i /mesdim;
-                  Ai_triplets.emplace_back(row,col,spaghetti_Aik[i]);
-                }
-            });
+              (
+               std::for_each(
+                 vec_of_wfactors.begin()),vec_of_wfactors.end(),
+                  [&accumulated_syst_squared_norm](const auto & wfactor)
+                  {
+                    // push the former norm
+                    wfactor.norm_history.push_back(wfactor.get_current_point_data().norm);
+                    // enforce new linearisation point on data (Ai)
+                    wfactor.update_persistent_data();
+                    accumulated_syst_squared_norm += wfactor.get_current_point_data().norm;
+                  }
+               ,...);
 
-            // put Ai and bi into sparseA_triplets and b
-            // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
-            b.block<mesdim,1>(line_counter,0) = bi;
-            line_counter += mesdim;
-            // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
-            sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
-            
-            // push factor norm into a history (create it if it is first iteration)
-            if (nIter == 0)
-              factors_histories.template insert_new_factor_history<factor_t>(factor.factor_id, factor,norm_factor);
-            else
-              factors_histories.template push_data_in_factor_history<factor_t>(factor.factor_id,norm_factor);
-          }
-
-        });
+            }
+            , this->all_factors_tuple_
+        );
 
         // push accumulated squared norm
         this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm);
@@ -470,7 +353,7 @@ namespace sam::System
 
       // TODO: remove here (2nd phase)
       this->marginals_histories_container = marginals_histories_container;
-      this->factors_histories = factors_histories;
+      // this->factors_histories = factors_histories;
 
       // clear quadratic error vector
       this->bookkeeper_.clear_quadratic_errors();
@@ -480,18 +363,18 @@ namespace sam::System
     marginals_histories_container_t marginals_histories_container;
     factors_histories_t factors_histories;
 
+    // FIX: remove
     factors_histories_t get_factors_histories() const
     {
       return this->factors_histories;
     }
 
-    // TODO: remove
+    // FIX: remove
     marginals_histories_container_t get_marginals_histories() const
     {
       return this->marginals_histories_container;
     }
 
-    // TODO: remove
     auto get_all_factors() const
     {
       return this->all_factors_tuple_;
@@ -502,31 +385,31 @@ namespace sam::System
       return this->bookkeeper_.getSystemInfos();
     }
 
-    Json::Value write_header(const SystemInfo & sysinfo) const
-    {
-      Json::Value json_header;
-      json_header["robot_id"] = this->agent_id;
-      json_header["seq"] = 0; // TODO:
-      json_header["base_unit"] = 0.15;
-      Json::Value quadratic_errors;
-      for (auto qerr : sysinfo.quadratic_error)
-        quadratic_errors.append(qerr);
-      json_header["quadratic_errors"] = quadratic_errors;
-      json_header["Rnnz"] = sysinfo.Rnnz;
-      json_header["Hnnz"] = sysinfo.Hnnz;
-      // some compile time information
-      using def_t = sam::definitions::CompiledDefinitions;
-      json_header["bla"] = def_t::blas;
-      json_header["bla_vendor_mkl"] = def_t::bla_vendor_mkl;
-      json_header["aggressively_optimised"] = def_t::optimised;
-      json_header["openmp"] = def_t::openmp;
-      json_header["timer"] = def_t::timer;
-      json_header["json_output"] = def_t::json_output;
-      json_header["runtime_checks"] = def_t::runtime_checks;
-      json_header["debug_trace"] = def_t::debug_trace;
-      // TODO: variable order  :  "variable_order"
-      return json_header;
-    }
+    // Json::Value write_header(const SystemInfo & sysinfo) const
+    // {
+    //   Json::Value json_header;
+    //   json_header["robot_id"] = this->agent_id;
+    //   json_header["seq"] = 0; // TODO:
+    //   json_header["base_unit"] = 0.15;
+    //   Json::Value quadratic_errors;
+    //   for (auto qerr : sysinfo.quadratic_error)
+    //     quadratic_errors.append(qerr);
+    //   json_header["quadratic_errors"] = quadratic_errors;
+    //   json_header["Rnnz"] = sysinfo.Rnnz;
+    //   json_header["Hnnz"] = sysinfo.Hnnz;
+    //   // some compile time information
+    //   using def_t = sam::definitions::CompiledDefinitions;
+    //   json_header["bla"] = def_t::blas;
+    //   json_header["bla_vendor_mkl"] = def_t::bla_vendor_mkl;
+    //   json_header["aggressively_optimised"] = def_t::optimised;
+    //   json_header["openmp"] = def_t::openmp;
+    //   json_header["timer"] = def_t::timer;
+    //   json_header["json_output"] = def_t::json_output;
+    //   json_header["runtime_checks"] = def_t::runtime_checks;
+    //   json_header["debug_trace"] = def_t::debug_trace;
+    //   // TODO: variable order  :  "variable_order"
+    //   return json_header;
+    // }
 
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
     bool is_system_consistent()
@@ -561,7 +444,7 @@ namespace sam::System
     marginals_t all_marginals_;
 
     // there's at least one factor, the rest are expanded
-    std::tuple<std::vector<FACTOR_T>, std::vector<FACTORS_Ts>...> all_factors_tuple_;
+    std::tuple<std::vector<::sam::WrapperPersistentFactor<FACTOR_T>>, std::vector<::sam::WrapperPersistentFactor<FACTORS_Ts>>...> all_factors_tuple_;
 
     /**
      * @brief how many different types of factor there are
@@ -579,36 +462,37 @@ namespace sam::System
      * @param keys
      * @param args
      */
-    template <std::size_t TUPLE_IDX = 0, typename FT>
+    template <std::size_t TUPLE_IDX = 0, typename WFT>
     void place_factor_in_container(const std::string&                          factor_id,
                                    const typename FT::measure_t&          mes_vect,
                                    const typename FT::measure_cov_t&           measure_cov,
                                    const std::array<std::string, FT::kNbKeys>& keys_id)
     {
+      using FT = typename WFT::Factor_t;
       // beginning of static recursion (expanded at compile time)
       if constexpr (TUPLE_IDX == S_)
         return;
       else
       {
         // if this is the type we are looking for, emplace back in
-        if constexpr (std::is_same_v<FT, factor_type_in_tuple_t<TUPLE_IDX>>)
+        if constexpr (std::is_same_v<WFT, factor_type_in_tuple_t<TUPLE_IDX>>)
         {
-          add_keys_to_bookkeeper<FT>(keys_id, factor_id);
+          add_keys_to_bookkeeper<WFT>(keys_id, factor_id);
           // add the factor_id with its infos in the bookkeeper
           // last argument is a conversion from std::array to std::vector
-          this->bookkeeper_.add_factor(factor_id, FT::kN, FT::kM, {keys_id.begin(), keys_id.end()});
+          this->bookkeeper_.add_factor(factor_id, WFT::Factor_t::kN, WFT::Factor_t::kM, {keys_id.begin(), keys_id.end()});
 
           // recover the means (at least the ones available, some may not exist)
           // TODO: make it a function
           auto tuple_of_opt_means_ptr 
           = sam_tuples::reduce_array_variadically(
               keys_id,[this]<std::size_t...J>(const auto& keys_id, std::index_sequence<J...>)
-                            -> typename FT::composite_of_opt_state_ptr_t
+                            -> typename WFT::composite_of_opt_state_ptr_t
               {
                 return 
                 { 
                   this->all_marginals_
-                  .template find_mean_ptr<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J])
+                  .template find_mean_ptr<typename std::tuple_element_t<J, typename WFT::Factor_t::KeysSet_t>::KeyMeta_t>(keys_id[J])
                 ... 
                 };
               }
@@ -617,7 +501,7 @@ namespace sam::System
           // It is probable that the above tuple contains std::nullopt.
           // Attempt to guess the full init point for this factor by using the measurement if necessary.
           // If we don't have enough data to fill in the blank, then `opt_tuple_of_init_point = std::nullopt`
-          std::optional<typename FT::composite_state_ptr_t> opt_tuple_of_init_point_ptr
+          std::optional<typename WFT::composite_state_ptr_t> opt_tuple_of_init_point_ptr
             = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect); // NOTE: heap allocation for the INIT POINT AS MEAN (make_shared)
 
           if (opt_tuple_of_init_point_ptr.has_value())
@@ -673,29 +557,32 @@ namespace sam::System
       }
     }
 
-    template <typename FT>
-    auto compute_Ai_bi(const FT & factor)
+    template <typename WFT>
+    auto compute_Ai_bi(const WFT & wrapped_factor)
     {
       if constexpr (isSystFullyLinear) 
-        return factor.compute_Ai_bi_linear();
+        return wrapped_factor.factor.compute_Ai_bi_linear();
       else 
-        return factor.compute_Ai_bi_at_current_lin_point();
+      {
+        auto factor_data = wrapped_factor.get_current_point_data();
+        return std::make_tuple(factor_data.bi, factor_data.Aiks);
+      }
     }
 
 
-    template <typename FT>
-    void add_keys_to_bookkeeper(const std::array<std::string, FT::kNbKeys>& keys_id,
+    template <typename WFT>
+    void add_keys_to_bookkeeper(const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
                                 const std::string&                          factor_id)
     {
-      add_keys_to_bookkeeper_impl<FT>(factor_id, keys_id, std::make_index_sequence<FT::kNbKeys> {});
+      add_keys_to_bookkeeper_impl<WFT>(factor_id, keys_id, std::make_index_sequence<WFT::Factor_t::kNbKeys> {});
     }
 
-    template <typename FT, std::size_t... INDEX_S>
+    template <typename WFT, std::size_t... INDEX_S>
     void add_keys_to_bookkeeper_impl(const std::string&                          factor_id,
-                                     const std::array<std::string, FT::kNbKeys>& keys_id,
+                                     const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
                                      std::index_sequence<INDEX_S...>)
     {
-      (add_in_bookkeeper_in_once(factor_id, keys_id[INDEX_S], std::tuple_element_t<INDEX_S, typename FT::KeysSet_t>::kN),
+      (add_in_bookkeeper_in_once(factor_id, keys_id[INDEX_S], std::tuple_element_t<INDEX_S, typename WFT::Factor_t::KeysSet_t>::kN),
        ...);
     }
 

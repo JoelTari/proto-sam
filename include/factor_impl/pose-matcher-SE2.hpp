@@ -22,20 +22,22 @@ namespace details_sam::Factor{
     {
       using BaseKeyCC_t = KeyContextualConduct
         <SightedSE2KeyConduct,Key::PoseSE2,Measure::RigidBodyMotionSE2,sighted_role_str>;
+      using BaseKeyCC_t::BaseKeyCC_t;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;
 
-      key_process_matrix_t compute_Aik_at(const Key_t & Xk) const
+      key_process_matrix_t compute_Hik_at(const Key_t & Xk) const
       {
         // non sequitur
         // FIX: add the computations here anyway. Optionaly raise some errors if called
-        key_process_matrix_t Ai;
-        return Ai;
+        key_process_matrix_t Hik;
+        throw std::runtime_error("not implemented yet");
+        return Hik;
       }
-      // the ctors
-      SightedSE2KeyConduct(const std::string& key_id, const measure_cov_t& rho) : BaseKeyCC_t(key_id, rho)
-      {}
-      SightedSE2KeyConduct(const std::string& key_id, const measure_cov_t& rho, std::shared_ptr<Key_t> init_point_view) : BaseKeyCC_t(key_id, rho, init_point_view)
-      {}
+      // // the ctors
+      // SightedSE2KeyConduct(const std::string& key_id, const measure_cov_t& rho) : BaseKeyCC_t(key_id, rho)
+      // {}
+      // SightedSE2KeyConduct(const std::string& key_id, const measure_cov_t& rho, std::shared_ptr<Key_t> init_point_view) : BaseKeyCC_t(key_id, rho, init_point_view)
+      // {}
     };
 
     struct ObserverSE2KeyConduct 
@@ -44,20 +46,23 @@ namespace details_sam::Factor{
     {
       using BaseKeyCC_t = KeyContextualConduct
         <ObserverSE2KeyConduct,Key::PoseSE2,Measure::RigidBodyMotionSE2,observer_role_str>;
+      using BaseKeyCC_t::BaseKeyCC_t;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;
 
-      key_process_matrix_t compute_Aik_at(const Key_t & Xk) const
+      key_process_matrix_t compute_Hik_at_impl(const Key_t & Xk) const
       {
         // non sequitur
         // FIX: add the computations here anyway. Optionaly raise some errors if called
-        key_process_matrix_t Ai;
-        return Ai;
+        key_process_matrix_t Hik;
+        throw std::runtime_error("not implemented yet");
+        return Hik;
       }
-      // the ctors
-      ObserverSE2KeyConduct(const std::string& key_id, const measure_cov_t& rho) : BaseKeyCC_t(key_id, rho)
-      {}
-      ObserverSE2KeyConduct(const std::string& key_id, const measure_cov_t& rho, std::shared_ptr<Key_t> init_point_view) : BaseKeyCC_t(key_id, rho, init_point_view)
-      {}
+
+      // // the ctors
+      // ObserverSE2KeyConduct(const std::string& key_id, const measure_cov_t& rho) : BaseKeyCC_t(key_id, rho)
+      // {}
+      // ObserverSE2KeyConduct(const std::string& key_id, const measure_cov_t& rho, std::shared_ptr<Key_t> init_point_view) : BaseKeyCC_t(key_id, rho, init_point_view)
+      // {}
     };
 
     inline static constexpr const char pose_matcher_label[] = "pose matcher SE2";
@@ -79,9 +84,8 @@ namespace details_sam::Factor{
           PoseMatcherSE2(const std::string&                                    factor_id,
                        const measure_t &                                 mes_vect,
                        const measure_cov_t&                                  measure_cov,
-                       const std::array<std::string, kNbKeys>& keys_id,
-                       const composite_state_ptr_t & tuple_of_init_point_ptrs)
-              : BaseFactor_t(factor_id, mes_vect, measure_cov, keys_id, tuple_of_init_point_ptrs)
+                       const std::array<std::string, kNbKeys>& keys_id)
+              : BaseFactor_t(factor_id, mes_vect, measure_cov, keys_id)
           {
 #if ENABLE_DEBUG_TRACE
             std::cout << "\t::  Factor " << factor_id << " (PoseMatcherSE2) created.\n";

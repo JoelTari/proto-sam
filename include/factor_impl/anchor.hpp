@@ -44,9 +44,8 @@ namespace details_sam::Factor {
         Anchor2d(const std::string&                                    factor_id,
                      const criterion_t&                                 mes_vect,
                      const measure_cov_t&                                  measure_cov,
-                     const std::array<std::string, kNbKeys>& keys_id,
-                     const composite_state_ptr_t & tuple_of_init_point_ptrs)
-            : BaseFactor_t(factor_id, mes_vect, measure_cov, keys_id, tuple_of_init_point_ptrs)
+                     const std::array<std::string, kNbKeys>& keys_id)
+            : BaseFactor_t(factor_id, mes_vect, measure_cov, keys_id)
         {
 #if ENABLE_DEBUG_TRACE
           std::cout << "\t::  Factor " << factor_id << " created.\n";

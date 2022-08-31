@@ -18,7 +18,7 @@ TEST(Factors, Anchor2d)
 
   TestedFactor_t::measure_t     m         = {2.0, -1};
   TestedFactor_t::measure_cov_t cov       = TestedFactor_t::measure_cov_t::Identity() * 2;
-  auto                          F         = TestedFactor_t("f0", m, cov, {"x0"}, {});
+  auto                          F         = TestedFactor_t("f0", m, cov, {"x0"});
   auto                          proposalF = TestedFactor_t::make_composite({1, 0});
 
   double norm_F = F.factor_norm_at(proposalF);
@@ -57,7 +57,7 @@ TEST(Factors, LinearTranslation2d)
   TestedFactor_t::measure_t z   = {-1.0, 1.0};
   auto                      cov = TestedFactor_t::measure_cov_t::Identity() / 2;
 
-  auto F         = TestedFactor_t("f1", z, cov, {"x0", "x1"}, {});   // x0 sighted from x1
+  auto F         = TestedFactor_t("f1", z, cov, {"x0", "x1"});   // x0 sighted from x1
   auto proposalF = TestedFactor_t::make_composite({-3, -1}, {-2, -2});
 
   double norm_F = F.factor_norm_at(proposalF);
@@ -110,9 +110,9 @@ TEST(Factors, AnchorSE2)
   auto z   = TestedFactor_t::measure_t(-1.0, 1.0, 0);
   auto cov = TestedFactor_t::measure_cov_t::Identity() / 2;
 
-  auto init_point = TestedFactor_t::make_composite({z});
-  auto F_tmp      = TestedFactor_t("f0", z, cov, {"x0"}, {});   // no init point (rvalue)
-  auto F          = TestedFactor_t("f0bis", z, cov, {"x0"}, init_point);
+  // auto init_point = TestedFactor_t::make_composite({z});
+  auto F = TestedFactor_t("f0", z, cov, {"x0"});   // no init point (rvalue)
+  // auto F          = TestedFactor_t("f0bis", z, cov, {"x0"});
   // proposal :  xyt = -5,5, pi/3
   auto proposalF = TestedFactor_t::make_composite({-5, 5, 3.14159 / 3});
 
@@ -150,7 +150,7 @@ TEST(Factors, MotionModelSE2)
   auto cov = TestedFactor_t::measure_cov_t::Identity() / 2;
 
   auto proposalF = TestedFactor_t::make_composite({-5, 5, 3.14159 / 3}, {-6, 5, 7 * 3.14159 / 12});
-  auto F         = TestedFactor_t("f1", z, cov, {"x0", "x1"}, {});
+  auto F         = TestedFactor_t("f1", z, cov, {"x0", "x1"});
   // proposal :  xyt = -5,5, pi/3
 
   double norm_F = F.factor_norm_at(proposalF);
@@ -189,7 +189,7 @@ TEST(Factors, PoseMatcherSE2)
   auto cov = TestedFactor_t::measure_cov_t::Identity() / 2;
 
   auto proposalF = TestedFactor_t::make_composite({-5, 5, 3.14159 / 3}, {-6, 5, 7 * 3.14159 / 12});
-  auto F         = TestedFactor_t("f1", z, cov, {"x0", "x1"}, {});
+  auto F         = TestedFactor_t("f1", z, cov, {"x0", "x1"});
   // proposal :  xyt = -5,5, pi/3
 
   double norm_F = F.factor_norm_at(proposalF);
@@ -228,7 +228,7 @@ TEST(Factors, CartesianLandmarkObsSE2)
   auto cov = TestedFactor_t::measure_cov_t::Identity() / 2;
 
   auto proposalF = TestedFactor_t::make_composite({0, 0}, {-8, 0, 3.14159 / 6});
-  auto F         = TestedFactor_t("f1", z, cov, {"l0", "x1"}, {});
+  auto F         = TestedFactor_t("f1", z, cov, {"l0", "x1"});
   // proposal :  xyt = -5,5, pi/3
 
   double norm_F = F.factor_norm_at(proposalF);
