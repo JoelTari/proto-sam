@@ -96,7 +96,7 @@ class WrapperPersistentFactor
     {
       std::cout << "init point(s) : \n";
       std::cout << 
-      stringify_composite_state_blockliner(tup_init_points_ptr, this->factor.get_array_keys_id(),4,4);
+      stringify_composite_state_blockliner<typename FACTOR_T::KeysSet_t>::str(tup_init_points_ptr, this->factor.get_array_keys_id(),4,4);
     }
     else
     {

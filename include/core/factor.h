@@ -207,11 +207,14 @@ namespace details_sam::Conduct{
 
 namespace sam::Factor
 {
+  // TODO: urgent: move CompositeState in separate header for clarity (as well with KCCs actually)
   // composite state
   template <typename ...KCCs>
   struct CompositeStatePtr
   {
     using type = std::tuple<std::shared_ptr<typename KCCs::Key_t>...>;
+    static constexpr auto size = sizeof...(KCCs);
+    using kccs_type = std::tuple<KCCs...>;
   };
   template <typename ...KCCs>
   using CompositeStatePtr_t = typename CompositeStatePtr<KCCs...>::type;
@@ -221,32 +224,67 @@ namespace sam::Factor
 
   // helper to print
   template<typename ...KCCs>
-  std::string stringify_composite_state_blockliner(const CompositeStatePtr_t<KCCs...>& X
-      , const std::array<std::string,sizeof...(KCCs)>  & keys_id
-      , int tabulation=4
-      ,int precision=4)
+  struct stringify_composite_state_blockliner
   {
-    std::stringstream ss;
-    // zip tupple pattern
-    std::apply(
-                [&](auto&&...key_id)
-                {
-                  std::apply(
-                      [&](auto&&...Xk_ptr)
-                      {
-                        ((ss << std::setw(tabulation)
-                           << "[ " << key_id << " ] : \t"
-                           << KCCs::KeyMeta_t::stringify_key_oneliner(*Xk_ptr, precision) 
-                           << '\n')
-                         , ...);  
-                      }
-                      ,X
-                      );
-                }
-                ,keys_id
-              );
-    return ss.str();
-  }
+    static  std::string str(const CompositeStatePtr_t<KCCs...>& X
+          , const std::array<std::string,sizeof...(KCCs)>  & keys_id
+          , int tabulation=4
+          ,int precision=4)
+      {
+        std::stringstream ss;
+        // zip tupple pattern
+        std::apply(
+                    [&](auto&&...key_id)
+                    {
+                      std::apply(
+                          [&](auto&&...Xk_ptr)
+                          {
+                            ((ss << std::setw(tabulation)
+                               << "[ " << key_id << " ] : \t"
+                               << KCCs::KeyMeta_t::stringify_key_oneliner(*Xk_ptr, precision) 
+                               << '\n')
+                             , ...);  
+                          }
+                          ,X
+                          );
+                    }
+                    ,keys_id
+                  );
+        return ss.str();
+      }
+  };
+
+  template<typename ...T_KCCs>
+  struct stringify_composite_state_blockliner< std::tuple<T_KCCs...> >
+  :      stringify_composite_state_blockliner<T_KCCs...>
+  { };
+
+  // std::string stringify_composite_state_blockliner(const FACTOR_T::composite_state_ptr_t & X
+  //     , const std::array<std::string,FACTOR_T::kNbKeys>  & keys_id
+  //     , int tabulation=4
+  //     ,int precision=4)
+  // {
+  //   std::stringstream ss;
+  //   // zip tupple pattern
+  //   std::apply(
+  //               [&](auto&&...key_id)
+  //               {
+  //                 std::apply(
+  //                     [&](auto&&...Xk_ptr)
+  //                     {
+  //                       ((ss << std::setw(tabulation)
+  //                          << "[ " << key_id << " ] : \t"
+  //                          << KCCs::KeyMeta_t::stringify_key_oneliner(*Xk_ptr, precision) 
+  //                          << '\n')
+  //                        , ...);  
+  //                     }
+  //                     ,X
+  //                     );
+  //               }
+  //               ,keys_id
+  //             );
+  //   return ss.str();
+  // }
 
   //------------------------------------------------------------------//
   //                    Base Factor class template                    //
