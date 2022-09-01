@@ -42,6 +42,11 @@ void EXPECT_bi_Aiks(const std::tuple<VEC_bi, TUP_Aiks>& expected,
   auto expected_Aiks = std::get<1>(expected);
   auto value_Aiks    = std::get<1>(value);
   EXPECT_TRUE(value_bi.isApprox(expected_bi, p));
+  if (!value_bi.isApprox(expected_bi, p))
+  {
+    std::cout << "Expected:\n" << expected_bi << '\n'; 
+    std::cout << "Value:\n" << value_bi << '\n'; 
+  }
   EXPECT_TUPLE_OF_MATRIX_APPROX(expected_Aiks, value_Aiks, p);
 }
 

@@ -1,3 +1,5 @@
+#define ENABLE_DEBUG_TRACE 1
+
 #include "factor_impl/anchor.hpp"
 #include "factor_impl/linear-translation.hpp"
 #include "core/sam-system.h"
@@ -72,6 +74,7 @@ TEST(ToyLinearSystem, Square)
   std::cout << " Pre Optimised points: \n";
   auto sys_marginals = syst.get_marginals();
   std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
+
   try
   {
     syst.sam_optimise();

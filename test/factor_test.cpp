@@ -74,7 +74,7 @@ TEST(Factors, LinearTranslation2d)
   TestedFactor_t::criterion_t                             expected_bi;
   std::tuple_element_t<0, TestedFactor_t::matrices_Aik_t> expected_Ai_sighted;
   std::tuple_element_t<1, TestedFactor_t::matrices_Aik_t> expected_Ai_observer;
-  expected_bi << 2e-16, -0;
+  expected_bi << 0, 0;
   expected_Ai_sighted << sqrt(2), 0, 0, sqrt(2);
   expected_Ai_observer << -sqrt(2), 0, 0, -sqrt(2);
   auto expected_Ai_bi
