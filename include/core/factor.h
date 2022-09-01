@@ -350,10 +350,6 @@ namespace sam::Factor
         , keyIdToTupleIdx(map_keyid(keys_id))
     {
       // TODO: throw if cov is not a POS matrix (consistency check enabled ?)
-#if ENABLE_DEBUG_TRACE
-      std::cout << "------------ \n ";
-      std::cout << "factor " << factor_id << " rho: \n" << this->rho << '\n';
-#endif
     }
 
     std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
