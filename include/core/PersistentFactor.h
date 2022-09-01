@@ -22,23 +22,37 @@ struct PersistentFactorData
       double norm)
     : Aiks(Aiks), bi(bi), norm(norm)
   {
-#if ENABLE_DEBUG_TRACE
-    std::cout << "persistent data\n";
-    std::cout << "bi : " << '\n'; 
-    std::cout << bi      << '\n';
-#endif
   }
 
 };
 
+template <typename FACTOR_T>
+std::string stringify_persistent_factor_data(const PersistentFactorData<FACTOR_T> & pfd, int tab = 4, int precision = 4)
+{
+  Eigen::IOFormat
+      CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "  ", ";");
 
-
-
-
-
-
-
+  std::stringstream ss;
+  ss << std::setw(tab) << " " << "Aiks:\n" ;
+  std::apply(
+      [&ss](const auto & ... Aik)
+      {
+        ((ss << Aik << '\n'), ... );
+      },pfd.Aiks);
+  ss << std::setw(tab) << " " << "bi:\n" ;
+  ss << pfd.bi << "\n";
+  ss << std::setw(tab) << " norm : " << pfd.norm << "\n";
   
+  return ss.str();
+}
+
+
+
+
+
+
+
+ 
 // a wrapper for factor, with storing informations about a lin point
 template <typename FACTOR_T>
 class WrapperPersistentFactor
@@ -50,6 +64,7 @@ class WrapperPersistentFactor
   using measure_t = typename FACTOR_T::measure_t; 
   using measure_cov_t = typename FACTOR_T::measure_cov_t; 
   using matrices_Aik_t = typename FACTOR_T::matrices_Aik_t;
+  using vector_bi_t = typename FACTOR_T::criterion_t;
 
 
   WrapperPersistentFactor(const std::string&                      factor_id,
@@ -57,36 +72,38 @@ class WrapperPersistentFactor
                const measure_cov_t&                    z_cov,
                const std::array<std::string, FACTOR_T::kNbKeys>& keys_id,
                const composite_state_ptr_t & tup_init_points_ptr)
+    // for now, even linear factor in linear system have init point
     : factor(FACTOR_T(factor_id,z,z_cov,keys_id))
       ,state_point_view(tup_init_points_ptr)
       ,persistentData_(this->compute_persistent_data())
   {
     // print init state
 #if ENABLE_DEBUG_TRACE
+    std::cout << ">>>>>>>>>>\n";
+    std::cout << "New WPF Declared\n";
     std::cout << stringify_factor_blockliner(this->factor) << '\n';
-    if constexpr (!FACTOR_T::isLinear)
-    {
-      // if all the state of the init pointer are VALID pointers
-      if (   
-          std::apply(
-            [&tup_init_points_ptr](auto &&...Xptr )
-            {
-              return ( (Xptr != nullptr) && ...);
-            }
-            ,tup_init_points_ptr
-          )
+    std::cout << stringify_persistent_factor_data(persistentData_) << '\n';
+    // if all the state of the init pointer are VALID pointers
+    if (   
+        std::apply(
+          [&tup_init_points_ptr](auto &&...Xptr )
+          {
+            return ( (Xptr != nullptr) && ...);
+          }
+          ,tup_init_points_ptr
         )
-      {
-        std::cout << "init point(s) : \n";
-        std::cout << 
-        stringify_composite_state_blockliner(tup_init_points_ptr, this->keys_id,4,4);
-      }
-      else
-      {
-        std::cout << "no init point(s) given. \n";
-      }
-      std::cout << "------------ \n ";
+      )
+    {
+      std::cout << "init point(s) : \n";
+      std::cout << 
+      stringify_composite_state_blockliner(tup_init_points_ptr, this->factor.get_array_keys_id(),4,4);
     }
+    else
+    {
+      std::cout << "no init point(s) given. \n";
+    }
+    std::cout << "------------ \n ";
+    std::cout << "<<<<<<<<<<<\n";
 #endif
   }
     
@@ -97,17 +114,29 @@ class WrapperPersistentFactor
   FACTOR_T factor;
 
   // state point has changed (e.g. the system updates it), the data must be updated
-  auto compute_persistent_data() const
+  template <bool LinearSystem=false>
+  PersistentFactorData<FACTOR_T> compute_persistent_data() const
   {
-    // TODO: rename the timer title of this scope URGENT:
-    PROFILE_SCOPE( this->factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
+    std::string title = this->factor.factor_id + "_compute_persistent_data";
+    PROFILE_SCOPE( title.c_str() ,sam_utils::JSONLogger::Instance());
     // WARNING: not protected against race condition on the current state X
-    // TODO:  dont recompute if factor AND system are linear (syst linear => template argument)
+    vector_bi_t bj;
+    matrices_Aik_t Ajks;
+
+    if constexpr (LinearSystem)
+    {
+      static_assert(FACTOR_T::isLinear);
+      std::tie(bj,Ajks) = this->factor.compute_Ai_bi_linear();
+    }
+    else
+    {
+      std::tie(bj,Ajks) = this->factor.compute_Ai_bi_at(this->state_point_view);
+    }
 #if ENABLE_DEBUG_TRACE
-    std::cout << "compute persistent data at creation\n";
-    std::cout << stringify_factor_blockliner(this->factor);
+    std::cout << "bibibibibibib\n";
+    std::cout << bj<<'\n';
 #endif
-    auto [bj,Ajks] = this->factor.compute_Ai_bi_at(this->state_point_view);
+
     double norm = this->factor.factor_norm_at(this->state_point_view);
 
     // Possibly later compute r(X) too. 
@@ -122,49 +151,20 @@ class WrapperPersistentFactor
 
   std::vector<double> norm_history;
 
-    // // copy the current point, push it in history
-    // // (do this before the current point gets changed/replaced)
-    // void push_current_norm_history()
-    // {
-    //   composite_state_ptr_t copy =
-    //     std::apply(
-    //         [](const auto & ...current_point_ptr)
-    //         {
-    //           return std::make_tuple( std::make_shared<decltype(*current_point_ptr)>(*current_point_ptr) ... );
-    //         }
-    //         ,this->state_point_view
-    //         );
-    //   
-    //   this->norm_history.push_back(copy);
-    // }
+  void clear_history()
+  {
+    this->norm_history.clear();
+  }
 
-    void clear_history()
-    {
-      this->norm_history.clear();
-    }
-
-    void set_persistent_data(const PersistentFactorData<FACTOR_T> & persistent_data)
-    {
-      persistentData_ = persistent_data;
-    }
+  void set_persistent_data(const PersistentFactorData<FACTOR_T> & persistent_data)
+  {
+    persistentData_ = persistent_data;
+  }
 
   private:
    PersistentFactorData<FACTOR_T> persistentData_;
 
 };
 
-// // specialize for euclidian, linear ?
-// template <typename FT>
-// class WrapperPersistentLinearFactor : public WrapperPersistentFactor<FT>
-// {
-//   static_assert(FT::isLinear);
-//   // ctor inherited
-//   using WrapperPersistentFactor::WrapperPersistentFactor;
-//
-//   auto compute_Ai_bi_linear()
-//   {
-//     return this->factor.compute_Ai_bi_linear();
-//   }
-// };
 
 } // end namespace

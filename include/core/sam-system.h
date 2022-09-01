@@ -343,7 +343,7 @@ namespace sam::System
                     // push the former norm
                     wfactor.norm_history.push_back(wfactor.get_current_point_data().norm);
                     // enforce new linearisation point on data (Ai)
-                    auto new_data_at_lin_point = wfactor.compute_persistent_data();
+                    auto new_data_at_lin_point = wfactor.template compute_persistent_data<isSystFullyLinear>();
                     wfactor.set_persistent_data(new_data_at_lin_point);
                     accumulated_syst_squared_norm += new_data_at_lin_point.norm;
                   })
