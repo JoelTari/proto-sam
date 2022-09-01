@@ -824,7 +824,7 @@ namespace sam::Factor
     static_assert((LinearKCCs::kLinear && ...));
 
     // rosie is a precious name for rho*z
-    const criterion_t rosie = this->rho * this->z;
+    const criterion_t rosie;// = this->rho * this->z;
 
     const matrices_Aik_t all_Aik;
 
@@ -855,6 +855,7 @@ namespace sam::Factor
                 }
                 ,this->keys_set)
               )
+            , rosie(this->rho*this->z)
     {
     }
 
@@ -902,21 +903,6 @@ namespace sam::Factor
      */
     std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_linear() const
     {
-      // // FIX: URGENT: to prepare for the SRP enforcement, have all_Aik be a constant member (in linear factor)
-      // //      KCCs can keep their Hik however (it will just not be called here).
-      // //      This also lead to the design decision that Kcc.Hik will not be a const member of Hik,
-      // //      but rather a statically returned func kcc.get_Hik (less memory, more CPU, but kcc.get_Hik())
-      // //      It is assumed that get_Hik will (almost) never be called, except at the ctor of the linear
-      // //      factor class.
-      // matrices_Aik_t all_Aik
-      //   =
-      //   std::apply(
-      //       [this,&all_Aik](const auto& ... kcc)
-      //       {
-      //         return std::make_tuple( kcc.Aik ... );
-      //       }
-      //       ,this->keys_set
-      //   );
       criterion_t bi = this->rosie;
       return { bi , this->all_Aik };
     }
@@ -930,22 +916,6 @@ namespace sam::Factor
      */
     std::tuple<criterion_t, matrices_Aik_t> compute_Ai_bi_at_impl(const composite_state_ptr_t & X) const
     {
-      // // FIX: URGENT: to prepare for the SRP enforcement, have all_Aik be a constant member (in linear factor)
-      // //      KCCs can keep their Hik however (it will just not be called here).
-      // //      This also lead to the design decision that Kcc.Hik will not be a const member of Hik,
-      // //      but rather a statically returned func kcc.get_Hik (less memory, more CPU, but kcc.get_Hik())
-      // //      It is assumed that get_Hik will (almost) never be called, except at the ctor of the linear
-      // //      factor class.
-      // //      NOTE: all_Aik is the same whether or not the wider system is linear or NL
-      // matrices_Aik_t all_Aik
-      //   =
-      //   std::apply(
-      //       [this,&all_Aik](const auto& ... kcc)
-      //       {
-      //         return std::make_tuple( kcc.Aik ... );
-      //       }
-      //       ,this->keys_set
-      //   );
       criterion_t bi = - this->compute_r_of_x_at(X);
       return { bi , this->all_Aik };
     }
@@ -993,23 +963,7 @@ namespace sam::Factor
      */
     criterion_t compute_r_of_x_at_impl(const composite_state_ptr_t& X) const
     {
-      // // use double std::apply to zip-multiply tuples X and kcc.Aik 
-      // // then sum the elements of resulting tuple
-      // // then substract by b
-      // // FIX: URGENT: use linear factor constant member all_Aik
-      // auto tuple_Aik_times_Xk =  std::apply(
-      //     [&X](const auto & ... kcc)
-      //     {
-      //       return std::apply(
-      //           [&](const auto & ... Xptr)
-      //           {
-      //             return std::make_tuple(kcc.Aik* *Xptr  ...); 
-      //           }
-      //           , X);
-      //     }
-      //     ,this->keys_set);
-      // r(X) =  - b  + Sum(Aik*Xk) OR -b + \rho*Sum(Hik*Xk)
-      return - this->rosie + this->rho * this-> compute_h_of_x(X);    
+      return this->rho * this-> compute_h_of_x(X) - this->rosie;    
     }
 
   };
@@ -1074,7 +1028,7 @@ namespace sam::Factor
         CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "  ", ";");
 
     ss << std::setw(tab) << " "
-       << "f0 : " << FT::kFactorLabel 
+       << fact.factor_id << " : " << FT::kFactorLabel 
        << ". M: " << FT::kM << ", N: " << FT::kN 
        << '\n';
     ss << std::setw(tab+2) << " "
