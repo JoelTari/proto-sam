@@ -22,6 +22,11 @@ struct PersistentFactorData
       double norm)
     : Aiks(Aiks), bi(bi), norm(norm)
   {
+#if ENABLE_DEBUG_TRACE
+    std::cout << "persistent data\n";
+    std::cout << "bi : " << '\n'; 
+    std::cout << bi      << '\n';
+#endif
   }
 
 };
@@ -95,9 +100,13 @@ class WrapperPersistentFactor
   auto compute_persistent_data() const
   {
     // TODO: rename the timer title of this scope URGENT:
-    PROFILE_SCOPE( factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE( this->factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
     // WARNING: not protected against race condition on the current state X
     // TODO:  dont recompute if factor AND system are linear (syst linear => template argument)
+#if ENABLE_DEBUG_TRACE
+    std::cout << "compute persistent data at creation\n";
+    std::cout << stringify_factor_blockliner(this->factor);
+#endif
     auto [bj,Ajks] = this->factor.compute_Ai_bi_at(this->state_point_view);
     double norm = this->factor.factor_norm_at(this->state_point_view);
 
