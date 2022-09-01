@@ -14,7 +14,7 @@ class SystemJsonify
     {
       Json::Value json_graph;
       json_graph["header"] = jsonify_header(sys.get_system_infos());
-      json_graph["factors"] = jsonify_factors(sys.get_factors_histories());
+      json_graph["factors"] = jsonify_factors(sys.get_all_factors());
       json_graph["marginals"] = jsonify_marginals(sys.get_marginals_histories());
 
       return json_graph;
@@ -48,20 +48,20 @@ class SystemJsonify
       return json_header;
     }
 
-    static Json::Value jsonify_factors(const typename SAM_SYS::factors_histories_t & factors_histories_list)
+    static Json::Value jsonify_factors(const typename SAM_SYS::Wrapped_Factor_t & wrapped_factors)
     {
       // input: a tuple of vectors of factors
 
       return 
         std::apply(
-                  [](const auto & ...map_factor_history)
+                  [](const auto & ...wfactors)
                   {
                       Json::Value json_factors;
                       // jsonify one type after another, append the result in json_factor
-                      (jsonify_map_of_factors(map_factor_history, json_factors) , ...);
+                      (jsonify_map_of_factors(wfactors, json_factors) , ...);
                       return json_factors;
                   }
-                  , factors_histories_list.factors_histories_container
+                  , wrapped_factors
                   );
     }
 
@@ -134,33 +134,37 @@ class SystemJsonify
         }
     }
 
-    template <typename FT_HISTORY_T>
-    static void jsonify_map_of_factors(const FT_HISTORY_T & map_factor_history, Json::Value & json_factors_out)
+    template <typename VECTOR_FACTORS_T>
+    static void jsonify_map_of_factors(const VECTOR_FACTORS_T & wfactors, Json::Value & json_factors_out)
     {
-      using factor_history_t = typename std::remove_const_t<std::decay_t<decltype(map_factor_history)>>::mapped_type;
-      using factor_t = typename factor_history_t::Factor_t;
+      using wrapped_factor_t = typename VECTOR_FACTORS_T::value_type;
+      using factor_t = typename VECTOR_FACTORS_T::value_type::Factor_t;
     
-      for (const auto & pair : map_factor_history)
+      for (const auto & wfactor : wfactors)
       {
-        const auto & factor_h = pair.second;
+        const auto & factor = wfactor.factor;
         Json::Value json_factor;
-        json_factor["factor_id"] = factor_h.factor_id;
-        json_factor["type"]      = factor_history_t::kFactorLabel; // TODO: rename type to label
-        json_factor["measure"]   = factor_history_t::kMeasureName;
+        json_factor["factor_id"] = factor.factor_id;
+        json_factor["type"]      = factor_t::kFactorLabel; // TODO: rename type to label
+        json_factor["measure"]   = factor_t::kMeasureName;
         // vars_id
         Json::Value json_vars_id;
-        for (const auto & key_id : factor_h.vars_id) json_vars_id.append(key_id);
+        for (const auto & key_id : factor.get_array_keys_id()) json_vars_id.append(key_id);
         json_factor["vars_id"] = json_vars_id;
-        json_factor["MAPerror"] = factor_h.norms.back();           // TODO: rename norm
+
+        auto wfactor_data = wfactor.get_current_point_data();
+
+        json_factor["MaP_residual"] = wfactor_data.norm;
         Json::Value json_norms;
-        for (const auto & norm: factor_h.norms) json_norms.append(norm);
-        json_factor["norms"]= json_norms;
+        // TODO: reverse vector, or use iterator
+        for (const auto & norm: wfactor.norm_history) json_norms.append(norm);
+        json_factor["previous_norms"]= json_norms;
         // report the measurement value, component by component
         Json::Value json_measure; // TODO: component name could be given statically so that the string comparaison would occur at compile time (micro opt)
         for (std::size_t i=0;i< factor_t::kMeasureComponentsName.size(); i++ )
         {
           json_measure[factor_t::kMeasureComponentsName[i]] 
-            = factor_t::MeasureMeta_t::get_component(factor_t::kMeasureComponentsName[i],factor_h.z);
+            = factor_t::MeasureMeta_t::get_component(factor_t::kMeasureComponentsName[i],factor.z);
         }
         json_factor["measure"] = json_measure;
         // Append at the json list of factors

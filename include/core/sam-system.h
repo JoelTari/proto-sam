@@ -36,7 +36,7 @@ namespace sam::System
     // declare marginal histories (over the span of iterative linearization) type
     using marginals_histories_container_t = ::sam::Marginal::MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
     // declare factor histories (over the span of iterative linearization) type
-    using factors_histories_t = FactorsHistoriesContainer<FACTOR_T, FACTORS_Ts ...>;
+    // using factors_histories_t = FactorsHistoriesContainer<FACTOR_T, FACTORS_Ts ...>;
 
     using system_info_t = SystemInfo;
 
@@ -370,13 +370,13 @@ namespace sam::System
 
     // FIX: this is temporary, remove after 'persistentfactor' refactor (the *_histories_* wont exist)
     marginals_histories_container_t marginals_histories_container;
-    factors_histories_t factors_histories;
-
-    // FIX: remove
-    factors_histories_t get_factors_histories() const
-    {
-      return this->factors_histories;
-    }
+    // factors_histories_t factors_histories;
+    //
+    // // FIX: remove
+    // factors_histories_t get_factors_histories() const
+    // {
+    //   return this->factors_histories;
+    // }
 
     // FIX: remove
     marginals_histories_container_t get_marginals_histories() const
@@ -440,6 +440,12 @@ namespace sam::System
     {
       return all_marginals_.data_map_tuple;
     }
+    using Wrapped_Factor_t = 
+      std::tuple<
+        std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T>>
+        , std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts>>
+        ...
+        >;
 
     private:
     /**
@@ -453,7 +459,7 @@ namespace sam::System
     marginals_t all_marginals_;
 
     // there's at least one factor, the rest are expanded
-    std::tuple<std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T>>, std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts>>...> all_factors_tuple_;
+    Wrapped_Factor_t all_factors_tuple_;
 
     /**
      * @brief how many different types of factor there are

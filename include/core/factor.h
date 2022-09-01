@@ -1090,116 +1090,116 @@ namespace sam::Factor
 }
 
 
-//------------------------------------------------------------------//
-//            Factor History & Factors History Container            //
-//------------------------------------------------------------------//
-template <typename FT>
-struct FactorHistory
-{
-  using Factor_t                                       = FT;
-  using measure_t                                      = typename FT::measure_t;
-  const std::string                          factor_id = "NaS";
-  static constexpr const char*               kFactorLabel {FT::kFactorLabel};
-  static constexpr const char*               kMeasureName {FT::kMeasureName};
-  const std::array<std::string, FT::kNbKeys> vars_id = {};
-  std::vector<double>                        norms;
-  const measure_t                            z;
-
-  // ctor
-  FactorHistory(const std::string&                          factor_id,
-                const std::array<std::string, FT::kNbKeys>& vars_id,
-                const measure_t&                            z)
-      : factor_id(factor_id)
-      , vars_id(vars_id)
-      , z(z)
-  {
-  }
-
-  // using measure_t = Factor_t::measure_t;
-  // const measure_t z;
-
-  void push_norm_value(double factor_norm) { norms.push_back(factor_norm); }
-};
-
-template <typename FT, typename... FTs>
-struct FactorsHistoriesContainer
-{
-  using factors_histories_t = std::tuple<std::unordered_map<std::string, FactorHistory<FT>>,
-                                         std::unordered_map<std::string, FactorHistory<FTs>>...>;
-
-  // the data : maps of
-  // Its wrapped in a tuple because the
-  factors_histories_t factors_histories_container;
-
-  static constexpr const std::size_t kNbFactorTypes {std::tuple_size_v<factors_histories_t>};
-
-
-  template <typename Q_FT>
-  void insert_new_factor_history(const std::string& factor_id,
-                                 const Q_FT&        factor,
-                                 double             factor_norm)
-  {
-    // static_assert(std::is_same_v<FT,Q_FT> || (std::is_same_v<FTs,Q_FT> || ...)  );
-    // constexpr std::size_t TUPLE_IDX= get_correct_tuple_idx_of_factor_type<Q_FT>();
-    //
-    // auto [it, hasBeenPlaced] = std::get<I>(this->factors_histories_container)
-    //   .try_emplace(factor_id, factor_id, factor.get_array_keys_id(),factor.z);
-    // assert(hasBeenPlaced); // TODO: consider this a consistency check
-    auto it = insert_new_factor_history<Q_FT>(factor_id, factor);
-
-    // push the norm
-    it->second.push_norm_value(factor_norm);
-  }
-
-  // overloard where
-  // TODO: no overload have the one with 3 args call the one with 2 args
-  template <typename Q_FT>
-  auto insert_new_factor_history(const std::string& factor_id, const Q_FT& factor)
-  {
-    static_assert(std::is_same_v<FT, Q_FT> || (std::is_same_v<FTs, Q_FT> || ...));
-    constexpr std::size_t TUPLE_IDX= get_correct_tuple_idx_of_factor_type<Q_FT>();
-
-    auto [it, hasBeenPlaced]
-        = std::get<TUPLE_IDX>(this->factors_histories_container)
-              .try_emplace(factor_id, factor_id, factor.get_array_keys_id(), factor.z);
-    assert(hasBeenPlaced);   // TODO: consider this a consistency check
-    return it;
-  }
-
-  // convenience overload
-  template <typename Q_FT>
-  void insert_new_factor_history(const Q_FT& factor)
-  {
-    this->insert_new_factor_history(factor.factor_id, factor);
-  }
-
-
-  template <typename Q_FT>
-  void push_data_in_factor_history(const std::string& factor_id, double factor_norm)
-  {
-    static_assert(std::is_same_v<FT, Q_FT> || (std::is_same_v<FTs, Q_FT> || ...));
-    constexpr std::size_t TUPLE_IDX= get_correct_tuple_idx_of_factor_type<Q_FT>();
-    // get marginal history ref
-    auto factor_history_it = std::get<TUPLE_IDX>(this->factors_histories_container).find(factor_id);
-    // TODO: assert(marginal_history_it != std::get<I>(this->marginal_history_tuple).end() );
-    // push new norm
-    factor_history_it->second.push_norm_value(factor_norm);
-  }
-
-
-  template <typename Q_FT, std::size_t TUPLE_IDX= 0>
-  static constexpr std::size_t get_correct_tuple_idx_of_factor_type()
-  {
-    static_assert(TUPLE_IDX< kNbFactorTypes);
-    if constexpr (std::is_same_v<
-                      typename std::tuple_element_t<TUPLE_IDX, factors_histories_t>::mapped_type::Factor_t,
-                      Q_FT>)
-    {
-      return TUPLE_IDX;
-    }
-    else { return get_correct_tuple_idx_of_factor_type<Q_FT, TUPLE_IDX+ 1>(); }
-  }
-};
+// //------------------------------------------------------------------//
+// //            Factor History & Factors History Container            //
+// //------------------------------------------------------------------//
+// template <typename FT>
+// struct FactorHistory
+// {
+//   using Factor_t                                       = FT;
+//   using measure_t                                      = typename FT::measure_t;
+//   const std::string                          factor_id = "NaS";
+//   static constexpr const char*               kFactorLabel {FT::kFactorLabel};
+//   static constexpr const char*               kMeasureName {FT::kMeasureName};
+//   const std::array<std::string, FT::kNbKeys> vars_id = {};
+//   std::vector<double>                        norms;
+//   const measure_t                            z;
+//
+//   // ctor
+//   FactorHistory(const std::string&                          factor_id,
+//                 const std::array<std::string, FT::kNbKeys>& vars_id,
+//                 const measure_t&                            z)
+//       : factor_id(factor_id)
+//       , vars_id(vars_id)
+//       , z(z)
+//   {
+//   }
+//
+//   // using measure_t = Factor_t::measure_t;
+//   // const measure_t z;
+//
+//   void push_norm_value(double factor_norm) { norms.push_back(factor_norm); }
+// };
+//
+// template <typename FT, typename... FTs>
+// struct FactorsHistoriesContainer
+// {
+//   using factors_histories_t = std::tuple<std::unordered_map<std::string, FactorHistory<FT>>,
+//                                          std::unordered_map<std::string, FactorHistory<FTs>>...>;
+//
+//   // the data : maps of
+//   // Its wrapped in a tuple because the
+//   factors_histories_t factors_histories_container;
+//
+//   static constexpr const std::size_t kNbFactorTypes {std::tuple_size_v<factors_histories_t>};
+//
+//
+//   template <typename Q_FT>
+//   void insert_new_factor_history(const std::string& factor_id,
+//                                  const Q_FT&        factor,
+//                                  double             factor_norm)
+//   {
+//     // static_assert(std::is_same_v<FT,Q_FT> || (std::is_same_v<FTs,Q_FT> || ...)  );
+//     // constexpr std::size_t TUPLE_IDX= get_correct_tuple_idx_of_factor_type<Q_FT>();
+//     //
+//     // auto [it, hasBeenPlaced] = std::get<I>(this->factors_histories_container)
+//     //   .try_emplace(factor_id, factor_id, factor.get_array_keys_id(),factor.z);
+//     // assert(hasBeenPlaced); // TODO: consider this a consistency check
+//     auto it = insert_new_factor_history<Q_FT>(factor_id, factor);
+//
+//     // push the norm
+//     it->second.push_norm_value(factor_norm);
+//   }
+//
+//   // overloard where
+//   // TODO: no overload have the one with 3 args call the one with 2 args
+//   template <typename Q_FT>
+//   auto insert_new_factor_history(const std::string& factor_id, const Q_FT& factor)
+//   {
+//     static_assert(std::is_same_v<FT, Q_FT> || (std::is_same_v<FTs, Q_FT> || ...));
+//     constexpr std::size_t TUPLE_IDX= get_correct_tuple_idx_of_factor_type<Q_FT>();
+//
+//     auto [it, hasBeenPlaced]
+//         = std::get<TUPLE_IDX>(this->factors_histories_container)
+//               .try_emplace(factor_id, factor_id, factor.get_array_keys_id(), factor.z);
+//     assert(hasBeenPlaced);   // TODO: consider this a consistency check
+//     return it;
+//   }
+//
+//   // convenience overload
+//   template <typename Q_FT>
+//   void insert_new_factor_history(const Q_FT& factor)
+//   {
+//     this->insert_new_factor_history(factor.factor_id, factor);
+//   }
+//
+//
+//   template <typename Q_FT>
+//   void push_data_in_factor_history(const std::string& factor_id, double factor_norm)
+//   {
+//     static_assert(std::is_same_v<FT, Q_FT> || (std::is_same_v<FTs, Q_FT> || ...));
+//     constexpr std::size_t TUPLE_IDX= get_correct_tuple_idx_of_factor_type<Q_FT>();
+//     // get marginal history ref
+//     auto factor_history_it = std::get<TUPLE_IDX>(this->factors_histories_container).find(factor_id);
+//     // TODO: assert(marginal_history_it != std::get<I>(this->marginal_history_tuple).end() );
+//     // push new norm
+//     factor_history_it->second.push_norm_value(factor_norm);
+//   }
+//
+//
+//   template <typename Q_FT, std::size_t TUPLE_IDX= 0>
+//   static constexpr std::size_t get_correct_tuple_idx_of_factor_type()
+//   {
+//     static_assert(TUPLE_IDX< kNbFactorTypes);
+//     if constexpr (std::is_same_v<
+//                       typename std::tuple_element_t<TUPLE_IDX, factors_histories_t>::mapped_type::Factor_t,
+//                       Q_FT>)
+//     {
+//       return TUPLE_IDX;
+//     }
+//     else { return get_correct_tuple_idx_of_factor_type<Q_FT, TUPLE_IDX+ 1>(); }
+//   }
+// };
 
 
 
