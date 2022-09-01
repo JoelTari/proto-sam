@@ -58,29 +58,30 @@ class WrapperPersistentFactor
   {
     // print init state
 #if ENABLE_DEBUG_TRACE
-      if constexpr (!FACTOR_T::isLinear)
-      {
-        // if all the state of the init pointer are VALID pointers
-        if (   
-            std::apply(
-              [&tup_init_points_ptr](auto &&...Xptr )
-              {
-                return ( (Xptr != nullptr) && ...);
-              }
-              ,tup_init_points_ptr
-            )
+    std::cout << stringify_factor_blockliner(this->factor) << '\n';
+    if constexpr (!FACTOR_T::isLinear)
+    {
+      // if all the state of the init pointer are VALID pointers
+      if (   
+          std::apply(
+            [&tup_init_points_ptr](auto &&...Xptr )
+            {
+              return ( (Xptr != nullptr) && ...);
+            }
+            ,tup_init_points_ptr
           )
-        {
-          std::cout << "init point(s) : \n";
-          std::cout << 
-            stringify_composite_state_blockliner<KCC,KCCs...>(tup_init_points_ptr, this->keys_id,4,4);
-        }
-        else
-        {
-          std::cout << "no init point(s) given. \n";
-        }
-        std::cout << "------------ \n ";
+        )
+      {
+        std::cout << "init point(s) : \n";
+        std::cout << 
+        stringify_composite_state_blockliner(tup_init_points_ptr, this->keys_id,4,4);
       }
+      else
+      {
+        std::cout << "no init point(s) given. \n";
+      }
+      std::cout << "------------ \n ";
+    }
 #endif
   }
     
