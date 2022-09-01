@@ -88,9 +88,6 @@ namespace details_sam::Factor{
                        const std::array<std::string, kNbKeys>& keys_id)
               : BaseFactor_t(factor_id, mes_vect, measure_cov, keys_id)
           {
-#if ENABLE_DEBUG_TRACE
-            std::cout << "\t::  Factor " << factor_id << " (MotionModelSE2) created.\n";
-#endif
           }
 
           static constexpr uint8_t kSubsequentKeyConductIdx = 0;

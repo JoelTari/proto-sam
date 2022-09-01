@@ -57,10 +57,8 @@ namespace details_sam::Factor{
                        const std::array<std::string, kNbKeys>& keys_id)
               : BaseFactor_t(factor_id, mes_vect, measure_cov, keys_id)
           {
-#if ENABLE_DEBUG_TRACE
-            std::cout << "\t::  Factor " << factor_id << " (AnchorSE2) created.\n";
-#endif
           }
+
           static_assert( std::is_same_v<measure_t, PriorSE2KeyConduct::Key_t> , "measure and key types should be the same for anchor SE2 factor.");
 
           // init point guesser
