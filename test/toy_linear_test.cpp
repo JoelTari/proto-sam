@@ -64,11 +64,6 @@ TEST(ToyLinearSystem, Square)
       ::sam::Factor::LinearTranslation2d::measure_t {0.0, 1},
       ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.002, 0}, {0, 0.002}},
       {"x3", "x0"});
-  // syst.register_new_factor<::sam::Factor::LinearTranslation2d>(
-  //     "f5",
-  //     ::sam::Factor::LinearTranslation2d::measure_t {-1.01654, -0.8},
-  //     ::sam::Factor::LinearTranslation2d::measure_cov_t {{0.2, 0}, {0, 0.17}},
-  //     {"x0", "x2"});
 
   // std::this_thread::sleep_for(std::chrono::seconds(1));
   std::cout << " Pre Optimised points: \n";
