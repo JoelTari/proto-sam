@@ -166,14 +166,14 @@ TEST(ToySLAMSE2System, Manif)
   // auto all_positionSE2 =
   auto all_positionSE2 = std::get<1>(sys_marginals);
   auto all_positionLandmark = std::get<0>(sys_marginals);
-  EXPECT_KEY_APPROX("x0", expected_x0_init, *all_positionSE2.find("x0")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x1", expected_x1_init, *all_positionSE2.find("x1")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x2", expected_x2_init, *all_positionSE2.find("x2")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b0", expected_b0_init, *all_positionLandmark.find("b0")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b1", expected_b1_init, *all_positionLandmark.find("b1")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b2", expected_b2_init, *all_positionLandmark.find("b2")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b3", expected_b3_init, *all_positionLandmark.find("b3")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b4", expected_b4_init, *all_positionLandmark.find("b4")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x0", expected_x0_init, *all_positionSE2.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x1", expected_x1_init, *all_positionSE2.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x2", expected_x2_init, *all_positionSE2.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b0", expected_b0_init, *all_positionLandmark.find("b0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b1", expected_b1_init, *all_positionLandmark.find("b1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b2", expected_b2_init, *all_positionLandmark.find("b2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b3", expected_b3_init, *all_positionLandmark.find("b3")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b4", expected_b4_init, *all_positionLandmark.find("b4")->second->mean_ptr);
 
   sys.sam_optimise();
 
@@ -191,13 +191,13 @@ TEST(ToySLAMSE2System, Manif)
 
   all_positionSE2 = std::get<1>(sys_marginals);
   all_positionLandmark = std::get<0>(sys_marginals);
-  EXPECT_KEY_APPROX("x0", expected_x0_map, *all_positionSE2.find("x0")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x1", expected_x1_map, *all_positionSE2.find("x1")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x2", expected_x2_map, *all_positionSE2.find("x2")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b0", expected_b0_map, *all_positionLandmark.find("b0")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b1", expected_b1_map, *all_positionLandmark.find("b1")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b2", expected_b2_map, *all_positionLandmark.find("b2")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b3", expected_b3_map, *all_positionLandmark.find("b3")->second->mean_ptr);
-  EXPECT_KEY_APPROX("b4", expected_b4_map, *all_positionLandmark.find("b4")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x0", expected_x0_map, *all_positionSE2.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x1", expected_x1_map, *all_positionSE2.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x2", expected_x2_map, *all_positionSE2.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b0", expected_b0_map, *all_positionLandmark.find("b0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b1", expected_b1_map, *all_positionLandmark.find("b1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b2", expected_b2_map, *all_positionLandmark.find("b2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b3", expected_b3_map, *all_positionLandmark.find("b3")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b4", expected_b4_map, *all_positionLandmark.find("b4")->second->mean_ptr);
 
 }

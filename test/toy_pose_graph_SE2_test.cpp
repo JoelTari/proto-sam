@@ -131,12 +131,12 @@ TEST(ToyPoseGraphSE2System, Square){
 
   auto all_positionSE2 = std::get<0>(sys_marginals);
 
-  EXPECT_KEY_APPROX("x0", expected_x0_init, *all_positionSE2.find("x0")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x1", expected_x1_init, *all_positionSE2.find("x1")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x2", expected_x2_init, *all_positionSE2.find("x2")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x3", expected_x3_init, *all_positionSE2.find("x3")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x4", expected_x4_init, *all_positionSE2.find("x4")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x5", expected_x5_init, *all_positionSE2.find("x5")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x0", expected_x0_init, *all_positionSE2.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x1", expected_x1_init, *all_positionSE2.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x2", expected_x2_init, *all_positionSE2.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x3", expected_x3_init, *all_positionSE2.find("x3")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x4", expected_x4_init, *all_positionSE2.find("x4")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x5", expected_x5_init, *all_positionSE2.find("x5")->second->mean_ptr);
 
   // std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
   // test map points
@@ -154,12 +154,12 @@ TEST(ToyPoseGraphSE2System, Square){
   auto expected_x1_map = ::sam::Key::PoseSE2_t(4.822, -0.4609, 0.4156 );
   auto expected_x0_map = ::sam::Key::PoseSE2_t(8.331e-21, -0.002, 5.627e-27 );
 
-  EXPECT_KEY_APPROX("x0", expected_x0_map, *all_positionSE2.find("x0")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x1", expected_x1_map, *all_positionSE2.find("x1")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x2", expected_x2_map, *all_positionSE2.find("x2")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x3", expected_x3_map, *all_positionSE2.find("x3")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x4", expected_x4_map, *all_positionSE2.find("x4")->second->mean_ptr);
-  EXPECT_KEY_APPROX("x5", expected_x5_map, *all_positionSE2.find("x5")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x0", expected_x0_map, *all_positionSE2.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x1", expected_x1_map, *all_positionSE2.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x2", expected_x2_map, *all_positionSE2.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x3", expected_x3_map, *all_positionSE2.find("x3")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x4", expected_x4_map, *all_positionSE2.find("x4")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>("x5", expected_x5_map, *all_positionSE2.find("x5")->second->mean_ptr);
 
   // std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
 }
