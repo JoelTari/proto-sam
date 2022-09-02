@@ -95,7 +95,7 @@ namespace sam::System
         throw std::runtime_error("Factor id already exists");
 
       // emplace a factor in the correct container
-      place_factor_in_container<0, ::sam::Factor::WrapperPersistentFactor<FT>>(factor_id, mes_vect, measure_cov, keys_id);
+      place_factor_in_container<0, ::sam::Factor::WrapperPersistentFactor<FT,isSystFullyLinear>>(factor_id, mes_vect, measure_cov, keys_id);
     }
 
     /**
@@ -343,7 +343,7 @@ namespace sam::System
                     // push the former norm
                     wfactor.norm_history.push_back(wfactor.get_current_point_data().norm);
                     // enforce new linearisation point on data (Ai)
-                    auto new_data_at_lin_point = wfactor.template compute_persistent_data<isSystFullyLinear>();
+                    auto new_data_at_lin_point = wfactor.compute_persistent_data();
                     wfactor.set_persistent_data(new_data_at_lin_point);
                     accumulated_syst_squared_norm += new_data_at_lin_point.norm;
                   })
@@ -442,8 +442,8 @@ namespace sam::System
     }
     using Wrapped_Factor_t = 
       std::tuple<
-        std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T>>
-        , std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts>>
+        std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T,isSystFullyLinear>>
+        , std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts,isSystFullyLinear>>
         ...
         >;
 

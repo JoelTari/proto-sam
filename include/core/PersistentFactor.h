@@ -54,7 +54,7 @@ std::string stringify_persistent_factor_data(const PersistentFactorData<FACTOR_T
 
  
 // a wrapper for factor, with storing informations about a lin point
-template <typename FACTOR_T>
+template <typename FACTOR_T, bool LinearSystem = false>
 class WrapperPersistentFactor
 {
   public:
@@ -80,7 +80,6 @@ class WrapperPersistentFactor
     // print init state
 #if ENABLE_DEBUG_TRACE
     std::cout << ">>>>>>>>>>\n";
-    std::cout << "New WPF Declared\n";
     std::cout << stringify_factor_blockliner(this->factor) << '\n';
     std::cout << stringify_persistent_factor_data(persistentData_) << '\n';
     // if all the state of the init pointer are VALID pointers
@@ -114,7 +113,6 @@ class WrapperPersistentFactor
   FACTOR_T factor;
 
   // state point has changed (e.g. the system updates it), the data must be updated
-  template <bool LinearSystem=false>
   PersistentFactorData<FACTOR_T> compute_persistent_data() const
   {
     std::string title = this->factor.factor_id + "_compute_persistent_data";
@@ -125,6 +123,7 @@ class WrapperPersistentFactor
 
     if constexpr (LinearSystem)
     {
+      std::cout << "linear \n";
       static_assert(FACTOR_T::isLinear);
       std::tie(bj,Ajks) = this->factor.compute_Ai_bi_linear();
     }
@@ -133,8 +132,9 @@ class WrapperPersistentFactor
       std::tie(bj,Ajks) = this->factor.compute_Ai_bi_at(this->state_point_view);
     }
 #if ENABLE_DEBUG_TRACE
-    std::cout << "bibibibibibib\n";
-    std::cout << bj<<'\n';
+    std::cout << stringify_composite_state_blockliner<typename FACTOR_T::KeysSet_t>::str(this->state_point_view, this->factor.get_array_keys_id(),4,4);
+    // std::cout << bj<<'\n';
+    // std::cout << this->factor.rosie <<'\n';
 #endif
 
     double norm = this->factor.factor_norm_at(this->state_point_view);
