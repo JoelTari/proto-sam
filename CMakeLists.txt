@@ -12,6 +12,8 @@ if ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
   list(APPEND "COMPILED_WITH" "COMPILED_WITH_AGGRESSIVE_OPTIMISATION")
 endif()
 
+# set(CMAKE_CXX_STANDARD 20)
+
 # set(CMAKE_BUILD_TYPE Release) # defer to command line
 # add_definitions("-Wfatal-errors")
 include(CMakePrintHelpers)
@@ -56,10 +58,12 @@ else()
 endif()
 
 # letting the user know the compilation profile wrt low level libraries
-message(STATUS "Low level definitions: ${LOW_LEVEL_DEFINITIONS}")
-message(STATUS "Low level libraries: ${LOW_LEVEL_LIBRARIES}")
-message(STATUS "Compiled with : ${COMPILED_WITH}")
+# ExIGraM : Exact Inference on Graphical Models
+message(STATUS "\n[ExIGraM] Low level definitions :\n\t ${LOW_LEVEL_DEFINITIONS}")
+message(STATUS "\n[ExIGraM] Low level libraries :\n\t ${LOW_LEVEL_LIBRARIES}")
+message(STATUS "\n[ExIGraM] Compiled with the following definitions:\n\t ${COMPILED_WITH}")
 
+add_subdirectory(meta)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
@@ -78,18 +82,25 @@ target_compile_features(marginal_test PUBLIC cxx_std_20)
 target_compile_features(mainstdin PUBLIC cxx_std_20)
 
 include(FetchContent)
-FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG release-1.12.1
-)
-FetchContent_MakeAvailable(googletest)
+
+find_package(GTest REQUIRED)
+
+if (NOT GTest_FOUND)
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG release-1.12.1
+  )
+  FetchContent_MakeAvailable(googletest)
+endif()
 
 enable_testing()
 
+message(STATUS "\n[ExIGraM] TEST LIBRARIES :\n\t ${GTEST_BOTH_LIBRARIES}")
+
 add_executable(aggregate_tests test/factor_test.cpp test/toy_pose_graph_SE2_test.cpp test/toy_slam_SE2.cpp test/toy_linear_test.cpp test/eigen_blas_routine_test.cpp test/system_fail_test.cpp)
-target_include_directories(aggregate_tests PUBLIC include ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS})
-target_link_libraries(aggregate_tests jsoncpp_static ${LOW_LEVEL_LIBRARIES} gtest gmock gtest_main)
+target_include_directories(aggregate_tests PUBLIC include ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
+target_link_libraries(aggregate_tests jsoncpp_static ${LOW_LEVEL_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
 target_compile_definitions(aggregate_tests PUBLIC ENABLE_DEBUG_TRACE=0 ENABLE_TIMER=0 ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
 target_compile_features(aggregate_tests PUBLIC cxx_std_20)
 
