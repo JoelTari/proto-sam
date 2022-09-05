@@ -269,7 +269,7 @@ namespace sam::Factor
     public:
     friend DerivedFactor;
     using MeasureMeta_t = typename KCC::MeasureMeta_t;
-    using measure_t      = typename MeasureMeta_t::measure_t;
+    using measure_t      = typename MeasureMeta_t::measure_t; // FIX: URGENT: rename Measure_t
     static constexpr const char* kFactorLabel {FactorLabel};
     // *** the syntax:  N + (Ns + ...) has no fallback when Ns pack is empty
     static constexpr size_t      kN      = (KCC::kN  + ... + KCCs::kN );  // ***

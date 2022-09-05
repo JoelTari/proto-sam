@@ -3,7 +3,7 @@
 // #include "core/config.h"
 #include "factor/factor.h"
 #include "key-position-2d/key-position-2d.h"
-#include "measure-position-2d/measure-position-2d.h"
+#include "measure-motion-2d/measure-motion-2d.h"
 
 namespace details_sam::Factor {
   namespace Anchor2dImpl{
@@ -21,7 +21,7 @@ namespace details_sam::Factor {
       LinearKeyContextualConduct
           < 
             Key::Position2d
-            ,Measure::Position2d
+            ,Measure::Motion2d
             ,anchor_role_str
             ,&Hik_prior
           >;
@@ -74,6 +74,13 @@ namespace details_sam::Factor {
           }
           // NOTE: it never returns std::nullopt, that's normal in this situation
         }
+
+        // FIX: URGENT: ultra tmp
+        void get_comp()
+        {
+          MeasureMeta_t::get_component("dx",measure_t(0,0) );
+        }
+
       };
     }  // namespace exports
   }  // namespace impl
