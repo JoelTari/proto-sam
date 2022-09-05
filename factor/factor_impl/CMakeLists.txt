@@ -2,7 +2,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
 add_library(factor_anchor2d STATIC src/anchor2d.cpp)
 target_include_directories(factor_anchor2d PUBLIC ${EIGEN3_INCLUDE_DIRS} include)
-target_link_libraries(factor_anchor2d PUBLIC factor key_position_2d ${LOW_LEVEL_LIBRAIRIES}) #FIX: URGENT ultra tmp
+target_link_libraries(factor_anchor2d PUBLIC factor key_position_2d measure_motion_2d ${LOW_LEVEL_LIBRAIRIES}) #FIX: URGENT ultra tmp measure_motion_2d
 target_link_libraries(factor_anchor2d PUBLIC factor meta ${LOW_LEVEL_LIBRAIRIES})
 target_compile_definitions(factor_anchor2d PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
 target_compile_features(factor_anchor2d PUBLIC cxx_std_20) # perhaps unecessary

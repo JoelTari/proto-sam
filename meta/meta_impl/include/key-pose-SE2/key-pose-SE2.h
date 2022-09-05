@@ -68,3 +68,6 @@ namespace details_sam::Meta::Key
 namespace sam::Meta::Key{
   using namespace details_sam::Meta::Key::PoseSE2Impl::exports;
 }
+namespace sam::Key{
+  using PoseSE2_t = typename sam::Meta::Key::PoseSE2_t;
+}

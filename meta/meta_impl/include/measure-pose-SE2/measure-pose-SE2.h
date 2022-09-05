@@ -61,3 +61,6 @@ namespace details_sam::Meta::Measure{
 namespace sam::Meta::Measure{
   using namespace details_sam::Meta::Measure::PoseSE2Impl::exports;
 }
+namespace sam::Measure{
+  using PoseSE2_t = typename sam::Meta::Measure::PoseSE2_t;
+}

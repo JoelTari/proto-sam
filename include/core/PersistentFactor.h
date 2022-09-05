@@ -2,7 +2,7 @@
 
 #include "core/config.h"
 #include <vector>
-#include "core/factor.h"
+// #include "core/factor.h"
 
 namespace sam::Factor
 {
@@ -123,7 +123,7 @@ class WrapperPersistentFactor
 
     if constexpr (LinearSystem)
     {
-      std::cout << "linear \n";
+      // std::cout << "linear \n";
       static_assert(FACTOR_T::isLinear);
       std::tie(bj,Ajks) = this->factor.compute_Ai_bi_linear();
     }

@@ -75,11 +75,11 @@ namespace details_sam::Factor {
           // NOTE: it never returns std::nullopt, that's normal in this situation
         }
 
-        // FIX: URGENT: ultra tmp
-        void get_comp()
-        {
-          MeasureMeta_t::get_component("dx",measure_t(0,0) );
-        }
+        // // FIX: URGENT: ultra tmp
+        // void get_comp()
+        // {
+        //   MeasureMeta_t::get_component("dx",measure_t(0,0) );
+        // }
 
       };
     }  // namespace exports

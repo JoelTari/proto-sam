@@ -3,7 +3,7 @@
 
 #include "core/bookkeeper.h"
 #include "core/marginal.h"
-#include "core/factor.h"
+// #include "core/factor.h"
 #include "core/config.h"
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"

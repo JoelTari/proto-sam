@@ -1,6 +1,6 @@
+#include "anchorSE2/anchorSE2.h"
+#include "relative-matcher-SE2/relative-matcher-SE2.h"
 #include "core/sam-system.h"
-#include "factor_impl/anchorSE2.hpp"
-#include "factor_impl/pose-matcher-SE2.hpp"
 
 #include <gtest/gtest.h>
 #include "test_utils.h"
@@ -27,8 +27,8 @@ TEST(ToyPoseGraphSE2System, Square){
   true_poses.emplace_back(0, 0, -MANIF_PI_4);      // x5
 
   cout << "\n\n Declaring a sam system:\n";
-  auto sys = ::sam::System::SamSystem<::sam::Factor::AnchorSE2, ::sam::Factor::PoseMatcherSE2>(
-      "PoseMatcherSLAM");
+  auto sys = ::sam::System::SamSystem<::sam::Factor::AnchorSE2, ::sam::Factor::RelativeMatcherSE2>(
+      "RelativeMatcherSLAM");
 
   //------------------------------------------------------------------//
   //                        specify the noises                        //
@@ -65,7 +65,7 @@ TEST(ToyPoseGraphSE2System, Square){
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
-    sys.register_new_factor<::sam::Factor::PoseMatcherSE2>("f1", z, cov_z, {"x0", "x1"});
+    sys.register_new_factor<::sam::Factor::RelativeMatcherSE2>("f1", z, cov_z, {"x0", "x1"});
   }
 
   // odometry pose matcher  x1 to x2
@@ -76,7 +76,7 @@ TEST(ToyPoseGraphSE2System, Square){
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
-    sys.register_new_factor<::sam::Factor::PoseMatcherSE2>("f2", z, cov_z, {"x1", "x2"});
+    sys.register_new_factor<::sam::Factor::RelativeMatcherSE2>("f2", z, cov_z, {"x1", "x2"});
   }
   // odometry pose matcher  x2 to x3
   {
@@ -86,7 +86,7 @@ TEST(ToyPoseGraphSE2System, Square){
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
-    sys.register_new_factor<::sam::Factor::PoseMatcherSE2>("f3", z, cov_z, {"x2", "x3"});
+    sys.register_new_factor<::sam::Factor::RelativeMatcherSE2>("f3", z, cov_z, {"x2", "x3"});
   }
   // odometry pose matcher  x3 to x4
   {
@@ -96,7 +96,7 @@ TEST(ToyPoseGraphSE2System, Square){
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
-    sys.register_new_factor<::sam::Factor::PoseMatcherSE2>("f4", z, cov_z, {"x3", "x4"});
+    sys.register_new_factor<::sam::Factor::RelativeMatcherSE2>("f4", z, cov_z, {"x3", "x4"});
   }
   // odometry pose matcher  x4 to x5
   {
@@ -106,7 +106,7 @@ TEST(ToyPoseGraphSE2System, Square){
     auto z     = true_Z + pose_matcher_noise;
     auto cov_z = cov_pose_matcher;
     // registration
-    sys.register_new_factor<::sam::Factor::PoseMatcherSE2>("f5", z, cov_z, {"x4", "x5"});
+    sys.register_new_factor<::sam::Factor::RelativeMatcherSE2>("f5", z, cov_z, {"x4", "x5"});
   }
   // loop closure from x5 to x0
   {
@@ -116,7 +116,7 @@ TEST(ToyPoseGraphSE2System, Square){
     auto z     = true_Z + loop_closure_matcher_noise;
     auto cov_z = cov_loop_closure;
     // registration
-    sys.register_new_factor<::sam::Factor::PoseMatcherSE2>("f6", z, cov_z, {"x0", "x5"});
+    sys.register_new_factor<::sam::Factor::RelativeMatcherSE2>("f6", z, cov_z, {"x0", "x5"});
   }
 
 

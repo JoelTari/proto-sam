@@ -55,3 +55,6 @@ namespace details_sam::Meta::Measure
 namespace sam::Meta::Measure{
   using namespace details_sam::Meta::Measure::Position2dImpl::exports;
 }
+namespace sam::Measure{
+  using Position2d_t = typename sam::Meta::Measure::Position2d_t;
+}

@@ -1,9 +1,9 @@
 #include <iomanip> // std::precision
 #include <iostream>
 #include "core/sam-system.h"
-#include "factor_impl/anchorSE2.hpp"
-#include "factor_impl/cartesian-landmark-obs-SE2.hpp"
-#include "factor_impl/motion-model-SE2.hpp"
+#include "motion-model-SE2/motion-model-SE2.h"
+#include "anchorSE2/anchorSE2.h"
+#include "cartesian-landmark-obs-SE2/cartesian-landmark-obs-SE2.h"
 
 #include <gtest/gtest.h>
 #include "test_utils.h"
@@ -96,57 +96,57 @@ TEST(ToySLAMSE2System, Manif)
   }
   // f1
   {
-    auto z = ::sam::Measure::LinearTranslation2d_t(4.8335, 1.7085);
+    auto z = ::sam::Measure::Motion2d_t(4.8335, 1.7085);
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f1", z , cov_landmark, {"b0","x0"});
   }
   // f2
   {
-    auto z = ::sam::Measure::LinearTranslation2d_t(3.0034,-5.2488);
+    auto z = ::sam::Measure::Motion2d_t(3.0034,-5.2488);
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f2", z , cov_landmark, {"b1","x0"});
   }
   // f3
   {
-    auto z = ::sam::Measure::LinearTranslation2d_t(7.3764, -2.6761);
+    auto z = ::sam::Measure::Motion2d_t(7.3764, -2.6761);
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f3", z , cov_landmark, {"b3","x0"});
   }
   // f4
   {
-    auto z = ::sam::Measure::VelocitySE2(4.0623, 0.0001, -0.2979);
+    auto z = ::sam::Measure::VelocitySE2_t(4.0623, 0.0001, -0.2979);
     sys.register_new_factor<::sam::Factor::MotionModelSE2>("f4", z , cov_control, {"x1","x0"});
   }
   // f5
   {
-    auto z = ::sam::Measure::LinearTranslation2d_t(0.8791, 2.7602);
+    auto z = ::sam::Measure::Motion2d_t(0.8791, 2.7602);
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f5", z , cov_landmark, {"b0","x1"});
   }
   // f6
   {
-    auto z = ::sam::Measure::LinearTranslation2d_t(-6.1805,1.9506);
+    auto z = ::sam::Measure::Motion2d_t(-6.1805,1.9506);
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f6", z , cov_landmark, {"b2","x1"});
   }
   // f7
   {
-    auto z = ::sam::Measure::LinearTranslation2d_t(-3.1906,5.5414);
+    auto z = ::sam::Measure::Motion2d_t(-3.1906,5.5414);
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f7", z , cov_landmark, {"b4","x1"});
   }
   // f8
   {
-    auto z = ::sam::Measure::VelocitySE2(2.6136, -0.0002, -0.6015); // vx.t , vy.t , w.t
+    auto z = ::sam::Measure::VelocitySE2_t(2.6136, -0.0002, -0.6015); // vx.t , vy.t , w.t
     sys.register_new_factor<::sam::Factor::MotionModelSE2>("f8", z , cov_control, {"x2","x1"});
   }
   // f9
   {
-    auto z = ::sam::Measure::LinearTranslation2d_t(0.3480,-3.7441);
+    auto z = ::sam::Measure::Motion2d_t(0.3480,-3.7441);
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f9", z , cov_landmark, {"b1","x2"});
   }
   // f10
   {
-    auto z = ::sam::Measure::LinearTranslation2d_t(-9.2770,-1.3639);
+    auto z = ::sam::Measure::Motion2d_t(-9.2770,-1.3639);
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f10", z , cov_landmark, {"b2","x2"});
   }
   // f11
   {
-    auto z = ::sam::Measure::LinearTranslation2d_t(-8.0425,3.6379);
+    auto z = ::sam::Measure::Motion2d_t(-8.0425,3.6379);
     sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f11", z , cov_landmark, {"b4","x2"});
   }
 

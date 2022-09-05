@@ -67,7 +67,7 @@ add_subdirectory(meta)
 add_subdirectory(factor)
 # bundle of all factors 
 list(APPEND FACTOR_STATIC_LIBRARIES
-  factor_anchor2d factor_anchorSE2 factor_motion_model_SE2 factor_relative_matcher_2d factor_motion_model_SE2 factor_cartesian_landmark_obs_SE2
+  factor_anchor2d factor_anchorSE2 factor_motion_model_SE2 factor_relative_matcher_2d factor_relative_matcher_SE2 factor_motion_model_SE2 factor_cartesian_landmark_obs_SE2
   )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
@@ -79,7 +79,7 @@ target_include_directories(marginal_test PUBLIC include)
 target_include_directories(mainstdin PUBLIC include)
 
 target_compile_definitions(mainstdin PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
-target_link_libraries(mainstdin PUBLIC jsoncpp_static ${LOW_LEVEL_LIBRARIES})
+target_link_libraries(mainstdin PUBLIC jsoncpp_static factor_anchor2d factor_relative_matcher_2d ${LOW_LEVEL_LIBRARIES})
 
 # NOTE: jsoncpp_static vs jsoncpp_lib (.so)  => 200 kB difference on binary size
 

@@ -59,5 +59,8 @@ namespace details_sam::Meta::Measure{
 namespace sam::Meta::Measure{
   using namespace details_sam::Meta::Measure::VelocitySE2Impl::exports;
 }
+namespace sam::Measure{
+  using VelocitySE2_t = typename sam::Meta::Measure::VelocitySE2_t;
+}
 
 

@@ -1,9 +1,7 @@
-#include "core/marginal.h"
+// #include "core/marginal.h"
 #include "core/sam-system.h"
-#include "factor_impl/anchor.hpp"
-#include "factor_impl/key-meta-position.h"
-#include "factor_impl/linear-translation.hpp"
-#include "utils/tuple_patterns.h"
+#include "anchor2d/anchor2d.h"
+#include "relative-matcher-2d/relative-matcher-2d.h"
 
 #include<iostream>
 #include<fstream>
@@ -54,8 +52,8 @@ int main(int argc, char* argv[])
 #endif
 
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());   // TODO: remove those calls
-  using system_t = typename sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::LinearTranslation2d>;
-  auto syst   = sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::LinearTranslation2d>(argId);
+  using system_t = typename sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+  auto syst   = sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>(argId);
   int  fcount = 0;
 
   {
@@ -84,7 +82,7 @@ int main(int argc, char* argv[])
         Eigen::Map<Eigen::Matrix2d> Sigma(cov_vect.data());
         std::stringstream           fid;
         fid << "f" << fcount;
-        syst.register_new_factor<sam::Factor::LinearTranslation2d>(
+        syst.register_new_factor<sam::Factor::RelativeMatcher2d>(
             fid.str(),
             z,
             Sigma,

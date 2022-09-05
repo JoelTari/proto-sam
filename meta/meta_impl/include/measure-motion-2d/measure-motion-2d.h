@@ -61,3 +61,7 @@ namespace sam::Meta::Measure
 {
   using namespace details_sam::Meta::Measure::Motion2dImpl::exports;
 }
+namespace sam::Measure
+{
+  using Motion2d_t = typename sam::Meta::Measure::Motion2d_t;
+}

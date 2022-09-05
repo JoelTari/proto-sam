@@ -64,3 +64,6 @@ namespace sam::Meta::Key{
   using namespace details_sam::Meta::Key::Position2dImpl::exports;
   // exported : Position2d, Position2d_t (the key_t)
 }
+namespace sam::Key{
+  using Position2d_t = typename sam::Meta::Key::Position2d_t;
+}
