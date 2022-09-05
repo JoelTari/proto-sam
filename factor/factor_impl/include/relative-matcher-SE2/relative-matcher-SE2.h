@@ -7,7 +7,7 @@
 
 
 namespace details_sam::Factor{
-  namespace PoseMatcherSE2Impl{
+  namespace RelativeMatcherSE2Impl{
     inline static constexpr const char observer_role_str[] = "observer key";
     inline static constexpr const char sighted_role_str[] = "sighted key";
 
@@ -67,19 +67,19 @@ namespace details_sam::Factor{
 
     namespace exports{
 
-      class PoseMatcherSE2 :
-        public ::sam::Factor::BaseFactor<PoseMatcherSE2, pose_matcher_label, SightedSE2KeyConduct, ObserverSE2KeyConduct>
+      class RelativeMatcherSE2 :
+        public ::sam::Factor::BaseFactor<RelativeMatcherSE2, pose_matcher_label, SightedSE2KeyConduct, ObserverSE2KeyConduct>
       {
 
           public:
-          using BaseFactor_t = BaseFactor<PoseMatcherSE2, pose_matcher_label, SightedSE2KeyConduct, ObserverSE2KeyConduct>;
+          using BaseFactor_t = BaseFactor<RelativeMatcherSE2, pose_matcher_label, SightedSE2KeyConduct, ObserverSE2KeyConduct>;
           friend BaseFactor_t;
           static_assert( factor_process_matrix_t::ColsAtCompileTime 
               == 
               (SightedSE2KeyConduct::key_process_matrix_t::ColsAtCompileTime + ObserverSE2KeyConduct::key_process_matrix_t::ColsAtCompileTime)
               ); // column numbers adds up
 
-          PoseMatcherSE2(const std::string&                                    factor_id,
+          RelativeMatcherSE2(const std::string&                                    factor_id,
                        const measure_t &                                 mes_vect,
                        const measure_cov_t&                                  measure_cov,
                        const std::array<std::string, kNbKeys>& keys_id)
@@ -183,7 +183,7 @@ namespace details_sam::Factor{
 }
 
 namespace sam::Factor{
-  using namespace details_sam::Factor::PoseMatcherSE2Impl::exports;
+  using namespace details_sam::Factor::RelativeMatcherSE2Impl::exports;
 }
 
 

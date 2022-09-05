@@ -5,7 +5,7 @@
 #include "measure-motion-2d/measure-motion-2d.h"
 
 namespace details_sam::Factor{
-  namespace LinearTranslation2dImpl{
+  namespace RelativeMatcher2dImpl{
 
     inline static constexpr const char sighted_var[]           = "sighted";
     inline static constexpr const char observer_var[]           = "observer";
@@ -19,24 +19,24 @@ namespace details_sam::Factor{
     using ObserverKeyConduct = LinearKeyContextualConduct<Key::Position2d , Measure::Motion2d , observer_var, &Hik_Observer>;
     using SightedKeyConduct = LinearKeyContextualConduct<Key::Position2d, Measure::Motion2d, sighted_var, &Hik_Sighted>;
 
-    inline static constexpr const char LinearTranslationLabel[] = "linear translation 2d";
+    inline static constexpr const char RelativeMatcher2dLabel[] = "linear translation 2d";
 
     namespace exports{
 
-      class LinearTranslation2d
+      class RelativeMatcher2d
         : public 
           ::sam::Factor::LinearEuclidianFactor
             <
-              LinearTranslation2d,
-              LinearTranslationLabel,
+              RelativeMatcher2d,
+              RelativeMatcher2dLabel,
               SightedKeyConduct,
               ObserverKeyConduct
             >
       {
         using BaseFactor_t = ::sam::Factor::LinearEuclidianFactor
                               <
-                                LinearTranslation2d,
-                                LinearTranslationLabel,
+                                RelativeMatcher2d,
+                                RelativeMatcher2dLabel,
                                 SightedKeyConduct,
                                 ObserverKeyConduct
                               >;
@@ -48,7 +48,7 @@ namespace details_sam::Factor{
         public:
 
         // ctor
-        LinearTranslation2d(
+        RelativeMatcher2d(
             const std::string&                                               factor_id,
             const measure_t&                                            mes_vect,
             const measure_cov_t&                                             measure_cov,
@@ -118,6 +118,6 @@ namespace details_sam::Factor{
 } // details_sam
 
 namespace sam::Factor{
-  using namespace details_sam::Factor::LinearTranslation2dImpl::exports;
+  using namespace details_sam::Factor::RelativeMatcher2dImpl::exports;
 }
 
