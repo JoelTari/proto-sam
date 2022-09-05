@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------#
 add_library(key_position_2d STATIC src/key-position-2d.cpp)
 target_include_directories(key_position_2d PUBLIC ${EIGEN3_INCLUDE_DIRS} include)
-target_link_libraries(key_position_2d PRIVATE meta PUBLIC ${LOW_LEVEL_LIBRAIRIES})
+target_link_libraries(key_position_2d PUBLIC meta  ${LOW_LEVEL_LIBRAIRIES})
 target_compile_definitions(key_position_2d PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
 target_compile_features(key_position_2d PUBLIC cxx_std_20)
 # # PRIVATE means users (such as factors) will have neither the stuff included nor defined by meta
