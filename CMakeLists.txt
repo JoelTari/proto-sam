@@ -64,6 +64,7 @@ message(STATUS "\n[ExIGraM] Low level libraries :\n\t ${LOW_LEVEL_LIBRARIES}")
 message(STATUS "\n[ExIGraM] Compiled with the following definitions:\n\t ${COMPILED_WITH}")
 
 add_subdirectory(meta)
+list(APPEND META_STATIC_LIBRARIES key_position_2d key_pose_SE2)  # add measures
 add_subdirectory(factor)
 # bundle of all factors 
 list(APPEND FACTOR_STATIC_LIBRARIES
@@ -75,7 +76,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 add_executable(marginal_test test/marginal_test.cpp)
 add_executable(mainstdin main/mainstdin.cpp)
 
-target_include_directories(marginal_test PUBLIC include)
+target_link_libraries(marginal_test PUBLIC ${META_STATIC_LIBRARIES})
+target_include_directories(marginal_test PUBLIC include ${EIGEN_INCLUDE_DIRS})
 target_include_directories(mainstdin PUBLIC include)
 
 target_compile_definitions(mainstdin PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})

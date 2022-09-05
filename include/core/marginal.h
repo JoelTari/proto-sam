@@ -2,12 +2,12 @@
 #define SAM_MARGINAL_H_
 
 #include "core/config.h"
-#include "core/meta.h"
+#include "meta/meta.h"
 #include "utils/tuple_patterns.h"
 
 #include <cmath>
 #include <memory>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <optional>
 #include <string>
 #include <tuple>
