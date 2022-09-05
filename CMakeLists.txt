@@ -65,6 +65,8 @@ message(STATUS "\n[ExIGraM] Compiled with the following definitions:\n\t ${COMPI
 
 add_subdirectory(meta)
 
+add_subdirectory(factor)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
 add_executable(marginal_test test/marginal_test.cpp)
