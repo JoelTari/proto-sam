@@ -1,9 +1,9 @@
-#include "factor_impl/anchor.hpp"
-#include "factor_impl/anchorSE2.hpp"
-#include "factor_impl/cartesian-landmark-obs-SE2.hpp"
-#include "factor_impl/linear-translation.hpp"
-#include "factor_impl/motion-model-SE2.hpp"
-#include "factor_impl/pose-matcher-SE2.hpp"
+#include "anchor2d/anchor2d.h"
+#include "anchorSE2/anchorSE2.h"
+#include "relative-matcher-2d/relative-matcher-2d.h"
+#include "relative-matcher-SE2/relative-matcher-SE2.h"
+#include "cartesian-landmark-obs-SE2/cartesian-landmark-obs-SE2.h"
+#include "motion-model-SE2/motion-model-SE2.h"
 
 #include <gtest/gtest.h>
 
@@ -50,9 +50,9 @@ TEST(Factors, Anchor2d)
 //------------------------------------------------------------------//
 //                      Linear Translation 2d                       //
 //------------------------------------------------------------------//
-TEST(Factors, LinearTranslation2d)
+TEST(Factors, Relative_matcher_2d)
 {
-  using TestedFactor_t = ::sam::Factor::LinearTranslation2d;
+  using TestedFactor_t = ::sam::Factor::RelativeMatcher2d;
 
   TestedFactor_t::measure_t z   = {-1.0, 1.0};
   auto                      cov = TestedFactor_t::measure_cov_t::Identity() / 2;
@@ -181,9 +181,9 @@ TEST(Factors, MotionModelSE2)
   F.get_array_keys_id();
 }
 
-TEST(Factors, PoseMatcherSE2)
+TEST(Factors, RelativeMatcherSE2)
 {
-  using TestedFactor_t = ::sam::Factor::PoseMatcherSE2;
+  using TestedFactor_t = ::sam::Factor::RelativeMatcherSE2;
 
   auto z   = TestedFactor_t::measure_t(-.5, -.5, -3.14159 / 4);   // SE2(x,y,t)
   auto cov = TestedFactor_t::measure_cov_t::Identity() / 2;

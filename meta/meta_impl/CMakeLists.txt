@@ -57,18 +57,3 @@ target_include_directories(measure_velocity_SE2 PUBLIC ${EIGEN3_INCLUDE_DIRS} ${
 target_link_libraries(measure_velocity_SE2 PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
 target_compile_definitions(measure_velocity_SE2 PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
 target_compile_features(measure_velocity_SE2 PUBLIC cxx_std_20)
-
-# meta of all bundle
-add_library(all_keys_and_metas STATIC
-         src/key-pose-SE2.cpp
-         src/key-position-2d.cpp
-         src/measure-motion-2d.cpp
-         src/measure-motion-SE2.cpp
-         src/measure-pose-SE2.cpp
-         src/measure-position-2d.cpp
-         src/measure-velocity-SE2.cpp
-)
-target_include_directories(all_keys_and_metas PUBLIC ${EIGEN3_INCLUDE_DIRS} ${manif_INCLUDE_DIRS} include)
-target_link_libraries(all_keys_and_metas PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
-target_compile_definitions(all_keys_and_metas PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
-target_compile_features(all_keys_and_metas PUBLIC cxx_std_20)

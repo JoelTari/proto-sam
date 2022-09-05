@@ -64,8 +64,11 @@ message(STATUS "\n[ExIGraM] Low level libraries :\n\t ${LOW_LEVEL_LIBRARIES}")
 message(STATUS "\n[ExIGraM] Compiled with the following definitions:\n\t ${COMPILED_WITH}")
 
 add_subdirectory(meta)
-
 add_subdirectory(factor)
+# bundle of all factors 
+list(APPEND FACTOR_STATIC_LIBRARIES
+  factor_anchor2d factor_anchorSE2 factor_motion_model_SE2 factor_relative_matcher_2d factor_motion_model_SE2 factor_cartesian_landmark_obs_SE2
+  )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
@@ -102,7 +105,7 @@ message(STATUS "\n[ExIGraM] TEST LIBRARIES :\n\t ${GTEST_BOTH_LIBRARIES}")
 
 add_executable(aggregate_tests test/factor_test.cpp test/toy_pose_graph_SE2_test.cpp test/toy_slam_SE2.cpp test/toy_linear_test.cpp test/eigen_blas_routine_test.cpp test/system_fail_test.cpp)
 target_include_directories(aggregate_tests PUBLIC include ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
-target_link_libraries(aggregate_tests jsoncpp_static ${LOW_LEVEL_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(aggregate_tests jsoncpp_static ${FACTOR_STATIC_LIBRARIES} ${LOW_LEVEL_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
 target_compile_definitions(aggregate_tests PUBLIC ENABLE_DEBUG_TRACE=0 ENABLE_TIMER=0 ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
 target_compile_features(aggregate_tests PUBLIC cxx_std_20)
 
