@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include "meta/meta.h"
+#include "meta/meta_interface.h"
 
 namespace details_sam::Meta::Measure
 {

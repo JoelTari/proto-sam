@@ -1,5 +1,4 @@
-#ifndef SAM_META_H_
-#define SAM_META_H_
+#pragma once
 
 #include <array>
 // #include <cstring>
@@ -167,5 +166,3 @@ namespace sam::Meta::Measure
     }
   };
 }   // namespace
-
-#endif

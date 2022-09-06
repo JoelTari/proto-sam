@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <manif/manif.h>
 
-#include "meta/meta.h"
+#include "meta/meta_interface.h"
 
 namespace details_sam::Meta::Measure{
   namespace VelocitySE2Impl{

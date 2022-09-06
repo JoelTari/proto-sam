@@ -1,6 +1,6 @@
 #pragma once
 
-#include "meta/meta.h"
+#include "meta/meta_interface.h"
 
 #include <Eigen/Dense>
 #include <stdexcept>
