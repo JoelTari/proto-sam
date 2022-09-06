@@ -2,20 +2,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 #--------------------------------------------------------------------#
 #                      key meta implementations                      #
 #--------------------------------------------------------------------#
-add_library(key_position_2d STATIC src/key-position-2d.cpp)
-target_include_directories(key_position_2d PUBLIC ${EIGEN3_INCLUDE_DIRS} include)
-target_link_libraries(key_position_2d PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
-target_compile_definitions(key_position_2d PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
-target_compile_features(key_position_2d PUBLIC cxx_std_20)
+add_library(key_spatial_2d STATIC src/key-spatial-2d.cpp)
+target_include_directories(key_spatial_2d PUBLIC ${EIGEN3_INCLUDE_DIRS} include)
+target_link_libraries(key_spatial_2d PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
+target_compile_definitions(key_spatial_2d PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
+target_compile_features(key_spatial_2d PUBLIC cxx_std_20)
 # # PRIVATE means users (such as factors) will have neither the stuff included nor defined by meta
 
 
 # pose SE2
-add_library(key_pose_SE2 STATIC src/key-pose-SE2.cpp)
-target_include_directories(key_pose_SE2 PUBLIC ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} include)
-target_link_libraries(key_pose_SE2 PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
-target_compile_definitions(key_pose_SE2 PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
-target_compile_features(key_pose_SE2 PUBLIC cxx_std_20)
+add_library(key_spatial_SE2 STATIC src/key-spatial-SE2.cpp)
+target_include_directories(key_spatial_SE2 PUBLIC ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} include)
+target_link_libraries(key_spatial_SE2 PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
+target_compile_definitions(key_spatial_SE2 PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
+target_compile_features(key_spatial_SE2 PUBLIC cxx_std_20)
 
 
 
@@ -24,18 +24,18 @@ target_compile_features(key_pose_SE2 PUBLIC cxx_std_20)
 #--------------------------------------------------------------------#
 
 # pose SE2 (used for anchorSE2 etc..)
-add_library(measure_pose_SE2 STATIC src/measure-pose-SE2.cpp)
-target_include_directories(measure_pose_SE2 PUBLIC ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} include)
-target_link_libraries(measure_pose_SE2 PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
-target_compile_definitions(measure_pose_SE2 PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
-target_compile_features(measure_pose_SE2 PUBLIC cxx_std_20)
+add_library(measure_location_SE2 STATIC src/measure-location-SE2.cpp)
+target_include_directories(measure_location_SE2 PUBLIC ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} include)
+target_link_libraries(measure_location_SE2 PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
+target_compile_definitions(measure_location_SE2 PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
+target_compile_features(measure_location_SE2 PUBLIC cxx_std_20)
 
 # position 2d (used for anchor2d etc..)
-add_library(measure_position_2d STATIC src/measure-position-2d.cpp)
-target_include_directories(measure_position_2d PUBLIC ${EIGEN3_INCLUDE_DIRS} include)
-target_link_libraries(measure_position_2d PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
-target_compile_definitions(measure_position_2d PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
-target_compile_features(measure_position_2d PUBLIC cxx_std_20)
+add_library(measure_location_2d STATIC src/measure-location-2d.cpp)
+target_include_directories(measure_location_2d PUBLIC ${EIGEN3_INCLUDE_DIRS} include)
+target_link_libraries(measure_location_2d PUBLIC meta ${LOW_LEVEL_LIBRAIRIES})
+target_compile_definitions(measure_location_2d PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
+target_compile_features(measure_location_2d PUBLIC cxx_std_20)
 
 # rigid body motion 2d (used for 2d odometry etc..)
 add_library(measure_motion_2d STATIC src/measure-motion-2d.cpp)
