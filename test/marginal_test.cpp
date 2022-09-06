@@ -1,5 +1,5 @@
 #include "key-spatial-2d/key-spatial-2d.h"
-#include "core/marginal.h"
+#include "marginal/marginal.h"
 #include <iostream>
 
 int main (int argc, char *argv[])

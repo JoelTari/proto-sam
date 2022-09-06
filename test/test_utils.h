@@ -1,5 +1,4 @@
-#ifndef SAM_TEST_UTILS_H_
-#define SAM_TEST_UTILS_H_
+#pragma once
 
 #include <gtest/gtest.h>
 #include <random>
@@ -71,7 +70,3 @@ void EXPECT_KEY_APPROX(const std::string & id, const typename Key_Meta::key_t & 
     std::cerr << "Actual key Value "<< id << ": " << Key_Meta::stringify_key_oneliner(val) << '\n'; 
   }
 }
-
-
-
-#endif

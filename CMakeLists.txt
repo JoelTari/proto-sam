@@ -74,13 +74,7 @@ add_subdirectory(system)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
-add_executable(marginal_test test/marginal_test.cpp)
 
-target_link_libraries(marginal_test PUBLIC ${META_STATIC_LIBRARIES})
-target_include_directories(marginal_test PUBLIC include ${EIGEN_INCLUDE_DIRS})
-# target_include_directories(mainstdin PUBLIC include)
-
-# target_compile_definitions(mainstdin PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
 add_executable(mainstdin main/mainstdin.cpp)
 target_link_libraries(mainstdin 
   PUBLIC 
@@ -92,8 +86,17 @@ target_link_libraries(mainstdin
 
 # NOTE: jsoncpp_static vs jsoncpp_lib (.so)  => 200 kB difference on binary size
 
-target_compile_features(marginal_test PUBLIC cxx_std_20)
 target_compile_features(mainstdin PUBLIC cxx_std_20)
+
+
+#--------------------------------------------------------------------#
+#                                test                                #
+#--------------------------------------------------------------------#
+# test: move in test subdirectory with dedicated cmake
+add_executable(marginal_test test/marginal_test.cpp)
+target_link_libraries(marginal_test PUBLIC sam_system_interface ${META_STATIC_LIBRARIES})
+target_include_directories(marginal_test PUBLIC ${EIGEN_INCLUDE_DIRS})
+target_compile_features(marginal_test PUBLIC cxx_std_20)
 
 include(FetchContent)
 
@@ -112,9 +115,15 @@ enable_testing()
 
 message(STATUS "\n[ExIGraM] TEST LIBRARIES :\n\t ${GTEST_BOTH_LIBRARIES}")
 
-add_executable(aggregate_tests test/factor_test.cpp test/toy_pose_graph_SE2_test.cpp test/toy_slam_SE2.cpp test/toy_linear_test.cpp test/eigen_blas_routine_test.cpp test/system_fail_test.cpp)
-target_include_directories(aggregate_tests PUBLIC include ${manif_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
-target_link_libraries(aggregate_tests jsoncpp_static ${FACTOR_STATIC_LIBRARIES} ${LOW_LEVEL_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
+add_executable(aggregate_tests 
+  test/factor_test.cpp 
+  test/toy_pose_graph_SE2_test.cpp 
+  test/toy_slam_SE2.cpp 
+  test/toy_linear_test.cpp 
+  test/eigen_blas_routine_test.cpp 
+  test/system_fail_test.cpp)
+target_link_libraries(aggregate_tests sam_system_interface ${FACTOR_STATIC_LIBRARIES} ${LOW_LEVEL_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
+target_include_directories(aggregate_tests PUBLIC ${GTEST_INCLUDE_DIRS})
 target_compile_definitions(aggregate_tests PUBLIC ENABLE_DEBUG_TRACE=0 ENABLE_TIMER=0 ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
 target_compile_features(aggregate_tests PUBLIC cxx_std_20)
 

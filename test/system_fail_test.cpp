@@ -5,7 +5,8 @@
 #include "relative-matcher-SE2/relative-matcher-SE2.h"
 #include "motion-model-SE2/motion-model-SE2.h"
 #include "cartesian-landmark-obs-SE2/cartesian-landmark-obs-SE2.h"
-#include "core/sam-system.h"
+
+#include "system/sam-system.h"
 
 #include <gtest/gtest.h>
 #include "test_utils.h"

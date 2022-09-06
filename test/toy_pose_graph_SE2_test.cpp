@@ -1,6 +1,6 @@
 #include "anchorSE2/anchorSE2.h"
 #include "relative-matcher-SE2/relative-matcher-SE2.h"
-#include "core/sam-system.h"
+#include "system/sam-system.h"
 
 #include <gtest/gtest.h>
 #include "test_utils.h"
