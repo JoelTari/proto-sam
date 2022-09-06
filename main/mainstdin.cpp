@@ -1,7 +1,7 @@
 // #include "core/marginal.h"
-#include "core/sam-system.h"
 #include "anchor2d/anchor2d.h"
 #include "relative-matcher-2d/relative-matcher-2d.h"
+#include "system/sam-system.h"
 
 #include<iostream>
 #include<fstream>

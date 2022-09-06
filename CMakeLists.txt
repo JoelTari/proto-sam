@@ -70,18 +70,25 @@ add_subdirectory(factor)
 list(APPEND FACTOR_STATIC_LIBRARIES
   factor_anchor2d factor_anchorSE2 factor_motion_model_SE2 factor_relative_matcher_2d factor_relative_matcher_SE2 factor_motion_model_SE2 factor_cartesian_landmark_obs_SE2
   )
+add_subdirectory(system)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
 add_executable(marginal_test test/marginal_test.cpp)
-add_executable(mainstdin main/mainstdin.cpp)
 
 target_link_libraries(marginal_test PUBLIC ${META_STATIC_LIBRARIES})
 target_include_directories(marginal_test PUBLIC include ${EIGEN_INCLUDE_DIRS})
-target_include_directories(mainstdin PUBLIC include)
+# target_include_directories(mainstdin PUBLIC include)
 
-target_compile_definitions(mainstdin PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
-target_link_libraries(mainstdin PUBLIC jsoncpp_static factor_anchor2d factor_relative_matcher_2d ${LOW_LEVEL_LIBRARIES})
+# target_compile_definitions(mainstdin PUBLIC ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
+add_executable(mainstdin main/mainstdin.cpp)
+target_link_libraries(mainstdin 
+  PUBLIC 
+  jsoncpp_static 
+  factor_anchor2d 
+  factor_relative_matcher_2d 
+  sam_system_interface
+  ${LOW_LEVEL_LIBRARIES})
 
 # NOTE: jsoncpp_static vs jsoncpp_lib (.so)  => 200 kB difference on binary size
 
