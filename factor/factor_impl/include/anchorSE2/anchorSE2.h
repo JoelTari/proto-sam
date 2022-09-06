@@ -2,8 +2,8 @@
 
 // #include "core/config.h"
 #include "factor/factor.h"
-#include "key-pose-SE2/key-pose-SE2.h"
-#include "measure-pose-SE2/measure-pose-SE2.h"
+#include "key-spatial-SE2/key-spatial-SE2.h"
+#include "measure-location-SE2/measure-location-SE2.h"
 
 
 
@@ -16,10 +16,10 @@ namespace details_sam::Factor{
 
     struct PriorSE2KeyConduct 
       : KeyContextualConduct
-        <PriorSE2KeyConduct,Key::PoseSE2,Measure::PoseSE2,anchor_role_str>
+        <PriorSE2KeyConduct,Key::SpatialSE2,Measure::LocationSE2,anchor_role_str>
     {
       using BaseKeyCC_t = KeyContextualConduct
-        <PriorSE2KeyConduct,Key::PoseSE2,Measure::PoseSE2,anchor_role_str>;
+        <PriorSE2KeyConduct,Key::SpatialSE2,Measure::LocationSE2,anchor_role_str>;
       // ctor inherited
       using BaseKeyCC_t::BaseKeyCC_t;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;

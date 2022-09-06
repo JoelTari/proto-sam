@@ -86,20 +86,20 @@ TEST(ToyLinearSystem, Square)
 
   // test: print all marginals, register values, hardcode them, and google test them
   // after optim
-  auto expected_x3map =  ::sam::Key::Position2d_t(  -4.757e-05,  1 );
-  auto expected_x2map = ::sam::Key::Position2d_t( 0.9975,  0.9513 );
-  auto expected_x1map = ::sam::Key::Position2d_t(  0.969,  -0.161 );
-  auto expected_x0map = ::sam::Key::Position2d_t(  -4.034e-18,  1.862e-16 );
+  auto expected_x3map =  ::sam::Key::Spatial2d_t(  -4.757e-05,  1 );
+  auto expected_x2map = ::sam::Key::Spatial2d_t( 0.9975,  0.9513 );
+  auto expected_x1map = ::sam::Key::Spatial2d_t(  0.969,  -0.161 );
+  auto expected_x0map = ::sam::Key::Spatial2d_t(  -4.034e-18,  1.862e-16 );
 
   // sys_marginals is a 1-uple, let's simplify
   auto all_position2d = std::get<0>(sys_marginals);
 
 
-  std::cout << ::sam::Meta::Key::Position2d::stringify_key_oneliner( *all_position2d.find("x3")->second->mean_ptr ) << '\n';
+  std::cout << ::sam::Meta::Key::Spatial2d::stringify_key_oneliner( *all_position2d.find("x3")->second->mean_ptr ) << '\n';
 
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("x0", expected_x0map, *all_position2d.find("x0")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("x1", expected_x1map, *all_position2d.find("x1")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("x2", expected_x2map, *all_position2d.find("x2")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("x3", expected_x3map, *all_position2d.find("x3")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x0", expected_x0map, *all_position2d.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x1", expected_x1map, *all_position2d.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x2", expected_x2map, *all_position2d.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x3", expected_x3map, *all_position2d.find("x3")->second->mean_ptr);
 
 }

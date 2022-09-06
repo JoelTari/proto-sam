@@ -37,9 +37,9 @@ TEST(ToySLAMSE2System, Manif)
   //------------------------------------------------------------------//
   //                    Ground truth for landmarks                    //
   //------------------------------------------------------------------//
-  std::vector< ::sam::Key::Position2d_t > landmarks_simu;
+  std::vector< ::sam::Key::Spatial2d_t > landmarks_simu;
   {
-    ::sam::Key::Position2d_t b0, b1, b2, b3, b4;
+    ::sam::Key::Spatial2d_t b0, b1, b2, b3, b4;
     b0 << 3.0, 0.0;
     b1 << 2.0, -1.0;
     b2 << 2.0, 1.0;
@@ -56,9 +56,9 @@ TEST(ToySLAMSE2System, Manif)
   //                      Ground truth for poses                      //
   //------------------------------------------------------------------//
   int                      NUMPOSES = 3;
-  std::vector<::sam::Key::PoseSE2_t> true_poses;
+  std::vector<::sam::Key::SpatialSE2_t> true_poses;
   // applied velocities per time step : vx = 3, omega = -0.4
-  ::sam::Meta::Key::PoseSE2::tangent_space_t       u_nom;
+  ::sam::Meta::Key::SpatialSE2::tangent_space_t       u_nom;
   u_nom << 3, 0, -.4;
   // u_nom     << 0.1, 0.0, 0.05;
 
@@ -154,50 +154,50 @@ TEST(ToySLAMSE2System, Manif)
   std::cout << "Before Optimisation:\n";
   auto sys_marginals = sys.get_marginals();
   std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
-  auto expected_b4_init = ::sam::Key::Position2d_t(15.05, 4.589 );
-  auto expected_b2_init = ::sam::Key::Position2d_t(10.38, 4.332 );
-  auto expected_b3_init = ::sam::Key::Position2d_t(15.05, -5.006 );
-  auto expected_b1_init = ::sam::Key::Position2d_t(9.977, -5.047 );
-  auto expected_b0_init = ::sam::Key::Position2d_t(15.04, 0.06285 );
-  auto expected_x2_init = ::sam::Key::PoseSE2_t(14.28, -3.841, -1.423 );
-  auto expected_x1_init = ::sam::Key::PoseSE2_t(13.17, -1.521, -0.8215 );
-  auto expected_x0_init = ::sam::Key::PoseSE2_t(10, 1, -0.5236 );
+  auto expected_b4_init = ::sam::Key::Spatial2d_t(15.05, 4.589 );
+  auto expected_b2_init = ::sam::Key::Spatial2d_t(10.38, 4.332 );
+  auto expected_b3_init = ::sam::Key::Spatial2d_t(15.05, -5.006 );
+  auto expected_b1_init = ::sam::Key::Spatial2d_t(9.977, -5.047 );
+  auto expected_b0_init = ::sam::Key::Spatial2d_t(15.04, 0.06285 );
+  auto expected_x2_init = ::sam::Key::SpatialSE2_t(14.28, -3.841, -1.423 );
+  auto expected_x1_init = ::sam::Key::SpatialSE2_t(13.17, -1.521, -0.8215 );
+  auto expected_x0_init = ::sam::Key::SpatialSE2_t(10, 1, -0.5236 );
 
   // auto all_positionSE2 =
   auto all_positionSE2 = std::get<1>(sys_marginals);
   auto all_positionLandmark = std::get<0>(sys_marginals);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x0", expected_x0_init, *all_positionSE2.find("x0")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x1", expected_x1_init, *all_positionSE2.find("x1")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x2", expected_x2_init, *all_positionSE2.find("x2")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b0", expected_b0_init, *all_positionLandmark.find("b0")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b1", expected_b1_init, *all_positionLandmark.find("b1")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b2", expected_b2_init, *all_positionLandmark.find("b2")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b3", expected_b3_init, *all_positionLandmark.find("b3")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b4", expected_b4_init, *all_positionLandmark.find("b4")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>   ("x0", expected_x0_init, *all_positionSE2.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>   ("x1", expected_x1_init, *all_positionSE2.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>   ("x2", expected_x2_init, *all_positionSE2.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b0", expected_b0_init, *all_positionLandmark.find("b0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b1", expected_b1_init, *all_positionLandmark.find("b1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b2", expected_b2_init, *all_positionLandmark.find("b2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b3", expected_b3_init, *all_positionLandmark.find("b3")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b4", expected_b4_init, *all_positionLandmark.find("b4")->second->mean_ptr);
 
   sys.sam_optimise();
 
   // get Keys after optimisation
   std::cout << "After Optimisation:\n";
   sys_marginals = sys.get_marginals();
-  auto expected_b4_map = ::sam::Key::Position2d_t(14.89, 4.983 );
-  auto expected_b2_map = ::sam::Key::Position2d_t(9.981, 5.01 );
-  auto expected_b3_map = ::sam::Key::Position2d_t(15.05, -5.006 );
-  auto expected_b1_map = ::sam::Key::Position2d_t(10.04, -5 );
-  auto expected_b0_map = ::sam::Key::Position2d_t(15.04, 0.02159 );
-  auto expected_x2_map = ::sam::Key::PoseSE2_t(13.62, -3.645, -1.308 );
-  auto expected_x1_map = ::sam::Key::PoseSE2_t(12.32, -1.019, -0.9104 );
-  auto expected_x0_map = ::sam::Key::PoseSE2_t(10, 1, -0.5236 );
+  auto expected_b4_map = ::sam::Key::Spatial2d_t(14.89, 4.983 );
+  auto expected_b2_map = ::sam::Key::Spatial2d_t(9.981, 5.01 );
+  auto expected_b3_map = ::sam::Key::Spatial2d_t(15.05, -5.006 );
+  auto expected_b1_map = ::sam::Key::Spatial2d_t(10.04, -5 );
+  auto expected_b0_map = ::sam::Key::Spatial2d_t(15.04, 0.02159 );
+  auto expected_x2_map = ::sam::Key::SpatialSE2_t(13.62, -3.645, -1.308 );
+  auto expected_x1_map = ::sam::Key::SpatialSE2_t(12.32, -1.019, -0.9104 );
+  auto expected_x0_map = ::sam::Key::SpatialSE2_t(10, 1, -0.5236 );
 
   all_positionSE2 = std::get<1>(sys_marginals);
   all_positionLandmark = std::get<0>(sys_marginals);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x0", expected_x0_map, *all_positionSE2.find("x0")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x1", expected_x1_map, *all_positionSE2.find("x1")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::PoseSE2>   ("x2", expected_x2_map, *all_positionSE2.find("x2")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b0", expected_b0_map, *all_positionLandmark.find("b0")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b1", expected_b1_map, *all_positionLandmark.find("b1")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b2", expected_b2_map, *all_positionLandmark.find("b2")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b3", expected_b3_map, *all_positionLandmark.find("b3")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Position2d>("b4", expected_b4_map, *all_positionLandmark.find("b4")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>   ("x0", expected_x0_map, *all_positionSE2.find("x0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>   ("x1", expected_x1_map, *all_positionSE2.find("x1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>   ("x2", expected_x2_map, *all_positionSE2.find("x2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b0", expected_b0_map, *all_positionLandmark.find("b0")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b1", expected_b1_map, *all_positionLandmark.find("b1")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b2", expected_b2_map, *all_positionLandmark.find("b2")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b3", expected_b3_map, *all_positionLandmark.find("b3")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("b4", expected_b4_map, *all_positionLandmark.find("b4")->second->mean_ptr);
 
 }

@@ -1,13 +1,13 @@
-#include "key-position-2d/key-position-2d.h"
+#include "key-spatial-2d/key-spatial-2d.h"
 #include "core/marginal.h"
 #include <iostream>
 
 int main (int argc, char *argv[])
 {
-    sam::Marginal::MarginalsContainer<std::tuple<sam::Meta::Key::Position2d>> container;  
+    sam::Marginal::MarginalsContainer<std::tuple<sam::Meta::Key::Spatial2d>> container;  
     // without tuple
-    sam::Marginal::MarginalsContainer<sam::Meta::Key::Position2d> container2;  
-    using MarginalPosition_t = sam::Marginal::BaseMarginal<sam::Meta::Key::Position2d>;
+    sam::Marginal::MarginalsContainer<sam::Meta::Key::Spatial2d> container2;  
+    using MarginalPosition_t = sam::Marginal::BaseMarginal<sam::Meta::Key::Spatial2d>;
     
     // UniqueKeyConduct::measure_cov_t rho({{1,0},{0,1}});
     // auto adfs = UniqueKeyConduct_t({ "test"}, Eigen::Matrix2d{{1,0},{0,1}} ) ;
@@ -26,7 +26,7 @@ int main (int argc, char *argv[])
 
     container.insert_in_marginal_container<MarginalPosition_t>("k",marg_ptr);
 
-    auto opt = container.find_mean_ptr<sam::Meta::Key::Position2d>("k");
+    auto opt = container.find_mean_ptr<sam::Meta::Key::Spatial2d>("k");
     std::cout << "has value? : " << opt.has_value();
     if (opt.has_value())
       std::cout << " value (mean) of k is :\n" << *opt.value() << '\n';
@@ -36,3 +36,5 @@ int main (int argc, char *argv[])
 
     return 0;
 }
+
+

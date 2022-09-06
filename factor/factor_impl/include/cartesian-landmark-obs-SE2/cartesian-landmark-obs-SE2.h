@@ -3,8 +3,8 @@
 
 // #include "core/config.h"
 #include "factor/factor.h"
-#include "key-position-2d/key-position-2d.h"
-#include "key-pose-SE2/key-pose-SE2.h"
+#include "key-spatial-2d/key-spatial-2d.h"
+#include "key-spatial-SE2/key-spatial-SE2.h"
 #include "measure-motion-2d/measure-motion-2d.h"
 
 namespace details_sam::Factor{
@@ -17,10 +17,10 @@ namespace details_sam::Factor{
 
     struct SightedLandmarkKeyConduct 
       : KeyContextualConduct
-        <SightedLandmarkKeyConduct,Key::Position2d,Measure::Motion2d,sighted_role_str>
+        <SightedLandmarkKeyConduct,Key::Spatial2d,Measure::Motion2d,sighted_role_str>
     {
       using BaseKeyCC_t = KeyContextualConduct
-        <SightedLandmarkKeyConduct,Key::Position2d,Measure::Motion2d,sighted_role_str>;
+        <SightedLandmarkKeyConduct,Key::Spatial2d,Measure::Motion2d,sighted_role_str>;
       using BaseKeyCC_t::BaseKeyCC_t;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;
 
@@ -36,10 +36,10 @@ namespace details_sam::Factor{
 
     struct ObserverSE2KeyConduct 
       : KeyContextualConduct
-        <ObserverSE2KeyConduct,Key::PoseSE2,Measure::Motion2d,observer_role_str>
+        <ObserverSE2KeyConduct,Key::SpatialSE2,Measure::Motion2d,observer_role_str>
     {
       using BaseKeyCC_t = KeyContextualConduct
-        <ObserverSE2KeyConduct,Key::PoseSE2,Measure::Motion2d,observer_role_str>;
+        <ObserverSE2KeyConduct,Key::SpatialSE2,Measure::Motion2d,observer_role_str>;
       using BaseKeyCC_t::BaseKeyCC_t;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;
 

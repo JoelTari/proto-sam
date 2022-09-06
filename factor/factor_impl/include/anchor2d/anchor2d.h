@@ -2,7 +2,7 @@
 
 // #include "core/config.h"
 #include "factor/factor.h"
-#include "key-position-2d/key-position-2d.h"
+#include "key-spatial-2d/key-spatial-2d.h"
 #include "measure-motion-2d/measure-motion-2d.h"
 
 namespace details_sam::Factor {
@@ -20,7 +20,7 @@ namespace details_sam::Factor {
     using PriorKeyConduct = 
       LinearKeyContextualConduct
           < 
-            Key::Position2d
+            Key::Spatial2d
             ,Measure::Motion2d
             ,anchor_role_str
             ,&Hik_prior

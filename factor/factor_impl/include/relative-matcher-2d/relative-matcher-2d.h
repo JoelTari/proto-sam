@@ -1,7 +1,7 @@
 #pragma once
 
 #include "factor/factor.h"
-#include "key-position-2d/key-position-2d.h"
+#include "key-spatial-2d/key-spatial-2d.h"
 #include "measure-motion-2d/measure-motion-2d.h"
 
 namespace details_sam::Factor{
@@ -16,8 +16,8 @@ namespace details_sam::Factor{
     using namespace ::sam::Meta;
     using namespace ::details_sam::Conduct;
 
-    using ObserverKeyConduct = LinearKeyContextualConduct<Key::Position2d , Measure::Motion2d , observer_var, &Hik_Observer>;
-    using SightedKeyConduct = LinearKeyContextualConduct<Key::Position2d, Measure::Motion2d, sighted_var, &Hik_Sighted>;
+    using ObserverKeyConduct = LinearKeyContextualConduct<Key::Spatial2d , Measure::Motion2d , observer_var, &Hik_Observer>;
+    using SightedKeyConduct = LinearKeyContextualConduct<Key::Spatial2d, Measure::Motion2d, sighted_var, &Hik_Sighted>;
 
     inline static constexpr const char RelativeMatcher2dLabel[] = "linear translation 2d";
 

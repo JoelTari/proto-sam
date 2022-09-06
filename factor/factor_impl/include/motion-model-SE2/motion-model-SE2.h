@@ -1,7 +1,7 @@
 #pragma once
 
 #include "factor/factor.h"
-#include "key-pose-SE2/key-pose-SE2.h"
+#include "key-spatial-SE2/key-spatial-SE2.h"
 #include "measure-velocity-SE2/measure-velocity-SE2.h"
 
 
@@ -16,10 +16,10 @@ namespace details_sam::Factor{
 
     struct SubsequentSE2KeyConduct 
       : KeyContextualConduct
-        <SubsequentSE2KeyConduct,Key::PoseSE2,Measure::VelocitySE2,subsequent_role_str>
+        <SubsequentSE2KeyConduct,Key::SpatialSE2,Measure::VelocitySE2,subsequent_role_str>
     {
       using BaseKeyCC_t = KeyContextualConduct
-        <SubsequentSE2KeyConduct,Key::PoseSE2,Measure::VelocitySE2,subsequent_role_str>;
+        <SubsequentSE2KeyConduct,Key::SpatialSE2,Measure::VelocitySE2,subsequent_role_str>;
       // inherited ctors
       using BaseKeyCC_t::BaseKeyCC_t;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;
@@ -41,10 +41,10 @@ namespace details_sam::Factor{
 
     struct AntecedentSE2KeyConduct 
       : KeyContextualConduct
-        <AntecedentSE2KeyConduct,Key::PoseSE2,Measure::VelocitySE2,antecedent_role_str>
+        <AntecedentSE2KeyConduct,Key::SpatialSE2,Measure::VelocitySE2,antecedent_role_str>
     {
       using BaseKeyCC_t = KeyContextualConduct
-        <AntecedentSE2KeyConduct,Key::PoseSE2,Measure::VelocitySE2,antecedent_role_str>;
+        <AntecedentSE2KeyConduct,Key::SpatialSE2,Measure::VelocitySE2,antecedent_role_str>;
       using BaseKeyCC_t::BaseKeyCC_t;
       using key_process_matrix_t = typename BaseKeyCC_t::key_process_matrix_t;
 
