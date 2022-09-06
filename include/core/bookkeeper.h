@@ -1,12 +1,11 @@
-#ifndef SAM_BOOKKEEPER_H_
-#define SAM_BOOKKEEPER_H_
+#pragma once
 
 #include <map>
 #include <unordered_map>
 #include <vector>
 #include <string>
 
-#include "config.h"
+// #include "config.h"
 
 // WARNING: must still decide if the Bookkeeper should be templated in the meta
 // info (for now, no, it would be too complicated)
@@ -158,6 +157,3 @@ class Bookkeeper
 
   // std::vector< std::string > ordered_keys; // NOTE: feature order not active
 };
-
-
-#endif

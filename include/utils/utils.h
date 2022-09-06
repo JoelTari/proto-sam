@@ -1,5 +1,4 @@
-#ifndef SAM_UTILS_H_
-#define SAM_UTILS_H_
+#pragma once
 
 #include <chrono>
 #include <json/value.h>
@@ -245,5 +244,3 @@ struct ScopedTimer
 #endif
 }
 
-
-#endif

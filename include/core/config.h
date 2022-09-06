@@ -1,5 +1,4 @@
-#ifndef SAM_CONFIG_H_
-#define SAM_CONFIG_H_
+#pragma once
 
 // compile definitions and their respective default values
 #ifndef ENABLE_DEBUG_TRACE
@@ -84,5 +83,3 @@ struct CompiledDefinitions
 }
 // since these doesn't implies any branching in this library (only at the lower level for ext dependencies)
 // Lets put that in a structure
-  
-#endif

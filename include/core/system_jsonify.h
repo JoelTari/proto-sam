@@ -1,10 +1,12 @@
 #pragma once
 
 #include "core/config.h"
-#include "utils/utils.h"
-#include "utils/tuple_patterns.h"
+// #include "utils/utils.h"
+// #include "utils/tuple_patterns.h"
 
 // TODO:  wrap with #if ENABLE_JSON_OUTPUT ?? I think yes
+
+#if ENABLE_JSON_OUTPUT
 
 template <typename SAM_SYS>
 class SystemJsonify
@@ -171,6 +173,5 @@ class SystemJsonify
         json_factors_out.append(json_factor);
       }
     }
-
-
 };
+#endif // ENABLE_JSON_OUTPUT

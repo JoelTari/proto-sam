@@ -1,5 +1,4 @@
-#ifndef SAM_SYSTEM_H_
-#define SAM_SYSTEM_H_
+#pragma once
 
 #include "core/bookkeeper.h"
 #include "core/marginal.h"
@@ -8,7 +7,7 @@
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"
 
-#include <eigen3/Eigen/Sparse>
+#include <Eigen/Sparse>
 #include <functional>
 #include <stdexcept>
 #include <type_traits>
@@ -700,4 +699,3 @@ namespace sam::System
   };
 
 };   // namespace SAM
-#endif
