@@ -9,25 +9,25 @@
 
 namespace details_sam::Meta::Key
 {
-  namespace Position2dImpl{
+  namespace Spatial2dImpl{
 
     inline static constexpr const char position_str[] = "position 2d";
     inline static constexpr const char x[]        = "x";
     inline static constexpr const char y[]        = "y";
-    using Position2d_t                           = Eigen::Vector<double, 2>;
+    using Spatial2d_t                           = Eigen::Vector<double, 2>;
     using namespace ::sam::Meta::Key;
 
     namespace exports{
-      struct Position2d : 
-        ::sam::Meta::Key::EuclidBase <Position2d, position_str, Position2d_t,x,y>
+      struct Spatial2d : 
+        ::sam::Meta::Key::EuclidBase <Spatial2d, position_str, Spatial2d_t,x,y>
       {
         constexpr static std::size_t compute_kN_impl()
         {
-          return Position2d_t::RowsAtCompileTime;
+          return Spatial2d_t::RowsAtCompileTime;
         }
 
         template <const char* COMPONENT>
-          static auto get_component_impl(const Position2d_t& key_spatial_element)
+          static auto get_component_impl(const Spatial2d_t& key_spatial_element)
           {
             if constexpr (std::string_view(COMPONENT) == x)
               return key_spatial_element(0, 0);
@@ -40,7 +40,7 @@ namespace details_sam::Meta::Key
 
         // remove
         static double get_component_impl(const char*          component,
-            const Position2d_t& key_spatial_element)
+            const Spatial2d_t& key_spatial_element)
         {
           if (std::string_view(component) == x)
             return key_spatial_element(0, 0);
@@ -52,7 +52,7 @@ namespace details_sam::Meta::Key
 
       };
 
-      using Position2d_t = typename Position2d::type;
+      using Spatial2d_t = typename Spatial2d::type;
     }
 
   }
@@ -61,9 +61,9 @@ namespace details_sam::Meta::Key
 // expose the key meta position structure
 namespace sam::Meta::Key{
   // for users
-  using namespace details_sam::Meta::Key::Position2dImpl::exports;
-  // exported : Position2d, Position2d_t (the key_t)
+  using namespace details_sam::Meta::Key::Spatial2dImpl::exports;
+  // exported : Spatial2d, Spatial2d_t (the key_t)
 }
 namespace sam::Key{
-  using Position2d_t = typename sam::Meta::Key::Position2d_t;
+  using Spatial2d_t = typename sam::Meta::Key::Spatial2d_t;
 }

@@ -8,18 +8,18 @@
 
 namespace details_sam::Meta::Key
 {
-  namespace PoseSE2Impl {
+  namespace SpatialSE2Impl {
     inline static constexpr const char pose_SE2_label[] = "pose SE2";
     inline static constexpr const char x[]   = "x";
     inline static constexpr const char y[]   = "y";
     inline static constexpr const char t[]   = "theta";
-    using PoseSE2_t = typename manif::SE2d;
+    using SpatialSE2_t = typename manif::SE2d;
     using Tangent_Space_SE2_t = typename manif::SE2Tangentd;
 
     using namespace ::sam::Meta::Key;
 
     namespace exports{
-      struct PoseSE2 : ::sam::Meta::Key::Base<PoseSE2, pose_SE2_label, PoseSE2_t, Tangent_Space_SE2_t ,x,y,t>
+      struct SpatialSE2 : ::sam::Meta::Key::Base<SpatialSE2, pose_SE2_label, SpatialSE2_t, Tangent_Space_SE2_t ,x,y,t>
       {
         constexpr static std::size_t compute_kN_impl()
         {
@@ -27,7 +27,7 @@ namespace details_sam::Meta::Key
         }
         
         template<const char* COMPONENT>
-        static auto get_component_impl(const PoseSE2_t & key_SE2)
+        static auto get_component_impl(const SpatialSE2_t & key_SE2)
         {
           if constexpr(std::string_view(COMPONENT) ==x)
             return key_SE2.x();
@@ -46,7 +46,7 @@ namespace details_sam::Meta::Key
           }
         }
 
-        static double get_component_impl(const char* component, const PoseSE2_t & key_SE2)
+        static double get_component_impl(const char* component, const SpatialSE2_t & key_SE2)
         {
           if (std::string_view(component) == x)
             return key_SE2.x();
@@ -59,15 +59,15 @@ namespace details_sam::Meta::Key
         }
 
       };
-      using PoseSE2_t = typename PoseSE2::type;
+      using SpatialSE2_t = typename SpatialSE2::type;
     }
 
   }
 }
 
 namespace sam::Meta::Key{
-  using namespace details_sam::Meta::Key::PoseSE2Impl::exports;
+  using namespace details_sam::Meta::Key::SpatialSE2Impl::exports;
 }
 namespace sam::Key{
-  using PoseSE2_t = typename sam::Meta::Key::PoseSE2_t;
+  using SpatialSE2_t = typename sam::Meta::Key::SpatialSE2_t;
 }

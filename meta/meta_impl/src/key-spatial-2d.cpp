@@ -3,14 +3,14 @@
 
 // using namespace ::sam::Meta::Key;
 //
-// constexpr std::size_t Position2d::compute_kN_impl()
+// constexpr std::size_t Spatial2d::compute_kN_impl()
 // {
-//   return Position2d_t::RowsAtCompileTime;
+//   return Spatial2d_t::RowsAtCompileTime;
 // }
 //
 // // remove
-// double Position2d::get_component_impl(const char*          component,
-//     const Position2d_t& key_spatial_element)
+// double Spatial2d::get_component_impl(const char*          component,
+//     const Spatial2d_t& key_spatial_element)
 // {
 //   if (std::string_view(component) == x)
 //     return key_spatial_element(0, 0);

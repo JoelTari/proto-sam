@@ -1,9 +1,9 @@
 #include "measure-location-2d/measure-location-2d.h"
 
-namespace details_sam::Meta::Measure::Position2dImpl::exports
+namespace details_sam::Meta::Measure::Spatial2dImpl::exports
 {
-    double Position2d::get_component_impl(const char*                       component,
-                                     const Position2d_t & measure)
+    double Spatial2d::get_component_impl(const char*                       component,
+                                     const Spatial2d_t & measure)
     {
       if (std::string_view(component) == x)
         return measure(0, 0);
