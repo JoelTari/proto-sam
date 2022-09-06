@@ -1,6 +1,6 @@
 #pragma once
 
-#include "factor/factor.h"
+#include "factor/factor_interface.h"
 #include "key-spatial-SE2/key-spatial-SE2.h"
 #include "measure-motion-SE2/measure-motion-SE2.h"
 

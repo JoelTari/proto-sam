@@ -1,7 +1,7 @@
 #pragma once
 
 // #include "core/config.h"
-#include "factor/factor.h"
+#include "factor/factor_interface.h"
 #include "key-spatial-SE2/key-spatial-SE2.h"
 #include "measure-location-SE2/measure-location-SE2.h"
 
