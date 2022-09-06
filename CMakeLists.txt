@@ -83,9 +83,6 @@ target_link_libraries(mainstdin
   factor_relative_matcher_2d 
   sam_system_interface
   ${LOW_LEVEL_LIBRARIES})
-
-# NOTE: jsoncpp_static vs jsoncpp_lib (.so)  => 200 kB difference on binary size
-
 target_compile_features(mainstdin PUBLIC cxx_std_20)
 
 
