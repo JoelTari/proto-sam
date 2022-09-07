@@ -2,7 +2,6 @@
 
 #include "system/bookkeeper.h"
 #include "marginal/marginal.h"
-// #include "core/factor.h"
 #include "system/config.h"
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"
@@ -59,7 +58,7 @@ namespace sam::System
     *
     * @return 
     */
-    std::tuple<Eigen::MatrixXd,double> compute_covariance(const Eigen::SparseMatrix<double> & A)
+    std::tuple<Eigen::MatrixXd,double> compute_covariance(const Eigen::SparseMatrix<double> & A) const // WARNING: matrix specific
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
@@ -93,8 +92,17 @@ namespace sam::System
       if (this->bookkeeper_.factor_id_exists(factor_id))
         throw std::runtime_error("Factor id already exists");
 
-      // emplace a factor in the correct container
-      place_factor_in_container<0, ::sam::Factor::WrapperPersistentFactor<FT,isSystFullyLinear>>(factor_id, mes_vect, measure_cov, keys_id);
+      // apply to emplace this factor in the correct container
+      std::apply(
+          [&,this](auto & ... vect_of_wfactors)
+          {
+            (
+             (
+                this->emplace_factor_in<FT>(factor_id, mes_vect, measure_cov, keys_id,vect_of_wfactors)
+              )
+            , ...);
+          }
+          , this->all_factors_tuple_);
     }
 
     /**
@@ -102,7 +110,7 @@ namespace sam::System
      *
      * @param system_infos system information (dimensions, indexes, graph connectivity ...)
      */
-    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(const SystemInfo & system_infos)// const
+    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(const SystemInfo & system_infos) const // WARNING: matrix specific
     {
       uint nnz = system_infos.nnz;
       int        M            = system_infos.aggr_dim_mes;
@@ -120,16 +128,16 @@ namespace sam::System
       //------------------------------------------------------------------//
       //  OPTIMIZE: the computation of {partAi...} & bi for each factor could be assumed to be already done (at factor ctor, or after the lin point is analysed)
       //  OPTIMIZE: EXPECTED PERFORMANCE GAIN : low to medium 
-      sam_tuples::for_each_in_tuple(
+      sam_tuples::for_each_in_const_tuple( // FIX: use std::apply
         this->all_factors_tuple_,
-        [this,&sparseA_triplets,&b,&line_counter](auto& vect_of_f, auto NIET) // NOTE: I unusable (not constexpr-able)
+        [this,&sparseA_triplets,&b,&line_counter](const auto& vect_of_f, auto NIET) // NOTE: I unusable (not constexpr-able)
         {
           using wrapped_factor_t = typename std::decay_t<decltype(vect_of_f)>::value_type;
           using factor_t = typename wrapped_factor_t::Factor_t;
           // OPTIMIZE: parallel loop
           // OPTIMIZE: race: sparseA_triplets, b ; potential race : vector of factors (check)
           // https://stackoverflow.com/a/45773308
-          for(auto & wfactor : vect_of_f)
+          for(const auto & wfactor : vect_of_f)
           {
             auto factor = wfactor.factor;
             PROFILE_SCOPE( wfactor.factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
@@ -147,7 +155,7 @@ namespace sam::System
             
             // placing those matrices in Ai_triplets
             int k = 0; // tuple idx
-            sam_tuples::for_each_in_const_tuple( matrices_Aik,
+            sam_tuples::for_each_in_const_tuple( matrices_Aik,  // FIX: use std::apply
             [this, &mesdim, &line_counter, &Ai_triplets, &k, &factor](auto & Aik, auto NIET)
             {
                 int Nk = Aik.cols();
@@ -184,7 +192,7 @@ namespace sam::System
     *
     * @param logger the log
     */
-    void sam_optimise(sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance())
+    void sam_optimise(sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance()) // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
     {
       if (this->bookkeeper_.getSystemInfos().number_of_factors == 0) return;
 
@@ -283,7 +291,7 @@ namespace sam::System
         //            Do the same optionally for the covariance             //
         //------------------------------------------------------------------//
         static_assert( std::is_same_v<decltype(MaP),typename Eigen::VectorXd>);
-        sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,
+        sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,        // FIX: use std::apply
         [this, &MaP, &SigmaCovariance, &nIter, &marginals_histories_container ](auto & map_to_marginal_ptr, auto margTypeIdx)
         {
           using marginal_t = typename std::decay_t<decltype(map_to_marginal_ptr)>::mapped_type::element_type;
@@ -329,11 +337,6 @@ namespace sam::System
         std::apply(
             [&accumulated_syst_squared_norm](auto & ...vec_of_wfactors)
             {
-              // (std::for_each(vec_of_wfactors.begin(),vec_of_wfactors.end(),
-              //               [](const auto & wf)
-              //               { 1; })
-              //               , ...
-              // );
               (
                std::for_each(
                  vec_of_wfactors.begin(),vec_of_wfactors.end(),
@@ -393,46 +396,6 @@ namespace sam::System
       return this->bookkeeper_.getSystemInfos();
     }
 
-    // Json::Value write_header(const SystemInfo & sysinfo) const
-    // {
-    //   Json::Value json_header;
-    //   json_header["robot_id"] = this->agent_id;
-    //   json_header["seq"] = 0; // TODO:
-    //   json_header["base_unit"] = 0.15;
-    //   Json::Value quadratic_errors;
-    //   for (auto qerr : sysinfo.quadratic_error)
-    //     quadratic_errors.append(qerr);
-    //   json_header["quadratic_errors"] = quadratic_errors;
-    //   json_header["Rnnz"] = sysinfo.Rnnz;
-    //   json_header["Hnnz"] = sysinfo.Hnnz;
-    //   // some compile time information
-    //   using def_t = sam::definitions::CompiledDefinitions;
-    //   json_header["bla"] = def_t::blas;
-    //   json_header["bla_vendor_mkl"] = def_t::bla_vendor_mkl;
-    //   json_header["aggressively_optimised"] = def_t::optimised;
-    //   json_header["openmp"] = def_t::openmp;
-    //   json_header["timer"] = def_t::timer;
-    //   json_header["json_output"] = def_t::json_output;
-    //   json_header["runtime_checks"] = def_t::runtime_checks;
-    //   json_header["debug_trace"] = def_t::debug_trace;
-    //   // TODO: variable order  :  "variable_order"
-    //   return json_header;
-    // }
-
-#if ENABLE_RUNTIME_CONSISTENCY_CHECKS
-    bool is_system_consistent()
-    {
-      // TODO:
-      return true;
-    }
-
-    bool AreMatricesFilled()
-    {
-      // TODO: put after the end of the fill routine (check, for examples that
-      // the last line_counter is coherent with A,b sizes)
-      return true;
-    }
-#endif
 
     // get all marginals
     auto get_marginals()
@@ -466,40 +429,25 @@ namespace sam::System
     constexpr static const size_t S_ = std::tuple_size<decltype(all_factors_tuple_)>::value;
 
 
-    /**
-     * @brief emplace back factor in the right container (recursive static)
-     *
-     * @tparam I
-     * @tparam FT
-     * @tparam Args
-     * @param factor_id
-     * @param keys
-     * @param args
-     */
-    template <std::size_t TUPLE_IDX = 0, typename WFT>
-    void place_factor_in_container(const std::string&                          factor_id,
-                                   const typename WFT::Factor_t::measure_t&          mes_vect,
-                                   const typename WFT::Factor_t::measure_cov_t&           measure_cov,
-                                   const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id)
+    template <typename FT, typename VECT_OF_WFT>
+    void emplace_factor_in(const std::string&                          factor_id,
+                           const typename FT::measure_t&          mes_vect,
+                           const typename FT::measure_cov_t&           measure_cov,
+                           const std::array<std::string, FT::kNbKeys>& keys_id,
+                           VECT_OF_WFT & vector_of_wrapped_factors)
     {
-      using FT = typename WFT::Factor_t;
-      // beginning of static recursion (expanded at compile time)
-      if constexpr (TUPLE_IDX == S_)
-        return;
-      else
+      using WFT = typename VECT_OF_WFT::value_type;
+      // only run if compatible type
+      if constexpr( std::is_same_v<FT,typename WFT::Factor_t> )
       {
-        // if this is the type we are looking for, emplace back in
-        if constexpr (std::is_same_v<WFT, factor_type_in_tuple_t<TUPLE_IDX>>)
-        {
           add_keys_to_bookkeeper<WFT>(keys_id, factor_id);
           // add the factor_id with its infos in the bookkeeper
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id, WFT::Factor_t::kN, WFT::Factor_t::kM, {keys_id.begin(), keys_id.end()});
 
           // recover the means (at least the ones available, some may not exist)
-          // TODO: make it a function
           auto tuple_of_opt_means_ptr 
-          = sam_tuples::reduce_array_variadically(
+          = sam_tuples::reduce_array_variadically( // FIX: use std::apply
               keys_id,[this]<std::size_t...J>(const auto& keys_id, std::index_sequence<J...>)
                             -> typename WFT::composite_of_opt_state_ptr_t
               {
@@ -520,7 +468,7 @@ namespace sam::System
 
           if (opt_tuple_of_init_point_ptr.has_value())
           {
-            // iterations over several tuples
+            // iterations over several tuples // FIX: use std::apply
             sam_tuples::constexpr_for<FT::kNbKeys>(
             [&](auto idx)
             {
@@ -550,7 +498,8 @@ namespace sam::System
             // TODO: more detail (which key.s failed etc..)
             throw std::runtime_error("Unable to determine all init points for this factor");
           }
-          std::get<TUPLE_IDX>(this->all_factors_tuple_).emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
+          // emplace back in the structure
+          vector_of_wrapped_factors.emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
               
 // Debug consistency check of everything
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
@@ -562,14 +511,10 @@ namespace sam::System
           assert(this->is_system_consistent());
           // TODO: assert that aggregate size of factor containers correspond to the bookkeeper nb of factors
 #endif
-        }
-        else
-        {
-          // recursion :  compile time call
-          place_factor_in_container<TUPLE_IDX + 1, WFT>(factor_id, mes_vect, measure_cov, keys_id);
-        }
+
       }
     }
+
 
     template <typename WFT>
     auto compute_Ai_bi(const WFT & wrapped_factor)
@@ -633,7 +578,7 @@ namespace sam::System
      *
      * @return
      */
-    std::tuple<Eigen::VectorXd,double> solveQR(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b)
+    std::tuple<Eigen::VectorXd,double> solveQR(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b) // WARNING: derived matrix
     // TODO: add a solverOpts variable: check rank or not, check success, count the nnz of R or not
     {
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
@@ -680,22 +625,20 @@ namespace sam::System
       return {map,0}; // R nnz number set at 0 (unused)
     }
 
-    /**
-     * @brief Gets the factor type of the Ith tuple element. Use case: get some
-     * static info about the factors such as :
-     * - factor type name of 0th factor collection :
-     * `factor_type_in_tuple_t<0>::kFactorCategory`
-     * - some meta (dimensions) about the Ith factors collection:
-     * `factor_type_in_tuple_t<I>::Meta_t::kMesDim`.
-     *
-     * The advantage is that it doesn't matter if the std::vector is not holding
-     * any factor (or many)
-     *
-     * @tparam I
-     */
-    template <size_t TUPLE_IDX>
-    using factor_type_in_tuple_t =
-        typename std::tuple_element<TUPLE_IDX, decltype(all_factors_tuple_)>::type::value_type;
+#if ENABLE_RUNTIME_CONSISTENCY_CHECKS
+    bool is_system_consistent()
+    {
+      // TODO:
+      return true;
+    }
+
+    bool AreMatricesFilled()
+    {
+      // TODO: put after the end of the fill routine (check, for examples that
+      // the last line_counter is coherent with A,b sizes)
+      return true;
+    }
+#endif
   };
 
 };   // namespace SAM
