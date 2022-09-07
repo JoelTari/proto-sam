@@ -25,7 +25,8 @@ namespace details_sam::Conduct{
 
   /**
    * @brief KeyContextualConduct  -- The class describes how a key (associated with a key meta)
-   * behaves in a certain context (in a factor). It stores dimension informations name and most
+   * behaves in a certain context (in a factor, with a measure type). 
+   * It stores dimension informations name and most
    * importantly Jacobian matrices to be used when differentiating the factor wrt the decision keys.
    * As a factor can have several keys, therefore, the KeyContextualConduct class only manages a
    * subset of the columns of the factor 's process matrix (normed Jacobian).
@@ -51,17 +52,13 @@ namespace details_sam::Conduct{
     static constexpr const bool        kLinear {false};
     // non static but const
     const std::string key_id; // the  only non-static element
-    // non static, not const
+
     using key_process_matrix_t = Eigen::Matrix<double, kM, kN>;
     using measure_cov_t        = Eigen::Matrix<double, kM, kM>;
     using tangent_space_vect_t = Eigen::Matrix<double, kN, 1>;
-    // const measure_cov_t& rho; // WARNING: SRP: remove
 
     // euclidian space is a trivial manifold (same as its tangent space)
     static constexpr bool kIsTrivialManifold = std::is_same_v<Key_t, tangent_space_vect_t>;
-
-    //   // WARNING: SRP: remove
-    // const std::shared_ptr<Key_t> key_mean_view = nullptr;
 
     /**
      * @brief compute Hik, the jacobian matrix, a.k.a. the partial derivative of the factor
@@ -73,64 +70,20 @@ namespace details_sam::Conduct{
      * of the full process matrix of factor \phi_i as there may be other keys k in the factor with
      * their own sub process-matrix Hik.
      */
-    key_process_matrix_t compute_Hik_at(const Key_t & Xk) const // WARNING: SRP: compute_Hik_at rather ? then it would be static
+    key_process_matrix_t compute_Hik_at(const Key_t & Xk) const
     {
       return static_cast<const DerivedKCC*>(this)->compute_Hik_at_impl(Xk);
     }
 
-    // /**
-    //  * @brief compute Aik, the normed jacobian matrix, a.k.a. the partial derivative of the factor
-    //  * criterion premultiply by the root of the measure precision Aik = \rho * \partial r_i(X) /
-    //  * \partial X_k Index i refers to the usual iterator on factor, k to the kth key of factor \phi_i
-    //  * @return the process matrix associated with this key. Note that it only a subset of the columns
-    //  * of the full process matrix of factor \phi_i as there may be other keys k in the factor with
-    //  * their own sub process-matrix Aik.
-    //  */
-    // key_process_matrix_t compute_Aik_at_current_lin_point() const
-    // {
-    //   // WARNING: SRP: remove
-    //   // copy the current linearization point
-    //   if (key_mean_view == nullptr) throw std::runtime_error("nullptr to linearization point Xk");
-    //   const auto Xk = *key_mean_view;
-    //   return this->compute_Aik_at(Xk);
-    // }
-
     /**
-     * @brief Constructor , no pointer to the value of the key is required. This one is therefore by
-     * fully linear SLAM problems.
+     * @brief Constructor
      *
      * @param key_id identifier of the key
-     * @param rho root of the inverse of the measure covariance matrix:   \rho = chol( \Sigma_i )^T
      */
     KeyContextualConduct(const std::string& key_id)//, const measure_cov_t& rho)
         : key_id(key_id)
-        // , rho(rho)           // FIX: remove rho once SRP is fixed
     {
-      // necessary (but not sufficient) condition for this ctor: the context model must be linear.
-      // sufficient condition would be that the wider system be linear (enforceable at higher level)
     }
-
-  //   /**
-  //    * @brief Constructor. In nonlinear systems, it required to provide a ptr to a value of the key:
-  //    * typically this value is the linearization point. Note that a Key can be linear in the context
-  //    * of one factor, but nonlinear with respect to another. This is why a slam system that has at
-  //    * least one type of nonlinear factor alters the potential linearity behavior of other factors in
-  //    * the same system. To summarize, even if this key behaves linearly in this context, the nonlinear
-  //    * aspects may still be enforced by the user
-  //    *
-  //    * @param key_id identifier of the key
-  //    * @param rho root of the inverse of the measure covariance matrix: \rho = chol( \Sigma_i ) ^T
-  //    * @param init_point_view shared pointer to a value of the key
-  //    */
-  //   KeyContextualConduct(const std::string&     key_id,
-  //                        const measure_cov_t&   rho,
-  //                        std::shared_ptr<Key_t> init_point_view)
-  //       : key_id(key_id)
-  //       , rho(rho)
-  //       , key_mean_view(init_point_view)
-  //     // WARNING: SRP: remove
-  //   {
-  //   }
   };
 
   //------------------------------------------------------------------//
@@ -177,9 +130,7 @@ namespace details_sam::Conduct{
 
     static_assert(std::is_same_v< std::remove_pointer_t<decltype(Hik_MATRIX_PTR)>,const key_process_matrix_t > );
 
-     // NOTE: couldn't make it (inline) static, for some reason it would always be full of zeros
-     // NOTE: So it is only const, i.e. one object by instance but, for small matrix, the additional
-     // NOTE: memory cost shouldn't be too bad, plus it is probably better for cache locality
+    // one for each instance (not static, couldn't make it static), better for cache locality
     const key_process_matrix_t Hik  {*Hik_MATRIX_PTR}; // by copy at construction time, non-static
 
     // this is a linear context for this KCC template
@@ -197,15 +148,6 @@ namespace details_sam::Conduct{
       return this->Hik;
     }
 
-    // LinearKeyContextualConduct
-    //   (
-    //     const std::string& key_id
-    //     ,const measure_cov_t& rho
-    //     ,std::shared_ptr<Key_t> init_point_view
-    //   )
-    //   : base_kcc_t(key_id,rho,init_point_view)
-    // {
-    // }
   };
 }
 
