@@ -1,7 +1,7 @@
 #pragma
 
 #include "system/config.h"
-#include "meta/meta.h"
+#include "meta/meta_interface.h"
 #include "utils/tuple_patterns.h"
 
 #include <cmath>
