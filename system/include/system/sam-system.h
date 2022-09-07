@@ -115,70 +115,23 @@ namespace sam::System
       uint nnz = system_infos.nnz;
       int        M            = system_infos.aggr_dim_mes;
       int        N            = system_infos.aggr_dim_keys;
-
-      // declare A & b
+      // declare A, b, and triplets for A data
       Eigen::SparseMatrix<double> A(M,N);
       Eigen::VectorXd b(M);
-
       std::vector<Eigen::Triplet<double>> sparseA_triplets;
       sparseA_triplets.reserve(nnz); // expected number of nonzeros elements
       uint64_t line_counter = 0;
       //------------------------------------------------------------------//
       //                fill triplets of A and vector of b                //
       //------------------------------------------------------------------//
-      //  OPTIMIZE: the computation of {partAi...} & bi for each factor could be assumed to be already done (at factor ctor, or after the lin point is analysed)
-      //  OPTIMIZE: EXPECTED PERFORMANCE GAIN : low to medium 
-      sam_tuples::for_each_in_const_tuple( // FIX: use std::apply
-        this->all_factors_tuple_,
-        [this,&sparseA_triplets,&b,&line_counter](const auto& vect_of_f, auto NIET) // NOTE: I unusable (not constexpr-able)
-        {
-          using wrapped_factor_t = typename std::decay_t<decltype(vect_of_f)>::value_type;
-          using factor_t = typename wrapped_factor_t::Factor_t;
-          // OPTIMIZE: parallel loop
-          // OPTIMIZE: race: sparseA_triplets, b ; potential race : vector of factors (check)
-          // https://stackoverflow.com/a/45773308
-          for(const auto & wfactor : vect_of_f)
+      std::apply(
+          [this,&sparseA_triplets,&b,&line_counter](const auto & ...vect_of_wfactors)
           {
-            auto factor = wfactor.factor;
-            PROFILE_SCOPE( wfactor.factor.factor_id.c_str() ,sam_utils::JSONLogger::Instance());
-            // compute Ai and bi 
-            // // OPTIMIZE: unecessary if this is the last iteration, low-to-medium performance hit
-            // auto [bi, matrices_Aik] = compute_Ai_bi<wrapped_factor_t>(wfactor);
-            auto matrices_Aik = wfactor.get_current_point_data().Aiks;
-            auto bi = wfactor.get_current_point_data().bi;
-
-            // declaring a triplets for matrices_Aik values to be associated with their
-            // row/col indexes in view of its future integration into the system matrix A
-            std::vector<Eigen::Triplet<double>> Ai_triplets; 
-            Ai_triplets.reserve(factor_t::kN*factor_t::kM);
-            constexpr int mesdim = factor_t::kM;
-            
-            // placing those matrices in Ai_triplets
-            int k = 0; // tuple idx
-            sam_tuples::for_each_in_const_tuple( matrices_Aik,  // FIX: use std::apply
-            [this, &mesdim, &line_counter, &Ai_triplets, &k, &factor](auto & Aik, auto NIET)
-            {
-                int Nk = Aik.cols();
-                auto key_id = factor.get_array_keys_id()[k] ; k++; // WARNING: race condition if parallel policy
-                int colIdxInSystemA = this->bookkeeper_.getKeyInfos(key_id).sysidx;
-                auto spaghetti_Aik = Aik.reshaped(); // make it one dimension
-                for (int i=0; i< Nk*mesdim; i++)
-                {
-                  int row = line_counter + (i%mesdim);
-                  int col = colIdxInSystemA + i /mesdim;
-                  Ai_triplets.emplace_back(row,col,spaghetti_Aik[i]);
-                }
-            });
-             
-            // put Ai and bi into sparseA_triplets and b
-            // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
-            b.block<mesdim,1>(line_counter,0) = bi;
-            line_counter += mesdim;
-            // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
-            sparseA_triplets.insert(std::end(sparseA_triplets),std::begin(Ai_triplets),std::end(Ai_triplets));
+              (
+               ( this->lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b,line_counter) )
+               , ... );
           }
-        }
-      );
+          ,this->all_factors_tuple_);
 
       // set A from triplets, clear the triplets
       A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
@@ -639,6 +592,96 @@ namespace sam::System
       return true;
     }
 #endif
+
+    template <typename VECT_OF_WFT>
+    void lay_out_factors_to_sparse_triplets
+    (
+     const VECT_OF_WFT & vect_of_wfactors
+     , std::vector<Eigen::Triplet<double>> & sparseA_triplets_out
+     , Eigen::VectorXd& b_out
+     , uint64_t& line_counter_out
+    ) const
+    {
+        using WFT = typename VECT_OF_WFT::value_type;
+        using FT = typename WFT::Factor_t;
+        // OPTIMIZE: parallel loop
+        // OPTIMIZE: race: sparseA_triplets, b ; potential race : vector of factors (check)
+        // https://stackoverflow.com/a/45773308
+        for (const auto & wfactor : vect_of_wfactors)
+        {
+          // refactor proposal: 
+          // - construct many smaller triplets in parallel (based on 0-col 0-row)
+          // - rebase them in system indices (constant increment of line (all factor are the same here), col depends on bookkeeper data)
+          //    in parallel also (concurrent calls to bookkeeper get sysidx)
+          // - and join them later in a greater triplets for that type of factor
+          // - at higher level, join all triplets of all factor types
+          // It would be better because that would have more parallelism + returned values
+          // methods would be static etc...
+          std::string scope_name = "lay out " + wfactor.factor.factor_id + " in triplet";
+          PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
+          auto factor = wfactor.factor;
+          // get Ai and bi (computations of Ai,bi not done here)
+          auto matrices_Aik = wfactor.get_current_point_data().Aiks;
+          auto bi = wfactor.get_current_point_data().bi;
+
+          // declaring a triplets for matrices_Aik values to be associated with their
+          // row/col indexes in view of its future integration into the system matrix A
+          std::vector<Eigen::Triplet<double>> Ai_triplets; 
+          Ai_triplets.reserve(FT::kN*FT::kM);
+          
+          // tuple of sysidx so that we know how to scatter the cols for every Aik
+          auto tuple_of_sys_col_idx =
+            std::apply(
+                [this](const auto & ... key_id)
+                {
+                  return std::make_tuple( this->bookkeeper_.getKeyInfos(key_id).sysidx ... );
+                }, factor.get_array_keys_id()
+                );
+          
+          // placing those matrices in Ai_triplets
+          std::apply(
+              [this, &line_counter_out,&tuple_of_sys_col_idx, &Ai_triplets](const auto & ...Aik)
+              {
+                std::apply(
+                    [&,this](auto... sys_col_idx)
+                    {
+                      (
+                       (this->lay_out_Aik_in_triplets(Aik, sys_col_idx ,line_counter_out,Ai_triplets))
+                       ,...
+                      );
+                    }
+                    ,tuple_of_sys_col_idx);
+              }
+              , matrices_Aik);
+           
+          // put Ai and bi into sparseA_triplets and b
+          // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
+          b_out.block<FT::kM,1>(line_counter_out,0) = bi;
+          line_counter_out += FT::kM;
+          // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
+          sparseA_triplets_out.insert(std::end(sparseA_triplets_out),std::begin(Ai_triplets),std::end(Ai_triplets));
+        }
+    }
+
+    template <typename MAT>
+    void lay_out_Aik_in_triplets(const MAT & Aik
+        ,const int sys_col_idx
+        ,const int line_counter
+        ,std::vector<Eigen::Triplet<double>>& Ai_triplets_out) const
+    {
+      constexpr int M = MAT::RowsAtCompileTime;
+      constexpr int Nk = MAT::ColsAtCompileTime;
+      int offset_cols = sys_col_idx;
+      int offset_rows = line_counter;
+      auto spaghetti_Aik = Aik.reshaped(); // make it one dimension
+      for (int i=0; i< Nk*M; i++)
+      {
+        int row = offset_rows + (i%M);
+        int col = offset_cols + (i/M);
+        Ai_triplets_out.emplace_back(row,col,spaghetti_Aik[i]);
+      }
+    }
+
   };
 
 };   // namespace SAM
