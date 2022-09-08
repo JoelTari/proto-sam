@@ -1,11 +1,11 @@
 #pragma once
 
+#include "system/config.h"
+
 #include <map>
+#include <string>
 #include <unordered_map>
 #include <vector>
-#include <string>
-
-#include "system/config.h"
 
 // WARNING: must still decide if the Bookkeeper should be templated in the meta
 // info (for now, no, it would be too complicated)
@@ -34,25 +34,23 @@ struct FactorInfo
  */
 struct SystemInfo
 {
-  std::string agent_id;
-  uint aggr_dim_keys = 0;
-  uint aggr_dim_mes = 0;
-  uint number_of_keys = 0;
-  uint number_of_factors = 0;
-  uint nnz = 0; // number of non zero (in the measurement matrix)
-  uint Rnnz = 0;
-  uint Hnnz = 0;
+  std::string         agent_id;
+  uint                aggr_dim_keys     = 0;
+  uint                aggr_dim_mes      = 0;
+  uint                number_of_keys    = 0;
+  uint                number_of_factors = 0;
+  uint                nnz               = 0;   // number of non zero (in the measurement matrix)
+  uint                Rnnz              = 0;
+  uint                Hnnz              = 0;
   std::vector<double> quadratic_error;
 
-  SystemInfo(const std::string & agent_id = std::string() ): agent_id(agent_id){}
+  SystemInfo(const std::string& agent_id = std::string()) : agent_id(agent_id) {}
 };
 
 class Bookkeeper
 {
   public:
-
-  Bookkeeper(const std::string & agent_id = std::string()): system_info_(agent_id)
-  {}
+  Bookkeeper(const std::string& agent_id = std::string()) : system_info_(agent_id) {}
 
   void add_key(const std::string& key, int key_dimension)
   {
@@ -62,15 +60,13 @@ class Bookkeeper
     // measurement & hessian matrices)
     new_key_info.sysidx = this->system_info_.aggr_dim_keys;
     // the aggregate dimension is then expanded by the key dimension
-    this->system_info_.aggr_dim_keys
-        = this->system_info_.aggr_dim_keys + key_dimension;
+    this->system_info_.aggr_dim_keys = this->system_info_.aggr_dim_keys + key_dimension;
     this->system_info_.number_of_keys++;
     // add the key info in the map
     this->key_to_infos[key] = new_key_info;
   }
 
-  void add_factor_id_to_key(const std::string& key,
-                            const std::string& factor_id)
+  void add_factor_id_to_key(const std::string& key, const std::string& factor_id)
   {
     this->key_to_infos[key].factors_id.push_back(factor_id);
   }
@@ -88,13 +84,12 @@ class Bookkeeper
     // update the system info (aggregate size rise, number of elements grows in the sparse matrix)
     this->system_info_.aggr_dim_mes += aggr_mes_dim;
     this->system_info_.number_of_factors++;
-    this->system_info_.nnz += factor_info.factor_aggr_key_dim*factor_info.factor_aggr_mes_dim;
+    this->system_info_.nnz += factor_info.factor_aggr_key_dim * factor_info.factor_aggr_mes_dim;
   };
 
   KeyInfo getKeyInfos(const std::string& key) const
   {
-    if (auto it {this->key_to_infos.find(key)};
-        it != std::end(this->key_to_infos))
+    if (auto it {this->key_to_infos.find(key)}; it != std::end(this->key_to_infos))
     {
       return it->second;
     }
@@ -107,8 +102,7 @@ class Bookkeeper
 
   FactorInfo getFactorInfos(const std::string& factor_id) const
   {
-    if (auto it {factor_to_infos.find(factor_id)};
-        it != std::end(this->factor_to_infos))
+    if (auto it {factor_to_infos.find(factor_id)}; it != std::end(this->factor_to_infos))
     {
       return it->second;
     }
@@ -118,17 +112,19 @@ class Bookkeeper
     }
   }
   SystemInfo getSystemInfos() const { return this->system_info_; }
-  void set_syst_Rnnz(double rnnz){this->system_info_.Rnnz = rnnz;}
-  void set_syst_Hnnz(double Hnnz){this->system_info_.Hnnz = Hnnz;}
-  void push_back_quadratic_error(double quad_err){this->system_info_.quadratic_error.push_back(quad_err);}
-  void clear_quadratic_errors(){this->system_info_.quadratic_error.clear();}
+  void       set_syst_Rnnz(double rnnz) { this->system_info_.Rnnz = rnnz; }
+  void       set_syst_Hnnz(double Hnnz) { this->system_info_.Hnnz = Hnnz; }
+  void       push_back_quadratic_error(double quad_err)
+  {
+    this->system_info_.quadratic_error.push_back(quad_err);
+  }
+  void clear_quadratic_errors() { this->system_info_.quadratic_error.clear(); }
   // void set_syst_quadratic_error(double res_err){this->system_info_.quadratic_error = res_err;}
 
   bool factor_id_exists(const std::string& factor_id) const
   {
     // NOTE: ugly code ?
-    if (auto it {this->factor_to_infos.find(factor_id)};
-        it != std::end(this->factor_to_infos))
+    if (auto it {this->factor_to_infos.find(factor_id)}; it != std::end(this->factor_to_infos))
     {
       return true;
     }
@@ -148,8 +144,8 @@ class Bookkeeper
 #endif
 
   private:
-  SystemInfo                               system_info_;
-  std::unordered_map<std::string, KeyInfo> key_to_infos;   // TODO: map better ?
+  SystemInfo                                  system_info_;
+  std::unordered_map<std::string, KeyInfo>    key_to_infos;   // TODO: map better ?
   std::unordered_map<std::string, FactorInfo> factor_to_infos;
   // PERFORMANCE: I have way more lookups than insert/delete -> unordered_map
   // PERFORMANCE: unordered has more overhead however -> the smaller the

@@ -7,7 +7,7 @@ template <std::size_t N, typename MAT_T>
 MAT_T sample_nmv_u_vector(std::default_random_engine& generator)
 {
   std::normal_distribution<double> dist {0, 1};
-  MAT_T         X;
+  MAT_T                            X;
   for (int i = 0; i < N; i++) X[i] = dist(generator);
   return X;
 }
@@ -43,8 +43,8 @@ void EXPECT_bi_Aiks(const std::tuple<VEC_bi, TUP_Aiks>& expected,
   EXPECT_TRUE(value_bi.isApprox(expected_bi, p));
   if (!value_bi.isApprox(expected_bi, p))
   {
-    std::cerr << "Expected:\n" << expected_bi << '\n'; 
-    std::cerr << "Value:\n" << value_bi << '\n'; 
+    std::cerr << "Expected:\n" << expected_bi << '\n';
+    std::cerr << "Value:\n" << value_bi << '\n';
   }
   EXPECT_TUPLE_OF_MATRIX_APPROX(expected_Aiks, value_Aiks, p);
 }
@@ -60,13 +60,16 @@ void print(const std::tuple<VEC_bi, TUP_Aiks>& biAiks)
              std::get<1>(biAiks));
 }
 
-template<typename Key_Meta>
-void EXPECT_KEY_APPROX(const std::string & id, const typename Key_Meta::key_t & exp , const typename Key_Meta::key_t & val, double p=1)
+template <typename Key_Meta>
+void EXPECT_KEY_APPROX(const std::string&              id,
+                       const typename Key_Meta::key_t& exp,
+                       const typename Key_Meta::key_t& val,
+                       double                          p = 1)
 {
-  EXPECT_TRUE( exp.isApprox(val, p)  );
+  EXPECT_TRUE(exp.isApprox(val, p));
   if (!val.isApprox(exp, p))
   {
-    std::cerr << "Expected key     "<< id << ": " <<     Key_Meta::stringify_key_oneliner(exp) << '\n'; 
-    std::cerr << "Actual key Value "<< id << ": " << Key_Meta::stringify_key_oneliner(val) << '\n'; 
+    std::cerr << "Expected key     " << id << ": " << Key_Meta::stringify_key_oneliner(exp) << '\n';
+    std::cerr << "Actual key Value " << id << ": " << Key_Meta::stringify_key_oneliner(val) << '\n';
   }
 }

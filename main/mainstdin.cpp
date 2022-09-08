@@ -3,8 +3,8 @@
 #include "relative-matcher-2d/relative-matcher-2d.h"
 #include "system/sam-system.h"
 
-#include<iostream>
-#include<fstream>
+#include <fstream>
+#include <iostream>
 
 //------------------------------------------------------------------//
 //                               MAIN                               //
@@ -14,22 +14,16 @@ int main(int argc, char* argv[])
   // std::cout << "nb of threads : " << Eigen::nbThreads() << '\n';
   std::string argId;
   if (argc > 1) { argId = argv[1]; }
-  else
-  {
-    argId = "unnamed";
-  }
-  std::stringstream session_name;
-  // session_name << "mainstdin.cpp_sam_" << argId; 
-  // std::string result_filename
-  //     = sam_utils::currentDateTime() + "_results_" + argId + ".json";
-  sam_utils::JSONLogger::Instance().beginSession("mainstdin", argId, sam_utils::currentDateTime()); // second argument: some sort of runtime prefix: date, dataset ID etc..
-                                                                                       // program name
-                                                                                       // pb_id (e.g. M3500)
-                                                                                       // date
+  else { argId = "unnamed"; }
+  sam_utils::JSONLogger::Instance().beginSession(
+      "mainstdin",
+      argId,
+      sam_utils::currentDateTime());   // second argument: some sort of runtime prefix: date,
+                                       // dataset ID etc.. program name pb_id (e.g. M3500) date
 
   Json::Value rootJson;   // the desired 'container' (to be filled)
                           // initialized as null
-  
+
   // read measurements inputs
   if (argc > 2)
   {
@@ -51,14 +45,15 @@ int main(int argc, char* argv[])
   std::cout << "\n\n Declaring a sam system:\n";
 #endif
 
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());   // TODO: remove those calls
-  using system_t = typename sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
-  auto syst   = sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>(argId);
+  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+  using system_t =
+      typename sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+  auto syst = sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>(argId);
   int  fcount = 0;
 
   {
     PROFILE_SCOPE("integrates factors", sam_utils::JSONLogger::Instance());
-    for (const auto& mesJson : rootJson)   // TODO: template it
+    for (const auto& mesJson : rootJson)   // template it ?
     {
       if (mesJson["type"] == "anchor")
       {
@@ -69,9 +64,9 @@ int main(int argc, char* argv[])
         std::stringstream           fid;   // factor id
         fid << "f" << fcount;
         syst.register_new_factor<sam::Factor::Anchor2d>(fid.str(),
-                                               z,
-                                               Sigma,
-                                               {mesJson["vars_id"][0].asCString()});
+                                                        z,
+                                                        Sigma,
+                                                        {mesJson["vars_id"][0].asCString()});
         fcount++;
       }
       else if (mesJson["type"] == "linear-translation")
@@ -94,8 +89,6 @@ int main(int argc, char* argv[])
     }
   }
 
-  // std::this_thread::sleep_for(std::chrono::seconds(1));
-
   try
   {
     syst.sam_optimise();
@@ -104,11 +97,10 @@ int main(int argc, char* argv[])
   {
     std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
   }
-  
+
   Json::Value json_graph = SystemJsonify<system_t>::jsonify_graph(syst);
   sam_utils::JSONLogger::Instance().writeGraph(json_graph);
 
-  // sam_utils::JSONLogger::Instance().endSession();
   std::cout << sam_utils::JSONLogger::Instance().out();
   return 0;
 }

@@ -1,13 +1,12 @@
 #include "anchor2d/anchor2d.h"
 #include "anchorSE2/anchorSE2.h"
-#include "relative-matcher-2d/relative-matcher-2d.h"
-#include "relative-matcher-SE2/relative-matcher-SE2.h"
 #include "cartesian-landmark-obs-SE2/cartesian-landmark-obs-SE2.h"
 #include "motion-model-SE2/motion-model-SE2.h"
+#include "relative-matcher-2d/relative-matcher-2d.h"
+#include "relative-matcher-SE2/relative-matcher-SE2.h"
+#include "test_utils.h"
 
 #include <gtest/gtest.h>
-
-#include "test_utils.h"
 
 //------------------------------------------------------------------//
 //                            Anchor 2d                             //
@@ -25,7 +24,6 @@ TEST(Factors, Anchor2d)
   EXPECT_DOUBLE_EQ(norm_F, 1);
 
   {
-    // FIX: remove after refactor
     auto [bi, Aiks] = F.compute_Ai_bi_linear();
   }
 
@@ -66,7 +64,6 @@ TEST(Factors, Relative_matcher_2d)
   std::cout << " ---- \n";
 
   {
-    // FIX: remove after refactor
     auto [bi, Aiks] = F.compute_Ai_bi_linear();
   }
 
