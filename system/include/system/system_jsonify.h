@@ -16,7 +16,7 @@ class SystemJsonify
       Json::Value json_graph;
       json_graph["header"] = jsonify_header(sys.get_system_infos());
       json_graph["factors"] = jsonify_factors(sys.get_all_factors());
-      json_graph["marginals"] = jsonify_marginals(sys.get_marginals_histories());
+      json_graph["marginals"] = jsonify_marginals(sys.get_marginals());
 
       return json_graph;
     }
@@ -66,36 +66,38 @@ class SystemJsonify
                   );
     }
 
-    static Json::Value jsonify_marginals(const typename SAM_SYS::marginals_histories_container_t & marginals_history_list)
+    static Json::Value jsonify_marginals(const typename SAM_SYS::Marginals_t & marginals_container)
     {
       return std::apply(
-          [](const auto & ...map_marginal_histories)
+          [](const auto & ...map_of_wmarginals)
           {
             Json::Value json_marginals;
             // jsonify one type after another, append the result in json_marginals
-            ( jsonify_map_of_marginals(map_marginal_histories,json_marginals) ,...);
+            ( jsonify_map_of_marginals(map_of_wmarginals,json_marginals) ,...);
             return json_marginals;
           }
-          ,marginals_history_list.marginal_history_tuple);
+          ,marginals_container.data_map_tuple);
     }
 
 
     //------------------------------------------------------------------//
     //                           lower level                            //
     //------------------------------------------------------------------//
-    template <typename MARGINAL_HISTORY_T>
-    static void jsonify_map_of_marginals(const MARGINAL_HISTORY_T & map_marginal_histories, Json::Value & json_marginals_out)
+    template <typename MAP_OF_WMARG_T>
+    static void jsonify_map_of_marginals(const MAP_OF_WMARG_T & map_of_wmarginals, Json::Value & json_marginals_out)
     {
-        using marginal_history_t = typename std::remove_const_t<std::decay_t<decltype(map_marginal_histories)>>::mapped_type;
-        using marginal_t = typename marginal_history_t::Marginal_t;
+        using wrapped_marginal_t = typename MAP_OF_WMARG_T::mapped_type;
+        using marginal_t = typename wrapped_marginal_t::Marginal_t;
         using keymeta_t = typename marginal_t::KeyMeta_t;
-        for (const auto & pair : map_marginal_histories)
+        for (const auto & [key_id, wrapped_marginal] : map_of_wmarginals)
         {
           Json::Value json_marginal;
-          auto marg_hist = pair.second;
-          json_marginal["var_id"] = marg_hist.var_id;
+          // auto marg_hist = pair.second;
+          json_marginal["var_id"] = key_id;
           json_marginal["category"] = keymeta_t::kKeyName;
           Json::Value json_mean;
+          // FIX: URGENT: CONTINUE: HERE
+          // TODO: CONTINUE: HERE
           for (std::size_t i =0; i< keymeta_t::components.size();i++)
           {
             // TODO: component name could be given statically so that the string comparaison would occur at compile time (micro opt)

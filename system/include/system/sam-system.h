@@ -30,9 +30,9 @@ namespace sam::System
     // remove duplicates
     using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
     // declare marginal container type of those keymetas
-    using marginals_t = ::sam::Marginal::MarginalsContainer<___uniq_keymeta_set_t> ;
+    using Marginals_t = ::sam::Marginal::MarginalsContainer<___uniq_keymeta_set_t> ;
     // declare marginal histories (over the span of iterative linearization) type
-    using marginals_histories_container_t = ::sam::Marginal::MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
+    // using marginals_histories_container_t = ::sam::Marginal::MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
     // declare factor histories (over the span of iterative linearization) type
     // using factors_histories_t = FactorsHistoriesContainer<FACTOR_T, FACTORS_Ts ...>;
 
@@ -179,7 +179,7 @@ namespace sam::System
       if constexpr (isSystFullyLinear) maxIter = 1;
       else maxIter = 3; // NOTE: start the tests with maxIter of 1
       // history OPTIMIZE: could be class member that would be reset here ? Expected gain almost none
-      marginals_histories_container_t marginals_histories_container;
+      // marginals_histories_container_t marginals_histories_container;
       // factors_histories_t factors_histories;
       
 
@@ -245,42 +245,47 @@ namespace sam::System
         //------------------------------------------------------------------//
         static_assert( std::is_same_v<decltype(MaP),typename Eigen::VectorXd>);
         sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,        // FIX: use std::apply
-        [this, &MaP, &SigmaCovariance, &nIter, &marginals_histories_container ](auto & map_to_marginal_ptr, auto margTypeIdx)
+        [this, &MaP, &SigmaCovariance, &nIter](auto & map_to_wmarginal, auto margTypeIdx)
         {
-          using marginal_t = typename std::decay_t<decltype(map_to_marginal_ptr)>::mapped_type::element_type;
+          using wrapped_marginal_t = typename std::decay_t<decltype(map_to_marginal_ptr)>::mapped_type::element_type;
+          using marginal_t = typename wrapped_marginal_t::Marginal_t;
           using tangent_space_t = typename marginal_t::Tangent_Space_t;
           using keymeta_t = typename marginal_t::KeyMeta_t;
           constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
-          PROFILE_SCOPE( keymeta_t::kKeyName ,sam_utils::JSONLogger::Instance());
+          std::string scope_name = "marginal " + keymeta_t::kKeyName;
+          PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
           // looping over the marginal collection and updating them with the MAP result
-          for (auto & pair : map_to_marginal_ptr)
+          // OPTIMIZE: easy parallelisation of this for-loop (with std::for_each(std::exec::par))
+          for (auto & [key_id, wrapped_marginal] : map_to_wmarginal)
           {
-            std::string key_id = pair.first;
-            auto marginal_ptr = pair.second;
+            // std::string key_id = pair.first;
+            // auto marginal_ptr = pair.second;
             auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
-            auto marginal_MaP = MaP.block<kN,1>(sysidx, 0);
+            auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
+
+            // clear previous history at first iteration
+            if (nIter ==0)
+            {
+              wrapped_marginal.clear_history();
+            }
+            // covariance  TODO: if covariance is asked for or not  (std::nullopt if not)
+            std::optional<typename marginal_t::Covariance_t> 
+              OptSigmaCovariance{SigmaCovariance.block<kN,kN>(sysidx,sysidx)};
+
             // writes the new mean (or increment in NL systems) and the new covariance in the marginal
             if constexpr (isSystFullyLinear) 
             {
-              // replace the eman
-              *(marginal_ptr->mean_ptr) =  marginal_MaP;
+              // replace the mean by the maximum a posterior subvector, and save previous mean in history
+              // *(marginal_ptr->mean_ptr) =  marginal_MaP;
+              wrapped_marginal.save_and_replace( 
+                  marginal_t(MaP_subvector, OptSigmaCovariance) 
+                  );
             }
             else
             {
-              // increment the mean
-              *(marginal_ptr->mean_ptr) += tangent_space_t(marginal_MaP);
-            }
-                                                                       //
-            marginal_ptr->covariance = SigmaCovariance.block<kN,kN>( sysidx, sysidx );
-            // fill/complete the history
-            if (nIter == 0)
-            {
-              marginals_histories_container.template insert_new_marginal<marginal_t>(key_id,marginal_ptr);
-            }
-            else
-            {
-              // push some new data in history
-              marginals_histories_container.template push_marginal_history<marginal_t>(key_id,marginal_ptr);
+              // the Max a Posteriori is in the tangent space (R^kN technically, hat operator must be used
+              // to be in the tangent space formally)
+              wrapped_marginal.save_and_add( tangent_space_t(MaP_subvector), OptSigmaCovariance );
             }
           }
         });
@@ -315,9 +320,9 @@ namespace sam::System
         nIter++;
       }
 
-      // TODO: remove here (2nd phase)
-      this->marginals_histories_container = marginals_histories_container;
-      // this->factors_histories = factors_histories;
+      // // TODO: remove here (2nd phase)
+      // this->marginals_histories_container = marginals_histories_container;
+      // // this->factors_histories = factors_histories;
 
       // clear quadratic error vector
       this->bookkeeper_.clear_quadratic_errors();
@@ -371,7 +376,7 @@ namespace sam::System
 
     std::string agent_id;
 
-    marginals_t all_marginals_;
+    Marginals_t all_marginals_;
 
     // there's at least one factor, the rest are expanded
     Wrapped_Factor_t all_factors_tuple_;
@@ -407,11 +412,29 @@ namespace sam::System
                 return 
                 { 
                   this->all_marginals_
-                  .template find_mean_ptr<typename std::tuple_element_t<J, typename WFT::Factor_t::KeysSet_t>::KeyMeta_t>(keys_id[J])
+                  .template find_marginal<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J]).shared_mean
                 ... 
                 };
               }
             );
+          // auto tuple_of_opt_means_ptr 
+          // = std::apply(
+          //     [this](const auto & ...key_id)
+          //     {
+          //       std::apply(
+          //           [&,this](auto ...dummy_kcc)
+          //           {
+          //             return 
+          //               std::make_tuple(
+          //                   this->all_marginals_
+          //                   .template find_mean_ptr
+          //                       <typename std::decay_t<decltype(dummy_kcc)>::KeyMeta_t>(key_id)
+          //                   ...
+          //                   );
+          //           }
+          //           ,std::declval<typename FT::KeysSet_t>() );
+          //     }
+          //     ,keys_id);
 
           // It is probable that the above tuple contains std::nullopt.
           // Attempt to guess the full init point for this factor by using the measurement if necessary.
@@ -433,13 +456,12 @@ namespace sam::System
                 auto guessed_init_point_ptr = std::get<tuple_idx>(opt_tuple_of_init_point_ptr.value());
                 // make a new marginal from the guessed init point
                 using marginal_t = ::sam::Marginal::BaseMarginal<typename std::tuple_element_t<tuple_idx,typename FT::KeysSet_t>::KeyMeta_t>;
-                std::shared_ptr<marginal_t> new_marginal_ptr = std::make_shared<marginal_t>(guessed_init_point_ptr); // NOTE: HEAP allocation for the full MARGINAL OF THE KEY  (this is a nuance from previous heap allocation)
+                using wrapped_marginal_t = WrapperPersistentFactor<marginal_t>; 
+                auto wrapped_marginal = wrapped_marginal_t(keys_id[tuple_idx], guessed_init_point_ptr);
                 // TODO: intermediary step before updating the marginal: infer a covariance (difficulty ***)
-                // insert the (shared ptr) marginal we just created in the system's marginal container
+                // insert the marginal we just created in the system's marginal container
                 this->all_marginals_.
-                  template insert_in_marginal_container<marginal_t>
-                  (keys_id[tuple_idx],new_marginal_ptr);
-                // TODO: update the bookkeeper ? I think its already done ( CHECK: )
+                  template insert_in_marginal_container<wrapped_marginal_t> (wrapped_marginal);
               }
             }
             );
@@ -447,8 +469,7 @@ namespace sam::System
           }
           else
           {
-            // TODO: FEATURE: emplace factor in a staging container if 
-            // TODO: more detail (which key.s failed etc..)
+            // TODO: FEATURE: emplace factor in a staging container if unable to guess all factors init points
             throw std::runtime_error("Unable to determine all init points for this factor");
           }
           // emplace back in the structure
