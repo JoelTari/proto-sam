@@ -243,52 +243,56 @@ namespace sam::System
         //             structure that will end up in the json.              //
         //            Do the same optionally for the covariance             //
         //------------------------------------------------------------------//
-        static_assert( std::is_same_v<decltype(MaP),typename Eigen::VectorXd>);
-        sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,        // FIX: use std::apply
-        [this, &MaP, &SigmaCovariance, &nIter](auto & map_to_wmarginal, auto margTypeIdx)
-        {
-          using wrapped_marginal_t = typename std::decay_t<decltype(map_to_wmarginal)>::mapped_type;
-          using marginal_t = typename wrapped_marginal_t::Marginal_t;
-          using tangent_space_t = typename marginal_t::Tangent_Space_t;
-          using keymeta_t = typename marginal_t::KeyMeta_t;
-          constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
-          std::string scope_name = "marginal " + std::string(keymeta_t::kKeyName);
-          PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
-          // looping over the marginal collection and updating them with the MAP result
-          // OPTIMIZE: easy parallelisation of this for-loop (with std::for_each(std::exec::par))
-          for (auto & [key_id, wrapped_marginal] : map_to_wmarginal)
-          {
-            // std::string key_id = pair.first;
-            // auto marginal_ptr = pair.second;
-            auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
-            auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
+        std::apply(
+            [this, &MaP,&SigmaCovariance,&nIter](auto & ... map_to_wmarginals)
+            {
+              std::string scope_name = "save marginal updates";
+              PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
+              // define the function
+              auto update_map_of_wmarginals = [&,this](auto & map_of_wrapped_marginals)
+              {
+                  using wrapped_marginal_t = typename std::decay_t<decltype(map_of_wrapped_marginals)>::mapped_type;
+                  using marginal_t = typename wrapped_marginal_t::Marginal_t;
+                  using tangent_space_t = typename marginal_t::Tangent_Space_t;
+                  using keymeta_t = typename marginal_t::KeyMeta_t;
+                  constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
+                  // looping over the marginal collection and updating them with the MAP result
+                  // OPTIMIZE: easy parallelisation of this for-loop (with std::for_each(std::exec::par))
+                  for (auto & [key_id, wrapped_marginal] : map_of_wrapped_marginals)
+                  {
+                    // get the subvector from the Maximum A Posteriori vector
+                    auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
+                    auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
 
-            // clear previous history at first iteration
-            if (nIter ==0)
-            {
-              wrapped_marginal.clear_history();
-            }
-            // covariance  TODO: if covariance is asked for or not  (std::nullopt if not)
-            std::optional<typename marginal_t::Covariance_t> 
-              OptSigmaCovariance{SigmaCovariance.block<kN,kN>(sysidx,sysidx)};
+                    // clear previous history at first iteration
+                    if (nIter ==0)  wrapped_marginal.clear_history();
+                   
+                    // covariance  TODO: if covariance is asked for or not  (std::nullopt if not)
+                    std::optional<typename marginal_t::Covariance_t> 
+                      OptSigmaCovariance{SigmaCovariance.block<kN,kN>(sysidx,sysidx)};
 
-            // writes the new mean (or increment in NL systems) and the new covariance in the marginal
-            if constexpr (isSystFullyLinear) 
-            {
-              // replace the mean by the maximum a posterior subvector, and save previous mean in history
-              // *(marginal_ptr->mean_ptr) =  marginal_MaP;
-              wrapped_marginal.save_and_replace( 
-                  marginal_t(MaP_subvector, OptSigmaCovariance) 
-                  );
+                    // writes the new mean (or increment in NL systems) and the new covariance in the marginal
+                    if constexpr (isSystFullyLinear) 
+                    {
+                      // replace the mean by the maximum a posterior subvector, and save previous mean in history
+                      // *(marginal_ptr->mean_ptr) =  marginal_MaP;
+                      wrapped_marginal.save_and_replace( 
+                          marginal_t(MaP_subvector, OptSigmaCovariance) 
+                          );
+                    }
+                    else
+                    {
+                      // the Max a Posteriori is in the tangent space (R^kN technically, hat operator must be used
+                      // to be in the tangent space formally)
+                      wrapped_marginal.save_and_add( tangent_space_t(MaP_subvector), OptSigmaCovariance );
+                    }
+                  }
+              };
+              
+              ( update_map_of_wmarginals(map_to_wmarginals), ...);
+
             }
-            else
-            {
-              // the Max a Posteriori is in the tangent space (R^kN technically, hat operator must be used
-              // to be in the tangent space formally)
-              wrapped_marginal.save_and_add( tangent_space_t(MaP_subvector), OptSigmaCovariance );
-            }
-          }
-        });
+            , this->all_marginals_.data_map_tuple);
 
         double accumulated_syst_squared_norm = 0;
         // push in history & update data (Ai, bi, norm) in factors
