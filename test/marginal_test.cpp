@@ -4,34 +4,39 @@
 
 int main (int argc, char *argv[])
 {
-    sam::Marginal::MarginalsContainer<std::tuple<sam::Meta::Key::Spatial2d>> container;  
+  // some compile time tests
+    using My_Container_t = typename sam::Marginal::MarginalsContainer<std::tuple<sam::Meta::Key::Spatial2d>>::type;  
+    using My_Container2_t = typename sam::Marginal::MarginalsContainer<sam::Meta::Key::Spatial2d>::type;  
     // without tuple
-    sam::Marginal::MarginalsContainer<sam::Meta::Key::Spatial2d> container2;  
-    using MarginalPosition_t = sam::Marginal::BaseMarginal<sam::Meta::Key::Spatial2d>;
+    static_assert(std::is_same_v<My_Container2_t,My_Container_t>); // not the same actually if ::type is forgotten
+    My_Container_t container;
+    using Marginal_Position_t = sam::Marginal::BaseMarginal<sam::Meta::Key::Spatial2d>;
+    using Wrapped_Marginal_Position_t = ::sam::Marginal::WrapperPersistentMarginal<Marginal_Position_t>;
     
-    // UniqueKeyConduct::measure_cov_t rho({{1,0},{0,1}});
-    // auto adfs = UniqueKeyConduct_t({ "test"}, Eigen::Matrix2d{{1,0},{0,1}} ) ;
-    // const UniqueKeyConduct_t & adfss = UniqueKeyConduct_t({ "test"}, Eigen::Matrix2d{{1,0},{0,1}} ) ;
-    // auto & dd = adfs;
-
-
-    // std::cout << std::decay_t<decltype(adfss)>::kN << '\n';
-    // std::cout << std::decay_t<decltype(dd)>::kN << '\n';
-
     // Marginal<MetaKeyPosition> ;
-    Eigen::Vector2d xmap_marg {1,2};
+    Eigen::Vector2d xmap{1,2};
     Eigen::Matrix2d cov; cov << 1,0,0,3.1;
 
-    auto marg_ptr = std::make_shared<MarginalPosition_t>(  std::make_shared<typename MarginalPosition_t::Mean_t>(xmap_marg),cov);
+    auto my_wrapped_marginal = 
+      sam::Marginal::WrapperPersistentMarginal<Marginal_Position_t>("x1"
+          , std::make_shared<sam::Key::Spatial2d_t>(xmap)
+          , std::optional<Eigen::Matrix2d>(cov));
 
-    container.insert_in_marginal_container<MarginalPosition_t>("k",marg_ptr);
+    container.insert_in_marginal_container(my_wrapped_marginal);
 
-    auto opt = container.find_mean_ptr<sam::Meta::Key::Spatial2d>("k");
+    auto opt = container.find_wrapped_marginal<sam::Meta::Key::Spatial2d>("x1");
     std::cout << "has value? : " << opt.has_value();
-    if (opt.has_value())
-      std::cout << " value (mean) of k is :\n" << *opt.value() << '\n';
+    // if (opt.has_value())
+    //   std::cout << " value (mean) of k is :\n" << *opt.value() << '\n';
 
+    auto my_copied_wmarg = 
+      sam::Marginal::WrapperPersistentMarginal<Marginal_Position_t>("x2"
+          , std::make_shared<sam::Key::Spatial2d_t>(xmap)
+          , std::optional<Eigen::Matrix2d>(cov));
 
+    // copy assignment
+    my_copied_wmarg = my_wrapped_marginal;
+    
     // TODO: marginal SE2
 
     return 0;

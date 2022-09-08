@@ -1,8 +1,5 @@
 #pragma once
 
-// #include "utils/tuple_patterns.h"
-// #include "utils/utils.h"
-
 #include <array>
 #include <memory>
 #include <Eigen/Dense>
@@ -17,9 +14,6 @@
 #include <sstream>
 #include <string_view>
 
-
-// WARNING: SRP
-// include a factor/utils.h with all the print function templates
 
 namespace details_sam::Conduct{
 
@@ -211,7 +205,7 @@ namespace sam::Factor
     public:
     friend DerivedFactor;
     using MeasureMeta_t = typename KCC::MeasureMeta_t;
-    using measure_t      = typename MeasureMeta_t::measure_t; // FIX: URGENT: rename Measure_t
+    using measure_t      = typename MeasureMeta_t::measure_t; // TODO: rename Measure_t
     static constexpr const char* kFactorLabel {FactorLabel};
     // *** the syntax:  N + (Ns + ...) has no fallback when Ns pack is empty
     static constexpr size_t      kN      = (KCC::kN  + ... + KCCs::kN );  // ***
@@ -221,7 +215,8 @@ namespace sam::Factor
     using measure_cov_t                  = Eigen::Matrix<double, kM, kM>;
     using factor_process_matrix_t        = Eigen::Matrix<double, kM, kN>;
     using state_vector_t                 = Eigen::Matrix<double, kN, 1>;   // { dXk , ... }
-    using composite_state_ptr_t = CompositeStatePtr_t<KCC,KCCs...>;
+    using composite_state_ptr = CompositeStatePtr<KCC,KCCs...>;
+    using composite_state_ptr_t = typename composite_state_ptr::type;
         // = std::tuple<std::shared_ptr<typename KCC::Key_t>, std::shared_ptr<typename KCCs::Key_t>...>;   // {*Xk ...}
     using composite_of_opt_state_ptr_t
         = std::tuple<std::optional<std::shared_ptr<typename KCC::Key_t>>,std::optional<std::shared_ptr<typename KCCs::Key_t>>...>;
@@ -266,13 +261,13 @@ namespace sam::Factor
         , factor_id(factor_id)
         , rho(z_cov.inverse().llt().matrixL().transpose())  // cov^-1 =: LL^T
         // , keys_id(keys_id)
-        , keys_set(construct_keys_set<KCC,KCCs...>(keys_id))
+        , keys_set(construct_keys_set(keys_id))
         , keyIdToTupleIdx(map_keyid(keys_id))
     {
       // TODO: throw if cov is not a POS matrix (consistency check enabled ?)
     }
 
-    std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
+    const std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
     /**
      * @brief static method initial point guesstimator. At factor creation, an initial value for some
@@ -399,6 +394,34 @@ namespace sam::Factor
     //   return compute_r_of_x_at_current_lin_point().norm();
     // }
 
+    static KeysSet_t construct_keys_set( const std::array<std::string, kNbKeys> & keys_id)
+    {
+      if constexpr ( kNbKeys > 1 )
+      {
+        std::array<std::string, kNbKeys-1> sub_keys_id; //(keys_id.begin()+1,keys_id.end());
+        for(int i = 1 ; i< kNbKeys; i++)
+        {
+          sub_keys_id[i-1] = keys_id[i];
+        }
+        auto t1 = std::make_tuple(KCC(keys_id[0]));
+        auto t2 =
+         std::apply (
+           [&](const auto & ... key_id)
+           {
+           return std::make_tuple( KCCs(key_id)... );
+           // return std::make_tuple( allKCCs(key_id)... );
+           }
+           , sub_keys_id  
+           // , keys_id
+          );
+        return std::tuple_cat(t1,t2);
+      }
+      else
+      {
+        return std::make_tuple(KCC(keys_id[0]));
+      }
+    }
+
     private:
     /**
      * @brief  constructor helper that creates a map that associated a key id to its index in the
@@ -415,62 +438,6 @@ namespace sam::Factor
       std::map<std::string, std::size_t> result;
       for (int i = 0; i < keys_id.size(); i++) result[keys_id[i]] = i;
       return result;
-    }
-
-    // /**
-    //  * @brief method that gets the tuple of pointers to the active
-    //  * linearization points
-    //  *
-    //  * @return tuple of key values \bar Xk (one for each key in the factor)
-    //  */
-    // composite_state_ptr_t get_key_points() const
-    // {
-    //   // WARNING: SRP: remove
-    //   // REFACTOR: why not make it a const member, at worst it would mean that the 
-    //   // class holds 2 times the same shared_ptr for each key (one in keys_set.key_mean_view
-    //   // , the other in that new tuple member)
-    //   // const composite_state_ptr_t lin_points_view; 
-    //   composite_state_ptr_t current_lin_points_ptr;
-    //   std::apply([this, &current_lin_points_ptr](const auto& ... kcc)
-    //       {
-    //         current_lin_points_ptr = { kcc.key_mean_view ...};
-    //       }
-    //       , this->keys_set
-    //       );
-    //   return current_lin_points_ptr;
-    // }
-    
-    /**
-     * @brief construct keys set (tuple of key contextual conducts objects)
-     *
-     * @tparam allKCCs types of all key contextual conducts (KCC and KCCs into one expansion)
-     *   HACK: cheap trick so that my pack allKCCs has same size as keys_id & init_points, allowing valid expansion in std::apply
-     * @param keys_id keys_id
-     * @param rho square root matrix (upper triangular) of the measurement covariance
-     * @param init_points composite state of initial points
-     * @return keys set of contextual conduct (tuple)
-     */
-    template <typename ...allKCCs>
-    KeysSet_t construct_keys_set( const std::array<std::string, kNbKeys> & keys_id)
-    {
-      return 
-        std::apply
-        (
-          [&](const auto & ... key_id)
-          {
-            return std::make_tuple( allKCCs(key_id)... );
-          //   std::apply([&](const auto & ...key_id)
-          //             {
-          //                 // std::tuple<KCC> key_set0 = { KCC(key_id, rho, init_point) };     
-          //                 // auto kss =std::make_tuple( KCCs(key_id,rho,init_point) ... );           
-          //                return std::make_tuple( allKCCs(key_id) ... );           
-          //             }
-          //             ,keys_id
-          //           ); 
-          }
-          , keys_id  
-        );
-      // return keys_set;
     }
   };
 
@@ -953,7 +920,7 @@ std::string stringify_factor_blockliner(int tab = 4, int precision = 4)
   ss << std::setw(tab) << " " << FT::kFactorLabel << ". M: " << FT::kM << ", N: " << FT::kN << '\n';
   ss << std::setw(tab + 2) << " "
      << "Keys :\n";
-  // FIX: find a way to extract the KCC static info
+  // TODO: find a way to extract the KCC static info
   // std::apply([&](auto&... kcc)
   //             {
   //               ((ss << std::setw(tab+4) << "+ " << stringify_keyconduct_oneliner(kcc) ), ...);

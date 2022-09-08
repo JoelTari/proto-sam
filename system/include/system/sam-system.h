@@ -30,7 +30,7 @@ namespace sam::System
     // remove duplicates
     using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
     // declare marginal container type of those keymetas
-    using Marginals_t = ::sam::Marginal::MarginalsContainer<___uniq_keymeta_set_t> ;
+    using Marginals_t = typename ::sam::Marginal::MarginalsContainer<___uniq_keymeta_set_t>::type ;
     // declare marginal histories (over the span of iterative linearization) type
     // using marginals_histories_container_t = ::sam::Marginal::MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
     // declare factor histories (over the span of iterative linearization) type
@@ -247,12 +247,12 @@ namespace sam::System
         sam_tuples::for_each_in_tuple(this->all_marginals_.data_map_tuple,        // FIX: use std::apply
         [this, &MaP, &SigmaCovariance, &nIter](auto & map_to_wmarginal, auto margTypeIdx)
         {
-          using wrapped_marginal_t = typename std::decay_t<decltype(map_to_marginal_ptr)>::mapped_type::element_type;
+          using wrapped_marginal_t = typename std::decay_t<decltype(map_to_wmarginal)>::mapped_type;
           using marginal_t = typename wrapped_marginal_t::Marginal_t;
           using tangent_space_t = typename marginal_t::Tangent_Space_t;
           using keymeta_t = typename marginal_t::KeyMeta_t;
           constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
-          std::string scope_name = "marginal " + keymeta_t::kKeyName;
+          std::string scope_name = "marginal " + std::string(keymeta_t::kKeyName);
           PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
           // looping over the marginal collection and updating them with the MAP result
           // OPTIMIZE: easy parallelisation of this for-loop (with std::for_each(std::exec::par))
@@ -328,22 +328,6 @@ namespace sam::System
       this->bookkeeper_.clear_quadratic_errors();
     }
 
-    // FIX: this is temporary, remove after 'persistentfactor' refactor (the *_histories_* wont exist)
-    marginals_histories_container_t marginals_histories_container;
-    // factors_histories_t factors_histories;
-    //
-    // // FIX: remove
-    // factors_histories_t get_factors_histories() const
-    // {
-    //   return this->factors_histories;
-    // }
-
-    // FIX: remove
-    marginals_histories_container_t get_marginals_histories() const
-    {
-      return this->marginals_histories_container;
-    }
-
     auto get_all_factors() const
     {
       return this->all_factors_tuple_;
@@ -356,7 +340,7 @@ namespace sam::System
 
 
     // get all marginals
-    auto get_marginals()
+    auto get_marginals() const
     {
       return all_marginals_.data_map_tuple;
     }
@@ -403,38 +387,19 @@ namespace sam::System
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id, WFT::Factor_t::kN, WFT::Factor_t::kM, {keys_id.begin(), keys_id.end()});
 
-          // recover the means (at least the ones available, some may not exist)
-          auto tuple_of_opt_means_ptr 
-          = sam_tuples::reduce_array_variadically( // FIX: use std::apply
-              keys_id,[this]<std::size_t...J>(const auto& keys_id, std::index_sequence<J...>)
-                            -> typename WFT::composite_of_opt_state_ptr_t
+          typename FT::KeysSet_t KccSet = FT::construct_keys_set(keys_id);
+          typename FT::composite_of_opt_state_ptr_t tuple_of_opt_means_ptr
+            = std::apply(
+              [this](auto ... kcc) // copy, no big deal
               {
-                return 
-                { 
-                  this->all_marginals_
-                  .template find_marginal<typename std::tuple_element_t<J, typename FT::KeysSet_t>::KeyMeta_t>(keys_id[J]).shared_mean
-                ... 
-                };
-              }
-            );
-          // auto tuple_of_opt_means_ptr 
-          // = std::apply(
-          //     [this](const auto & ...key_id)
-          //     {
-          //       std::apply(
-          //           [&,this](auto ...dummy_kcc)
-          //           {
-          //             return 
-          //               std::make_tuple(
-          //                   this->all_marginals_
-          //                   .template find_mean_ptr
-          //                       <typename std::decay_t<decltype(dummy_kcc)>::KeyMeta_t>(key_id)
-          //                   ...
-          //                   );
-          //           }
-          //           ,std::declval<typename FT::KeysSet_t>() );
-          //     }
-          //     ,keys_id);
+                return
+                  std::make_tuple
+                  ( 
+                     this->all_marginals_
+                       .template find_mean_ptr<typename decltype(kcc)::KeyMeta_t>(kcc.key_id)
+                      ... 
+                  );
+              }, KccSet);
 
           // It is probable that the above tuple contains std::nullopt.
           // Attempt to guess the full init point for this factor by using the measurement if necessary.
@@ -456,7 +421,7 @@ namespace sam::System
                 auto guessed_init_point_ptr = std::get<tuple_idx>(opt_tuple_of_init_point_ptr.value());
                 // make a new marginal from the guessed init point
                 using marginal_t = ::sam::Marginal::BaseMarginal<typename std::tuple_element_t<tuple_idx,typename FT::KeysSet_t>::KeyMeta_t>;
-                using wrapped_marginal_t = WrapperPersistentFactor<marginal_t>; 
+                using wrapped_marginal_t = ::sam::Marginal::WrapperPersistentMarginal<marginal_t>; 
                 auto wrapped_marginal = wrapped_marginal_t(keys_id[tuple_idx], guessed_init_point_ptr);
                 // TODO: intermediary step before updating the marginal: infer a covariance (difficulty ***)
                 // insert the marginal we just created in the system's marginal container

@@ -95,11 +95,11 @@ TEST(ToyLinearSystem, Square)
   auto all_position2d = std::get<0>(sys_marginals);
 
 
-  std::cout << ::sam::Meta::Key::Spatial2d::stringify_key_oneliner( *all_position2d.find("x3")->second->mean_ptr ) << '\n';
+  std::cout << ::sam::Meta::Key::Spatial2d::stringify_key_oneliner( *all_position2d.find("x3")->second.shared_mean ) << '\n';
 
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x0", expected_x0map, *all_position2d.find("x0")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x1", expected_x1map, *all_position2d.find("x1")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x2", expected_x2map, *all_position2d.find("x2")->second->mean_ptr);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x3", expected_x3map, *all_position2d.find("x3")->second->mean_ptr);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x0", expected_x0map, *all_position2d.find("x0")->second.shared_mean);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x1", expected_x1map, *all_position2d.find("x1")->second.shared_mean);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x2", expected_x2map, *all_position2d.find("x2")->second.shared_mean);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x3", expected_x3map, *all_position2d.find("x3")->second.shared_mean);
 
 }

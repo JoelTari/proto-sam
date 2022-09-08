@@ -1,11 +1,9 @@
 #pragma once
 
 #include "system/config.h"
-#include <json/json.h>
-
-// TODO:  wrap with #if ENABLE_JSON_OUTPUT ?? I think yes
 
 #if ENABLE_JSON_OUTPUT
+#include <json/json.h>
 
 template <typename SAM_SYS>
 class SystemJsonify
@@ -66,7 +64,7 @@ class SystemJsonify
                   );
     }
 
-    static Json::Value jsonify_marginals(const typename SAM_SYS::Marginals_t & marginals_container)
+    static Json::Value jsonify_marginals(const typename SAM_SYS::Marginals_t::Marginals_Data_t & marginals_data_tuple)
     {
       return std::apply(
           [](const auto & ...map_of_wmarginals)
@@ -76,7 +74,7 @@ class SystemJsonify
             ( jsonify_map_of_marginals(map_of_wmarginals,json_marginals) ,...);
             return json_marginals;
           }
-          ,marginals_container.data_map_tuple);
+          ,marginals_data_tuple);
     }
 
 
@@ -96,45 +94,53 @@ class SystemJsonify
           json_marginal["var_id"] = key_id;
           json_marginal["category"] = keymeta_t::kKeyName;
           Json::Value json_mean;
-          // FIX: URGENT: CONTINUE: HERE
-          // TODO: CONTINUE: HERE
           for (std::size_t i =0; i< keymeta_t::components.size();i++)
           {
             // TODO: component name could be given statically so that the string comparaison would occur at compile time (micro opt)
             json_mean[keymeta_t::components[i]]  
-              = keymeta_t::get_component(keymeta_t::components[i],marg_hist.iterative_means.back());
+              = keymeta_t::get_component(keymeta_t::components[i],wrapped_marginal.marginal.mean);
           }
           json_marginal["mean"] = json_mean;
-          // iterative means
-          Json::Value iterative_means;
-          for (std::size_t j = 0 ; j < marg_hist.iterative_means.size(); j++)
+          // covariance
+          if (wrapped_marginal.marginal.covariance.has_value())
           {
+            json_marginal["covariance"] = jsonify_marginal_covariance(wrapped_marginal.marginal);
+          }
+          // historic marginals (from the init point given to the solver to)
+          //  If system is linear, there is only one historic mean
+          Json::Value historic_marginals;
+          for (std::size_t j = 0 ; j < wrapped_marginal.marginal_histories.size(); j++)
+          {
+            Json::Value ith_json_marginal;
             Json::Value ith_json_mean;
             for (std::size_t i =0; i< keymeta_t::components.size();i++)
             {
               ith_json_mean[keymeta_t::components[i]] 
-                = keymeta_t::get_component(keymeta_t::components[i],marg_hist.iterative_means[j]);
+                = keymeta_t::get_component(keymeta_t::components[i],wrapped_marginal.marginal_histories[j].mean);
             }
-            iterative_means.append(ith_json_mean);
+            ith_json_marginal["mean"] = ith_json_mean;
+            if (wrapped_marginal.marginal_histories[j].covariance.has_value())
+            {
+              ith_json_marginal["covariance"] = jsonify_marginal_covariance(wrapped_marginal.marginal_histories[j]);
+            }
+            historic_marginals.append(ith_json_marginal);
           }
-          json_marginal["iterative_means"] = iterative_means;
-          // iterative covariance
-          json_marginal["covariance"]["sigma"].append(std::get<0>(marg_hist.iterative_covariances.back())[0]);
-          json_marginal["covariance"]["sigma"].append(std::get<0>(marg_hist.iterative_covariances.back())[1]);
-          json_marginal["covariance"]["rot"]= std::get<1>(marg_hist.iterative_covariances.back());
-          Json::Value iterative_covariances;
-          for (std::size_t j=0; j< marg_hist.iterative_covariances.size();j++)
-          {
-            Json::Value covariance;
-            covariance["sigma"].append(std::get<0>(marg_hist.iterative_covariances[j])[0]);
-            covariance["sigma"].append((std::get<0>(marg_hist.iterative_covariances[j])[1]));
-            covariance["rot"] = std::get<1>(marg_hist.iterative_covariances[j]);
-            iterative_covariances.append(covariance);
-          }
-          json_marginal["iterative_covariances"] = iterative_covariances;
+          json_marginal["historic_marginals"] = historic_marginals;
+          // TODO: historic covariances
           // put in result
           json_marginals_out.append(json_marginal);
         }
+    }
+
+    template <typename MARG_T>
+    static Json::Value jsonify_marginal_covariance(const MARG_T & marg)
+    {
+      Json::Value json_cov;
+      auto [sigma, rot] = ::sam::Marginal::get_visual_2d_covariance(marg.covariance.value());
+      json_cov["sigma"].append(sigma.first);
+      json_cov["sigma"].append(sigma.second);
+      json_cov["rot"] = rot;
+      return json_cov;
     }
 
     template <typename VECTOR_FACTORS_T>
