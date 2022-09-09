@@ -1,7 +1,6 @@
 #pragma once
 
 #include "system/config.h"
-#include "utils/utils.h"
 
 #include <Eigen/Dense>
 #include <array>
@@ -105,8 +104,6 @@ namespace sam::Factor
     // state point has changed (e.g. the system updates it), the data must be updated
     PersistentFactorData<FACTOR_T> compute_persistent_data() const
     {
-      std::string title = this->factor.factor_id + "_compute_persistent_data";
-      PROFILE_SCOPE(title.c_str(), sam_utils::JSONLogger::Instance());
       // WARNING: not protected against race condition on the current state X
       vector_bi_t    bj;
       matrices_Aik_t Ajks;
