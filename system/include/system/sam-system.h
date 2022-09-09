@@ -8,6 +8,7 @@
 
 #include <Eigen/Sparse>
 #include <functional>
+#include <execution>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -257,38 +258,40 @@ namespace sam::System
                   using keymeta_t = typename marginal_t::KeyMeta_t;
                   constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
                   // looping over the marginal collection and updating them with the MAP result
-                  // OPTIMIZE: easy parallelisation of this for-loop (with std::for_each(std::exec::par))
-                  std::for_each ( map_of_wrapped_marginals.begin(), map_of_wrapped_marginals.end() ,
-                      [&,this]( auto & kvpair)
-                      {
-                        std::string key_id = kvpair.first;
-                        auto wrapped_marginal = kvpair.second;
-                        // get the subvector from the Maximum A Posteriori vector
-                        auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
-                        auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
-
-                        // clear previous history at first iteration
-                        if (nIter ==0)  wrapped_marginal.clear_history();
-                       
-                        // covariance  TODO: if covariance is asked for or not  (std::nullopt if not)
-                        std::optional<typename marginal_t::Covariance_t> 
-                          OptSigmaCovariance{SigmaCovariance.block<kN,kN>(sysidx,sysidx)};
-
-                        // writes the new mean (or increment in NL systems) and the new covariance in the marginal
-                        if constexpr (isSystFullyLinear) 
+                  std::for_each (
+                      std::execution::par_unseq   // aggressive execution policy
+                      , map_of_wrapped_marginals.begin()
+                      , map_of_wrapped_marginals.end() 
+                      , [&,this]( auto & kvpair)
                         {
-                          // replace the mean by the maximum a posterior subvector, and save previous marginal in history
-                          wrapped_marginal.save_and_replace( 
-                              marginal_t(MaP_subvector, OptSigmaCovariance) 
-                              );
+                          std::string key_id = kvpair.first;
+                          auto wrapped_marginal = kvpair.second;
+                          // get the subvector from the Maximum A Posteriori vector
+                          auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
+                          auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
+
+                          // clear previous history at first iteration
+                          if (nIter ==0)  wrapped_marginal.clear_history();
+                         
+                          // covariance  TODO: if covariance is asked for or not  (std::nullopt if not)
+                          std::optional<typename marginal_t::Covariance_t> 
+                            OptSigmaCovariance{SigmaCovariance.block<kN,kN>(sysidx,sysidx)};
+
+                          // writes the new mean (or increment in NL systems) and the new covariance in the marginal
+                          if constexpr (isSystFullyLinear) 
+                          {
+                            // replace the mean by the maximum a posterior subvector, and save previous marginal in history
+                            wrapped_marginal.save_and_replace( 
+                                marginal_t(MaP_subvector, OptSigmaCovariance) 
+                                );
+                          }
+                          else
+                          {
+                            // the Max a Posteriori is in the tangent space (R^kN technically, hat operator must be used
+                            // to be in the tangent space formally)
+                            wrapped_marginal.save_and_add( tangent_space_t(MaP_subvector), OptSigmaCovariance );
+                          }
                         }
-                        else
-                        {
-                          // the Max a Posteriori is in the tangent space (R^kN technically, hat operator must be used
-                          // to be in the tangent space formally)
-                          wrapped_marginal.save_and_add( tangent_space_t(MaP_subvector), OptSigmaCovariance );
-                        }
-                      }
                   );
               };
               
