@@ -259,7 +259,7 @@ namespace sam::System
                   constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
                   // looping over the marginal collection and updating them with the MAP result
                   std::for_each (
-                      std::execution::par_unseq   // aggressive execution policy
+                      std::execution::seq   // on M3500, sequential is still slightly faster than par_unseq (1.4 ms vs 1.625 ms)
                       , map_of_wrapped_marginals.begin()
                       , map_of_wrapped_marginals.end() 
                       , [&,this]( auto & kvpair)
@@ -300,13 +300,18 @@ namespace sam::System
             }
             , this->all_marginals_.data_map_tuple);
 
-        double accumulated_syst_squared_norm = 0;
+        // std::atomic<double> accumulated_syst_squared_norm  (0);
+        double accumulated_syst_squared_norm  (0);
         // push in history & update data (Ai, bi, norm) in factors
         std::apply(
             [&accumulated_syst_squared_norm](auto & ...vec_of_wfactors)
             {
+              std::string title = "loop factor and update data";
+              PROFILE_SCOPE(title.c_str(), sam_utils::JSONLogger::Instance());
+              // on M3500, sequential policy is ~3.5 times faster (0.37 ms vs 1.25ms)
+              // probably because of the lock !
               (
-               std::for_each(
+               std::for_each(//  std::execution::par_unseq,  // linker failure if tbb not found at cmake level
                  vec_of_wfactors.begin(),vec_of_wfactors.end(),
                   [&accumulated_syst_squared_norm](auto & wfactor)
                   {
@@ -315,7 +320,7 @@ namespace sam::System
                     // enforce new linearisation point on data (Ai)
                     auto new_data_at_lin_point = wfactor.compute_persistent_data();
                     wfactor.set_persistent_data(new_data_at_lin_point);
-                    accumulated_syst_squared_norm += new_data_at_lin_point.norm;
+                    accumulated_syst_squared_norm += new_data_at_lin_point.norm; // fetch_add for atomic
                   })
                ,...
               );
@@ -325,7 +330,7 @@ namespace sam::System
         );
 
         // push accumulated squared norm
-        this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm);
+        this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm/* .load() */);
 
         nIter++;
       }
