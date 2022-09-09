@@ -90,7 +90,7 @@ namespace sam::System
       // check if factor id exists already
       // TODO: consistent management failure (throw ? return value false ?
       // std::optional ?)
-      if (this->bookkeeper_.factor_id_exists(factor_id))
+      if (this->bookkeeper_.factor_id_exists(factor_id)) // NOTE: BOOKKEEPER: just loop over factor_tuple and find (same pattern as for remove_factor). A bit slow but thats ok
         throw std::runtime_error("Factor id already exists");
 
       // apply to emplace this factor in the correct container
@@ -146,19 +146,24 @@ namespace sam::System
     */
     void sam_optimise() // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
     {
-      if (this->bookkeeper_.getSystemInfos().number_of_factors == 0) return;
+      if (this->bookkeeper_.getSystemInfos().number_of_factors == 0) return; // NOTE: BOOKKEEPER: just compute M, and if M=0 return
 
       // scoped timer
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
       // get some dimension constants of the system
       SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
-      uint nnz = system_infos.nnz;
-      int        M            = system_infos.aggr_dim_mes;
-      int        N            = system_infos.aggr_dim_keys;
+      uint nnz = system_infos.nnz; // NOTE: BOOKKEEPER: replaced by whiteboard formula
+      int        M            = system_infos.aggr_dim_mes;   // NOTE: BOOKKEEPER: see whiteboard formula
+      int        N            = system_infos.aggr_dim_keys;  // NOTE: BOOKKEEPER: see whiteboard formula
+
+      // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
+      //                                       or  ratio    /N*N
+
+      // NOTE: SolverStats might have ratio
 
       // reset vector of quadratic error TODO: maybe do it at end of function
-      this->bookkeeper_.clear_quadratic_errors();
+      this->bookkeeper_.clear_quadratic_errors(); // NOTE: BOOKKEEPER: remove
 
 #if ENABLE_DEBUG_TRACE
       {
@@ -208,14 +213,14 @@ namespace sam::System
         std::tie(MaP,rnnz) = solveQR(A,b); 
         // TODO: split the compute() step with the analyse pattern (can be set before the loop)
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
-        this->bookkeeper_.set_syst_Rnnz(rnnz);
+        this->bookkeeper_.set_syst_Rnnz(rnnz); // NOTE: BOOKKEEPER: replace, have an adhoc structure such as SolverStats or something, specific to each solver
 
         // optionaly compute the covariance matrix
         Eigen::MatrixXd SigmaCovariance;
         double Hnnz;
         std::tie(SigmaCovariance,Hnnz) = compute_covariance(A);
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
-        this->bookkeeper_.set_syst_Hnnz(Hnnz);
+        this->bookkeeper_.set_syst_Hnnz(Hnnz); // NOTE: BOOKKEEPER: replace, have an adhoc structure such as SolverStats or something, specific to each solver
 
 #if ENABLE_DEBUG_TRACE
       {
@@ -265,7 +270,7 @@ namespace sam::System
                           std::string key_id = kvpair.first;
                           auto wrapped_marginal = kvpair.second;
                           // get the subvector from the Maximum A Posteriori vector
-                          auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;
+                          auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;// NOTE: BOOKKEEPER: replace (second time this sysidx appears)
                           auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
 
                           // clear previous history at first iteration
@@ -328,7 +333,7 @@ namespace sam::System
         );
 
         // push accumulated squared norm
-        this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm/* .load() */);
+        this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm/* .load() */); // NOTE: BOOKKEEPER: replace by an OptStats structure
 
         nIter++;
       }
@@ -358,6 +363,8 @@ namespace sam::System
              )
             , ...);
           },this->all_factors_tuple_);
+      // FIX: URGENT: remove from bookkeeper
+      // this->bookkeeper_.       // NOTE: BOOKKEEPER: remove smthing in GraphModel
     }
 
     void remove_key(const std::string & key_id)
@@ -378,10 +385,15 @@ namespace sam::System
     
     auto get_system_infos() const
     {
-      return this->bookkeeper_.getSystemInfos();
+      return this->bookkeeper_.getSystemInfos();// NOTE: BOOKKEEPER: remove
     }
     
     // FIX: urgent get_joint-marginal etc... 
+    // joint_marginal<marginals_t> get_joint_marginal()
+    // {
+    //
+    // }
+    //
     // get_full_joint()
 
     // get all marginals
@@ -403,7 +415,7 @@ namespace sam::System
      * @brief bookkeeper : store the infos of variables and factors, as well as
      * associative relations, total sizes, indexes , ordering
      */
-    Bookkeeper bookkeeper_;
+    Bookkeeper bookkeeper_;// NOTE: BOOKKEEPER:
 
     std::string agent_id;
 
@@ -433,7 +445,7 @@ namespace sam::System
           // add the factor_id with its infos in the bookkeeper
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id, WFT::Factor_t::kN, WFT::Factor_t::kM, {keys_id.begin(), keys_id.end()});
-
+// NOTE: BOOKKEEPER: remove (not replaced for now, because replacement will have no cache)
           // look up our container to see if we have existing means for each key
           typename FT::KeysSet_t KccSet = FT::construct_keys_set(keys_id);
           typename FT::composite_of_opt_state_ptr_t tuple_of_opt_means_ptr
@@ -505,7 +517,7 @@ namespace sam::System
 #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
           // 1. checking if the bookkeeper is consistent with itself (systemInfo
           // vs whats on the std::maps)
-          assert(this->bookkeeper_.are_dimensions_consistent());
+          assert(this->bookkeeper_.are_dimensions_consistent());// NOTE: BOOKKEEPER: remove probably
           // 2. checking if the bookkeeper is consistent with the tuples of
           // vector holding the factors
           assert(this->is_system_consistent());
@@ -528,14 +540,14 @@ namespace sam::System
       }
     }
 
-
+// NOTE: BOOKKEEPER: remove
     template <typename WFT>
     void add_keys_to_bookkeeper(const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
                                 const std::string&                          factor_id)
     {
       add_keys_to_bookkeeper_impl<WFT>(factor_id, keys_id, std::make_index_sequence<WFT::Factor_t::kNbKeys> {});
     }
-
+// NOTE: BOOKKEEPER: remove
     template <typename WFT, std::size_t... INDEX_S>
     void add_keys_to_bookkeeper_impl(const std::string&                          factor_id,
                                      const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
@@ -544,7 +556,7 @@ namespace sam::System
       (add_in_bookkeeper_in_once(factor_id, keys_id[INDEX_S], std::tuple_element_t<INDEX_S, typename WFT::Factor_t::KeysSet_t>::kN),
        ...);
     }
-
+// NOTE: BOOKKEEPER: remove
     void add_in_bookkeeper_in_once(const std::string& factor_id,
                      const std::string& key_id,
                      int                key_dimension)   // string_view?
@@ -555,7 +567,7 @@ namespace sam::System
       // of the key is consistent ?
       try
       {
-        this->bookkeeper_.getKeyInfos(key_id);
+        this->bookkeeper_.getKeyInfos(key_id);// NOTE: BOOKKEEPER
       }
       catch (int e)
       {
@@ -681,7 +693,8 @@ namespace sam::System
             std::apply(
                 [this](const auto & ... key_id)
                 {
-                  return std::make_tuple( this->bookkeeper_.getKeyInfos(key_id).sysidx ... );
+                  return std::make_tuple( this->bookkeeper_.getKeyInfos(key_id).sysidx ... );// NOTE: BOOKKEEPER
+                                                                                             // replace by something else
                 }, factor.get_array_keys_id()
                 );
           
