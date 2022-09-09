@@ -60,9 +60,9 @@ endif()
 
 # letting the user know the compilation profile wrt low level libraries
 # ExIGraM : Exact Inference on Graphical Models
-message(STATUS "\n[ExIGraM] Low level definitions :\n\t ${LOW_LEVEL_DEFINITIONS}")
-message(STATUS "\n[ExIGraM] Low level libraries :\n\t ${LOW_LEVEL_LIBRARIES}")
-message(STATUS "\n[ExIGraM] Compiled with the following definitions:\n\t ${COMPILED_WITH}")
+message(STATUS "\n[  ] Low level definitions :\n\t ${LOW_LEVEL_DEFINITIONS}")
+message(STATUS "\n[  ] Low level libraries :\n\t ${LOW_LEVEL_LIBRARIES}")
+message(STATUS "\n[  ] Compiled with the following definitions:\n\t ${COMPILED_WITH}")
 
 add_subdirectory(meta)
 list(APPEND META_STATIC_LIBRARIES key_spatial_2d key_spatial_SE2)  # add measures
@@ -85,6 +85,7 @@ target_link_libraries(mainstdin
   sam_system_interface
   ${LOW_LEVEL_LIBRARIES})
 target_compile_features(mainstdin PUBLIC cxx_std_20)
+target_compile_definitions(mainstdin PUBLIC ${COMPILED_WITH})
 
 
 #--------------------------------------------------------------------#

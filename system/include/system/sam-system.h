@@ -142,11 +142,9 @@ namespace sam::System
     }
 
     /**
-    * @brief QR optimisation method
-    *
-    * @param logger the log
+    * @brief optimisation method
     */
-    void sam_optimise(sam_utils::JSONLogger& logger = sam_utils::JSONLogger::Instance()) // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
+    void sam_optimise() // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
     {
       if (this->bookkeeper_.getSystemInfos().number_of_factors == 0) return;
 
