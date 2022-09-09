@@ -29,6 +29,7 @@ set(BLA_VENDOR Intel10_64lp)
 # set(BLA_VENDOR Generic)
 find_package(BLAS)
 find_package(LAPACK)
+find_package(TBB) # link error with intel if BLAS and LAPACK called but not tbb (on execution policy)
 # BUG: link error with lapacke_dgetrf with generic blas vendor
 
 # setting some variables depending on whats avaible on the system
@@ -37,7 +38,7 @@ if (BLAS_FOUND)
   if ("${BLAS_LIBRARIES}" MATCHES ".*intel.*") # if BLAS vendor is intel's mkl
     list(APPEND "COMPILED_WITH" "COMPILED_WITH_BLA_VENDOR_MKL")
     set(LOW_LEVEL_DEFINITIONS "EIGEN_USE_BLAS;EIGEN_USE_LAPACKE;EIGEN_USE_MKL_VML")# equivalent to EIGEN_USE_MKL_ALL
-    set(LOW_LEVEL_LIBRARIES "BLAS::BLAS;LAPACK::LAPACK") # no openMP with intel, see if another BLAS lib
+    set(LOW_LEVEL_LIBRARIES "BLAS::BLAS;LAPACK::LAPACK;TBB::tbb") # no openMP with intel, see if another BLAS lib
   else()
     set(LOW_LEVEL_DEFINITIONS "EIGEN_USE_BLAS;EIGEN_USE_LAPACKE")
     if (OpenMP_CXX_FOUND)
