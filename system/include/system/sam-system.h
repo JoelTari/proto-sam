@@ -378,7 +378,9 @@ namespace sam::System
     {
       return this->bookkeeper_.getSystemInfos();
     }
-
+    
+    // FIX: urgent get_joint-marginal etc... 
+    // get_full_joint()
 
     // get all marginals
     auto get_marginals() const

@@ -33,16 +33,17 @@ namespace sam::Factor
                                                int                                   tab       = 4,
                                                int                                   precision = 4)
   {
-    Eigen::IOFormat
-        CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "  ", ";");
+    // Eigen::IOFormat
+    //     CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "  ", ";");
 
     std::stringstream ss;
-    ss << std::setw(tab) << " "
-       << "Aiks:\n";
-    std::apply([&ss](const auto&... Aik) { ((ss << Aik << '\n'), ...); }, pfd.Aiks);
-    ss << std::setw(tab) << " "
-       << "bi:\n";
-    ss << pfd.bi << "\n";
+    // // next lines print the matrices , commented for now
+    // ss << std::setw(tab) << " "
+    //    << "Aiks:\n";
+    // std::apply([&ss](const auto&... Aik) { ((ss << Aik << '\n'), ...); }, pfd.Aiks);
+    // ss << std::setw(tab) << " "
+    //    << "bi:\n";
+    // ss << pfd.bi << "\n";
     ss << std::setw(tab) << " norm : " << pfd.norm << "\n";
 
     return ss.str();
@@ -149,32 +150,43 @@ namespace sam::Factor
     PersistentFactorData<FACTOR_T> persistentData_;
   };
 
+  template <typename WFACTOR_T>
+    std::string stringify_wrapped_factor_block(const WFACTOR_T& wfactor,int tabulation = 4, int precision = 4)
+    {
+      std::stringstream ss;
+      
+      using FT=typename WFACTOR_T::Factor_t;
+      ss << stringify_factor_blockliner<FT>(wfactor.factor,tabulation +2)
+        << stringify_composite_state_blockliner<typename FT::KeysSet_t>::str(
+            wfactor.state_point_view,
+            wfactor.factor.get_array_keys_id(),
+            tabulation + 4, 4)
+        <<  stringify_persistent_factor_data<FT>(wfactor.get_current_point_data(),tabulation +8);
 
-  // TODO: stringify wfactor
+      return ss.str();
+    }
 
-    // // print all marginals in the marginal container
-    // template <typename TUPLE_MAP_WMARGINAL_T>
-    // std::string stringify_marginal_container_block(const TUPLE_MAP_WMARGINAL_T& marginals_data,
-    //                                                int                          tabulation = 4,
-    //                                                int                          precision  = 4)
-    // {
-    //   std::stringstream ss;
-    //   std::apply(
-    //       [&](const auto&... map_of_wmarginals)
-    //       {
-    //         // declaring the function
-    //         auto loop_map = [&](const auto& my_map)
-    //         {
-    //           for (const auto& [key_id, wmarginal] : my_map)
-    //           {
-    //             ss << std::setw(tabulation) << "[ " << key_id << " ] : \t"
-    //                << stringify_marginal_oneliner(wmarginal.marginal, precision) << '\n';
-    //           }
-    //         };
-    //         (loop_map(map_of_wmarginals), ...);
-    //       },
-    //       marginals_data);
-    //   return ss.str();
-    // }
+  template <typename TUPLE_VECT_WFACTOR_T>
+    std::string stringify_wrapped_factor_container_block(const TUPLE_VECT_WFACTOR_T & wfactor_tuple,
+        int tabulation = 4, int precision = 4)
+    {
+      std::stringstream ss;
+      ss << "All the factors: \n";
+      std::apply(
+          [&](const auto & ... vect_of_wfactors)
+          {
+               ss << "-------\n";
+              ((std::for_each(vect_of_wfactors.begin(),vect_of_wfactors.end(),
+                             [&](const auto & wfactor)
+                             {
+                               ss << stringify_wrapped_factor_block(wfactor,tabulation+4,precision)
+                                  << std::setw(tabulation) << "--\n";
+                             }
+                            )),...);
+          }, wfactor_tuple
+          );
+      ss << "------\n\n";
 
+      return ss.str();
+    }
 }   // namespace sam::Factor

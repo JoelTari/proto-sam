@@ -288,4 +288,7 @@ TEST(ToySLAMSE2System, Manif)
 
   EXPECT_EQ(nbfactors_before, nbfactors_after+1);
 
+  // print all factors
+  std::cout << sam::Factor::stringify_wrapped_factor_container_block(sys.get_all_factors());
+
 }

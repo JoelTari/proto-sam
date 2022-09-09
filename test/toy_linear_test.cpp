@@ -131,4 +131,8 @@ TEST(ToyLinearSystem, Square)
         ,syst.get_all_factors());
 
   EXPECT_EQ(nbfactors_before, nbfactors_after+1);
+
+
+  // print all the factors
+  std::cout << sam::Factor::stringify_wrapped_factor_container_block(syst.get_all_factors());
 }
