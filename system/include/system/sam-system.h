@@ -31,7 +31,7 @@ namespace sam::System
     // remove duplicates
     using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
     // declare marginal container type of those keymetas
-    using Marginals_t = typename ::sam::Marginal::MarginalsContainer<___uniq_keymeta_set_t>::type ;
+    using Marginals_t = typename ::sam::Marginal::MarginalsCollection<___uniq_keymeta_set_t>::type ;
     // declare marginal histories (over the span of iterative linearization) type
     // using marginals_histories_container_t = ::sam::Marginal::MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
     // declare factor histories (over the span of iterative linearization) type

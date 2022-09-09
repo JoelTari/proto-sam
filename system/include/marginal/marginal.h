@@ -121,10 +121,10 @@ namespace sam::Marginal
    * @param key_id marginal key identifier
    */
   template <typename KEYMETA_T, typename... KEYMETA_Ts>
-  class MarginalsContainer
+  class MarginalsCollection
   {
     public:
-    using type = MarginalsContainer<KEYMETA_T, KEYMETA_Ts...>;
+    using type = MarginalsCollection<KEYMETA_T, KEYMETA_Ts...>;
 
     using Marginals_Data_t = std::tuple<
         std::unordered_map<std::string, WrapperPersistentMarginal<BaseMarginal<KEYMETA_T>>>,
@@ -322,12 +322,12 @@ namespace sam::Marginal
   // specialization: if tuple of marginals is given, then extract whats inside the tuple and
   // fallback to the struct above
   template <typename KEYMETA_T, typename... KEYMETA_Ts>
-  class MarginalsContainer<std::tuple<KEYMETA_T, KEYMETA_Ts...>>
-      : public MarginalsContainer<KEYMETA_T, KEYMETA_Ts...>   // WOW !!
+  class MarginalsCollection<std::tuple<KEYMETA_T, KEYMETA_Ts...>>
+      : public MarginalsCollection<KEYMETA_T, KEYMETA_Ts...>   // WOW !!
   {
   };
   template <typename KEYMETA_T>
-  class MarginalsContainer<std::tuple<KEYMETA_T>> : public MarginalsContainer<KEYMETA_T>   // WOW !!
+  class MarginalsCollection<std::tuple<KEYMETA_T>> : public MarginalsCollection<KEYMETA_T>   // WOW !!
   {
   };
 }   // namespace sam::Marginal

@@ -7,9 +7,9 @@ int main(int argc, char* argv[])
 {
   // some compile time tests
   using My_Container_t =
-      typename sam::Marginal::MarginalsContainer<std::tuple<sam::Meta::Key::Spatial2d>>::type;
+      typename sam::Marginal::MarginalsCollection<std::tuple<sam::Meta::Key::Spatial2d>>::type;
   using My_Container2_t =
-      typename sam::Marginal::MarginalsContainer<sam::Meta::Key::Spatial2d>::type;
+      typename sam::Marginal::MarginalsCollection<sam::Meta::Key::Spatial2d>::type;
   // without tuple
   static_assert(std::is_same_v<My_Container2_t,
                                My_Container_t>);   // not the same actually if ::type is forgotten
