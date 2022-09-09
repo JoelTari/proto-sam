@@ -394,6 +394,7 @@ namespace sam::System
           // last argument is a conversion from std::array to std::vector
           this->bookkeeper_.add_factor(factor_id, WFT::Factor_t::kN, WFT::Factor_t::kM, {keys_id.begin(), keys_id.end()});
 
+          // look up our container to see if we have existing means for each key
           typename FT::KeysSet_t KccSet = FT::construct_keys_set(keys_id);
           typename FT::composite_of_opt_state_ptr_t tuple_of_opt_means_ptr
             = std::apply(
@@ -407,37 +408,50 @@ namespace sam::System
                       ... 
                   );
               }, KccSet);
+          // It is often the case that the above tuple contains at least 1 std::nullopt.
 
-          // It is probable that the above tuple contains std::nullopt.
           // Attempt to guess the full init point for this factor by using the measurement if necessary.
           // If we don't have enough data to fill in the blank, then `opt_tuple_of_init_point = std::nullopt`
           std::optional<typename WFT::composite_state_ptr_t> opt_tuple_of_init_point_ptr
-            = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect); // NOTE: heap allocation for the INIT POINT AS MEAN (make_shared)
+            = FT::guess_init_key_points(tuple_of_opt_means_ptr,mes_vect);
+          // NOTE: this is were we heap allocate for the mean of new keys (or so far unknown key)
 
+          // if all keys are guessed or were already complete, fill the container of 
+          // the means for keys that were missing
           if (opt_tuple_of_init_point_ptr.has_value())
           {
-            // iterations over several tuples // FIX: use std::apply
-            sam_tuples::constexpr_for<FT::kNbKeys>(
-            [&](auto idx)
-            {
-              constexpr auto tuple_idx = idx.value;
-              // if the mean was not found ante-previously, insert it using the guesser result
-              if ( !std::get<tuple_idx>(tuple_of_opt_means_ptr).has_value() )
-              {
-                // isolate the shared ptr to the guessed init point
-                auto guessed_init_point_ptr = std::get<tuple_idx>(opt_tuple_of_init_point_ptr.value());
-                // make a new marginal from the guessed init point
-                using marginal_t = ::sam::Marginal::BaseMarginal<typename std::tuple_element_t<tuple_idx,typename FT::KeysSet_t>::KeyMeta_t>;
-                using wrapped_marginal_t = ::sam::Marginal::WrapperPersistentMarginal<marginal_t>; 
-                auto wrapped_marginal = wrapped_marginal_t(keys_id[tuple_idx], guessed_init_point_ptr);
-                // TODO: intermediary step before updating the marginal: infer a covariance (difficulty ***)
-                // insert the marginal we just created in the system's marginal container
-                this->all_marginals_.
-                  template insert_in_marginal_container<wrapped_marginal_t> (wrapped_marginal);
-              }
-            }
-            );
+            // HACK: triple zip tupple pattern
+            std::apply(
+                [&,this](const auto & ...opt_mean_ptr)
+                {
+                  std::apply(
+                      [&,this](const auto & ...guessed_mean_ptr)
+                      {
+                        std::apply(
+                            [&,this](auto...kcc) // copy, no big deal though
+                            {
+                              auto lambda = [&,this](const auto & _opt_mean_ptr, const auto &_guessed_mean_ptr, auto _kcc)
+                              {
+                                // if opt_mean_ptr has no value
+                                //  then create a wrapped marginal with the guessed mean pointer
+                                if (!_opt_mean_ptr.has_value())
+                                {
+                                  using marginal_t = ::sam::Marginal::BaseMarginal<typename decltype(_kcc)::KeyMeta_t>;
+                                  using wrapped_marginal_t = ::sam::Marginal::WrapperPersistentMarginal<marginal_t>; 
+                                  auto wrapped_marginal = wrapped_marginal_t(_kcc.key_id, _guessed_mean_ptr);
+                                  // TODO: intermediary step before updating the marginal: infer a covariance (difficulty ***)
+                                  // insert the marginal we just created in the system's marginal container
+                                  this->all_marginals_.
+                                    template insert_in_marginal_container<wrapped_marginal_t> (wrapped_marginal);
+                                }
+                              };
+                              ((lambda(opt_mean_ptr,guessed_mean_ptr,kcc)),...);
+                            },KccSet);
+                      }
+                      , opt_tuple_of_init_point_ptr.value());
 
+                }
+                , tuple_of_opt_means_ptr);
           }
           else
           {
