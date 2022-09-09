@@ -341,6 +341,34 @@ namespace sam::System
       this->bookkeeper_.clear_quadratic_errors();
     }
 
+    void remove_factor(const std::string & factor_id)
+    {
+      // nothing happend if factor_id doesnt exist
+      std::apply(
+          [&](auto& ... vec_of_wfactor)
+          {
+            // erase-remove idiom wrapped in expression expansion 
+          ( 
+           // TODO: assert that number of eliminated element is 1 at most (returned value of erase_if)
+           std::erase_if(
+             vec_of_wfactor, 
+             [&](auto & wf){return wf.factor.factor_id == factor_id;}
+             )
+            , ...);
+          },this->all_factors_tuple_);
+    }
+
+    void remove_key(const std::string & key_id)
+    {
+      // remove associated factors?
+      // several mines here: what happen if graph becomes unconnected etc...
+    }
+
+    void sum_out(const std::string & key_id)
+    {
+      // not the same as remove !
+    }
+
     auto get_all_factors() const
     {
       return this->all_factors_tuple_;

@@ -42,8 +42,8 @@ namespace details_sam::Conduct
     static constexpr const std::size_t kM {MeasureMeta_t::kM};
     static constexpr const std::size_t kN {KeyMeta_t::kN};
     static constexpr const bool        kLinear {false};
-    // non static but const
-    const std::string key_id;   // the  only non-static element
+    // should be const but it deletes the copy-assignment operator
+    std::string key_id;   // the  only non-static element
 
     using key_process_matrix_t = Eigen::Matrix<double, kM, kN>;
     using measure_cov_t        = Eigen::Matrix<double, kM, kM>;
@@ -119,7 +119,7 @@ namespace details_sam::Conduct
                                  const key_process_matrix_t>);
 
     // one for each instance (not static, couldn't make it static), better for cache locality
-    const key_process_matrix_t Hik {*Hik_MATRIX_PTR};   // by copy at construction time, non-static
+    key_process_matrix_t Hik {*Hik_MATRIX_PTR};   // by copy at construction time, non-static
 
     // this is a linear context for this KCC template
     static constexpr const bool kLinear {true};
@@ -145,9 +145,12 @@ namespace sam::Factor
     using type                 = std::tuple<std::shared_ptr<typename KCCs::Key_t>...>;
     static constexpr auto size = sizeof...(KCCs);
     using kccs_type            = std::tuple<KCCs...>;
+    using ConstType=std::tuple<std::shared_ptr<const typename KCCs::Key_t>...>;
   };
   template <typename... KCCs>
   using CompositeStatePtr_t = typename CompositeStatePtr<KCCs...>::type;
+  template <typename... KCCs>
+  using CompositeStateConstPtr_t = typename CompositeStatePtr<KCCs...>::ConstType;
 
   // template <typename FT>
   // struct CompositeStatePtr : CompositeStatePtr<typename FT::KeysSet_t>{};
@@ -204,6 +207,7 @@ namespace sam::Factor
     using state_vector_t            = Eigen::Matrix<double, kN, 1>;   // { dXk , ... }
     using composite_state_ptr       = CompositeStatePtr<KCC, KCCs...>;
     using composite_state_ptr_t     = typename composite_state_ptr::type;
+    using composite_state_const_ptr_t     = typename CompositeStatePtr<KCC, KCCs...>::ConstType;
     // = std::tuple<std::shared_ptr<typename KCC::Key_t>, std::shared_ptr<typename KCCs::Key_t>...>;
     // // {*Xk ...}
     using composite_of_opt_state_ptr_t
@@ -219,10 +223,10 @@ namespace sam::Factor
 
     static constexpr const char* kMeasureName {MeasureMeta_t::kMeasureName};
     static constexpr auto        kMeasureComponentsName = MeasureMeta_t::components;
-    const std::string            factor_id;   // fill at ctor
-    const measure_t              z;           // fill at ctor
-    const measure_cov_t          z_cov;       // fill at ctor
-    const measure_cov_t          rho;         // fill at ctor
+    std::string            factor_id;   // fill at ctor
+    measure_t              z;           // fill at ctor
+    measure_cov_t          z_cov;       // fill at ctor
+    measure_cov_t          rho;         // fill at ctor
     // const std::array<std::string, kNbKeys>       keys_id;     // fill at ctor
     KeysSet_t keys_set;   // fill at ctor, mutable NOTE: perhaps shouldnt be mutable
 
@@ -259,7 +263,7 @@ namespace sam::Factor
       // TODO: throw if cov is not a POS matrix (consistency check enabled ?)
     }
 
-    const std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
+    std::map<std::string, size_t> keyIdToTupleIdx;   // fill at ctor
 
     /**
      * @brief static method initial point guesstimator. At factor creation, an initial value for
@@ -690,9 +694,9 @@ namespace sam::Factor
     static_assert((LinearKCCs::kLinear && ...));
 
     // rosie is a precious name for rho*z
-    const criterion_t rosie;   // = this->rho * this->z;
+    criterion_t rosie;   // = this->rho * this->z;
 
-    const matrices_Aik_t all_Aik;
+    matrices_Aik_t all_Aik;
 
     /**
      * @brief Constructor

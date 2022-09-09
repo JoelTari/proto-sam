@@ -112,4 +112,23 @@ TEST(ToyLinearSystem, Square)
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x3",
                                                  expected_x3map,
                                                  *all_position2d.find("x3")->second.shared_mean);
+
+  // additional test: remove f5
+  int nbfactors_before = 
+    std::apply([](const auto & ...vect)
+        { 
+          return (vect.size() + ...) ;  
+        }
+        ,syst.get_all_factors());
+
+  syst.remove_factor("f2");
+
+  int nbfactors_after = 
+    std::apply([](const auto & ...vect)
+        { 
+          return (vect.size() + ...) ;  
+        }
+        ,syst.get_all_factors());
+
+  EXPECT_EQ(nbfactors_before, nbfactors_after+1);
 }

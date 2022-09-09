@@ -267,4 +267,25 @@ TEST(ToySLAMSE2System, Manif)
       "b4",
       expected_b4_map,
       *all_positionLandmark.find("b4")->second.shared_mean);
+
+  
+  // additional test: remove f5
+  int nbfactors_before = 
+    std::apply([](const auto & ...vect)
+        { 
+          return (vect.size() + ...) ;  
+        }
+        ,sys.get_all_factors());
+
+  sys.remove_factor("f5");
+
+  int nbfactors_after = 
+    std::apply([](const auto & ...vect)
+        { 
+          return (vect.size() + ...) ;  
+        }
+        ,sys.get_all_factors());
+
+  EXPECT_EQ(nbfactors_before, nbfactors_after+1);
+
 }

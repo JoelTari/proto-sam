@@ -56,6 +56,7 @@ namespace sam::Factor
     public:
     using Factor_t                     = FACTOR_T;
     using composite_state_ptr_t        = typename FACTOR_T::composite_state_ptr_t;
+    // using composite_state_const_ptr_t  = typename FACTOR_T::composite_state_const_ptr_t;
     using composite_of_opt_state_ptr_t = typename FACTOR_T::composite_of_opt_state_ptr_t;
     using measure_t                    = typename FACTOR_T::measure_t;
     using measure_cov_t                = typename FACTOR_T::measure_cov_t;
@@ -96,7 +97,8 @@ namespace sam::Factor
     }
 
     // shared with other structures in system
-    const composite_state_ptr_t state_point_view;
+    // this should be const
+    composite_state_ptr_t state_point_view;
 
     // factor (the wrapped thing)
     FACTOR_T factor;
@@ -147,5 +149,32 @@ namespace sam::Factor
     PersistentFactorData<FACTOR_T> persistentData_;
   };
 
+
+  // TODO: stringify wfactor
+
+    // // print all marginals in the marginal container
+    // template <typename TUPLE_MAP_WMARGINAL_T>
+    // std::string stringify_marginal_container_block(const TUPLE_MAP_WMARGINAL_T& marginals_data,
+    //                                                int                          tabulation = 4,
+    //                                                int                          precision  = 4)
+    // {
+    //   std::stringstream ss;
+    //   std::apply(
+    //       [&](const auto&... map_of_wmarginals)
+    //       {
+    //         // declaring the function
+    //         auto loop_map = [&](const auto& my_map)
+    //         {
+    //           for (const auto& [key_id, wmarginal] : my_map)
+    //           {
+    //             ss << std::setw(tabulation) << "[ " << key_id << " ] : \t"
+    //                << stringify_marginal_oneliner(wmarginal.marginal, precision) << '\n';
+    //           }
+    //         };
+    //         (loop_map(map_of_wmarginals), ...);
+    //       },
+    //       marginals_data);
+    //   return ss.str();
+    // }
 
 }   // namespace sam::Factor
