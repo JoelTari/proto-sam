@@ -12,7 +12,7 @@ class SystemJsonify
   static Json::Value jsonify_graph(const SAM_SYS& sys)
   {
     Json::Value json_graph;
-    json_graph["header"]    = jsonify_header(sys.get_system_infos());
+    json_graph["header"]    = jsonify_header(sys.get_system_infos(),sys.nbSequence);
     json_graph["factors"]   = jsonify_factors(sys.get_all_factors());
     json_graph["marginals"] = jsonify_marginals(sys.get_marginals());
 
@@ -20,11 +20,11 @@ class SystemJsonify
   }
 
   private:
-  static Json::Value jsonify_header(const typename SAM_SYS::system_info_t& sysinfo)
+  static Json::Value jsonify_header(const typename SAM_SYS::system_info_t& sysinfo, int nbSequence)
   {
     Json::Value json_header;
     json_header["robot_id"]  = sysinfo.agent_id;
-    json_header["seq"]       = 0;   // TODO:
+    json_header["seq"]       = nbSequence;
     json_header["base_unit"] = 0.15;
     Json::Value quadratic_errors;
     for (auto qerr : sysinfo.quadratic_error) quadratic_errors.append(qerr);

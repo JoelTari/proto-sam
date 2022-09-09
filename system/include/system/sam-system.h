@@ -339,6 +339,8 @@ namespace sam::System
 
       // clear quadratic error vector
       this->bookkeeper_.clear_quadratic_errors();
+      // update sequence number
+      nbSequence++;
     }
 
     void remove_factor(const std::string & factor_id)
@@ -393,6 +395,8 @@ namespace sam::System
         , std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts,isSystFullyLinear>>
         ...
         >;
+
+    int nbSequence = 0;
 
     private:
     /**
