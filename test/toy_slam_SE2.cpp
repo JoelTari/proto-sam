@@ -227,6 +227,8 @@ TEST(ToySLAMSE2System, Manif)
   // get Keys after optimisation
   std::cout << "After Optimisation:\n";
   sys_marginals        = sys.get_marginals();
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
+
   auto expected_b4_map = ::sam::Key::Spatial2d_t(14.89, 4.983);
   auto expected_b2_map = ::sam::Key::Spatial2d_t(9.981, 5.01);
   auto expected_b3_map = ::sam::Key::Spatial2d_t(15.05, -5.006);
