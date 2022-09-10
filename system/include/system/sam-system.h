@@ -122,11 +122,9 @@ namespace sam::System
       Eigen::VectorXd b(M);
       std::vector<Eigen::Triplet<double>> sparseA_triplets;
       sparseA_triplets.reserve(jacobian_NNZ); // expected number of nonzeros elements
-      uint64_t line_counter = 0; // FIX: remove
       //------------------------------------------------------------------//
       //                fill triplets of A and vector of b                //
       //------------------------------------------------------------------//
-      // FIX: zip factor-tuple and factor-idx-offset + pass down key-idx-offset in argument
       std::apply(
           [&,this](const auto & ...vect_of_wfactors)
           {
@@ -134,8 +132,14 @@ namespace sam::System
                 [&,this](const auto & ... start_row_idx)
                 {
                     (
-                     ( this->lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b/*,line_counter*/, start_row_idx, N_type_idx_offsets) )
-                     //      lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b,const this-factor-type-idx-offset) 
+                     ( this->lay_out_factors_to_sparse_triplets(
+                                                                vect_of_wfactors
+                                                                , start_row_idx
+                                                                , N_type_idx_offsets
+                                                                ,sparseA_triplets
+                                                                ,b
+                                                               ) 
+                     )
                      , ... );
                 }, M_type_idx_offsets);
           } ,this->all_factors_tuple_);
@@ -664,29 +668,19 @@ namespace sam::System
     void lay_out_factors_to_sparse_triplets
     (
      const VECT_OF_WFT & vect_of_wfactors
-     , std::vector<Eigen::Triplet<double>> & sparseA_triplets_out
-     , Eigen::VectorXd& b_out
-     // , uint64_t& line_counter_out
      , std::size_t M_FT_idx_offset
      , const std::array<std::size_t, kNbKeyTypes> & N_type_idx_offsets
+     , std::vector<Eigen::Triplet<double>> & sparseA_triplets_out
+     , Eigen::VectorXd& b_out
     ) const
     {
         using WFT = typename VECT_OF_WFT::value_type;
         using FT = typename WFT::Factor_t;
         std::string scope_name = "lay out factors of type " + std::string(FT::kFactorLabel) + " in triplet";
         PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
-        // OPTIMIZE: parallel loop (std::execution::par)
-        // OPTIMIZE: race: sparseA_triplets, b ; potential race : vector of factors (check)
+
         for (auto it_wf = vect_of_wfactors.begin(); it_wf!=vect_of_wfactors.end(); it_wf++)
         {
-          // refactor proposal: 
-          // - construct many smaller triplets in parallel (based on 0-col 0-row)
-          // - rebase them in system indices (constant increment of line (all factor are the same here), col depends on bookkeeper data)
-          //    in parallel also (concurrent calls to bookkeeper get sysidx)
-          // - and join them later in a greater triplets for that type of factor
-          // - at higher level, join all triplets of all factor types
-          // It would be better because that would have more parallelism + returned values
-          // methods would be static etc...
           auto factor = it_wf->factor;
           // get Ai and bi (computations of Ai,bi not done here)
           auto matrices_Aik = it_wf->get_current_point_data().Aiks;
@@ -697,11 +691,7 @@ namespace sam::System
           std::vector<Eigen::Triplet<double>> Ai_triplets; 
           Ai_triplets.reserve(FT::kN*FT::kM);
           
-          // tuple of sysidx so that we know how to scatter the cols for every Aik
-          // FIX: replace by key-idx-offset ?
-          //       -> find marginal by id in container and compute distance from map.begin()
-          //          and add the KeyType-offset
-          //          WARNING: difficult
+          // FIX: remove in favor of array_of_start_column_idx
           auto tuple_of_start_column_idx =
             std::apply(
                 [this](const auto & ... key_id)
@@ -710,7 +700,6 @@ namespace sam::System
                                                                                              // replace by something else
                 }, factor.get_array_keys_id() // factor.keysset rather (so that we access KeyMeta_t AND key_id)
                 );
-
 
           // for each element of the tuple:
           //    start_column_idx = keytype_idx_offset + iterator_distance * kN
@@ -733,12 +722,11 @@ namespace sam::System
                 , factor.keys_set);
        
 
-          // FIX: start_row_idx = factortype_idx_offset + iterator_distance * kM
+          // start_row_idx = (the idx offset that depends on factor type) + iterator_distance * kM
           std::size_t factor_iterator_distance = std::distance( vect_of_wfactors.begin() , it_wf );
           std::size_t start_row_idx = M_FT_idx_offset + factor_iterator_distance* FT::kM;
           
           // placing those matrices in Ai_triplets
-          // FIX: rename line_counter_out to start_number
           std::apply(
               [this, &start_row_idx,&tuple_of_start_column_idx, &Ai_triplets](const auto & ...Aik)
               {
@@ -754,11 +742,8 @@ namespace sam::System
               }
               , matrices_Aik);
            
-          // put Ai and bi into sparseA_triplets and b
-          // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
           // QUESTION: is that a race condition if we write b at different places concurrently
-          b_out.block<FT::kM,1>(start_row_idx,0) = bi; // FIX: start_row_idx
-          // line_counter_out += FT::kM; // FIX: remove
+          b_out.block<FT::kM,1>(start_row_idx,0) = bi;
           // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
           sparseA_triplets_out.insert(std::end(sparseA_triplets_out),std::begin(Ai_triplets),std::end(Ai_triplets));
         }
