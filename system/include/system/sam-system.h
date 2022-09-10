@@ -175,6 +175,7 @@ namespace sam::System
                         * vect_of_wf.size()) + ...); 
           },this->all_factors_tuple_);
 
+      // Factor Idx in A,b
       std::array<std::size_t, 1+sizeof...(FACTORS_Ts)> IdxMatrixFactorTypesSize
         = std::apply([](const auto & ... vectofwf)
             {
@@ -207,9 +208,37 @@ namespace sam::System
 
 
 
-      std::array<uint, std::tuple_size_v<___uniq_keymeta_set_t>> IdxMatrixKeyTypesSize;
+      // Key Idx in A,b
+      std::array<std::size_t, std::tuple_size_v<___uniq_keymeta_set_t>> IdxMatrixKeyTypesSize
+        = std::apply([](const auto & ... map_of_wmarg)
+            {
+              return std::array<std::size_t, std::tuple_size_v<___uniq_keymeta_set_t>>
+              {
+                 std::remove_cvref_t<decltype(map_of_wmarg)>::mapped_type::Marginal_t::KeyMeta_t::kN*map_of_wmarg.size() ...
+              };
+            },this->all_marginals_.data_map_tuple);
       
-      std::array<uint, std::tuple_size_v<___uniq_keymeta_set_t>> IdxMatrixKeyTypesOffset;
+         
+// #if ENABLE_DEBUG_TRACE
+      std::cout << "IdxMatrixKeyTypesSize : \n";
+      std::stringstream ss3;
+      ss3 << "[ ";
+      for (auto idx :  IdxMatrixKeyTypesSize  ) ss3 << idx <<", ";
+      // ss3.seekp(-2, ss3.cur); 
+      ss3<< " ]\n";
+      std::cout << ss3.str();
+// #endif
+      std::array<std::size_t, std::tuple_size_v<___uniq_keymeta_set_t>> IdxMatrixKeyTypesOffset = {};
+      std::partial_sum(IdxMatrixKeyTypesSize.begin(), IdxMatrixKeyTypesSize.end()-1, IdxMatrixKeyTypesOffset.begin()+1);
+// #if ENABLE_DEBUG_TRACE
+      std::cout << "IdxMatrixKeyTypesOffset : \n";
+      std::stringstream ss4;
+      ss4 << "[ ";
+      for (auto idx :  IdxMatrixKeyTypesOffset  ) ss4 << idx <<", ";
+      // ss4.seekp(-2, ss4.cur); 
+      ss4<< " ]\n";
+      std::cout << ss4.str();
+// #endif
 
       // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
       //                                       or  ratio    /N*N
