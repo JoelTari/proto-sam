@@ -9,6 +9,7 @@
 #include <Eigen/Sparse>
 #include <functional>
 #include <execution>
+#include <numeric>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -47,7 +48,7 @@ namespace sam::System
       * @param agent id
       */
     SamSystem(const std::string & agent_id)
-      :agent_id(agent_id),bookkeeper_(Bookkeeper(agent_id)) 
+      :agent_id(agent_id),bookkeeper_(Bookkeeper(agent_id))  // NOTE: BOOKKEEPER: remove
     { 
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); 
     }
@@ -153,9 +154,27 @@ namespace sam::System
 
       // get some dimension constants of the system
       SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
-      uint nnz = system_infos.nnz; // NOTE: BOOKKEEPER: replaced by whiteboard formula
-      int        M            = system_infos.aggr_dim_mes;   // NOTE: BOOKKEEPER: see whiteboard formula
-      int        N            = system_infos.aggr_dim_keys;  // NOTE: BOOKKEEPER: see whiteboard formula
+      // uint nnz2 = system_infos.nnz;
+      // int        MM            = system_infos.aggr_dim_mes;
+      // int        NN          = system_infos.aggr_dim_keys;
+
+      uint M = std::apply([](const auto & ...vect_of_wf)
+          { 
+            return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::kM  
+                        * vect_of_wf.size()) + ...); 
+          },this->all_factors_tuple_);
+      uint N = std::apply([](const auto & ...map_of_wmarg)
+          { 
+            return  ((std::remove_cvref_t<decltype(map_of_wmarg)>::mapped_type::Marginal_t::KeyMeta_t::kN  
+                        * map_of_wmarg.size()) + ...); 
+          },this->all_marginals_.data_map_tuple );
+
+      uint nnz = std::apply([](const auto & ...vect_of_wf)
+          { 
+            return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::factor_process_matrix_t::SizeAtCompileTime  
+                        * vect_of_wf.size()) + ...); 
+          },this->all_factors_tuple_);
+
 
       // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
       //                                       or  ratio    /N*N
@@ -170,8 +189,6 @@ namespace sam::System
         PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
         std::cout << "### Syst: Starting an optimisation \n";
         std::cout << "### Syst: size " << M << " * " << N << '\n';
-        // TODO: URGENT: print init point on NL systems
-        // loop over marginals, and print current mean
       }
 #endif
 
