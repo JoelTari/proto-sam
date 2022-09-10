@@ -5,6 +5,7 @@
 #include "system/config.h"
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"
+#include "system/MatrixConverter.hpp"
 
 #include <Eigen/Sparse>
 #include <functional>
@@ -26,17 +27,15 @@ namespace sam::System
   class SamSystem
   {
     public:
-    // marginals: infer the different types of marginals by looking into the keymeta of the factors (and filtering duplicates)
-    using ___aggrkeymeta_t
-        = sam_tuples::tuple_cat_t<typename FACTOR_T::KeyMetas_t, typename FACTORS_Ts::KeyMetas_t ... >;
-    // remove duplicates
-    using ___uniq_keymeta_set_t = typename sam_tuples::tuple_filter_duplicate<___aggrkeymeta_t>::type ;
+    // keymetae (latin plural <3) remove duplicates
+    using KeyMetae_t = typename sam_tuples::tuple_filter_duplicate
+                                    <
+                                      sam_tuples::tuple_cat_t
+                                      <typename FACTOR_T::KeyMetas_t, typename FACTORS_Ts::KeyMetas_t ... >
+                                    >::type;
+
     // declare marginal container type of those keymetas
-    using Marginals_t = typename ::sam::Marginal::MarginalsCollection<___uniq_keymeta_set_t>::type ;
-    // declare marginal histories (over the span of iterative linearization) type
-    // using marginals_histories_container_t = ::sam::Marginal::MarginalsHistoriesContainer<___uniq_keymeta_set_t>;
-    // declare factor histories (over the span of iterative linearization) type
-    // using factors_histories_t = FactorsHistoriesContainer<FACTOR_T, FACTORS_Ts ...>;
+    using Marginals_t = typename ::sam::Marginal::MarginalsCollection<KeyMetae_t>::type ;
 
     using system_info_t = SystemInfo;
 
@@ -158,87 +157,20 @@ namespace sam::System
       // int        MM            = system_infos.aggr_dim_mes;
       // int        NN          = system_infos.aggr_dim_keys;
 
-      std::size_t M = std::apply([](const auto & ...vect_of_wf)
-          { 
-            return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::kM  
-                        * vect_of_wf.size()) + ...); 
-          },this->all_factors_tuple_);
-      std::size_t N = std::apply([](const auto & ...map_of_wmarg)
-          { 
-            return  ((std::remove_cvref_t<decltype(map_of_wmarg)>::mapped_type::Marginal_t::KeyMeta_t::kN  
-                        * map_of_wmarg.size()) + ...); 
-          },this->all_marginals_.data_map_tuple );
-
       std::size_t nnz = std::apply([](const auto & ...vect_of_wf)
           { 
             return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::factor_process_matrix_t::SizeAtCompileTime  
                         * vect_of_wf.size()) + ...); 
           },this->all_factors_tuple_);
 
-      // Factor Idx in A,b
-      std::array<std::size_t, 1+sizeof...(FACTORS_Ts)> IdxMatrixFactorTypesSize
-        = std::apply([](const auto & ... vectofwf)
-            {
-              return std::array<std::size_t, 1+sizeof...(FACTORS_Ts)>
-              {
-                 std::remove_cvref_t<decltype(vectofwf)>::value_type::Factor_t::kM*vectofwf.size() ...
-              };
-            },this->all_factors_tuple_);
-
-// #if ENABLE_DEBUG_TRACE
-      std::cout << "IdxMatrixFactorTypesSize : \n";
-      std::stringstream ss;
-      ss << "[ ";
-      for (auto idx :  IdxMatrixFactorTypesSize  ) ss << idx <<", ";
-      // ss.seekp(-2, ss.cur); 
-      ss<< " ]\n";
-      std::cout << ss.str();
-// #endif
-      std::array<uint, 1+sizeof...(FACTORS_Ts)> IdxMatrixFactorTypesOffset ={} ;
-      std::partial_sum(IdxMatrixFactorTypesSize.begin(), IdxMatrixFactorTypesSize.end()-1, IdxMatrixFactorTypesOffset.begin()+1);
-// #if ENABLE_DEBUG_TRACE
-      std::cout << "IdxMatrixFactorTypesOffset : \n";
-      std::stringstream ss2;
-      ss2 << "[ ";
-      for (auto idx :  IdxMatrixFactorTypesOffset  ) ss2 << idx <<", ";
-      // ss2.seekp(-2, ss2.cur); 
-      ss2<< " ]\n";
-      std::cout << ss2.str();
-// #endif
-
-
-
-      // Key Idx in A,b
-      std::array<std::size_t, std::tuple_size_v<___uniq_keymeta_set_t>> IdxMatrixKeyTypesSize
-        = std::apply([](const auto & ... map_of_wmarg)
-            {
-              return std::array<std::size_t, std::tuple_size_v<___uniq_keymeta_set_t>>
-              {
-                 std::remove_cvref_t<decltype(map_of_wmarg)>::mapped_type::Marginal_t::KeyMeta_t::kN*map_of_wmarg.size() ...
-              };
-            },this->all_marginals_.data_map_tuple);
+      size_t M = MatrixConverter::Scalar::M(this->all_factors_tuple_);
+      size_t N = MatrixConverter::Scalar::N(this->all_marginals_.data_map_tuple);
+      // size_t nnz_jacob = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
+      // size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
       
-         
-// #if ENABLE_DEBUG_TRACE
-      std::cout << "IdxMatrixKeyTypesSize : \n";
-      std::stringstream ss3;
-      ss3 << "[ ";
-      for (auto idx :  IdxMatrixKeyTypesSize  ) ss3 << idx <<", ";
-      // ss3.seekp(-2, ss3.cur); 
-      ss3<< " ]\n";
-      std::cout << ss3.str();
-// #endif
-      std::array<std::size_t, std::tuple_size_v<___uniq_keymeta_set_t>> IdxMatrixKeyTypesOffset = {};
-      std::partial_sum(IdxMatrixKeyTypesSize.begin(), IdxMatrixKeyTypesSize.end()-1, IdxMatrixKeyTypesOffset.begin()+1);
-// #if ENABLE_DEBUG_TRACE
-      std::cout << "IdxMatrixKeyTypesOffset : \n";
-      std::stringstream ss4;
-      ss4 << "[ ";
-      for (auto idx :  IdxMatrixKeyTypesOffset  ) ss4 << idx <<", ";
-      // ss4.seekp(-2, ss4.cur); 
-      ss4<< " ]\n";
-      std::cout << ss4.str();
-// #endif
+      auto indexes_offset_M = MatrixConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
+      auto indexes_offset_N = MatrixConverter::Scalar::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
+      
 
       // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
       //                                       or  ratio    /N*N
@@ -263,9 +195,6 @@ namespace sam::System
       int maxIter, nIter = 0;
       if constexpr (isSystFullyLinear) maxIter = 1;
       else maxIter = 3; // NOTE: start the tests with maxIter of 1
-      // history OPTIMIZE: could be class member that would be reset here ? Expected gain almost none
-      // marginals_histories_container_t marginals_histories_container;
-      // factors_histories_t factors_histories;
       
 
       //------------------------------------------------------------------//
@@ -418,10 +347,6 @@ namespace sam::System
 
         nIter++;
       }
-
-      // // TODO: remove here (2nd phase)
-      // this->marginals_histories_container = marginals_histories_container;
-      // // this->factors_histories = factors_histories;
 
       // clear quadratic error vector
       this->bookkeeper_.clear_quadratic_errors();
