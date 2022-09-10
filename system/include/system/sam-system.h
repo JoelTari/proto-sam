@@ -130,12 +130,15 @@ namespace sam::System
       std::apply(
           [&,this](const auto & ...vect_of_wfactors)
           {
-              (
-               ( this->lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b,line_counter, M_type_idx_offsets, N_type_idx_offsets) )
-               //      lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b,const this-factor-type-idx-offset) 
-               , ... );
-          }
-          ,this->all_factors_tuple_);
+            std::apply(
+                [&,this](const auto & ... start_row_idx)
+                {
+                    (
+                     ( this->lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b/*,line_counter*/, start_row_idx, N_type_idx_offsets) )
+                     //      lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b,const this-factor-type-idx-offset) 
+                     , ... );
+                }, M_type_idx_offsets);
+          } ,this->all_factors_tuple_);
 
       // set A from triplets, clear the triplets
       A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
@@ -663,8 +666,8 @@ namespace sam::System
      const VECT_OF_WFT & vect_of_wfactors
      , std::vector<Eigen::Triplet<double>> & sparseA_triplets_out
      , Eigen::VectorXd& b_out
-     , uint64_t& line_counter_out
-     , const std::array<std::size_t, kNbFactorTypes> & M_type_idx_offsets
+     // , uint64_t& line_counter_out
+     , std::size_t M_FT_idx_offset
      , const std::array<std::size_t, kNbKeyTypes> & N_type_idx_offsets
     ) const
     {
@@ -674,7 +677,7 @@ namespace sam::System
         PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
         // OPTIMIZE: parallel loop (std::execution::par)
         // OPTIMIZE: race: sparseA_triplets, b ; potential race : vector of factors (check)
-        for (const auto & wfactor : vect_of_wfactors)
+        for (auto it_wf = vect_of_wfactors.begin(); it_wf!=vect_of_wfactors.end(); it_wf++)
         {
           // refactor proposal: 
           // - construct many smaller triplets in parallel (based on 0-col 0-row)
@@ -684,10 +687,10 @@ namespace sam::System
           // - at higher level, join all triplets of all factor types
           // It would be better because that would have more parallelism + returned values
           // methods would be static etc...
-          auto factor = wfactor.factor;
+          auto factor = it_wf->factor;
           // get Ai and bi (computations of Ai,bi not done here)
-          auto matrices_Aik = wfactor.get_current_point_data().Aiks;
-          auto bi = wfactor.get_current_point_data().bi;
+          auto matrices_Aik = it_wf->get_current_point_data().Aiks;
+          auto bi = it_wf->get_current_point_data().bi;
 
           // declaring a triplets for matrices_Aik values to be associated with their
           // row/col indexes in view of its future integration into the system matrix A
@@ -731,17 +734,19 @@ namespace sam::System
        
 
           // FIX: start_row_idx = factortype_idx_offset + iterator_distance * kM
+          std::size_t factor_iterator_distance = std::distance( vect_of_wfactors.begin() , it_wf );
+          std::size_t start_row_idx = M_FT_idx_offset + factor_iterator_distance* FT::kM;
           
           // placing those matrices in Ai_triplets
           // FIX: rename line_counter_out to start_number
           std::apply(
-              [this, &line_counter_out,&tuple_of_start_column_idx, &Ai_triplets](const auto & ...Aik)
+              [this, &start_row_idx,&tuple_of_start_column_idx, &Ai_triplets](const auto & ...Aik)
               {
                 std::apply(
                     [&,this](auto... start_column_idx)
                     {
                       (
-                       (this->lay_out_Aik_in_triplets(Aik, start_column_idx ,line_counter_out,Ai_triplets))
+                       (this->lay_out_Aik_in_triplets(Aik, start_column_idx ,start_row_idx,Ai_triplets))
                        ,...
                       );
                     }
@@ -752,8 +757,8 @@ namespace sam::System
           // put Ai and bi into sparseA_triplets and b
           // append bi into b -> WARNING: race condition on line_counter, and b, if parallel policy
           // QUESTION: is that a race condition if we write b at different places concurrently
-          b_out.block<FT::kM,1>(line_counter_out,0) = bi; // FIX: start_row_idx
-          line_counter_out += FT::kM; // FIX: remove
+          b_out.block<FT::kM,1>(start_row_idx,0) = bi; // FIX: start_row_idx
+          // line_counter_out += FT::kM; // FIX: remove
           // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if parallel policy
           sparseA_triplets_out.insert(std::end(sparseA_triplets_out),std::begin(Ai_triplets),std::end(Ai_triplets));
         }
