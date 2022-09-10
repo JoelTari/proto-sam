@@ -158,23 +158,58 @@ namespace sam::System
       // int        MM            = system_infos.aggr_dim_mes;
       // int        NN          = system_infos.aggr_dim_keys;
 
-      uint M = std::apply([](const auto & ...vect_of_wf)
+      std::size_t M = std::apply([](const auto & ...vect_of_wf)
           { 
             return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::kM  
                         * vect_of_wf.size()) + ...); 
           },this->all_factors_tuple_);
-      uint N = std::apply([](const auto & ...map_of_wmarg)
+      std::size_t N = std::apply([](const auto & ...map_of_wmarg)
           { 
             return  ((std::remove_cvref_t<decltype(map_of_wmarg)>::mapped_type::Marginal_t::KeyMeta_t::kN  
                         * map_of_wmarg.size()) + ...); 
           },this->all_marginals_.data_map_tuple );
 
-      uint nnz = std::apply([](const auto & ...vect_of_wf)
+      std::size_t nnz = std::apply([](const auto & ...vect_of_wf)
           { 
             return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::factor_process_matrix_t::SizeAtCompileTime  
                         * vect_of_wf.size()) + ...); 
           },this->all_factors_tuple_);
 
+      std::array<std::size_t, 1+sizeof...(FACTORS_Ts)> IdxMatrixFactorTypesSize
+        = std::apply([](const auto & ... vectofwf)
+            {
+              return std::array<std::size_t, 1+sizeof...(FACTORS_Ts)>
+              {
+                 std::remove_cvref_t<decltype(vectofwf)>::value_type::Factor_t::kM*vectofwf.size() ...
+              };
+            },this->all_factors_tuple_);
+
+// #if ENABLE_DEBUG_TRACE
+      std::cout << "IdxMatrixFactorTypesSize : \n";
+      std::stringstream ss;
+      ss << "[ ";
+      for (auto idx :  IdxMatrixFactorTypesSize  ) ss << idx <<", ";
+      // ss.seekp(-2, ss.cur); 
+      ss<< " ]\n";
+      std::cout << ss.str();
+// #endif
+      std::array<uint, 1+sizeof...(FACTORS_Ts)> IdxMatrixFactorTypesOffset ={} ;
+      std::partial_sum(IdxMatrixFactorTypesSize.begin(), IdxMatrixFactorTypesSize.end()-1, IdxMatrixFactorTypesOffset.begin()+1);
+// #if ENABLE_DEBUG_TRACE
+      std::cout << "IdxMatrixFactorTypesOffset : \n";
+      std::stringstream ss2;
+      ss2 << "[ ";
+      for (auto idx :  IdxMatrixFactorTypesOffset  ) ss2 << idx <<", ";
+      // ss2.seekp(-2, ss2.cur); 
+      ss2<< " ]\n";
+      std::cout << ss2.str();
+// #endif
+
+
+
+      std::array<uint, std::tuple_size_v<___uniq_keymeta_set_t>> IdxMatrixKeyTypesSize;
+      
+      std::array<uint, std::tuple_size_v<___uniq_keymeta_set_t>> IdxMatrixKeyTypesOffset;
 
       // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
       //                                       or  ratio    /N*N
