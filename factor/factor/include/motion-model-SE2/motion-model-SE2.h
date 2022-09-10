@@ -63,7 +63,7 @@ namespace details_sam::Factor{
       // {}
     };
 
-    inline static constexpr const char motion_model_label[] = "anchor SE2";
+    inline static constexpr const char motion_model_label[] = "motion model u(t) from antecedent key SE2 to subsequent key SE2";
 
     namespace exports{
 
