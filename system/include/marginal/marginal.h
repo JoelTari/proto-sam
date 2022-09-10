@@ -200,7 +200,7 @@ namespace sam::Marginal
     // main structure
     Marginals_Data_t data_map_tuple;
 
-    protected:
+    // protected:
     /**
      * @brief get an idx in a tuple statically using the key meta type  (recursive until the meta
      * matches)

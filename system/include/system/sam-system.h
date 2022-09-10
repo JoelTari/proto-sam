@@ -40,6 +40,8 @@ namespace sam::System
     using system_info_t = SystemInfo;
 
     static constexpr const bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
+    static constexpr std::size_t kNbFactorTypes = 1 + sizeof...(FACTORS_Ts);
+    static constexpr std::size_t kNbKeyTypes = std::tuple_size_v<KeyMetae_t>;
 
       /**
       * @brief constructor
@@ -111,7 +113,9 @@ namespace sam::System
      *
      * @param system_infos system information (dimensions, indexes, graph connectivity ...)
      */
-    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(std::size_t M , std::size_t N, std::size_t jacobian_NNZ) const // WARNING: matrix specific
+    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(std::size_t M , std::size_t N, std::size_t jacobian_NNZ
+        , const std::array<std::size_t, kNbFactorTypes> & M_type_idx_offsets
+        , const std::array<std::size_t, kNbKeyTypes> & N_type_idx_offsets ) const // WARNING: matrix specific
     {
       // declare A, b, and triplets for A data
       Eigen::SparseMatrix<double> A(M,N);
@@ -124,10 +128,10 @@ namespace sam::System
       //------------------------------------------------------------------//
       // FIX: zip factor-tuple and factor-idx-offset + pass down key-idx-offset in argument
       std::apply(
-          [this,&sparseA_triplets,&b,&line_counter](const auto & ...vect_of_wfactors)
+          [&,this](const auto & ...vect_of_wfactors)
           {
               (
-               ( this->lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b,line_counter) )
+               ( this->lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b,line_counter, M_type_idx_offsets, N_type_idx_offsets) )
                //      lay_out_factors_to_sparse_triplets(vect_of_wfactors,sparseA_triplets,b,const this-factor-type-idx-offset) 
                , ... );
           }
@@ -168,8 +172,8 @@ namespace sam::System
       size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
       // size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
       
-      auto indexes_offset_M = MatrixConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
-      auto indexes_offset_N = MatrixConverter::Scalar::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
+      auto M_type_idx_offsets = MatrixConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
+      auto N_type_idx_offsets = MatrixConverter::Scalar::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
       
 
       // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
@@ -208,7 +212,7 @@ namespace sam::System
         std::string timer_name = "iter" + std::to_string(nIter);
         PROFILE_SCOPE(timer_name.c_str(),sam_utils::JSONLogger::Instance());
 
-        auto [b,A] = compute_b_A(M,N,nnz_jacobian); // later one more argument: lin point ??
+        auto [b,A] = compute_b_A(M,N,nnz_jacobian,M_type_idx_offsets, N_type_idx_offsets);
 
         // number of nnz elements in R
         double rnnz;
@@ -653,13 +657,15 @@ namespace sam::System
     }
 #endif
 
-    template <typename VECT_OF_WFT> // FIX: static
+    template <typename VECT_OF_WFT> // FIX: static ??
     void lay_out_factors_to_sparse_triplets
     (
      const VECT_OF_WFT & vect_of_wfactors
      , std::vector<Eigen::Triplet<double>> & sparseA_triplets_out
      , Eigen::VectorXd& b_out
      , uint64_t& line_counter_out
+     , const std::array<std::size_t, kNbFactorTypes> & M_type_idx_offsets
+     , const std::array<std::size_t, kNbKeyTypes> & N_type_idx_offsets
     ) const
     {
         using WFT = typename VECT_OF_WFT::value_type;
@@ -702,6 +708,28 @@ namespace sam::System
                 }, factor.get_array_keys_id() // factor.keysset rather (so that we access KeyMeta_t AND key_id)
                 );
 
+
+          // for each element of the tuple:
+          //    start_column_idx = keytype_idx_offset + iterator_distance * kN
+          std::array<std::size_t, FT::kNbKeys> array_of_start_column_idx = 
+            std::apply(
+                [&,this](const auto & ... kcc)
+                {
+                  // pre declare my expression 
+                  auto lambda = [&](const auto & akcc, const auto & marginal_data_tuple) -> std::size_t
+                  {
+                    using keymeta_t = typename std::remove_cvref_t<decltype(akcc)>::KeyMeta_t;
+                    constexpr std::size_t tuple_idx = Marginals_t::template get_correct_tuple_idx<keymeta_t>();
+                    auto it = std::get<tuple_idx>(marginal_data_tuple).find(akcc.key_id);
+                    std::size_t iterator_distance = std::distance( std::get<tuple_idx>(marginal_data_tuple).begin(), it );
+                    return N_type_idx_offsets[tuple_idx] + iterator_distance * keymeta_t::kN;
+                  };
+
+                  return std::array<std::size_t, FT::kNbKeys>{ lambda(kcc, this->all_marginals_.data_map_tuple ) ... };
+                }
+                , factor.keys_set);
+       
+
           // FIX: start_row_idx = factortype_idx_offset + iterator_distance * kM
           
           // placing those matrices in Ai_triplets
@@ -731,7 +759,7 @@ namespace sam::System
         }
     }
 
-    template <typename MAT> // FIX: static
+    template <typename MAT> // FIX: static ??
     void lay_out_Aik_in_triplets(const MAT & Aik
         ,const std::size_t starting_column
         ,const std::size_t starting_row
