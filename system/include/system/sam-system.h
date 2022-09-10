@@ -111,16 +111,13 @@ namespace sam::System
      *
      * @param system_infos system information (dimensions, indexes, graph connectivity ...)
      */
-    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(const SystemInfo & system_infos) const // WARNING: matrix specific
+    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(std::size_t M , std::size_t N, std::size_t jacobian_NNZ) const // WARNING: matrix specific
     {
-      uint nnz = system_infos.nnz;
-      int        M            = system_infos.aggr_dim_mes;
-      int        N            = system_infos.aggr_dim_keys;
       // declare A, b, and triplets for A data
       Eigen::SparseMatrix<double> A(M,N);
       Eigen::VectorXd b(M);
       std::vector<Eigen::Triplet<double>> sparseA_triplets;
-      sparseA_triplets.reserve(nnz); // expected number of nonzeros elements
+      sparseA_triplets.reserve(jacobian_NNZ); // expected number of nonzeros elements
       uint64_t line_counter = 0;
       //------------------------------------------------------------------//
       //                fill triplets of A and vector of b                //
@@ -136,7 +133,8 @@ namespace sam::System
 
       // set A from triplets, clear the triplets
       A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
-      sparseA_triplets.clear(); // doesnt alter the capacity, so the .reserve( N ) is still valid 
+
+      // sparseA_triplets.clear(); // useless as the object is destroy
 
       return {b,A};
     }
@@ -195,6 +193,7 @@ namespace sam::System
       int maxIter, nIter = 0;
       if constexpr (isSystFullyLinear) maxIter = 1;
       else maxIter = 3; // NOTE: start the tests with maxIter of 1
+                        // NOTE: refactor: use OptimOpts
       
 
       //------------------------------------------------------------------//
@@ -207,13 +206,7 @@ namespace sam::System
         std::string timer_name = "iter" + std::to_string(nIter);
         PROFILE_SCOPE(timer_name.c_str(),sam_utils::JSONLogger::Instance());
 
-        auto [b,A] = compute_b_A( system_infos ); // later one more argument: lin point ??
-        // set A from the triplets (alrea)
-        // if(nIter > 0)
-        // {
-        //   A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
-        //   sparseA_triplets.clear();
-        // }
+        auto [b,A] = compute_b_A(M,N,nnz_jacobian); // later one more argument: lin point ??
 
         // number of nnz elements in R
         double rnnz;

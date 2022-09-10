@@ -36,8 +36,6 @@ namespace sam::System::MatrixConverter
           },tuple_map_wmarginals );
     }
     
-    // TODO: nnz
-
     template <typename TUPLE_VECTORS_WFACTOR_T>
     std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>
      FactorTypeIndexesOffset(const TUPLE_VECTORS_WFACTOR_T & wfactors_tuple)
@@ -58,7 +56,7 @@ namespace sam::System::MatrixConverter
       array_t Offsets ={} ;
       std::partial_sum(Sizes.begin(), Sizes.end()-1, Offsets.begin()+1);
 
-// #if ENABLE_DEBUG_TRACE
+#if ENABLE_DEBUG_TRACE
       std::cout << "Sizes (scalar) of vector of factor, by type: \n";
       std::stringstream ss;
       ss << "[ ";
@@ -73,7 +71,7 @@ namespace sam::System::MatrixConverter
       ss2.seekp(-2,std::ios_base::end); 
       ss2<< " ]\n";
       std::cout << ss2.str();
-// #endif
+#endif
 
       return Offsets;
     }
@@ -98,7 +96,7 @@ namespace sam::System::MatrixConverter
       array_t Offsets ={} ;
       std::partial_sum(Sizes.begin(), Sizes.end()-1, Offsets.begin()+1);
 
-// #if ENABLE_DEBUG_TRACE
+#if ENABLE_DEBUG_TRACE
       std::cout << "Sizes (scalar) of marginal maps, by type: \n";
       std::stringstream ss;
       ss << "[ ";
@@ -113,7 +111,7 @@ namespace sam::System::MatrixConverter
       ss2.seekp(-2,std::ios_base::end); 
       ss2<< " ]\n";
       std::cout << ss2.str();
-// #endif
+#endif
 
       return Offsets;
     }
@@ -128,7 +126,7 @@ namespace sam::System::MatrixConverter
                   },wfactors_tuple);
     }
 
-    // TODO: more difficult 
+    // TODO: more difficult, perhaps easier to expand from Semantic::HessianNNZ() ?
     // std::size_t HessianNNZ()
 
   }
@@ -143,27 +141,103 @@ namespace sam::System::MatrixConverter
     template <typename TUPLE_VECTORS_WFACTOR_T>
     std::size_t M(const TUPLE_VECTORS_WFACTOR_T& wfactors_tuple)
     {
+      return std::apply([](const auto & ...vect_of_wf)
+          { 
+            return  ( vect_of_wf.size() + ...); 
+          },wfactors_tuple);
     }
 
     template <typename TUPLE_MAP_WMARGINAL_T>
     std::size_t N(const TUPLE_MAP_WMARGINAL_T& tuple_map_wmarginals)
     {
-      
+      return std::apply([](const auto & ...map_of_wmarg)
+          { 
+            return  ( map_of_wmarg.size() + ...); 
+          },tuple_map_wmarginals );
     }
-
+    
     template <typename TUPLE_VECTORS_WFACTOR_T>
     std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>
      FactorTypeIndexesOffset(const TUPLE_VECTORS_WFACTOR_T & wfactors_tuple)
     {
+      using array_t = std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>> ;
 
+      array_t Sizes 
+        = std::apply([](const auto & ... vectofwf)
+            {
+              return array_t { vectofwf.size() ... };
+            },wfactors_tuple);
+
+      array_t Offsets ={} ;
+      std::partial_sum(Sizes.begin(), Sizes.end()-1, Offsets.begin()+1);
+
+#if ENABLE_DEBUG_TRACE
+      std::cout << "Sizes (scalar) of vector of factor, by type: \n";
+      std::stringstream ss;
+      ss << "[ ";
+      for (auto idx :  Sizes  ) ss << idx <<", ";
+      ss.seekp(-2,std::ios_base::end); 
+      ss<< " ]\n";
+      std::cout << ss.str();
+      std::cout << "Starting (scalar) indexes of vector of factor, by type : \n";
+      std::stringstream ss2;
+      ss2 << "[ ";
+      for (auto idx :  Offsets  ) ss2 << idx <<", ";
+      ss2.seekp(-2,std::ios_base::end); 
+      ss2<< " ]\n";
+      std::cout << ss2.str();
+#endif
+
+      return Offsets;
     }
 
     template <typename TUPLE_MAP_WMARGINAL_T>
     std::array<std::size_t, std::tuple_size_v<TUPLE_MAP_WMARGINAL_T>>
     MarginalTypeIndexesOffset(const TUPLE_MAP_WMARGINAL_T & tuple_map_wmarginals)
     {
+      using array_t = std::array<std::size_t, std::tuple_size_v<TUPLE_MAP_WMARGINAL_T>> ;
 
+      array_t Sizes 
+        = std::apply([](const auto & ... map_of_wmarg)
+            {
+              return array_t { map_of_wmarg.size() ... };
+            },tuple_map_wmarginals);
+
+      array_t Offsets ={} ;
+      std::partial_sum(Sizes.begin(), Sizes.end()-1, Offsets.begin()+1);
+
+#if ENABLE_DEBUG_TRACE
+      std::cout << "Sizes (scalar) of marginal maps, by type: \n";
+      std::stringstream ss;
+      ss << "[ ";
+      for (auto idx :  Sizes  ) ss << idx <<", ";
+      ss.seekp(-2,std::ios_base::end); 
+      ss<< " ]\n";
+      std::cout << ss.str();
+      std::cout << "Starting (scalar) indexes of vector of factor, by type : \n";
+      std::stringstream ss2;
+      ss2 << "[ ";
+      for (auto idx :  Offsets  ) ss2 << idx <<", ";
+      ss2.seekp(-2,std::ios_base::end); 
+      ss2<< " ]\n";
+      std::cout << ss2.str();
+#endif
+
+      return Offsets;
     }
+
+    template <typename TUPLE_VECTORS_WFACTOR_T>
+    std::size_t JacobianNNZ(const TUPLE_VECTORS_WFACTOR_T & wfactors_tuple)
+    {
+      return std::apply([](const auto & ...vect_of_wf)
+                  { 
+                    return  (  vect_of_wf.size() + ...); 
+                  },wfactors_tuple);
+    }
+
+    // TODO: more difficult
+    // std::size_t HessianNNZ()
+
   }
 
 
