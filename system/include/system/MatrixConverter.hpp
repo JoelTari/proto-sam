@@ -118,11 +118,18 @@ namespace sam::System::MatrixConverter
       return Offsets;
     }
 
-    // TODO:
-    // template <typename TUPLE_VECTORS_WFACTOR_T>
-    // std::size_t JacobianNNZ(this->all_factor_tuple_)
-    // {
-    // }
+    template <typename TUPLE_VECTORS_WFACTOR_T>
+    std::size_t JacobianNNZ(const TUPLE_VECTORS_WFACTOR_T & wfactors_tuple)
+    {
+      return std::apply([](const auto & ...vect_of_wf)
+                  { 
+                    return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::factor_process_matrix_t::SizeAtCompileTime  
+                                * vect_of_wf.size()) + ...); 
+                  },wfactors_tuple);
+    }
+
+    // TODO: more difficult 
+    // std::size_t HessianNNZ()
 
   }
 

@@ -157,15 +157,15 @@ namespace sam::System
       // int        MM            = system_infos.aggr_dim_mes;
       // int        NN          = system_infos.aggr_dim_keys;
 
-      std::size_t nnz = std::apply([](const auto & ...vect_of_wf)
-          { 
-            return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::factor_process_matrix_t::SizeAtCompileTime  
-                        * vect_of_wf.size()) + ...); 
-          },this->all_factors_tuple_);
+      // std::size_t nnz = std::apply([](const auto & ...vect_of_wf)
+      //     { 
+      //       return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::factor_process_matrix_t::SizeAtCompileTime  
+      //                   * vect_of_wf.size()) + ...); 
+      //     },this->all_factors_tuple_);
 
       size_t M = MatrixConverter::Scalar::M(this->all_factors_tuple_);
       size_t N = MatrixConverter::Scalar::N(this->all_marginals_.data_map_tuple);
-      // size_t nnz_jacob = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
+      size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
       // size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
       
       auto indexes_offset_M = MatrixConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
