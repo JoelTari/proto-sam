@@ -1,6 +1,5 @@
 #pragma once
 
-#include "system/bookkeeper.h"
 #include "marginal/marginal.h"
 #include "system/config.h"
 #include "utils/tuple_patterns.h"
@@ -56,12 +55,12 @@ namespace sam::Inference
     //  rnnz
     // ordering_method
     // ordering
-    // residual (actually different from the NLL) 
+    // residual (actually different from the NLog from a constant offset)
   };
 
   struct OptimStats
   {
-    OptimOptions optimOptions; // the options inputs (the rest is more output-ish)
+    OptimOptions optim_options; // the options inputs (the rest is more output-ish)
     SolverStats solver_stats;
 
     std::size_t nnz_jacobian_scalar;
@@ -74,8 +73,8 @@ namespace sam::Inference
 
     bool optim_success;
     std::string report_str;
-    double NLL_value_before; // negative log likelihood = sum of the factors norm2
-    double NLL_value_after;
+    double NLog_value_before; // negative log likelihood = sum of the factors norm2
+    double NLog_value_after;
   };
 
 
@@ -124,7 +123,6 @@ namespace sam::Inference
     System(const std::string & agent_id, const std::string & system_label = "inference system")
       :
       header(agent_id, system_label)
-       // ,bookkeeper_(Bookkeeper(agent_id))  // FIX: BOOKKEEPER: remove
     { 
     }
 
@@ -147,9 +145,7 @@ namespace sam::Inference
     /**
     * @brief optimisation method
     */
-    // FIX: input OptimOpts
-    // FIX: return SolverStats, OptimStats
-    void sam_optimise() // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
+    OptimStats sam_optimise(const OptimOptions & optimisation_options = OptimOptions()) // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
     {
       // scoped timer
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
@@ -159,24 +155,21 @@ namespace sam::Inference
       size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
       // size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
 
-      if (M == 0) return;
       
       auto M_type_idx_offsets = MatrixConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
       auto N_type_idx_offsets = MatrixConverter::Scalar::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
       
-
+      OptimStats optim_stats;
       // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
       //                                       or  ratio    /N*N
 
       // NOTE: SolverStats might have ratio rnnz/N*N
 
+      if (M == 0) return optim_stats; // set success bool to false
 
 #if ENABLE_DEBUG_TRACE
-      {
-        PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
         std::cout << "### Syst: Starting an optimisation \n";
         std::cout << "### Syst: size " << M << " * " << N << '\n';
-      }
 #endif
 
       //------------------------------------------------------------------//
@@ -186,7 +179,7 @@ namespace sam::Inference
       int maxIter, nIter = 0;
       if constexpr (isSystFullyLinear) maxIter = 1;
       else maxIter = 3; // NOTE: start the tests with maxIter of 1
-                        // NOTE: refactor: use OptimOpts
+                        // NOTE: refactor: use OptimOptions
       
 
       //------------------------------------------------------------------//
@@ -209,14 +202,12 @@ namespace sam::Inference
         std::tie(MaP,rnnz) = solveQR(A,b); 
         // TODO: split the compute() step with the analyse pattern (can be set before the loop)
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
-        // this->bookkeeper_.set_syst_Rnnz(rnnz); // FIX: BOOKKEEPER: replace SolverStats
 
         // optionaly compute the covariance matrix
         Eigen::MatrixXd SigmaCovariance;
         double Hnnz;
         std::tie(SigmaCovariance,Hnnz) = compute_covariance(A);
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
-        // this->bookkeeper_.set_syst_Hnnz(Hnnz); // FIX: BOOKKEEPER: replace SolverStats
 
 #if ENABLE_DEBUG_TRACE
       {
@@ -332,17 +323,15 @@ namespace sam::Inference
             , this->all_factors_tuple_
         );
 
-        // push accumulated squared norm
-        // this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm/* .load() */); // FIX: BOOKKEEPER: replace by an OptStats structure
+        // NOTE: save accumulated squared norm in OptimStats
 
         nIter++;
       }
 
-      // // clear quadratic error vector
-      // this->bookkeeper_.clear_quadratic_errors();
       // update sequence number
       this->header.nbSequence++;
 
+      return optim_stats;
     }
 
     void remove_factor(const std::string & factor_id)
@@ -379,35 +368,19 @@ namespace sam::Inference
       return this->all_factors_tuple_;
     }
     
-    // // // FIX: remove
-    // auto get_system_infos() const
-    // {
-    //   return this->bookkeeper_.getSystemInfos();// FIX: BOOKKEEPER: remove
-    // }
-    
-    // FIX: urgent get_joint-marginal etc... 
+    // TODO: urgent get_joint-marginal etc... 
     // joint_marginal<marginals_t> get_joint_marginal()
     // {
     //
     // }
     //
-    // get_full_joint()
+    // get_full_joint(){}
 
     // get all marginals
     auto get_marginals() const
     {
       return all_marginals_.data_map_tuple;
     }
-
-    // /**
-    //  * @brief bookkeeper : store the infos of variables and factors, as well as
-    //  * associative relations, total sizes, indexes , ordering
-    //  */
-    // Bookkeeper bookkeeper_;// FIX: BOOKKEEPER: remove
-                           //
-    // std::string agent_id;// FIX: put in some header
-    // std::string label = "SparseMatrix System";// FIX: put in some header + template argument const char *
-    // int nbSequence = 0; // FIX: put in some header
 
     Marginals_t all_marginals_;
 
@@ -541,59 +514,8 @@ namespace sam::Inference
           // emplace back in the structure
           vector_of_wrapped_factors.emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
               
-// // Debug consistency check of everything
-// #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
-//           // 1. checking if the bookkeeper is consistent with itself (systemInfo
-//           // vs whats on the std::maps)
-//           assert(this->bookkeeper_.are_dimensions_consistent());// NOTE: BOOKKEEPER: remove probably
-//           // 2. checking if the bookkeeper is consistent with the tuples of
-//           // vector holding the factors
-//           assert(this->is_system_consistent());
-//           // TODO: assert that aggregate size of factor containers correspond to the bookkeeper nb of factors
-// #endif
-
       }
     }
-
-// // NOTE: BOOKKEEPER: remove
-//     template <typename WFT>
-//     void add_keys_to_bookkeeper(const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
-//                                 const std::string&                          factor_id)
-//     {
-//       add_keys_to_bookkeeper_impl<WFT>(factor_id, keys_id, std::make_index_sequence<WFT::Factor_t::kNbKeys> {});
-//     }
-// // NOTE: BOOKKEEPER: remove
-//     template <typename WFT, std::size_t... INDEX_S>
-//     void add_keys_to_bookkeeper_impl(const std::string&                          factor_id,
-//                                      const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
-//                                      std::index_sequence<INDEX_S...>)
-//     {
-//       (add_in_bookkeeper_in_once(factor_id, keys_id[INDEX_S], std::tuple_element_t<INDEX_S, typename WFT::Factor_t::KeysSet_t>::kN),
-//        ...);
-//     }
-// // NOTE: BOOKKEEPER: remove
-//     void add_in_bookkeeper_in_once(const std::string& factor_id,
-//                      const std::string& key_id,
-//                      int                key_dimension)   // string_view?
-//     {
-//       // check if the key exists, if it doesn't, we will catch
-//       // TODO: a standard if/else might be more desirable (or std::optional)
-//       // TODO: would it be possible to check that the dimension and/or meta name
-//       // of the key is consistent ?
-//       try
-//       {
-//         this->bookkeeper_.getKeyInfos(key_id);// NOTE: BOOKKEEPER
-//       }
-//       catch (int e)
-//       {
-//         // add the key, the variable size is accessed via the factor Meta
-//         this->bookkeeper_.add_key(key_id, key_dimension);
-//       }
-//       // each key has a list of factors_id that it is connected, so add
-//       // this factor_id to it
-//       this->bookkeeper_.add_factor_id_to_key(key_id, factor_id);
-//     }
-
 
     /**
      * @brief solve the system given the big matrices A and b. Use the sparseQR

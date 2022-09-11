@@ -50,7 +50,6 @@ class SystemJsonify
     json_header["json_output"]            = def_t::json_output;
     json_header["runtime_checks"]         = def_t::runtime_checks;
     json_header["debug_trace"]            = def_t::debug_trace;
-    // TODO: variable order  :  "variable_order"
     return json_header;
   }
 
