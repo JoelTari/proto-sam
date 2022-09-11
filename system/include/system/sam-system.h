@@ -146,9 +146,7 @@ namespace sam::System
 
       // set A from triplets, clear the triplets
       A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
-
       // sparseA_triplets.clear(); // useless as the object is destroy
-
       return {b,A};
     }
 
@@ -264,58 +262,63 @@ namespace sam::System
         //            Do the same optionally for the covariance             //
         //------------------------------------------------------------------//
         std::apply(
-            [this, &MaP,&SigmaCovariance,&nIter](auto & ... map_to_wmarginals)
+            [this, &MaP,&SigmaCovariance,&nIter,&N_type_idx_offsets](auto & ... map_to_wmarginals)
             {
-              std::string scope_name = "save marginal updates";
-              PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
-              // define the function
-              auto update_map_of_wmarginals = [&,this](auto & map_of_wrapped_marginals)
-              {
-                  using wrapped_marginal_t = typename std::decay_t<decltype(map_of_wrapped_marginals)>::mapped_type;
-                  using marginal_t = typename wrapped_marginal_t::Marginal_t;
-                  using tangent_space_t = typename marginal_t::Tangent_Space_t;
-                  using keymeta_t = typename marginal_t::KeyMeta_t;
-                  constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
-                  // looping over the marginal collection and updating them with the MAP result
-                  std::for_each (
-                      std::execution::seq   // on M3500, sequential is still slightly faster than par_unseq (1.4 ms vs 1.625 ms)
-                      , map_of_wrapped_marginals.begin()
-                      , map_of_wrapped_marginals.end() 
-                      , [&,this]( auto & kvpair)
-                        {
-                          std::string key_id = kvpair.first;
-                          auto wrapped_marginal = kvpair.second;
-                          // get the subvector from the Maximum A Posteriori vector
-                          auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;// NOTE: BOOKKEEPER: replace (second time this sysidx appears)
-                          auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
-
-                          // clear previous history at first iteration
-                          if (nIter ==0)  wrapped_marginal.clear_history();
-                         
-                          // covariance  TODO: if covariance is asked for or not  (std::nullopt if not)
-                          std::optional<typename marginal_t::Covariance_t> 
-                            OptSigmaCovariance{SigmaCovariance.block<kN,kN>(sysidx,sysidx)};
-
-                          // writes the new mean (or increment in NL systems) and the new covariance in the marginal
-                          if constexpr (isSystFullyLinear) 
+              std::apply(
+                  [&,this](const auto & ... N_type_start_idx)
+                  {
+                      std::string scope_name = "save marginal updates";
+                      PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
+                      // define the function
+                      auto lambda_update_map_of_wmarginals = [&,this](auto & map_of_wrapped_marginals, std::size_t KeyTypeStartIdx)
+                      {
+                          using wrapped_marginal_t = typename std::decay_t<decltype(map_of_wrapped_marginals)>::mapped_type;
+                          using marginal_t = typename wrapped_marginal_t::Marginal_t;
+                          using tangent_space_t = typename marginal_t::Tangent_Space_t;
+                          using keymeta_t = typename marginal_t::KeyMeta_t;
+                          constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
+                          // looping over the marginal collection and updating them with the MAP result
+                          // std::for_each (
+                          //     // std::execution::par   // on M3500, sequential is still slightly faster than par_unseq (1.4 ms vs 1.625 ms)
+                          //     , map_of_wrapped_marginals.begin()
+                          //     , map_of_wrapped_marginals.end() 
+                          //     , [&,this]( auto & kvpair)
+                          for(auto it_marg =map_of_wrapped_marginals.begin(); it_marg!=map_of_wrapped_marginals.end(); it_marg++)
                           {
-                            // replace the mean by the maximum a posterior subvector, and save previous marginal in history
-                            wrapped_marginal.save_and_replace( 
-                                marginal_t(MaP_subvector, OptSigmaCovariance) 
-                                );
-                          }
-                          else
-                          {
-                            // the Max a Posteriori is in the tangent space (R^kN technically, hat operator must be used
-                            // to be in the tangent space formally)
-                            wrapped_marginal.save_and_add( tangent_space_t(MaP_subvector), OptSigmaCovariance );
-                          }
-                        }
-                  );
-              };
-              
-              ( update_map_of_wmarginals(map_to_wmarginals), ...);
+                            std::string key_id = it_marg->first;
+                            auto wrapped_marginal = it_marg->second;
+                            // get the subvector from the Maximum A Posteriori vector
+                            // auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;// NOTE: BOOKKEEPER: replace (second time this sysidx appears)
+                            auto sysidx = KeyTypeStartIdx + std::distance(map_of_wrapped_marginals.begin(), it_marg)* kN ;
+                            auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
 
+                            // clear previous history at first iteration
+                            if (nIter ==0)  wrapped_marginal.clear_history();
+                           
+                            // covariance  TODO: if covariance is asked for or not  (std::nullopt if not)
+                            std::optional<typename marginal_t::Covariance_t> 
+                              OptSigmaCovariance{SigmaCovariance.block<kN,kN>(sysidx,sysidx)};
+
+                            // writes the new mean (or increment in NL systems) and the new covariance in the marginal
+                            if constexpr (isSystFullyLinear) 
+                            {
+                              // replace the mean by the maximum a posterior subvector, and save previous marginal in history
+                              wrapped_marginal.save_and_replace( 
+                                  marginal_t(MaP_subvector, OptSigmaCovariance) 
+                                  );
+                            }
+                            else
+                            {
+                              // the Max a Posteriori is in the tangent space (R^kN technically, hat operator must be used
+                              // to be in the tangent space formally)
+                              wrapped_marginal.save_and_add( tangent_space_t(MaP_subvector), OptSigmaCovariance );
+                            }
+                          }
+                          // ); // for each
+                      };
+                    ( lambda_update_map_of_wmarginals(map_to_wmarginals, N_type_start_idx), ...);
+                  }
+                  , N_type_idx_offsets);
             }
             , this->all_marginals_.data_map_tuple);
 
@@ -696,7 +699,7 @@ namespace sam::System
             std::apply(
                 [this](const auto & ... key_id)
                 {
-                  return std::make_tuple( this->bookkeeper_.getKeyInfos(key_id).sysidx ... );// NOTE: BOOKKEEPER
+                  return std::array<int, FT::kNbKeys>{this->bookkeeper_.getKeyInfos(key_id).sysidx ...};// NOTE: BOOKKEEPER
                                                                                              // replace by something else
                 }, factor.get_array_keys_id() // factor.keysset rather (so that we access KeyMeta_t AND key_id)
                 );
@@ -720,6 +723,25 @@ namespace sam::System
                   return std::array<std::size_t, FT::kNbKeys>{ lambda(kcc, this->all_marginals_.data_map_tuple ) ... };
                 }
                 , factor.keys_set);
+
+#if ENABLE_DEBUG_TRACE
+          std::stringstream ss;
+          for (auto e : factor.get_array_keys_id()) ss << e << ", ";
+          ss.seekp(-2,std::ios_base::end);  ss << " --\n";
+          ss << "Previous [ ";
+          for (auto e :  tuple_of_start_column_idx  ) ss << e <<", ";
+          ss.seekp(-2,std::ios_base::end); 
+          ss<< " ]\n";
+          std::cout << ss.str();
+          // reset stream
+          ss.str(std::string());ss.clear();
+          ss << "New [ ";
+          for (auto e :  array_of_start_column_idx  ) ss << e <<", ";
+          ss.seekp(-2,std::ios_base::end); 
+          ss<< " ]\n";
+          std::cout << ss.str();
+#endif
+
        
 
           // start_row_idx = (the idx offset that depends on factor type) + iterator_distance * kM
@@ -728,7 +750,7 @@ namespace sam::System
           
           // placing those matrices in Ai_triplets
           std::apply(
-              [this, &start_row_idx,&tuple_of_start_column_idx, &Ai_triplets](const auto & ...Aik)
+              [this, &start_row_idx,&array_of_start_column_idx, &Ai_triplets](const auto & ...Aik)
               {
                 std::apply(
                     [&,this](auto... start_column_idx)
@@ -738,7 +760,7 @@ namespace sam::System
                        ,...
                       );
                     }
-                    ,tuple_of_start_column_idx);
+                    ,array_of_start_column_idx);
               }
               , matrices_Aik);
            
