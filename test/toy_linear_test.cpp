@@ -102,7 +102,7 @@ TEST(ToyLinearSystem, Square)
 
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x0",
                                                  expected_x0map,
-                                                 *all_position2d.find("x0")->second.shared_mean);
+                                                 *all_position2d.find("x0")->second.shared_mean,1e3); // 1000s precision, since we are close zero (1e-19), and the way the precision works, this is ok
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x1",
                                                  expected_x1map,
                                                  *all_position2d.find("x1")->second.shared_mean);
