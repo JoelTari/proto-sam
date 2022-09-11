@@ -37,6 +37,8 @@ namespace sam::System
     // declare marginal container type of those keymetas
     using Marginals_t = typename ::sam::Marginal::MarginalsCollection<KeyMetae_t>::type ;
 
+    using type = SamSystem<FACTOR_T,FACTORS_Ts...>;
+
     using system_info_t = SystemInfo;
 
     static constexpr const bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
@@ -110,8 +112,6 @@ namespace sam::System
 
     /**
      * @brief compute vector b and sparse matrix A of the convex system
-     *
-     * @param system_infos system information (dimensions, indexes, graph connectivity ...)
      */
     std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(std::size_t M , std::size_t N, std::size_t jacobian_NNZ
         , const std::array<std::size_t, kNbFactorTypes> & M_type_idx_offsets
@@ -136,6 +136,7 @@ namespace sam::System
                                                                 vect_of_wfactors
                                                                 , start_row_idx
                                                                 , N_type_idx_offsets
+                                                                , this->all_marginals_
                                                                 ,sparseA_triplets
                                                                 ,b
                                                                ) 
@@ -155,27 +156,17 @@ namespace sam::System
     */
     void sam_optimise() // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
     {
-      if (this->bookkeeper_.getSystemInfos().number_of_factors == 0) return; // NOTE: BOOKKEEPER: just compute M, and if M=0 return
+      // if (this->bookkeeper_.getSystemInfos().number_of_factors == 0) return; // NOTE: BOOKKEEPER: just compute M, and if M=0 return
 
       // scoped timer
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-
-      // get some dimension constants of the system
-      SystemInfo system_infos = this->bookkeeper_.getSystemInfos();
-      // uint nnz2 = system_infos.nnz;
-      // int        MM            = system_infos.aggr_dim_mes;
-      // int        NN          = system_infos.aggr_dim_keys;
-
-      // std::size_t nnz = std::apply([](const auto & ...vect_of_wf)
-      //     { 
-      //       return  ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::factor_process_matrix_t::SizeAtCompileTime  
-      //                   * vect_of_wf.size()) + ...); 
-      //     },this->all_factors_tuple_);
 
       size_t M = MatrixConverter::Scalar::M(this->all_factors_tuple_);
       size_t N = MatrixConverter::Scalar::N(this->all_marginals_.data_map_tuple);
       size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
       // size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
+
+      if (M == 0) return;
       
       auto M_type_idx_offsets = MatrixConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
       auto N_type_idx_offsets = MatrixConverter::Scalar::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
@@ -184,7 +175,8 @@ namespace sam::System
       // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
       //                                       or  ratio    /N*N
 
-      // NOTE: SolverStats might have ratio
+      // NOTE: SolverStats might have ratio rnnz/N*N
+
 
       // reset vector of quadratic error TODO: maybe do it at end of function
       this->bookkeeper_.clear_quadratic_errors(); // NOTE: BOOKKEEPER: remove
@@ -378,8 +370,7 @@ namespace sam::System
              )
             , ...);
           },this->all_factors_tuple_);
-      // FIX: URGENT: remove from bookkeeper
-      // this->bookkeeper_.       // NOTE: BOOKKEEPER: remove smthing in GraphModel
+      // TODO: remove smthing in GraphModel ?
     }
 
     void remove_key(const std::string & key_id)
@@ -398,6 +389,7 @@ namespace sam::System
       return this->all_factors_tuple_;
     }
     
+    // FIX: remove
     auto get_system_infos() const
     {
       return this->bookkeeper_.getSystemInfos();// NOTE: BOOKKEEPER: remove
@@ -673,6 +665,7 @@ namespace sam::System
      const VECT_OF_WFT & vect_of_wfactors
      , std::size_t M_FT_idx_offset
      , const std::array<std::size_t, kNbKeyTypes> & N_type_idx_offsets
+     , const Marginals_t & marginal_collection
      , std::vector<Eigen::Triplet<double>> & sparseA_triplets_out
      , Eigen::VectorXd& b_out
     ) const
@@ -694,21 +687,21 @@ namespace sam::System
           std::vector<Eigen::Triplet<double>> Ai_triplets; 
           Ai_triplets.reserve(FT::kN*FT::kM);
           
-          // FIX: remove in favor of array_of_start_column_idx
-          auto tuple_of_start_column_idx =
-            std::apply(
-                [this](const auto & ... key_id)
-                {
-                  return std::array<int, FT::kNbKeys>{this->bookkeeper_.getKeyInfos(key_id).sysidx ...};// NOTE: BOOKKEEPER
-                                                                                             // replace by something else
-                }, factor.get_array_keys_id() // factor.keysset rather (so that we access KeyMeta_t AND key_id)
-                );
+          // // FIX: remove in favor of array_of_start_column_idx
+          // auto tuple_of_start_column_idx =
+          //   std::apply(
+          //       [this](const auto & ... key_id)
+          //       {
+          //         return std::array<int, FT::kNbKeys>{this->bookkeeper_.getKeyInfos(key_id).sysidx ...};// NOTE: BOOKKEEPER
+          //                                                                                    // replace by something else
+          //       }, factor.get_array_keys_id() // factor.keysset rather (so that we access KeyMeta_t AND key_id)
+          //       );
 
           // for each element of the tuple:
           //    start_column_idx = keytype_idx_offset + iterator_distance * kN
           std::array<std::size_t, FT::kNbKeys> array_of_start_column_idx = 
             std::apply(
-                [&,this](const auto & ... kcc)
+                [&](const auto & ... kcc)
                 {
                   // pre declare my expression 
                   auto lambda = [&](const auto & akcc, const auto & marginal_data_tuple) -> std::size_t
@@ -720,7 +713,7 @@ namespace sam::System
                     return N_type_idx_offsets[tuple_idx] + iterator_distance * keymeta_t::kN;
                   };
 
-                  return std::array<std::size_t, FT::kNbKeys>{ lambda(kcc, this->all_marginals_.data_map_tuple ) ... };
+                  return std::array<std::size_t, FT::kNbKeys>{ lambda(kcc, marginal_collection.data_map_tuple ) ... };
                 }
                 , factor.keys_set);
 
@@ -750,13 +743,13 @@ namespace sam::System
           
           // placing those matrices in Ai_triplets
           std::apply(
-              [this, &start_row_idx,&array_of_start_column_idx, &Ai_triplets](const auto & ...Aik)
+              [ &start_row_idx,&array_of_start_column_idx, &Ai_triplets](const auto & ...Aik)
               {
                 std::apply(
-                    [&,this](auto... start_column_idx)
+                    [&](auto... start_column_idx)
                     {
                       (
-                       (this->lay_out_Aik_in_triplets(Aik, start_column_idx ,start_row_idx,Ai_triplets))
+                       (type::lay_out_Aik_in_triplets(Aik, start_column_idx ,start_row_idx,Ai_triplets))
                        ,...
                       );
                     }
@@ -771,11 +764,11 @@ namespace sam::System
         }
     }
 
-    template <typename MAT> // FIX: static ??
-    void lay_out_Aik_in_triplets(const MAT & Aik
+    template <typename MAT>
+    static void lay_out_Aik_in_triplets(const MAT & Aik
         ,const std::size_t starting_column
         ,const std::size_t starting_row
-        ,std::vector<Eigen::Triplet<double>>& Ai_triplets_out) const
+        ,std::vector<Eigen::Triplet<double>>& Ai_triplets_out)
     {
       constexpr std::size_t M = MAT::RowsAtCompileTime;
       constexpr std::size_t Nk = MAT::ColsAtCompileTime;
