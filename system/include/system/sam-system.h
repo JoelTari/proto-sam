@@ -373,11 +373,14 @@ namespace sam::Inference
       bool factor_id_already_exists = std::apply([&factor_id](const auto & ...vof)
           {
             return 
-            ( std::ranges::none_of(vof,[&factor_id](const auto & wf){ return wf.factor.factor_id == factor_id;}) && ... );
+            ( std::ranges::any_of(vof,[&factor_id](const auto & wf)
+                                   {
+                                      return wf.factor.factor_id == factor_id;
+                                   }) || ... );
           },this->all_factors_tuple_);
 
       if (factor_id_already_exists)
-        std::runtime_error("factor "+ factor_id+ " already exists");
+        throw std::runtime_error("factor "+ factor_id+ " already exists");
 
       // apply to emplace this factor in the correct container
       std::apply(

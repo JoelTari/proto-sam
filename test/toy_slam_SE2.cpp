@@ -293,4 +293,24 @@ TEST(ToySLAMSE2System, Manif)
   // print all factors
   std::cout << sam::Factor::stringify_wrapped_factor_container_block(sys.get_all_factors());
 
+
+  // f5 // this should work since f5 has been remove
+  {
+    auto z = ::sam::Measure::Motion2d_t(0.8791, 2.7602);
+    sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f5",
+                                                                    z,
+                                                                    cov_landmark,
+                                                                    {"b0", "x1"});
+  }
+  // f6 // this should fail ("f6 already exists")
+  {
+    auto z = ::sam::Measure::Motion2d_t(-6.1805, 1.9506);
+    EXPECT_THROW(
+      sys.register_new_factor<::sam::Factor::LandmarkCartesianObsSE2>("f6",
+                                                                      z,
+                                                                      cov_landmark,
+                                                                      {"b2", "x1"});
+    ,std::runtime_error);
+  }
+
 }
