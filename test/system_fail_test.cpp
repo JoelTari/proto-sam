@@ -14,7 +14,8 @@ TEST(FailSystem, EmptySystem)
 {
   // lets declare a system with lots of factor types
   using namespace ::sam::Factor;
-  auto sys = ::sam::Inference::System<Anchor2d,
+  auto sys = ::sam::Inference::System<::sam::Inference::SolverQR,
+                                      Anchor2d,
                                       RelativeMatcher2d,
                                       AnchorSE2,
                                       RelativeMatcherSE2,
