@@ -59,9 +59,8 @@ namespace sam::Inference
       * @param agent id
       */
     System(const std::string & agent_id)
-      :agent_id(agent_id),bookkeeper_(Bookkeeper(agent_id))  // NOTE: BOOKKEEPER: remove
+      :agent_id(agent_id),bookkeeper_(Bookkeeper(agent_id))  // FIX: BOOKKEEPER: remove
     { 
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); 
     }
 
     /**
@@ -81,52 +80,12 @@ namespace sam::Inference
     }
 
     /**
-    * @brief New factor registration
-    *
-    * @tparam FT
-    * @param factor_id
-    * @param mes_vect
-    * @param measure_cov
-    * @param keys_id
-    */
-    template <typename FT>
-    void register_new_factor(const std::string&                          factor_id,
-                             const typename FT::measure_t&          mes_vect,
-                             const typename FT::measure_cov_t&           measure_cov,
-                             const std::array<std::string, FT::kNbKeys>& keys_id)
-    {
-      static_assert(std::is_same_v<FT, FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
-                    "This type of factor doesnt exist ");
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-
-      // check if factor id exists already
-      // TODO: consistent management failure (throw ? return value false ?
-      // std::optional ?)
-      if (this->bookkeeper_.factor_id_exists(factor_id)) // NOTE: BOOKKEEPER: just loop over factor_tuple and find (same pattern as for remove_factor). A bit slow but thats ok
-        throw std::runtime_error("Factor id already exists");
-
-      // apply to emplace this factor in the correct container
-      std::apply(
-          [&,this](auto & ... vect_of_wfactors)
-          {
-            (
-             (
-                this->emplace_factor_in<FT>(factor_id, mes_vect, measure_cov, keys_id,vect_of_wfactors)
-              )
-            , ...);
-          }
-          , this->all_factors_tuple_);
-    }
-
-    /**
     * @brief optimisation method
     */
     // FIX: input OptimOpts
-    // FIX: return SolverStats, 
+    // FIX: return SolverStats, OptimStats
     void sam_optimise() // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
     {
-      // if (this->bookkeeper_.getSystemInfos().number_of_factors == 0) return; // NOTE: BOOKKEEPER: just compute M, and if M=0 return
-
       // scoped timer
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
@@ -146,9 +105,6 @@ namespace sam::Inference
 
       // NOTE: SolverStats might have ratio rnnz/N*N
 
-
-      // reset vector of quadratic error TODO: maybe do it at end of function
-      this->bookkeeper_.clear_quadratic_errors(); // NOTE: BOOKKEEPER: remove
 
 #if ENABLE_DEBUG_TRACE
       {
@@ -188,14 +144,14 @@ namespace sam::Inference
         std::tie(MaP,rnnz) = solveQR(A,b); 
         // TODO: split the compute() step with the analyse pattern (can be set before the loop)
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
-        this->bookkeeper_.set_syst_Rnnz(rnnz); // NOTE: BOOKKEEPER: replace, have an adhoc structure such as SolverStats or something, specific to each solver
+        this->bookkeeper_.set_syst_Rnnz(rnnz); // FIX: BOOKKEEPER: replace SolverStats
 
         // optionaly compute the covariance matrix
         Eigen::MatrixXd SigmaCovariance;
         double Hnnz;
         std::tie(SigmaCovariance,Hnnz) = compute_covariance(A);
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
-        this->bookkeeper_.set_syst_Hnnz(Hnnz); // NOTE: BOOKKEEPER: replace, have an adhoc structure such as SolverStats or something, specific to each solver
+        this->bookkeeper_.set_syst_Hnnz(Hnnz); // FIX: BOOKKEEPER: replace SolverStats
 
 #if ENABLE_DEBUG_TRACE
       {
@@ -249,7 +205,6 @@ namespace sam::Inference
                             std::string key_id = it_marg->first;
                             auto wrapped_marginal = it_marg->second;
                             // get the subvector from the Maximum A Posteriori vector
-                            // auto sysidx = this->bookkeeper_.getKeyInfos(key_id).sysidx;// NOTE: BOOKKEEPER: replace (second time this sysidx appears)
                             auto sysidx = KeyTypeStartIdx + std::distance(map_of_wrapped_marginals.begin(), it_marg)* kN ;
                             auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
 
@@ -313,7 +268,7 @@ namespace sam::Inference
         );
 
         // push accumulated squared norm
-        this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm/* .load() */); // NOTE: BOOKKEEPER: replace by an OptStats structure
+        this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm/* .load() */); // FIX: BOOKKEEPER: replace by an OptStats structure
 
         nIter++;
       }
@@ -321,7 +276,7 @@ namespace sam::Inference
       // clear quadratic error vector
       this->bookkeeper_.clear_quadratic_errors();
       // update sequence number
-      nbSequence++;
+      this->nbSequence++;
     }
 
     void remove_factor(const std::string & factor_id)
@@ -358,10 +313,10 @@ namespace sam::Inference
       return this->all_factors_tuple_;
     }
     
-    // FIX: remove
+    // // FIX: remove
     auto get_system_infos() const
     {
-      return this->bookkeeper_.getSystemInfos();// NOTE: BOOKKEEPER: remove
+      return this->bookkeeper_.getSystemInfos();// FIX: BOOKKEEPER: remove
     }
     
     // FIX: urgent get_joint-marginal etc... 
@@ -377,16 +332,16 @@ namespace sam::Inference
     {
       return all_marginals_.data_map_tuple;
     }
+
+    // /**
+    //  * @brief bookkeeper : store the infos of variables and factors, as well as
+    //  * associative relations, total sizes, indexes , ordering
+    //  */
+    Bookkeeper bookkeeper_;// FIX: BOOKKEEPER: remove
+                           //
+    std::string agent_id;// FIX: put in some header
+    std::string label = "SparseMatrix System";// FIX: put in some header + template argument const char *
     int nbSequence = 0; // FIX: put in some header
-
-    private:
-    /**
-     * @brief bookkeeper : store the infos of variables and factors, as well as
-     * associative relations, total sizes, indexes , ordering
-     */
-    Bookkeeper bookkeeper_;// NOTE: BOOKKEEPER:
-
-    std::string agent_id;
 
     Marginals_t all_marginals_;
 
@@ -394,10 +349,50 @@ namespace sam::Inference
     Wrapped_Factor_t all_factors_tuple_;
 
     /**
-     * @brief how many different types of factor there are
-     */
-    constexpr static const size_t S_ = std::tuple_size<decltype(all_factors_tuple_)>::value;
+    * @brief New factor registration
+    *
+    * @tparam FT
+    * @param factor_id
+    * @param mes_vect
+    * @param measure_cov
+    * @param keys_id
+    */
+    template <typename FT>
+    void register_new_factor(const std::string&                          factor_id,
+                             const typename FT::measure_t&          mes_vect,
+                             const typename FT::measure_cov_t&           measure_cov,
+                             const std::array<std::string, FT::kNbKeys>& keys_id)
+    {
+      static_assert(std::is_same_v<FT, FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
+                    "This type of factor doesnt exist ");
+      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
+      // TODO: consistent management failure (throw ? return value false ?
+
+      // look up factor tuple if factor_id already stored
+      bool factor_id_already_exists = std::apply([&factor_id](const auto & ...vof)
+          {
+            return 
+            ( std::ranges::none_of(vof,[&factor_id](const auto & wf){ return wf.factor.factor_id == factor_id;}) && ... );
+          },this->all_factors_tuple_);
+
+      if (factor_id_already_exists)
+        std::runtime_error("factor "+ factor_id+ " already exists");
+
+      // apply to emplace this factor in the correct container
+      std::apply(
+          [&,this](auto & ... vect_of_wfactors)
+          {
+            (
+             (
+                this->emplace_factor_in<FT>(factor_id, mes_vect, measure_cov, keys_id,vect_of_wfactors)
+              )
+            , ...);
+          }
+          , this->all_factors_tuple_);
+    }
+
+    private:
 
     template <typename FT, typename VECT_OF_WFT>
     void emplace_factor_in(const std::string&                          factor_id,
@@ -410,11 +405,6 @@ namespace sam::Inference
       // only run if compatible type
       if constexpr( std::is_same_v<FT,typename WFT::Factor_t> )
       {
-          add_keys_to_bookkeeper<WFT>(keys_id, factor_id);
-          // add the factor_id with its infos in the bookkeeper
-          // last argument is a conversion from std::array to std::vector
-          this->bookkeeper_.add_factor(factor_id, WFT::Factor_t::kN, WFT::Factor_t::kM, {keys_id.begin(), keys_id.end()});
-// NOTE: BOOKKEEPER: remove (not replaced for now, because replacement will have no cache)
           // look up our container to see if we have existing means for each key
           typename FT::KeysSet_t KccSet = FT::construct_keys_set(keys_id);
           typename FT::composite_of_opt_state_ptr_t tuple_of_opt_means_ptr
@@ -496,44 +486,44 @@ namespace sam::Inference
       }
     }
 
-// NOTE: BOOKKEEPER: remove
-    template <typename WFT>
-    void add_keys_to_bookkeeper(const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
-                                const std::string&                          factor_id)
-    {
-      add_keys_to_bookkeeper_impl<WFT>(factor_id, keys_id, std::make_index_sequence<WFT::Factor_t::kNbKeys> {});
-    }
-// NOTE: BOOKKEEPER: remove
-    template <typename WFT, std::size_t... INDEX_S>
-    void add_keys_to_bookkeeper_impl(const std::string&                          factor_id,
-                                     const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
-                                     std::index_sequence<INDEX_S...>)
-    {
-      (add_in_bookkeeper_in_once(factor_id, keys_id[INDEX_S], std::tuple_element_t<INDEX_S, typename WFT::Factor_t::KeysSet_t>::kN),
-       ...);
-    }
-// NOTE: BOOKKEEPER: remove
-    void add_in_bookkeeper_in_once(const std::string& factor_id,
-                     const std::string& key_id,
-                     int                key_dimension)   // string_view?
-    {
-      // check if the key exists, if it doesn't, we will catch
-      // TODO: a standard if/else might be more desirable (or std::optional)
-      // TODO: would it be possible to check that the dimension and/or meta name
-      // of the key is consistent ?
-      try
-      {
-        this->bookkeeper_.getKeyInfos(key_id);// NOTE: BOOKKEEPER
-      }
-      catch (int e)
-      {
-        // add the key, the variable size is accessed via the factor Meta
-        this->bookkeeper_.add_key(key_id, key_dimension);
-      }
-      // each key has a list of factors_id that it is connected, so add
-      // this factor_id to it
-      this->bookkeeper_.add_factor_id_to_key(key_id, factor_id);
-    }
+// // NOTE: BOOKKEEPER: remove
+//     template <typename WFT>
+//     void add_keys_to_bookkeeper(const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
+//                                 const std::string&                          factor_id)
+//     {
+//       add_keys_to_bookkeeper_impl<WFT>(factor_id, keys_id, std::make_index_sequence<WFT::Factor_t::kNbKeys> {});
+//     }
+// // NOTE: BOOKKEEPER: remove
+//     template <typename WFT, std::size_t... INDEX_S>
+//     void add_keys_to_bookkeeper_impl(const std::string&                          factor_id,
+//                                      const std::array<std::string, WFT::Factor_t::kNbKeys>& keys_id,
+//                                      std::index_sequence<INDEX_S...>)
+//     {
+//       (add_in_bookkeeper_in_once(factor_id, keys_id[INDEX_S], std::tuple_element_t<INDEX_S, typename WFT::Factor_t::KeysSet_t>::kN),
+//        ...);
+//     }
+// // NOTE: BOOKKEEPER: remove
+//     void add_in_bookkeeper_in_once(const std::string& factor_id,
+//                      const std::string& key_id,
+//                      int                key_dimension)   // string_view?
+//     {
+//       // check if the key exists, if it doesn't, we will catch
+//       // TODO: a standard if/else might be more desirable (or std::optional)
+//       // TODO: would it be possible to check that the dimension and/or meta name
+//       // of the key is consistent ?
+//       try
+//       {
+//         this->bookkeeper_.getKeyInfos(key_id);// NOTE: BOOKKEEPER
+//       }
+//       catch (int e)
+//       {
+//         // add the key, the variable size is accessed via the factor Meta
+//         this->bookkeeper_.add_key(key_id, key_dimension);
+//       }
+//       // each key has a list of factors_id that it is connected, so add
+//       // this factor_id to it
+//       this->bookkeeper_.add_factor_id_to_key(key_id, factor_id);
+//     }
 
 
     /**
@@ -592,21 +582,6 @@ namespace sam::Inference
       // return {map,solver.matrixR().nonZeros()};
       return {map,0}; // R nnz number set at 0 (unused)
     }
-
-#if ENABLE_RUNTIME_CONSISTENCY_CHECKS
-    bool is_system_consistent()
-    {
-      // TODO:
-      return true;
-    }
-
-    bool AreMatricesFilled()
-    {
-      // TODO: put after the end of the fill routine (check, for examples that
-      // the last line_counter is coherent with A,b sizes)
-      return true;
-    }
-#endif
 
   };
 
