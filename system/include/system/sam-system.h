@@ -188,22 +188,6 @@ namespace sam::Inference
     }
 
     /**
-    * @brief compute the covariance
-    *
-    * @param A the measurement matrix (M*N)
-    *
-    * @return 
-    */
-    std::tuple<Eigen::MatrixXd,double> compute_covariance(const Eigen::SparseMatrix<double> & A) const // WARNING: matrix specific
-    {
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-
-      auto At = Eigen::MatrixXd(A.transpose());
-      auto H = At*A;
-      return {H.inverse(),H.nonZeros()}; // inverse done through partial LU
-    }
-
-    /**
     * @brief optimisation method
     */
     OptimStats sam_optimise(const OptimOptions & optimisation_options = OptimOptions()) // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
@@ -576,63 +560,6 @@ namespace sam::Inference
           vector_of_wrapped_factors.emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
               
       }
-    }
-
-    /**
-     * @brief solve the system given the big matrices A and b. Use the sparseQR
-     * solver.
-     *
-     * @param A sparse matrix
-     * @param b
-     * @throw rank deficient (columnwise) matrix A
-     *
-     * @return
-     */
-    std::tuple<Eigen::VectorXd,double> solveQR(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b) // WARNING: derived matrix
-    // TODO: add a solverOpts variable: check rank or not, check success, count the nnz of R or not
-    {
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-      // solver
-      Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> solver;
-      // MAP
-      {
-        PROFILE_SCOPE("QR decomposition",sam_utils::JSONLogger::Instance());
-        solver.compute(A);
-      }
-      // rank check: not considered a consistency check
-      auto CheckRankTooLow = [](auto &solver,auto & A)
-        { 
-          PROFILE_SCOPE("Solver Rank Check",sam_utils::JSONLogger::Instance());
-          return solver.rank() < A.cols();
-        };
-
-      if ( CheckRankTooLow(solver,A) )
-      {
-        throw std::runtime_error("RANK DEFICIENT PROBLEM");
-      }
-      auto back_substitution = [](auto & solver, auto & b)
-        {
-          PROFILE_SCOPE("Back-Substitution",sam_utils::JSONLogger::Instance());
-          Eigen::VectorXd map = solver.solve(b);
-          return map;
-        };
-      auto map = back_substitution(solver,b);
-#if ENABLE_DEBUG_TRACE
-      {
-        PROFILE_SCOPE("print console",sam_utils::JSONLogger::Instance());
-        std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
-        std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
-        // std::cout << "### Syst solver :  nnz in square root : " << solver.matrixR().nonZeros()
-        //           << " (from " << A.nonZeros() << ") in Hessian."
-        //           << "\n";
-        // if ( Eigen::MatrixXd(solver.matrixR()).rows() < 15 )
-        // {
-        //   std::cout << "### Syst solver : matrix R : \n" << Eigen::MatrixXd(solver.matrixR()) << '\n';
-        // }
-      }
-#endif
-      // return {map,solver.matrixR().nonZeros()};
-      return {map,0}; // R nnz number set at 0 (unused)
     }
 
   };
