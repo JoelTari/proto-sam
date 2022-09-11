@@ -1,6 +1,7 @@
 #pragma once
 
 #include "system/config.h"
+#include "marginal/marginal.h"
 
 #if ENABLE_JSON_OUTPUT
 #include <json/json.h>

@@ -20,7 +20,7 @@
 #include "system/system_jsonify.h"
 #include "system/PersistentFactor.h"
 
-namespace sam::System
+namespace sam::System // FIX: rename sam::Inference
 {
   template <typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
@@ -42,6 +42,14 @@ namespace sam::System
     using system_info_t = SystemInfo;
 
     static constexpr const bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
+
+    using Wrapped_Factor_t = 
+      std::tuple<
+        std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T,isSystFullyLinear>>
+        , std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts,isSystFullyLinear>>
+        ...
+        >;
+
     static constexpr std::size_t kNbFactorTypes = 1 + sizeof...(FACTORS_Ts);
     static constexpr std::size_t kNbKeyTypes = std::tuple_size_v<KeyMetae_t>;
 
@@ -113,9 +121,14 @@ namespace sam::System
     /**
      * @brief compute vector b and sparse matrix A of the convex system
      */
-    std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(std::size_t M , std::size_t N, std::size_t jacobian_NNZ
+    static std::tuple< Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(
+        const Wrapped_Factor_t & factor_collection,
+        const Marginals_t & marginal_collection
+        , std::size_t M 
+        , std::size_t N
+        , std::size_t jacobian_NNZ
         , const std::array<std::size_t, kNbFactorTypes> & M_type_idx_offsets
-        , const std::array<std::size_t, kNbKeyTypes> & N_type_idx_offsets ) const // WARNING: matrix specific
+        , const std::array<std::size_t, kNbKeyTypes> & N_type_idx_offsets )
     {
       // declare A, b, and triplets for A data
       Eigen::SparseMatrix<double> A(M,N);
@@ -126,24 +139,24 @@ namespace sam::System
       //                fill triplets of A and vector of b                //
       //------------------------------------------------------------------//
       std::apply(
-          [&,this](const auto & ...vect_of_wfactors)
+          [&](const auto & ...vect_of_wfactors)
           {
             std::apply(
-                [&,this](const auto & ... start_row_idx)
+                [&](const auto & ... start_row_idx)
                 {
                     (
-                     ( this->lay_out_factors_to_sparse_triplets(
+                     ( type::lay_out_factors_to_sparse_triplets(
                                                                 vect_of_wfactors
                                                                 , start_row_idx
                                                                 , N_type_idx_offsets
-                                                                , this->all_marginals_
+                                                                , marginal_collection
                                                                 ,sparseA_triplets
                                                                 ,b
                                                                ) 
                      )
                      , ... );
                 }, M_type_idx_offsets);
-          } ,this->all_factors_tuple_);
+          } ,factor_collection);
 
       // set A from triplets, clear the triplets
       A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
@@ -154,6 +167,8 @@ namespace sam::System
     /**
     * @brief optimisation method
     */
+    // FIX: input OptimOpts
+    // FIX: return SolverStats, 
     void sam_optimise() // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
     {
       // if (this->bookkeeper_.getSystemInfos().number_of_factors == 0) return; // NOTE: BOOKKEEPER: just compute M, and if M=0 return
@@ -209,7 +224,7 @@ namespace sam::System
         std::string timer_name = "iter" + std::to_string(nIter);
         PROFILE_SCOPE(timer_name.c_str(),sam_utils::JSONLogger::Instance());
 
-        auto [b,A] = compute_b_A(M,N,nnz_jacobian,M_type_idx_offsets, N_type_idx_offsets);
+        auto [b,A] = type::compute_b_A(this->all_factors_tuple_, this->all_marginals_, M,N,nnz_jacobian,M_type_idx_offsets, N_type_idx_offsets);
 
         // number of nnz elements in R
         double rnnz;
@@ -408,14 +423,7 @@ namespace sam::System
     {
       return all_marginals_.data_map_tuple;
     }
-    using Wrapped_Factor_t = 
-      std::tuple<
-        std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T,isSystFullyLinear>>
-        , std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts,isSystFullyLinear>>
-        ...
-        >;
-
-    int nbSequence = 0;
+    int nbSequence = 0; // FIX: put in some header
 
     private:
     /**
@@ -535,17 +543,18 @@ namespace sam::System
     }
 
 
-    template <typename WFT>
-    auto compute_Ai_bi(const WFT & wrapped_factor)
-    {
-      if constexpr (isSystFullyLinear) 
-        return wrapped_factor.factor.compute_Ai_bi_linear();
-      else 
-      {
-        auto factor_data = wrapped_factor.get_current_point_data();
-        return std::make_tuple(factor_data.bi, factor_data.Aiks);
-      }
-    }
+    // FIX: deprecated
+    // template <typename WFT>
+    // auto compute_Ai_bi(const WFT & wrapped_factor)
+    // {
+    //   if constexpr (isSystFullyLinear) 
+    //     return wrapped_factor.factor.compute_Ai_bi_linear();
+    //   else 
+    //   {
+    //     auto factor_data = wrapped_factor.get_current_point_data();
+    //     return std::make_tuple(factor_data.bi, factor_data.Aiks);
+    //   }
+    // }
 
 // NOTE: BOOKKEEPER: remove
     template <typename WFT>
@@ -660,7 +669,7 @@ namespace sam::System
 #endif
 
     template <typename VECT_OF_WFT> // FIX: static ??
-    void lay_out_factors_to_sparse_triplets
+    static void lay_out_factors_to_sparse_triplets
     (
      const VECT_OF_WFT & vect_of_wfactors
      , std::size_t M_FT_idx_offset
@@ -668,7 +677,7 @@ namespace sam::System
      , const Marginals_t & marginal_collection
      , std::vector<Eigen::Triplet<double>> & sparseA_triplets_out
      , Eigen::VectorXd& b_out
-    ) const
+    )
     {
         using WFT = typename VECT_OF_WFT::value_type;
         using FT = typename WFT::Factor_t;
