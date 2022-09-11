@@ -22,6 +22,64 @@
 
 namespace sam::Inference
 {
+
+  struct SystemHeader
+  {
+    std::string agent_id;
+    std::string system_label;
+    // std::string solver_name;
+    std::size_t nbSequence = 0;
+    
+    SystemHeader(const std::string & agent_id, const std::string & system_label)
+      : agent_id(agent_id), system_label(system_label)
+    {}
+  };
+
+  struct OptimOptions
+  {
+    std::size_t max_iterations = 3;  // keep it even if syst is linear
+    bool compute_covariance = true;
+    bool cache_covariance = this->compute_covariance && false; // cache_covariance (moot if no computation of covariancc)
+    // TODO: threshold (by key type?? -> leads to template)
+    //
+    // TODO: have sane defaults
+  };
+  // TODO: perhaps a SolverOptions structure ?? but it should have a default
+  //       members could be: cache_R , ordering ect...
+  //       have sane default too
+
+  // stats that are specific to this type of solver (eg QR, chol, naive etc..)
+  struct SolverStats
+  {
+    //  rank , report_str
+    //  theoritical flops 
+    //  rnnz
+    // ordering_method
+    // ordering
+    // residual (actually different from the NLL) 
+  };
+
+  struct OptimStats
+  {
+    OptimOptions optimOptions; // the options inputs (the rest is more output-ish)
+    SolverStats solver_stats;
+
+    std::size_t nnz_jacobian_scalar;
+    std::size_t rnz_jacobian_scalar; //ratio of nonzeros
+    std::size_t nnz_hessian_scalar;
+    std::size_t rnz_hessian_scalar;  //ratio of nonzeros
+
+    std::size_t M,N;
+    std::size_t M_semantic,N_semantic;
+
+    bool optim_success;
+    std::string report_str;
+    double NLL_value_before; // negative log likelihood = sum of the factors norm2
+    double NLL_value_after;
+  };
+
+
+
   template <typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
   class System
@@ -39,7 +97,10 @@ namespace sam::Inference
 
     using type = System<FACTOR_T,FACTORS_Ts...>;
 
-    using system_info_t = SystemInfo;
+    using SystemHeader = SystemHeader;
+    using OptimOptions = OptimOptions;
+    using OptimStats = OptimStats;
+    using SolverStats = SolverStats;
 
     static constexpr const bool isSystFullyLinear = FACTOR_T::isLinear && ( FACTORS_Ts::isLinear && ... );
 
@@ -50,6 +111,8 @@ namespace sam::Inference
         ...
         >;
 
+    SystemHeader header;
+
     static constexpr std::size_t kNbFactorTypes = 1 + sizeof...(FACTORS_Ts);
     static constexpr std::size_t kNbKeyTypes = std::tuple_size_v<KeyMetae_t>;
 
@@ -58,8 +121,10 @@ namespace sam::Inference
       *
       * @param agent id
       */
-    System(const std::string & agent_id)
-      :agent_id(agent_id),bookkeeper_(Bookkeeper(agent_id))  // FIX: BOOKKEEPER: remove
+    System(const std::string & agent_id, const std::string & system_label = "inference system")
+      :
+      header(agent_id, system_label)
+       // ,bookkeeper_(Bookkeeper(agent_id))  // FIX: BOOKKEEPER: remove
     { 
     }
 
@@ -144,14 +209,14 @@ namespace sam::Inference
         std::tie(MaP,rnnz) = solveQR(A,b); 
         // TODO: split the compute() step with the analyse pattern (can be set before the loop)
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
-        this->bookkeeper_.set_syst_Rnnz(rnnz); // FIX: BOOKKEEPER: replace SolverStats
+        // this->bookkeeper_.set_syst_Rnnz(rnnz); // FIX: BOOKKEEPER: replace SolverStats
 
         // optionaly compute the covariance matrix
         Eigen::MatrixXd SigmaCovariance;
         double Hnnz;
         std::tie(SigmaCovariance,Hnnz) = compute_covariance(A);
         // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
-        this->bookkeeper_.set_syst_Hnnz(Hnnz); // FIX: BOOKKEEPER: replace SolverStats
+        // this->bookkeeper_.set_syst_Hnnz(Hnnz); // FIX: BOOKKEEPER: replace SolverStats
 
 #if ENABLE_DEBUG_TRACE
       {
@@ -268,15 +333,16 @@ namespace sam::Inference
         );
 
         // push accumulated squared norm
-        this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm/* .load() */); // FIX: BOOKKEEPER: replace by an OptStats structure
+        // this->bookkeeper_.push_back_quadratic_error(accumulated_syst_squared_norm/* .load() */); // FIX: BOOKKEEPER: replace by an OptStats structure
 
         nIter++;
       }
 
-      // clear quadratic error vector
-      this->bookkeeper_.clear_quadratic_errors();
+      // // clear quadratic error vector
+      // this->bookkeeper_.clear_quadratic_errors();
       // update sequence number
-      this->nbSequence++;
+      this->header.nbSequence++;
+
     }
 
     void remove_factor(const std::string & factor_id)
@@ -313,11 +379,11 @@ namespace sam::Inference
       return this->all_factors_tuple_;
     }
     
-    // // FIX: remove
-    auto get_system_infos() const
-    {
-      return this->bookkeeper_.getSystemInfos();// FIX: BOOKKEEPER: remove
-    }
+    // // // FIX: remove
+    // auto get_system_infos() const
+    // {
+    //   return this->bookkeeper_.getSystemInfos();// FIX: BOOKKEEPER: remove
+    // }
     
     // FIX: urgent get_joint-marginal etc... 
     // joint_marginal<marginals_t> get_joint_marginal()
@@ -337,11 +403,11 @@ namespace sam::Inference
     //  * @brief bookkeeper : store the infos of variables and factors, as well as
     //  * associative relations, total sizes, indexes , ordering
     //  */
-    Bookkeeper bookkeeper_;// FIX: BOOKKEEPER: remove
+    // Bookkeeper bookkeeper_;// FIX: BOOKKEEPER: remove
                            //
-    std::string agent_id;// FIX: put in some header
-    std::string label = "SparseMatrix System";// FIX: put in some header + template argument const char *
-    int nbSequence = 0; // FIX: put in some header
+    // std::string agent_id;// FIX: put in some header
+    // std::string label = "SparseMatrix System";// FIX: put in some header + template argument const char *
+    // int nbSequence = 0; // FIX: put in some header
 
     Marginals_t all_marginals_;
 
@@ -475,16 +541,16 @@ namespace sam::Inference
           // emplace back in the structure
           vector_of_wrapped_factors.emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
               
-// Debug consistency check of everything
-#if ENABLE_RUNTIME_CONSISTENCY_CHECKS
-          // 1. checking if the bookkeeper is consistent with itself (systemInfo
-          // vs whats on the std::maps)
-          assert(this->bookkeeper_.are_dimensions_consistent());// NOTE: BOOKKEEPER: remove probably
-          // 2. checking if the bookkeeper is consistent with the tuples of
-          // vector holding the factors
-          assert(this->is_system_consistent());
-          // TODO: assert that aggregate size of factor containers correspond to the bookkeeper nb of factors
-#endif
+// // Debug consistency check of everything
+// #if ENABLE_RUNTIME_CONSISTENCY_CHECKS
+//           // 1. checking if the bookkeeper is consistent with itself (systemInfo
+//           // vs whats on the std::maps)
+//           assert(this->bookkeeper_.are_dimensions_consistent());// NOTE: BOOKKEEPER: remove probably
+//           // 2. checking if the bookkeeper is consistent with the tuples of
+//           // vector holding the factors
+//           assert(this->is_system_consistent());
+//           // TODO: assert that aggregate size of factor containers correspond to the bookkeeper nb of factors
+// #endif
 
       }
     }

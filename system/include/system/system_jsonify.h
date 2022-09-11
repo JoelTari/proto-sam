@@ -10,11 +10,10 @@ template <typename SAM_SYS>
 class SystemJsonify
 {
   public:
-  static Json::Value jsonify_graph(const SAM_SYS& sys)
+  static Json::Value jsonify_graph(const SAM_SYS& sys,const std::optional<typename SAM_SYS::OptimStats> & optional_optim_stats = std::nullopt)
   {
     Json::Value json_graph;
-    json_graph["header"]    = jsonify_header(sys.get_system_infos(),sys.nbSequence);
-    // FIX: header:  take OptStats, OptimOpts, SolverStats, Header(seq, sys name (cosntexpr), agent id )
+    json_graph["header"]    = jsonify_header(sys, optional_optim_stats);
     json_graph["factors"]   = jsonify_factors(sys.get_all_factors());
     json_graph["marginals"] = jsonify_marginals(sys.get_marginals());
 
@@ -22,18 +21,25 @@ class SystemJsonify
   }
 
   private:
-  static Json::Value jsonify_header(const typename SAM_SYS::system_info_t& sysinfo, int nbSequence)
-    // FIX: header:  take OptStats, OptimOpts, SolverStats, Header(seq, sys label (cosntexpr), agent id )
+  static Json::Value jsonify_header(const SAM_SYS& sys, const std::optional<typename SAM_SYS::OptimStats> & optional_optim_stats = std::nullopt)
   {
     Json::Value json_header;
-    json_header["robot_id"]  = sysinfo.agent_id;
-    json_header["seq"]       = nbSequence;
-    json_header["base_unit"] = 0.15;
-    Json::Value quadratic_errors;
-    for (auto qerr : sysinfo.quadratic_error) quadratic_errors.append(qerr);
-    json_header["quadratic_errors"] = quadratic_errors;
-    json_header["Rnnz"]             = sysinfo.Rnnz;
-    json_header["Hnnz"]             = sysinfo.Hnnz;
+    json_header["system name"]  = sys.header.system_label;
+    json_header["robot_id"]  = sys.header.agent_id;
+    json_header["seq"]       = sys.header.nbSequence;
+    json_header["base_unit"] = 0.15; // samViz
+
+    if (optional_optim_stats.has_value())
+    {
+    // TODO: OptimStats
+      Json::Value json_optim_stats;
+    }
+    // Json::Value quadratic_errors;
+    // for (auto qerr : sysinfo.quadratic_error) quadratic_errors.append(qerr);
+    // json_header["quadratic_errors"] = quadratic_errors;
+    // json_header["Rnnz"]             = sysinfo.Rnnz;
+    // json_header["Hnnz"]             = sysinfo.Hnnz;
+
     // some compile time information (system agnostic)
     using def_t                           = sam::definitions::CompiledDefinitions;
     json_header["bla"]                    = def_t::blas;
