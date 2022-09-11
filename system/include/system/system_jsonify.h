@@ -13,6 +13,7 @@ class SystemJsonify
   {
     Json::Value json_graph;
     json_graph["header"]    = jsonify_header(sys.get_system_infos(),sys.nbSequence);
+    // FIX: header:  take OptStats, OptimOpts, SolverStats, Header(seq, sys name (cosntexpr), agent id )
     json_graph["factors"]   = jsonify_factors(sys.get_all_factors());
     json_graph["marginals"] = jsonify_marginals(sys.get_marginals());
 
@@ -21,6 +22,7 @@ class SystemJsonify
 
   private:
   static Json::Value jsonify_header(const typename SAM_SYS::system_info_t& sysinfo, int nbSequence)
+    // FIX: header:  take OptStats, OptimOpts, SolverStats, Header(seq, sys label (cosntexpr), agent id )
   {
     Json::Value json_header;
     json_header["robot_id"]  = sysinfo.agent_id;
@@ -31,7 +33,7 @@ class SystemJsonify
     json_header["quadratic_errors"] = quadratic_errors;
     json_header["Rnnz"]             = sysinfo.Rnnz;
     json_header["Hnnz"]             = sysinfo.Hnnz;
-    // some compile time information
+    // some compile time information (system agnostic)
     using def_t                           = sam::definitions::CompiledDefinitions;
     json_header["bla"]                    = def_t::blas;
     json_header["bla_vendor_mkl"]         = def_t::bla_vendor_mkl;
