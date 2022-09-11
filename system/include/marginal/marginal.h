@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 
 #include "meta/meta_interface.h"
 #include "system/config.h"
