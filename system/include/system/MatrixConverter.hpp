@@ -13,7 +13,7 @@
 // This then makes building a system Ax=b way easier, hidding the complexities 
 // from the system level
 
-namespace sam::System::MatrixConverter // FIX: inference
+namespace sam::Inference::MatrixConverter // FIX: inference
 {
   // matrix for which one row or column is one scalar dimension (e.g. is a key's dimension is 3, it takes 3 column)
   namespace Scalar

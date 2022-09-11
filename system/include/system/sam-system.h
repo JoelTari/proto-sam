@@ -20,11 +20,11 @@
 #include "system/system_jsonify.h"
 #include "system/PersistentFactor.h"
 
-namespace sam::System // FIX: rename sam::Inference
+namespace sam::Inference
 {
   template <typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
-  class SamSystem
+  class System
   {
     public:
     // keymetae (latin plural <3) remove duplicates
@@ -37,7 +37,7 @@ namespace sam::System // FIX: rename sam::Inference
     // declare marginal container type of those keymetas
     using Marginals_t = typename ::sam::Marginal::MarginalsCollection<KeyMetae_t>::type ;
 
-    using type = SamSystem<FACTOR_T,FACTORS_Ts...>;
+    using type = System<FACTOR_T,FACTORS_Ts...>;
 
     using system_info_t = SystemInfo;
 
@@ -58,7 +58,7 @@ namespace sam::System // FIX: rename sam::Inference
       *
       * @param agent id
       */
-    SamSystem(const std::string & agent_id)
+    System(const std::string & agent_id)
       :agent_id(agent_id),bookkeeper_(Bookkeeper(agent_id))  // NOTE: BOOKKEEPER: remove
     { 
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance()); 

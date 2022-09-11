@@ -34,7 +34,7 @@ TEST(ToyLinearSystem, Square)
 
   std::cout << "\n\n Declaring a sam system:\n";
 
-  auto syst = ::sam::System::SamSystem<sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>("A");
+  auto syst = ::sam::Inference::System<sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>("A");
 
   ::sam::Factor::Anchor2d::measure_t     z {0, 0};
   ::sam::Factor::Anchor2d::measure_cov_t Sigma {{0.002, 0}, {0, 0.002}};
