@@ -71,7 +71,7 @@ add_subdirectory(factor)
 list(APPEND FACTOR_STATIC_LIBRARIES
   factor_anchor2d factor_anchorSE2 factor_motion_model_SE2 factor_relative_matcher_2d factor_relative_matcher_SE2 factor_motion_model_SE2 factor_cartesian_landmark_obs_SE2
   )
-add_subdirectory(system)
+add_subdirectory(inference)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
