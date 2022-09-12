@@ -243,7 +243,7 @@ namespace sam::Inference::MatrixConverter
     std::size_t HessianNNZ(const TUPLE_VECTORS_WFACTOR_T & wfactors_tuple)
     {
       // std::vector<Eigen::Triplet<double>> semantic_triplet_A;
-      std::unordered_map<std::string, std::vector<std::string>> edges_from{};
+      std::unordered_map<std::string, std::unordered_set<std::string>> edges_from{};
       // loop factors, add to the edges
       std::apply([&edges_from](const auto & ...vect_of_wf)
           {
@@ -257,8 +257,7 @@ namespace sam::Inference::MatrixConverter
                   for (const auto & key_id : keys_id)
                   {
                     auto & mapped_key_neigbors = edges_from[key_id];
-                    mapped_key_neigbors.insert(std::end(mapped_key_neigbors),
-                                              std::begin(keys_id), std::end(keys_id));
+                    mapped_key_neigbors.insert( std::begin(keys_id), std::end(keys_id));
                   }
                 })
             ),...);
