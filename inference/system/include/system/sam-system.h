@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MatrixConverter.hpp"
 #include "marginal/marginal.h"
 #include "utils/config.h"
 #include "utils/tuple_patterns.h"
@@ -128,6 +129,7 @@ namespace sam::Inference
       size_t M = MatrixConverter::Scalar::M(this->all_factors_tuple_);
       size_t N = MatrixConverter::Scalar::N(this->all_marginals_.data_map_tuple);
       size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
+      size_t nnz_hessian  = MatrixConverter::Semantic::HessianNNZ(this->all_factors_tuple_);
       // size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
 
       
@@ -203,11 +205,6 @@ namespace sam::Inference
 
         //------------------------------------------------------------------//
         //                  POST SOLVER LOOP ON MARGINALS                   //
-        //        dispatch the Maximum A Posteriori subcomponents in        //
-        //                     the marginals container.                     //
-        //        Push the marginal result into a temporary history         //
-        //             structure that will end up in the json.              //
-        //            Do the same optionally for the covariance             //
         //------------------------------------------------------------------//
         std::apply(
             [this, &MaP,&SigmaCovariance,&nIter,&N_type_idx_offsets](auto & ... map_to_wmarginals)
@@ -269,9 +266,11 @@ namespace sam::Inference
             }
             , this->all_marginals_.data_map_tuple);
 
+        //------------------------------------------------------------------//
+        //                   Post Solver loop on factors                    //
+        //------------------------------------------------------------------//
         // std::atomic<double> accumulated_syst_squared_norm  (0);
         double accumulated_syst_squared_norm  (0);
-        // push in history & update data (Ai, bi, norm) in factors
         std::apply(
             [&accumulated_syst_squared_norm](auto & ...vec_of_wfactors)
             {
