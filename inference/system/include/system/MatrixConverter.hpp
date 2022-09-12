@@ -350,21 +350,21 @@ namespace sam::Inference::MatrixConverter
   namespace Sparse
   {
     template <typename MAT>
-    static void lay_out_Aik_in_triplets(const MAT&                           Aik,
+    static void emplace_matrix_in_triplets(const MAT&                           A,
                                         const std::size_t                    starting_column,
                                         const std::size_t                    starting_row,
-                                        std::vector<Eigen::Triplet<double>>& Ai_triplets_out)
+                                        std::vector<Eigen::Triplet<double>>& triplets_out)
     {
       constexpr std::size_t M  = MAT::RowsAtCompileTime;
       constexpr std::size_t Nk = MAT::ColsAtCompileTime;
       // int offset_cols = sys_col_idx;
       // int offset_rows = line_counter;
-      auto spaghetti_Aik = Aik.reshaped();   // make it one dimension
+      auto A_flattened = A.reshaped();   // make it one dimension
       for (std::size_t i = 0; i < MAT::SizeAtCompileTime; i++)
       {
         std::size_t row = starting_row + (i % M);
         std::size_t col = starting_column + (i / M);
-        Ai_triplets_out.emplace_back(row, col, spaghetti_Aik[i]);
+        triplets_out.emplace_back(row, col, A_flattened[i]);
       }
     }
 
@@ -408,9 +408,9 @@ namespace sam::Inference::MatrixConverter
                 using keymeta_t = typename std::remove_cvref_t<decltype(akcc)>::KeyMeta_t;
                 constexpr std::size_t tuple_idx
                     = MARGINAL_COLLECTION_T::template get_correct_tuple_idx<keymeta_t>();
-                auto        it = std::get<tuple_idx>(marginal_data_tuple).find(akcc.key_id);
+                auto        it = std::get<tuple_idx>(marginal_data_tuple).find(akcc.key_id);   // WARNING: mark marginal.find usage (marginal vectorisation)
                 std::size_t iterator_distance
-                    = std::distance(std::get<tuple_idx>(marginal_data_tuple).begin(), it);
+                    = std::distance(std::get<tuple_idx>(marginal_data_tuple).begin(), it); // WARNING: linear cost
                 return N_type_idx_offsets[tuple_idx] + iterator_distance * keymeta_t::kN;
               };
 
@@ -450,7 +450,7 @@ namespace sam::Inference::MatrixConverter
             {
               std::apply(
                   [&](auto... start_column_idx) {
-                    ((lay_out_Aik_in_triplets(Aik, start_column_idx, start_row_idx, Ai_triplets)),
+                    ((emplace_matrix_in_triplets(Aik, start_column_idx, start_row_idx, Ai_triplets)),
                      ...);
                   },
                   array_of_start_column_idx);
@@ -485,9 +485,8 @@ namespace sam::Inference::MatrixConverter
       Eigen::VectorXd                     b(M);
       std::vector<Eigen::Triplet<double>> sparseA_triplets;
       sparseA_triplets.reserve(jacobian_NNZ);   // expected number of nonzeros elements
-      //------------------------------------------------------------------//
-      //                fill triplets of A and vector of b                //
-      //------------------------------------------------------------------//
+
+      // 
       std::apply(
           [&](const auto&... vect_of_wfactors)
           {
@@ -512,6 +511,85 @@ namespace sam::Inference::MatrixConverter
       A.setFromTriplets(sparseA_triplets.begin(), sparseA_triplets.end());
       return {b, A};
     }
+
+    template <typename TUPLE_VECTORS_WFACTOR_T, typename MARGINAL_COLLECTION_T>
+    static Eigen::SparseMatrix<double> compute_semantic_A(
+        const TUPLE_VECTORS_WFACTOR_T& factor_collection,
+        const MARGINAL_COLLECTION_T&   marginal_collection,
+        std::size_t                    semantic_M,
+        std::size_t                    semantic_N,
+        std::size_t                    semantic_jacobian_NNZ,
+        const std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>&
+            M_semantic_type_idx_offsets,
+        const std::array<std::size_t,
+                         std::tuple_size_v<typename MARGINAL_COLLECTION_T::Marginals_Data_t>>&
+            N_semantic_type_idx_offsets)
+    {
+      std::string scope_name = "compute_semantic_A";
+      PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+      // declare A, b, and triplets for A data
+      Eigen::SparseMatrix<double>         semantic_A(semantic_M, semantic_N);
+      std::vector<Eigen::Triplet<int>> sparse_semantic_A_triplets;
+      sparse_semantic_A_triplets.reserve(semantic_jacobian_NNZ);   // expected number of nonzeros elements
+
+      // 
+      std::apply(
+          [&](const auto&... vect_of_wfactors)
+          {
+            std::apply(
+                [&](const auto&... type_row_idx_offset)
+                {
+                  auto lambda = [&](const auto & vwf, auto row_offset)
+                  {
+                    for (auto it_wf = vwf.begin(); it_wf != vwf.end(); it_wf++)
+                    {
+                      using VECT_OF_WFT = std::remove_cvref_t<decltype(vwf)>;
+                      using WFT = typename VECT_OF_WFT::value_type;
+                      using FT  = typename WFT::Factor_t;
+                      auto factor = it_wf->factor;
+                      std::array<std::size_t, FT::kNbKeys> array_of_column_idx = 
+                                  std::apply(
+                                      [&](const auto & ...kcc)
+                                      {
+                                            // pre declare my expression
+                                            auto lambda2 = [&](const auto& akcc, const auto& marginal_data_tuple) -> std::size_t
+                                            {
+                                              using keymeta_t = typename std::remove_cvref_t<decltype(akcc)>::KeyMeta_t;
+                                              constexpr std::size_t tuple_idx
+                                                  = MARGINAL_COLLECTION_T::template get_correct_tuple_idx<keymeta_t>();
+                                              auto        it = std::get<tuple_idx>(marginal_data_tuple).find(akcc.key_id);   // WARNING: mark marginal.find usage (marginal vectorisation)
+                                              std::size_t iterator_distance
+                                                  = std::distance(std::get<tuple_idx>(marginal_data_tuple).begin(), it); // WARNING: linear cost
+                                              return N_semantic_type_idx_offsets[tuple_idx] + iterator_distance;
+                                            };
+                                            return std::array<std::size_t, FT::kNbKeys> { lambda2(kcc, marginal_collection.data_map_tuple)...};
+                                      }
+                                      ,factor.keys_set);
+                      std::size_t row_idx = row_offset + std::distance( vwf.begin() ,it_wf );
+
+                      for (auto col_idx: array_of_column_idx)
+                      {
+                          sparse_semantic_A_triplets.emplace_back(row_idx,col_idx,1);
+                      }
+                    }
+                  };
+                  (lambda(vect_of_wfactors, type_row_idx_offset) ,...);
+                },
+                M_semantic_type_idx_offsets);
+          },
+          factor_collection);
+
+      // set A from triplets, clear the triplets
+      semantic_A.setFromTriplets(sparse_semantic_A_triplets.begin(), sparse_semantic_A_triplets.end());
+      return semantic_A;
+    }
+
+    
+    
+    // Eigen::Sparse<int> compute_semantic_H()
+    // {
+    //     return A.t A;
+    // }
 
   }   // namespace Sparse
 

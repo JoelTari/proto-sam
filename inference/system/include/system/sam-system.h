@@ -128,14 +128,19 @@ namespace sam::Inference
 
       size_t M = MatrixConverter::Scalar::M(this->all_factors_tuple_);
       size_t N = MatrixConverter::Scalar::N(this->all_marginals_.data_map_tuple);
+      size_t semantic_M = MatrixConverter::Semantic::M(this->all_factors_tuple_);
+      size_t semantic_N = MatrixConverter::Semantic::N(this->all_marginals_.data_map_tuple);
       size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
-      size_t nnz_hessian  = MatrixConverter::Semantic::HessianNNZ(this->all_factors_tuple_);
-      // size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
+      size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
+      size_t nnz_semantic_jacobian = MatrixConverter::Semantic::JacobianNNZ(this->all_factors_tuple_);
+      size_t nnz_semantic_hessian  = MatrixConverter::Semantic::HessianNNZ(this->all_factors_tuple_);
 
       
       auto M_type_idx_offsets = MatrixConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
       auto N_type_idx_offsets = MatrixConverter::Scalar::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
-      
+      auto semantic_M_type_idx_offsets = MatrixConverter::Semantic::FactorTypeIndexesOffset(this->all_factors_tuple_);
+      auto semantic_N_type_idx_offsets = MatrixConverter::Semantic::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
+
       OptimStats optim_stats;
       // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
       //                                       or  ratio    /N*N
@@ -148,6 +153,16 @@ namespace sam::Inference
         std::cout << "### Syst: Starting an optimisation \n";
         std::cout << "### Syst: size " << M << " * " << N << '\n';
 #endif
+        // std::cout << "### Semantic A: \n" 
+        //   << 
+        //   MatrixConverter::Sparse
+        //   ::compute_semantic_A(this->all_factors_tuple_
+        //     , this->all_marginals_
+        //     , semantic_M
+        //     , semantic_N
+        //     , nnz_semantic_jacobian
+        //     , semantic_M_type_idx_offsets
+        //     , semantic_N_type_idx_offsets);
 
       //------------------------------------------------------------------//
       //                      PRE LOOP DECLARATIONS                       //
