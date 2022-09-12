@@ -1,12 +1,12 @@
 #pragma once
 
 #include <chrono>
-#include <json/value.h>
 #include <ratio>
 #include <sstream>
 // #include <fstream>
 // #include "utils/config.h"
 
+#include <json/value.h>
 #include <json/json.h>
 #include <mutex>
 #include <thread>
@@ -158,7 +158,7 @@ namespace sam_utils
         = std::chrono::time_point_cast<TIME_UNIT>(std::chrono::steady_clock::now());
 
     // std::chrono::time_point<std::chrono::steady_clock> end; // no need for end to be a member
-    JSONLogger& logger;
+    JSONLogger& logger; // FIX: remove
     int         spanIdx = 0;
 
     ScopedTimer(const char* name, JSONLogger& logger) : name(name), logger(logger)
