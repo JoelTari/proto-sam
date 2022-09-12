@@ -1,3 +1,4 @@
+set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 add_library(sam_system_interface INTERFACE)
 target_include_directories(sam_system_interface INTERFACE include/ ${EIGEN_INCLUDE_DIRS})
 target_compile_definitions(sam_system_interface INTERFACE ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
