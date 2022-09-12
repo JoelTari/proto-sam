@@ -123,7 +123,7 @@ TEST(ToyPoseGraphSE2System, Square)
 
   // expected hessian nnz: semantic 18, scalar 162
   EXPECT_EQ( sam::Inference::MatrixConverter::Semantic::HessianNNZ(sys.get_all_factors()),18 );
-  // EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::HessianNNZ(sys.get_all_factors()),162 );
+  EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::HessianNNZ(sys.get_all_factors()),162 );
   // expected semantic jacobian nnz: semanctic 13, scalar 9+6*18
   EXPECT_EQ( sam::Inference::MatrixConverter::Semantic::JacobianNNZ(sys.get_all_factors()),13 );
   EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::JacobianNNZ(sys.get_all_factors()),9+(6*18) );

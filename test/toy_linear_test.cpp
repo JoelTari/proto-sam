@@ -67,7 +67,7 @@ TEST(ToyLinearSystem, Square)
 
   // expected hessian nnz: semantic 12, scalar 48
   EXPECT_EQ( sam::Inference::MatrixConverter::Semantic::HessianNNZ(syst.get_all_factors()),12 );
-  // EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::HessianNNZ(syst.get_all_factors()),48 );
+  EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::HessianNNZ(syst.get_all_factors()),48 );
   // expected semantic jacobian nnz: semanctic 7, scalar 4+4*8
   EXPECT_EQ( sam::Inference::MatrixConverter::Semantic::JacobianNNZ(syst.get_all_factors()),9 );
   EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::JacobianNNZ(syst.get_all_factors()),4+(4*8) );

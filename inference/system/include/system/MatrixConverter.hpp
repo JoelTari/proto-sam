@@ -139,8 +139,77 @@ namespace sam::Inference::MatrixConverter
           wfactors_tuple);
     }
 
-    // TODO: more difficult, perhaps easier to expand from Semantic::HessianNNZ() ?
-    // std::size_t HessianNNZ()
+    template <typename TUPLE_VECTORS_WFACTOR_T>
+    std::size_t HessianNNZ(const TUPLE_VECTORS_WFACTOR_T & wfactors_tuple)
+    {
+      // std::vector<Eigen::Triplet<double>> semantic_triplet_A;
+      std::unordered_map<std::string, std::unordered_set<std::string>> edges_from{};
+      // loop factors, add to the edges
+      std::size_t nnz =0;
+      std::apply([&edges_from,&nnz](const auto & ...vect_of_wf)
+          {
+          ((
+            std::for_each(
+              vect_of_wf.begin(),
+              vect_of_wf.end(),
+              [&edges_from,&nnz](const auto & wf)
+              { 
+                // The challenge is to avoid double count.
+                // In the hessian a case can be the contribution of several factors:
+                // for instance factors \phi(x0) and \phi(x0,x1) both contributes
+                // to 
+                // So the nnz is not simply found by looping naively the factor, we have 
+                // to check if an area is already counted. This is done through the 
+                // variable edges_from that is a map of sets (key: a variable, set: the neighbours variables)
+                // The return value of insertion in the set signals that a 
+
+                // for each factor
+                //    for each kcc
+                //        - insert in map[kcc.id,{}] 
+                //       for each other_kcc
+                //          - insert in set: [kcc.id, [other_kcc] ]
+                //          - if insertion took place
+                //             then nnz +=  kcc::kN*other_kcc::kN
+
+                std::apply(
+                    [&](const auto & ...kcc)
+                    {
+                      // expression definition
+                      auto lambda = [&](const auto & akcc)
+                      {
+                        edges_from[akcc.key_id];
+                        std::apply(
+                            [&](const auto & ...other_kcc)
+                            {
+                              // expression definition
+                              auto lambda2 = [&](const auto & another_kcc){
+                                  auto [it, insertionTookPlace] = edges_from[akcc.key_id].insert(another_kcc.key_id);
+                                  if (insertionTookPlace)
+                                  {
+                                    nnz+= std::remove_cvref_t<decltype(akcc)>::KeyMeta_t::kN * std::remove_cvref_t<decltype(another_kcc)>::KeyMeta_t::kN;
+                                  }
+                              };
+                              // expression application with expansion
+                              (lambda2(other_kcc), ...);
+                            },wf.factor.keys_set );
+                      };
+                      // expression application with expansion
+                      (lambda(kcc), ...);
+                    },wf.factor.keys_set);
+              })
+           ),...);
+          }
+          ,wfactors_tuple);
+
+      // accumulate
+      // std::size_t nnz ;= std::accumulate(std::begin(edges_from)
+      //     , std::end(edges_from)
+      //     , 0
+      //     , [] (int value, const auto & pair)
+      //     { return value + pair.second.size(); }
+      //     );
+      return nnz;
+    }
 
   }   // namespace Scalar
 
@@ -240,7 +309,6 @@ namespace sam::Inference::MatrixConverter
                         wfactors_tuple);
     }
 
-    // TODO: more difficult
     template <typename TUPLE_VECTORS_WFACTOR_T>
     std::size_t HessianNNZ(const TUPLE_VECTORS_WFACTOR_T & wfactors_tuple)
     {
