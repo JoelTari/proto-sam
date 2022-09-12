@@ -1,7 +1,7 @@
 #pragma once
 
 #include "marginal/marginal.h"
-#include "system/config.h"
+#include "utils/config.h"
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"
 #include "system/MatrixConverter.hpp"

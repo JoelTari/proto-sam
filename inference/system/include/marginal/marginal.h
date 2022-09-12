@@ -1,7 +1,7 @@
 #pragma once
 
 #include "meta/meta_interface.h"
-#include "system/config.h"
+#include "utils/config.h"
 #include "utils/tuple_patterns.h"
 
 #include <Eigen/Dense>

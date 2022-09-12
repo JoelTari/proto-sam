@@ -6,7 +6,7 @@
 #include <Eigen/Sparse>
 #include <Eigen/Dense>
 
-#include "system/config.h"
+#include "utils/config.h"
 
 // a set of helper functions to translate factor & marginal containers in
 // the matrix world (indices, matrice sizes etc..)

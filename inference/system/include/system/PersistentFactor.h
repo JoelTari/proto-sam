@@ -1,6 +1,6 @@
 #pragma once
 
-#include "system/config.h"
+#include "utils/config.h"
 
 #include <Eigen/Dense>
 #include <array>

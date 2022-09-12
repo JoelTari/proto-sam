@@ -5,11 +5,15 @@
 #include <ratio>
 #include <sstream>
 // #include <fstream>
-#include "system/config.h"
+// #include "utils/config.h"
 
 #include <json/json.h>
 #include <mutex>
 #include <thread>
+
+#ifndef ENABLE_JSON_OUTPUT
+#define ENABLE_JSON_OUTPUT 1
+#endif
 
 namespace sam_utils
 {

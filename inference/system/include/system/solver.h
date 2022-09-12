@@ -1,5 +1,5 @@
 #include <Eigen/Sparse>
-#include "system/config.h"
+#include "utils/config.h"
 #include "utils/utils.h"
 
 namespace sam::Inference
