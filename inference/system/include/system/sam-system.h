@@ -141,9 +141,14 @@ namespace sam::Inference
       auto semantic_M_type_idx_offsets = MatrixConverter::Semantic::FactorTypeIndexesOffset(this->all_factors_tuple_);
       auto semantic_N_type_idx_offsets = MatrixConverter::Semantic::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
 
+      Eigen::Sparse<int> semantic_A = MatrixConverter::Sparse ::compute_semantic_A
+                                              (this->all_factors_tuple_ , this->all_marginals_
+                                              , semantic_M
+                                              , semantic_N
+                                              , nnz_semantic_jacobian
+                                              , semantic_M_type_idx_offsets
+                                              , semantic_N_type_idx_offsets);
       OptimStats optim_stats;
-      // NOTE: OptStats: we can have connectivity: ratio nnz/M*N (scalar matrix A density)
-      //                                       or  ratio    /N*N
 
       // NOTE: SolverStats might have ratio rnnz/N*N
 
@@ -152,17 +157,8 @@ namespace sam::Inference
 #if ENABLE_DEBUG_TRACE
         std::cout << "### Syst: Starting an optimisation \n";
         std::cout << "### Syst: size " << M << " * " << N << '\n';
+        std::cout << "### Semantic A: \n" ;
 #endif
-        // std::cout << "### Semantic A: \n" 
-        //   << 
-        //   MatrixConverter::Sparse
-        //   ::compute_semantic_A(this->all_factors_tuple_
-        //     , this->all_marginals_
-        //     , semantic_M
-        //     , semantic_N
-        //     , nnz_semantic_jacobian
-        //     , semantic_M_type_idx_offsets
-        //     , semantic_N_type_idx_offsets);
 
       //------------------------------------------------------------------//
       //                      PRE LOOP DECLARATIONS                       //

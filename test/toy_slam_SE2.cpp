@@ -30,7 +30,7 @@ TEST(ToySLAMSE2System, Manif)
   cout << "          |   b0      b2            " << endl;
   cout << "          *                         " << endl;
   cout << "-----------------------------------------------" << endl;
-  cout << std::fixed << std::setprecision(4) << std::showpos;
+  // cout << std::fixed << std::setprecision(4) << std::showpos;
   // cout << "SE2 Dof " << manif::SE2d::DoF << '\n';
   // cout << "SE2 Dim " << manif::SE2d::Dim << '\n';
 
