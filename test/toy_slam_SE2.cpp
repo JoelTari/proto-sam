@@ -177,6 +177,13 @@ TEST(ToySLAMSE2System, Manif)
                                                                     {"b4", "x2"});
   }
 
+  // expected hessian nnz: semantic 30, scalar ??
+  EXPECT_EQ( sam::Inference::MatrixConverter::Semantic::HessianNNZ(sys.get_all_factors()),30 );
+  // EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::HessianNNZ(sys.get_all_factors()),48 );
+  // expected semantic jacobian nnz: semanctic 23, scalar 9+2*18+9*10 = 135 
+  EXPECT_EQ( sam::Inference::MatrixConverter::Semantic::JacobianNNZ(sys.get_all_factors()),23 );
+  EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::JacobianNNZ(sys.get_all_factors()),135 );
+
   // get init point before optimisation
   std::cout << "Before Optimisation:\n";
   auto sys_marginals = sys.get_marginals();

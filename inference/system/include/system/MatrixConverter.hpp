@@ -234,7 +234,9 @@ namespace sam::Inference::MatrixConverter
     template <typename TUPLE_VECTORS_WFACTOR_T>
     std::size_t JacobianNNZ(const TUPLE_VECTORS_WFACTOR_T& wfactors_tuple)
     {
-      return std::apply([](const auto&... vect_of_wf) { return (vect_of_wf.size() + ...); },
+      return std::apply([](const auto&... vect_of_wf) { 
+          return ((std::remove_cvref_t<decltype(vect_of_wf)>::value_type::Factor_t::kNbKeys*
+              vect_of_wf.size()) + ...); },
                         wfactors_tuple);
     }
 

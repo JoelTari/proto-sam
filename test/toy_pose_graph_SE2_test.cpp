@@ -1,5 +1,6 @@
 #include "anchorSE2/anchorSE2.h"
 #include "relative-matcher-SE2/relative-matcher-SE2.h"
+#include "system/MatrixConverter.hpp"
 #include "system/sam-system.h"
 #include "test_utils.h"
 
@@ -119,6 +120,13 @@ TEST(ToyPoseGraphSE2System, Square)
     // registration
     sys.register_new_factor<::sam::Factor::RelativeMatcherSE2>("f6", z, cov_z, {"x0", "x5"});
   }
+
+  // expected hessian nnz: semantic 18, scalar 162
+  EXPECT_EQ( sam::Inference::MatrixConverter::Semantic::HessianNNZ(sys.get_all_factors()),18 );
+  // EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::HessianNNZ(sys.get_all_factors()),162 );
+  // expected semantic jacobian nnz: semanctic 13, scalar 9+6*18
+  EXPECT_EQ( sam::Inference::MatrixConverter::Semantic::JacobianNNZ(sys.get_all_factors()),13 );
+  EXPECT_EQ( sam::Inference::MatrixConverter::Scalar::JacobianNNZ(sys.get_all_factors()),9+(6*18) );
 
 
   std::cout << "Before Optimisation:\n";
