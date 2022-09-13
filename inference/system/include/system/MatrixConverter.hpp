@@ -34,7 +34,7 @@ namespace sam::Inference::MatrixConverter
           wfactors_tuple);
     }
 
-    template <typename TUPLE_MAP_WMARGINAL_T>
+    template <typename TUPLE_MAP_WMARGINAL_T> // WARNING: marginal refactor: map -> vector
     std::size_t N(const TUPLE_MAP_WMARGINAL_T& tuple_map_wmarginals)
     {
       return std::apply(
@@ -87,7 +87,7 @@ namespace sam::Inference::MatrixConverter
     }
 
     template <typename TUPLE_MAP_WMARGINAL_T>
-    std::array<std::size_t, std::tuple_size_v<TUPLE_MAP_WMARGINAL_T>>
+    std::array<std::size_t, std::tuple_size_v<TUPLE_MAP_WMARGINAL_T>> // WARNING: marginal refactor: map -> vector
         MarginalTypeIndexesOffset(const TUPLE_MAP_WMARGINAL_T& tuple_map_wmarginals)
     {
       using array_t = std::array<std::size_t, std::tuple_size_v<TUPLE_MAP_WMARGINAL_T>>;
@@ -227,7 +227,7 @@ namespace sam::Inference::MatrixConverter
                         wfactors_tuple);
     }
 
-    template <typename TUPLE_MAP_WMARGINAL_T>
+    template <typename TUPLE_MAP_WMARGINAL_T> // WARNING: marginal refactor: map -> vector
     std::size_t N(const TUPLE_MAP_WMARGINAL_T& tuple_map_wmarginals)
     {
       return std::apply([](const auto&... map_of_wmarg) { return (map_of_wmarg.size() + ...); },
@@ -268,7 +268,7 @@ namespace sam::Inference::MatrixConverter
     }
 
     template <typename TUPLE_MAP_WMARGINAL_T>
-    std::array<std::size_t, std::tuple_size_v<TUPLE_MAP_WMARGINAL_T>>
+    std::array<std::size_t, std::tuple_size_v<TUPLE_MAP_WMARGINAL_T>> // WARNING: marginal refactor: map -> vector
         MarginalTypeIndexesOffset(const TUPLE_MAP_WMARGINAL_T& tuple_map_wmarginals)
     {
       using array_t = std::array<std::size_t, std::tuple_size_v<TUPLE_MAP_WMARGINAL_T>>;
@@ -410,7 +410,7 @@ namespace sam::Inference::MatrixConverter
                     = MARGINAL_COLLECTION_T::template get_correct_tuple_idx<keymeta_t>();
                 auto        it = std::get<tuple_idx>(marginal_data_tuple).find(akcc.key_id);   // WARNING: mark marginal.find usage (marginal vectorisation)
                 std::size_t iterator_distance
-                    = std::distance(std::get<tuple_idx>(marginal_data_tuple).begin(), it); // WARNING: linear cost
+                    = std::distance(std::get<tuple_idx>(marginal_data_tuple).begin(), it); // WARNING: linear cost // WARNING: marginal refactor: map -> vector
                 return N_type_idx_offsets[tuple_idx] + iterator_distance * keymeta_t::kN;
               };
 
@@ -467,7 +467,7 @@ namespace sam::Inference::MatrixConverter
       }
     }
 
-    template <typename TUPLE_VECTORS_WFACTOR_T, typename MARGINAL_COLLECTION_T>
+    template <typename TUPLE_VECTORS_WFACTOR_T, typename MARGINAL_COLLECTION_T> // WARNING: marginal refactor: map -> vector
     static std::tuple<Eigen::VectorXd, Eigen::SparseMatrix<double>> compute_b_A(
         const TUPLE_VECTORS_WFACTOR_T& factor_collection,
         const MARGINAL_COLLECTION_T&   marginal_collection,
@@ -512,7 +512,7 @@ namespace sam::Inference::MatrixConverter
       return {b, A};
     }
 
-    template <typename TUPLE_VECTORS_WFACTOR_T, typename MARGINAL_COLLECTION_T>
+    template <typename TUPLE_VECTORS_WFACTOR_T, typename MARGINAL_COLLECTION_T> // WARNING: marginal refactor: map -> vector
     static Eigen::SparseMatrix<int> compute_semantic_A(
         const TUPLE_VECTORS_WFACTOR_T& factor_collection,
         const MARGINAL_COLLECTION_T&   marginal_collection,
@@ -558,7 +558,7 @@ namespace sam::Inference::MatrixConverter
                                                   = MARGINAL_COLLECTION_T::template get_correct_tuple_idx<keymeta_t>();
                                               auto        it = std::get<tuple_idx>(marginal_data_tuple).find(akcc.key_id);   // WARNING: mark marginal.find usage (marginal vectorisation)
                                               std::size_t iterator_distance
-                                                  = std::distance(std::get<tuple_idx>(marginal_data_tuple).begin(), it); // WARNING: linear cost
+                                                  = std::distance(std::get<tuple_idx>(marginal_data_tuple).begin(), it); // WARNING: linear cost // WARNING: marginal refactor: map -> vector
                                               return N_semantic_type_idx_offsets[tuple_idx] + iterator_distance;
                                             };
                                             return std::array<std::size_t, FT::kNbKeys> { lambda2(kcc, marginal_collection.data_map_tuple)...};

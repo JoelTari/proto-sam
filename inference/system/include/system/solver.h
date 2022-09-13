@@ -64,7 +64,14 @@ namespace sam::Inference
       // MAP
       {
         PROFILE_SCOPE("QR decomposition",sam_utils::JSONLogger::Instance());
-        solver.compute(A); // analysePattern() & factorize()
+        {
+          PROFILE_SCOPE("analyse pattern",sam_utils::JSONLogger::Instance());
+          solver.analyzePattern(A);
+        }
+        {
+          PROFILE_SCOPE("factorization",sam_utils::JSONLogger::Instance());
+          solver.factorize(A); // complex
+        }
       }
 
       auto back_substitution = [](auto & solver, auto & b)
@@ -86,7 +93,7 @@ namespace sam::Inference
       stats.rnnz = solver.matrixR().nonZeros();
       stats.input_options = options;
       stats.rank = solver.rank();
-      // stats.ordering = solver.colsPermutation(); (that depends of what I want actually)
+      // stats.ordering = solver.colsPermutation(); (will depend on the desired structure)
 
       // if options.cache save matrixR
       // R = solver.matrixR().topLeftCorner(rank(),rank())
@@ -105,5 +112,8 @@ namespace sam::Inference
 
   };
 
+  //------------------------------------------------------------------//
+  //                       NAIVE SPARSE SOLVER                        //
+  //------------------------------------------------------------------//
   
 }
