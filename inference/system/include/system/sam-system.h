@@ -38,33 +38,47 @@ namespace sam::Inference
   template <typename SOLVER_T>
   struct OptimOptions
   {
-    typename SOLVER_T::Options_t solver_options;
-    std::size_t max_iterations = 3;  // keep it even if syst is linear
+    // max number of iterations (no effect if linear system)
+    std::size_t max_iterations = 3; 
+    // allow the solver to cache informations (mind the memory impact)
+    // to enable incremental inference
+    bool cache_incremental = false;
+    // compute the covariance (mind the time complexity)
     bool compute_covariance = true;
-    bool cache_covariance = this->compute_covariance && false; // cache_covariance (moot if no computation of covariancc)
-    // TODO: threshold (by key type?? -> leads to template)
-    //
-    // TODO: have sane defaults
+    // cache the full joint covariance (mind the memory impact, but allow for rapid joint covariance queries)
+    bool cache_covariance = this->compute_covariance && false; // cache_covariance (moot if no computation of covariance)
+    // TODO: thresholding strategy (by key type?? -> leads to template)
+    // solver options
+    typename SOLVER_T::Options_t solver;
   };
 
 
   template <typename SOLVER_T>
   struct OptimStats
   {
-    OptimOptions<SOLVER_T> optim_options; // the options inputs (the rest is more output-ish)
-    typename SOLVER_T::Stats_t solver_stats;
-
-    std::size_t nnz_jacobian_scalar;
-    std::size_t rnz_jacobian_scalar; //ratio of nonzeros
-    std::size_t nnz_hessian_scalar;
-    std::size_t rnz_hessian_scalar;  //ratio of nonzeros
-
+    // optimization success (or not)
+    bool success;
+    // forwards the options inputs (the rest is more output-ish)
+    OptimOptions<SOLVER_T> optim_options; 
+    // the stats specifics to the solver
+    typename SOLVER_T::Stats_t solver;
+    // number of scalar nonzeros in the jacobian matrix
+    std::size_t nbNZ_jacobian_scalar;
+    //ratio of nonzeros in the jacobian matrix
+    std::size_t ratioNZ_jacobian_scalar;
+    // number of scalar nonzeros in the hessian matrix
+    std::size_t nbNZ_hessian_scalar;
+    //ratio of nonzeros in the hessian matrix
+    std::size_t ratioNZ_hessian_scalar;
+    // size M,N of the jacobian matrix
     std::size_t M,N;
+    // size of the semantic jacobian matrix
     std::size_t M_semantic,N_semantic;
 
-    bool optim_success;
+    // report message
     std::string report_str;
-    double NLog_value_before; // negative log likelihood = sum of the factors norm2
+    // negative log likelihood of the product of factors
+    double NLog_value_before;
     double NLog_value_after;
   };
 
@@ -141,7 +155,7 @@ namespace sam::Inference
       auto semantic_M_type_idx_offsets = MatrixConverter::Semantic::FactorTypeIndexesOffset(this->all_factors_tuple_);
       auto semantic_N_type_idx_offsets = MatrixConverter::Semantic::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
 
-      Eigen::Sparse<int> semantic_A = MatrixConverter::Sparse ::compute_semantic_A
+      Eigen::SparseMatrix<int> semantic_A = MatrixConverter::Sparse ::compute_semantic_A
                                               (this->all_factors_tuple_ , this->all_marginals_
                                               , semantic_M
                                               , semantic_N
@@ -182,20 +196,13 @@ namespace sam::Inference
 
         auto [b,A] = MatrixConverter::Sparse::compute_b_A(this->all_factors_tuple_, this->all_marginals_, M,N,nnz_jacobian,M_type_idx_offsets, N_type_idx_offsets);
 
-        // number of nnz elements in R
-        double rnnz;
        // maximum a posteriori, may represent a \hat X or \delta \hat X (NL)
-        Eigen::VectorXd MaP; 
-        // give A and b to the solver
-        std::tie(MaP,rnnz) = SOLVER_T::solve(A,b); 
-        // TODO: split the compute() step with the analyse pattern (can be set before the loop)
-        // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
+        Eigen::VectorXd MaP = SOLVER_T::solve(A,b); 
+
+        // X_MaP, optional_covariance, SolverStats = SOLVER_T::solve(A,b, solver_options);
 
         // optionaly compute the covariance matrix
-        Eigen::MatrixXd SigmaCovariance;
-        double Hnnz;
-        std::tie(SigmaCovariance,Hnnz) = SOLVER_T::compute_covariance(A);
-        // NOTE: tie() is used because structure binding declaration pose issues with lambda capture (fixed in c++20 apparently)
+        Eigen::MatrixXd SigmaCovariance = SOLVER_T::compute_covariance(A);
 
 #if ENABLE_DEBUG_TRACE
       {

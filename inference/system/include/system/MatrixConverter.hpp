@@ -513,7 +513,7 @@ namespace sam::Inference::MatrixConverter
     }
 
     template <typename TUPLE_VECTORS_WFACTOR_T, typename MARGINAL_COLLECTION_T>
-    static Eigen::SparseMatrix<double> compute_semantic_A(
+    static Eigen::SparseMatrix<int> compute_semantic_A(
         const TUPLE_VECTORS_WFACTOR_T& factor_collection,
         const MARGINAL_COLLECTION_T&   marginal_collection,
         std::size_t                    semantic_M,
@@ -525,10 +525,9 @@ namespace sam::Inference::MatrixConverter
                          std::tuple_size_v<typename MARGINAL_COLLECTION_T::Marginals_Data_t>>&
             N_semantic_type_idx_offsets)
     {
-      std::string scope_name = "compute_semantic_A";
-      PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+      PROFILE_FUNCTION( sam_utils::JSONLogger::Instance());
       // declare A, b, and triplets for A data
-      Eigen::SparseMatrix<double>         semantic_A(semantic_M, semantic_N);
+      Eigen::SparseMatrix<int>         semantic_A(semantic_M, semantic_N);
       std::vector<Eigen::Triplet<int>> sparse_semantic_A_triplets;
       sparse_semantic_A_triplets.reserve(semantic_jacobian_NNZ);   // expected number of nonzeros elements
 
