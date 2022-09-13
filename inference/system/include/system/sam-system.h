@@ -50,6 +50,11 @@ namespace sam::Inference
     // TODO: thresholding strategy (by key type?? -> leads to template)
     // solver options
     typename SOLVER_T::Options_t solver;
+    // ctor
+    OptimOptions()
+      : solver(this->compute_covariance)
+    {}
+      
   };
 
 
@@ -135,7 +140,7 @@ namespace sam::Inference
     /**
     * @brief optimisation method
     */
-    OptimStats sam_optimise(const OptimOptions & optimisation_options = OptimOptions()) // WARNING: defer to sam_optimise_impl that will defer to matrix or graphical model
+    OptimStats sam_optimise(const OptimOptions & options = OptimOptions())
     {
       // scoped timer
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
@@ -175,20 +180,15 @@ namespace sam::Inference
 #endif
 
       //------------------------------------------------------------------//
-      //                      PRE LOOP DECLARATIONS                       //
-      //------------------------------------------------------------------//
-      // declare iterations counters
-      int maxIter, nIter = 0;
-      if constexpr (isSystFullyLinear) maxIter = 1;
-      else maxIter = 3; // NOTE: start the tests with maxIter of 1
-                        // NOTE: refactor: use OptimOptions
-      
-
-      //------------------------------------------------------------------//
       //                            LOOP START                            //
       //------------------------------------------------------------------//
       // loop of the iterations
-      while(nIter < maxIter)
+      int max_iterations;
+      if constexpr ( isSystFullyLinear )  max_iterations = 1;
+      else max_iterations =  options.max_iterations;
+
+      int nIter = 0;
+      while(nIter < max_iterations)
       {
         // scoped timer
         std::string timer_name = "iter" + std::to_string(nIter);
@@ -197,12 +197,10 @@ namespace sam::Inference
         auto [b,A] = MatrixConverter::Sparse::compute_b_A(this->all_factors_tuple_, this->all_marginals_, M,N,nnz_jacobian,M_type_idx_offsets, N_type_idx_offsets);
 
        // maximum a posteriori, may represent a \hat X or \delta \hat X (NL)
-        Eigen::VectorXd MaP = SOLVER_T::solve(A,b); 
-
-        // X_MaP, optional_covariance, SolverStats = SOLVER_T::solve(A,b, solver_options);
-
-        // optionaly compute the covariance matrix
-        Eigen::MatrixXd SigmaCovariance = SOLVER_T::compute_covariance(A);
+        Eigen::VectorXd MaP;
+        typename SOLVER_T::Stats_t solver_stats;
+        std::optional<Eigen::MatrixXd> optional_covariance;
+        std::tie(MaP,optional_covariance,solver_stats) = SOLVER_T::solve(A,b,options.solver); 
 
 #if ENABLE_DEBUG_TRACE
       {
@@ -216,8 +214,8 @@ namespace sam::Inference
         std::cout << "#### Syst: b computed :\n";
         if ( b.rows() < 22 && nIter ==0) std::cout << b << "\n";
         std::cout << "#### Syst: MAP computed :\n" << MaP << '\n';
-        std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
-        if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
+        // std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<< SigmaCovariance.cols() <<") computed : \n" ;
+        // if (SigmaCovariance.rows()<15) std::cout << SigmaCovariance << '\n';
       }
 #endif
 
@@ -225,7 +223,7 @@ namespace sam::Inference
         //                  POST SOLVER LOOP ON MARGINALS                   //
         //------------------------------------------------------------------//
         std::apply(
-            [this, &MaP,&SigmaCovariance,&nIter,&N_type_idx_offsets](auto & ... map_to_wmarginals)
+            [this, &MaP,&options,&optional_covariance,&nIter,&N_type_idx_offsets](auto & ... map_to_wmarginals)
             {
               std::apply(
                   [&,this](const auto & ... N_type_start_idx)
@@ -246,34 +244,38 @@ namespace sam::Inference
                           //     , map_of_wrapped_marginals.begin()
                           //     , map_of_wrapped_marginals.end() 
                           //     , [&,this]( auto & kvpair)
-                          for(auto it_marg =map_of_wrapped_marginals.begin(); it_marg!=map_of_wrapped_marginals.end(); it_marg++)
+                          for(auto it_marg =map_of_wrapped_marginals.begin(); it_marg!=map_of_wrapped_marginals.end(); it_marg++) // WARNING: marginal refactor: vector will speed up
                           {
                             std::string key_id = it_marg->first;
                             auto wrapped_marginal = it_marg->second;
                             // get the subvector from the Maximum A Posteriori vector
-                            auto sysidx = KeyTypeStartIdx + std::distance(map_of_wrapped_marginals.begin(), it_marg)* kN ;
+                            auto sysidx = KeyTypeStartIdx + std::distance(map_of_wrapped_marginals.begin(), it_marg)* kN ; // WARNING: marginal refactor std::distance has linear cost
                             auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
 
                             // clear previous history at first iteration
                             if (nIter ==0)  wrapped_marginal.clear_history();
                            
-                            // covariance  TODO: if covariance is asked for or not  (std::nullopt if not)
-                            std::optional<typename marginal_t::Covariance_t> 
-                              OptSigmaCovariance{SigmaCovariance.block<kN,kN>(sysidx,sysidx)};
+                            // covariance, if option is set
+                            std::optional<typename marginal_t::Covariance_t>  optional_subcovariance;
+                            if (options.compute_covariance)
+                            {
+                              optional_subcovariance = optional_covariance.value().block<kN,kN>(sysidx,sysidx);
+                            }
+                            else optional_subcovariance = std::nullopt;
 
                             // writes the new mean (or increment in NL systems) and the new covariance in the marginal
                             if constexpr (isSystFullyLinear) 
                             {
                               // replace the mean by the maximum a posterior subvector, and save previous marginal in history
                               wrapped_marginal.save_and_replace( 
-                                  marginal_t(MaP_subvector, OptSigmaCovariance) 
+                                  marginal_t(MaP_subvector, optional_subcovariance) 
                                   );
                             }
                             else
                             {
                               // the Max a Posteriori is in the tangent space (R^kN technically, hat operator must be used
                               // to be in the tangent space formally)
-                              wrapped_marginal.save_and_add( tangent_space_t(MaP_subvector), OptSigmaCovariance );
+                              wrapped_marginal.save_and_add( tangent_space_t(MaP_subvector), optional_subcovariance );
                             }
                           }
                           // ); // for each
@@ -342,17 +344,23 @@ namespace sam::Inference
             , ...);
           },this->all_factors_tuple_);
       // TODO: remove smthing in GraphModel ?
+
+      // TODO: the valid of any cache data should be questioned after removing a factor
     }
 
     void remove_key(const std::string & key_id)
     {
       // remove associated factors?
       // several mines here: what happen if graph becomes unconnected etc...
+      // TODO: the valid of any cache data should be questioned after removing a factor
     }
 
     void sum_out(const std::string & key_id)
     {
-      // not the same as remove !
+      // not the same as remove_key !
+      // -> a marginalisation should occur first
+      
+      // TODO: the valid of any cache data should be questioned after removing a factor
     }
 
     auto get_all_factors() const
@@ -362,17 +370,25 @@ namespace sam::Inference
     
     // TODO: urgent get_joint-marginal etc... 
     // joint_marginal<marginals_t> get_joint_marginal()
-    // {
-    //
-    // }
-    //
+    // get_key_marginal() // WARNING: marginal refactor: linear cost
     // get_full_joint(){}
+    // get_full_joint_except( ... )
 
     // get all marginals
     auto get_marginals() const
     {
+      // WARNING: after marginal refactor: return the vector of marginals. If you want the map of marginals, use get_marginals_as_map()
       return all_marginals_.data_map_tuple;
     }
+
+    
+    // auto get_marginals_as_map() const
+    // {
+    //   // WARNING: translate the vector into a map (key is key_id)
+    //   // motivation: don't assume users utilisation of the key marginals collection
+    //   //             e.g. for json it is better to have a vector
+    //   //                  for most other purposes better to have a map
+    // }
 
     Marginals_t all_marginals_;
 
@@ -449,7 +465,7 @@ namespace sam::Inference
                   std::make_tuple
                   ( 
                      this->all_marginals_
-                       .template find_mean_ptr<typename decltype(kcc)::KeyMeta_t>(kcc.key_id)
+                       .template find_mean_ptr<typename decltype(kcc)::KeyMeta_t>(kcc.key_id) // WARNING: adverse cost when marginal refactor: perhaps transform vector of marginals in a std::map first (yes, in this method ! A slightly costlier emplace_factor method is not a big deal, this is not where bottleneck of the users API is)
                       ... 
                   );
               }, KccSet);
@@ -487,7 +503,7 @@ namespace sam::Inference
                                   // TODO: intermediary step before updating the marginal: infer a covariance (difficulty ***)
                                   // insert the marginal we just created in the system's marginal container
                                   this->all_marginals_.
-                                    template insert_in_marginal_container<wrapped_marginal_t> (wrapped_marginal);
+                                    template insert_in_marginal_container<wrapped_marginal_t> (wrapped_marginal); // WARNING: marginal refactor: push_back
                                 }
                               };
                               ((lambda(opt_mean_ptr,guessed_mean_ptr,kcc)),...);
