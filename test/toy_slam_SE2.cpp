@@ -70,7 +70,7 @@ TEST(ToySLAMSE2System, Manif)
 
 
   cout << "\n\n Declaring a sam system:\n";
-  auto sys = ::sam::Inference::System<sam::Inference::SolverQR,
+  auto sys = ::sam::Inference::System<sam::Inference::SolverSparseQR,
                                       ::sam::Factor::MotionModelSE2,
                                       ::sam::Factor::AnchorSE2,
                                       ::sam::Factor::LandmarkCartesianObsSE2>("slam system");

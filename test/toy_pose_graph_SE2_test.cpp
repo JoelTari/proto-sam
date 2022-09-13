@@ -29,7 +29,7 @@ TEST(ToyPoseGraphSE2System, Square)
   true_poses.emplace_back(0, 0, -MANIF_PI_4);      // x5
 
   cout << "\n\n Declaring a sam system:\n";
-  auto sys = ::sam::Inference::System<sam::Inference::SolverQR, ::sam::Factor::AnchorSE2, ::sam::Factor::RelativeMatcherSE2>(
+  auto sys = ::sam::Inference::System<sam::Inference::SolverSparseQR, ::sam::Factor::AnchorSE2, ::sam::Factor::RelativeMatcherSE2>(
       "RelativeMatcherSLAM");
 
   //------------------------------------------------------------------//

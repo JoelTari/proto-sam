@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
   using system_t =
-      typename sam::Inference::System<sam::Inference::SolverQR,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+      typename sam::Inference::System<sam::Inference::SolverSparseQR,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
   auto syst = system_t(argId);
   int  fcount = 0;
 
