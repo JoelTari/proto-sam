@@ -247,7 +247,7 @@ namespace sam::Inference
                           for(auto it_marg =map_of_wrapped_marginals.begin(); it_marg!=map_of_wrapped_marginals.end(); it_marg++) // WARNING: marginal refactor: vector will speed up
                           {
                             std::string key_id = it_marg->first;
-                            auto wrapped_marginal = it_marg->second;
+                            wrapped_marginal_t & wrapped_marginal = it_marg->second;
                             // get the subvector from the Maximum A Posteriori vector
                             auto sysidx = KeyTypeStartIdx + std::distance(map_of_wrapped_marginals.begin(), it_marg)* kN ; // WARNING: marginal refactor std::distance has linear cost
                             auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
@@ -267,9 +267,12 @@ namespace sam::Inference
                             if constexpr (isSystFullyLinear) 
                             {
                               // replace the mean by the maximum a posterior subvector, and save previous marginal in history
+                              // std::cout << optional_subcovariance.value() << '\n';
+                              // std::cout << ::sam::Marginal::stringify_marginal_blockliner(marginal_t(MaP_subvector,optional_subcovariance));
                               wrapped_marginal.save_and_replace( 
                                   marginal_t(MaP_subvector, optional_subcovariance) 
                                   );
+                              // std::cout << "post save_and_replace \n" << ::sam::Marginal::stringify_marginal_blockliner(wrapped_marginal.marginal);
                             }
                             else
                             {

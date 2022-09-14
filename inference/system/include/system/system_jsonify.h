@@ -93,7 +93,7 @@ class SystemJsonify
     using wrapped_marginal_t = typename MAP_OF_WMARG_T::mapped_type;
     using marginal_t         = typename wrapped_marginal_t::Marginal_t;
     using keymeta_t          = typename marginal_t::KeyMeta_t;
-    for (const auto& [key_id, wrapped_marginal] : map_of_wmarginals)
+    for (const auto& [key_id, wrapped_marginal] : map_of_wmarginals) // WARNING: marginal refactor
     {
       Json::Value json_marginal;
       // auto marg_hist = pair.second;
