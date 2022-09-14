@@ -54,7 +54,7 @@ namespace sam::Marginal
     {
     }
 
-    const std::string key_id;
+    std::string key_id;
 
     std::vector<MARGINAL_T> marginal_histories;
 
@@ -76,35 +76,35 @@ namespace sam::Marginal
 
     void clear_history() { this->marginal_histories.clear(); }
 
-    // copy assignment (explicit otherwise default copy assignment fails because of const members)
-    WrapperPersistentMarginal<MARGINAL_T>&
-        operator=(const WrapperPersistentMarginal<MARGINAL_T>& other)
-    {
-      if (this == &other) return *this;
+    // // copy assignment (explicit otherwise default copy assignment fails because of const members)
+    // WrapperPersistentMarginal<MARGINAL_T>&
+    //     operator=(const WrapperPersistentMarginal<MARGINAL_T>& other)
+    // {
+    //   if (this == &other) return *this;
+    //
+    //   // we dont copy-assign the key or the shared pointer obviously
+    //   // But lets assert they are the same
+    //   assert(this->key_id == other.key_id);
+    //   assert(this->shared_mean == other.shared_mean);   // same address
+    //   this->marginal_histories = other.marginal_histories;
+    //   this->marginal           = other.marginal;   // shallow copy of marginal is ok
+    //
+    //   return *this;
+    // }
 
-      // we dont copy-assign the key or the shared pointer obviously
-      // But lets assert they are the same
-      assert(this->key_id == other.key_id);
-      assert(this->shared_mean == other.shared_mean);   // same address
-      this->marginal_histories = other.marginal_histories;
-      this->marginal           = other.marginal;   // shallow copy of marginal is ok
-
-      return *this;
-    }
-
-    // copy ctor (ro3)
-    WrapperPersistentMarginal<MARGINAL_T>(const WrapperPersistentMarginal<MARGINAL_T>& other)
-        : shared_mean(other.shared_mean)
-        , key_id(other.key_id)
-        , marginal(other.marginal)
-        , marginal_histories(other.marginal_histories)
-    {
-    }
-
-    // destructor (ro3)
-    ~WrapperPersistentMarginal<MARGINAL_T>() {}
-
-    const std::shared_ptr<Mean_t> shared_mean;   // seen by other system class (wfactors...)
+  //   // copy ctor (ro3)
+  //   WrapperPersistentMarginal<MARGINAL_T>(const WrapperPersistentMarginal<MARGINAL_T>& other)
+  //       : shared_mean(other.shared_mean)
+  //       , key_id(other.key_id)
+  //       , marginal(other.marginal)
+  //       , marginal_histories(other.marginal_histories)
+  //   {
+  //   }
+  //
+  //   // destructor (ro3)
+  //   ~WrapperPersistentMarginal<MARGINAL_T>() {}
+  //
+    std::shared_ptr<Mean_t> shared_mean;   // keep const ! seen by other system class (wfactors...)
     MARGINAL_T                    marginal;
   };
 
@@ -290,7 +290,7 @@ namespace sam::Marginal
   {
     using keymeta_t = typename MARGINAL_T::KeyMeta_t;
     std::stringstream ss;
-    ss << keymeta_t::stringify_key_oneliner(Xmarg.mean, precision);
+    ss << keymeta_t::stringify_key_oneliner(Xmarg.mean, precision) << '\n';
     if (Xmarg.covariance.has_value())
     {
       // TODO: embellish a little bit...
