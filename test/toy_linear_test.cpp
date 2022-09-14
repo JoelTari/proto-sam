@@ -22,11 +22,11 @@ TEST(ToyLinearSystem, Square)
   // x2: 1, 1
   // x3: 0, 1
   //
-  // x3  ───────x2
+  // x3  ─────── x2
   //  │          │
   //  │          │
   //  │          │
-  // x0 ────────x1
+  // x0 ──────── x1
   //  ┼
 
   // scoped Timer
@@ -34,7 +34,9 @@ TEST(ToyLinearSystem, Square)
 
   std::cout << "\n\n Declaring a sam system:\n";
 
-  auto syst = ::sam::Inference::System<sam::Inference::SolverSparseQR, sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>("A");
+  // auto syst = ::sam::Inference::System<sam::Inference::SolverSparseQR, sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>("A");
+  auto syst = ::sam::Inference::System<sam::Inference::SolverSparseNaive, sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>("A");
+  // auto syst = ::sam::Inference::System<sam::Inference::SolverSparseCholesky, sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>("A");
 
   ::sam::Factor::Anchor2d::measure_t     z {0, 0};
   ::sam::Factor::Anchor2d::measure_cov_t Sigma {{0.002, 0}, {0, 0.002}};

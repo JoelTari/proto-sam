@@ -29,7 +29,8 @@ TEST(ToyPoseGraphSE2System, Square)
   true_poses.emplace_back(0, 0, -MANIF_PI_4);      // x5
 
   cout << "\n\n Declaring a sam system:\n";
-  auto sys = ::sam::Inference::System<sam::Inference::SolverSparseQR, ::sam::Factor::AnchorSE2, ::sam::Factor::RelativeMatcherSE2>(
+  // auto sys = ::sam::Inference::System<sam::Inference::SolverSparseQR, ::sam::Factor::AnchorSE2, ::sam::Factor::RelativeMatcherSE2>(
+  auto sys = ::sam::Inference::System<sam::Inference::SolverSparseCholesky, ::sam::Factor::AnchorSE2, ::sam::Factor::RelativeMatcherSE2>(
       "RelativeMatcherSLAM");
 
   //------------------------------------------------------------------//
@@ -131,6 +132,7 @@ TEST(ToyPoseGraphSE2System, Square)
 
   std::cout << "Before Optimisation:\n";
   auto sys_marginals    = sys.get_marginals();
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
   auto expected_x5_init = ::sam::Key::SpatialSE2_t(1.111, -2.229, -0.6704);
   auto expected_x4_init = ::sam::Key::SpatialSE2_t(0.5155, 2.916, -1.474);
   auto expected_x3_init = ::sam::Key::SpatialSE2_t(5.647, 3.504, 3.037);
@@ -168,6 +170,7 @@ TEST(ToyPoseGraphSE2System, Square)
 
   std::cout << "After Optimisation:\n";
   sys_marginals        = sys.get_marginals();
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
   auto expected_x5_map = ::sam::Key::SpatialSE2_t(0.03214, 0.2128, -0.8544);
   auto expected_x4_map = ::sam::Key::SpatialSE2_t(0.4438, 5.26, -1.675);
   auto expected_x3_map = ::sam::Key::SpatialSE2_t(5.645, 4.689, 2.966);

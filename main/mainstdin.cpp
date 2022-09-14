@@ -47,7 +47,9 @@ int main(int argc, char* argv[])
 
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
   using system_t =
-      typename sam::Inference::System<sam::Inference::SolverSparseQR,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+      // typename sam::Inference::System<sam::Inference::SolverSparseQR,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+      // typename sam::Inference::System<sam::Inference::SolverSparseNaive,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+      typename sam::Inference::System<sam::Inference::SolverSparseCholesky,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
   auto syst = system_t(argId);
   int  fcount = 0;
 
@@ -97,6 +99,12 @@ int main(int argc, char* argv[])
   {
     std::cerr << "SLAM algorithm failed. Reason: " << e << '\n';
   }
+  // auto wmargs = syst.get_marginals();
+  // for (const auto & wmarg : std::get<0>(wmargs))
+  // {
+  //   std::cout << sam::Marginal::stringify_marginal_blockliner(wmarg.second.marginal);
+  //   std::cout << "-----------\n";
+  // }
 
   Json::Value json_graph = SystemJsonify<system_t>::jsonify_graph(syst);
   sam_utils::JSONLogger::Instance().writeGraph(json_graph);
