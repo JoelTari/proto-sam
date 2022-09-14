@@ -93,7 +93,8 @@ int main(int argc, char* argv[])
 
   try
   {
-    syst.sam_optimise();
+    // ::sam::Inference::OptimOptions<::sam::Inference::SolverSparseNaive> opts(false);
+    syst.sam_optimise(/* opts */);
   }
   catch (const char* e)
   {

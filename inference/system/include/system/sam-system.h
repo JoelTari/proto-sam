@@ -55,6 +55,12 @@ namespace sam::Inference
       : solver(this->compute_covariance)
     {}
       
+    // ctor
+    OptimOptions(bool compute_covariance)
+      :
+      compute_covariance(compute_covariance)
+      ,solver(this->compute_covariance)
+    {}
   };
 
 

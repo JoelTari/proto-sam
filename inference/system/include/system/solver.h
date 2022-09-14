@@ -175,7 +175,7 @@ namespace sam::Inference
       // MAP
       Eigen::VectorXd X_map;
       {
-        PROFILE_SCOPE("Covariance times information vector",sam_utils::JSONLogger::Instance());
+        PROFILE_SCOPE("Xmap = Covariance times information vector",sam_utils::JSONLogger::Instance());
 
         X_map = S*A.transpose()*b;
       }
@@ -188,9 +188,13 @@ namespace sam::Inference
 
       // if options.cache save covariance
       // R = solver.matrixR().topLeftCorner(rank(),rank())
-      
-      std::optional<Covariance_t> optional_covariance = S;
+      std::optional<Covariance_t> optional_covariance;
+      if (options.compute_covariance)
+         optional_covariance = S;
+      else
+        optional_covariance = std::nullopt;
 
+      // Note: return covariance value seems to create a copy
       return {X_map, optional_covariance, stats};
     }
 
