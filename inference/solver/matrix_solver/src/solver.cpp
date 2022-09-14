@@ -141,23 +141,23 @@ std::tuple<SolverSparseNaive::MaP_t,
 }
 
 //------------------------------------------------------------------//
-//                      Sparse Cholesky Solver                      //
+//                      Sparse SimplicialLLT Solver                      //
 //------------------------------------------------------------------//
-std::tuple<SolverSparseCholesky::MaP_t,
-           std::optional<SolverSparseCholesky::Covariance_t>,
-           SolverSparseCholesky::Stats_t>
-    SolverSparseCholesky::solve(const Eigen::SparseMatrix<double>&     A,
+std::tuple<SolverSparseSimplicialLLT::MaP_t,
+           std::optional<SolverSparseSimplicialLLT::Covariance_t>,
+           SolverSparseSimplicialLLT::Stats_t>
+    SolverSparseSimplicialLLT::solve(const Eigen::SparseMatrix<double>&     A,
           const Eigen::VectorXd&                 b,
-          const SolverSparseCholesky::Options_t& options)
+          const SolverSparseSimplicialLLT::Options_t& options)
 {
-  std::string scope_name = "Solve with " + std::string(SolverSparseCholesky::name);
+  std::string scope_name = "Solve with " + std::string(SolverSparseSimplicialLLT::name);
   PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
-  SolverSparseCholesky::Stats_t                                           stats;
+  SolverSparseSimplicialLLT::Stats_t                                           stats;
   Eigen::SparseMatrix<double>                       H = A.transpose() * A;
   // MAP
   {
-    PROFILE_SCOPE("Cholesky decomposition", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("SimplicialLLT decomposition", sam_utils::JSONLogger::Instance());
     {
       PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
       solver.analyzePattern(H);
@@ -192,7 +192,7 @@ std::tuple<SolverSparseCholesky::MaP_t,
 
   // if options.cache save matrixL
 
-  std::optional<SolverSparseCholesky::Covariance_t> optional_covariance;
+  std::optional<SolverSparseSimplicialLLT::Covariance_t> optional_covariance;
   if (options.compute_covariance)
   {
     PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
@@ -205,23 +205,23 @@ std::tuple<SolverSparseCholesky::MaP_t,
 }
 
 //------------------------------------------------------------------//
-//                      Sparse Pardiso Solver                      //
+//                      Sparse PardisoLLT Solver                      //
 //------------------------------------------------------------------//
-std::tuple<SolverSparsePardiso::MaP_t,
-           std::optional<SolverSparsePardiso::Covariance_t>,
-           SolverSparsePardiso::Stats_t>
-    SolverSparsePardiso::solve(const Eigen::SparseMatrix<double>&     A,
+std::tuple<SolverSparsePardisoLLT::MaP_t,
+           std::optional<SolverSparsePardisoLLT::Covariance_t>,
+           SolverSparsePardisoLLT::Stats_t>
+    SolverSparsePardisoLLT::solve(const Eigen::SparseMatrix<double>&     A,
           const Eigen::VectorXd&                 b,
-          const SolverSparsePardiso::Options_t& options)
+          const SolverSparsePardisoLLT::Options_t& options)
 {
-  std::string scope_name = "Solve with " + std::string(SolverSparsePardiso::name);
+  std::string scope_name = "Solve with " + std::string(SolverSparsePardisoLLT::name);
   PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   Eigen::PardisoLLT<Eigen::SparseMatrix<double>> solver;
-  SolverSparsePardiso::Stats_t                                           stats;
+  SolverSparsePardisoLLT::Stats_t                                           stats;
   Eigen::SparseMatrix<double>                       H = A.transpose() * A;
   // MAP
   {
-    PROFILE_SCOPE("Pardiso decomposition", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("PardisoLLT decomposition", sam_utils::JSONLogger::Instance());
     {
       PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
       solver.analyzePattern(H);
@@ -256,7 +256,7 @@ std::tuple<SolverSparsePardiso::MaP_t,
 
   // if options.cache save matrixL
 
-  std::optional<SolverSparsePardiso::Covariance_t> optional_covariance;
+  std::optional<SolverSparsePardisoLLT::Covariance_t> optional_covariance;
   if (options.compute_covariance)
   {
     PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());

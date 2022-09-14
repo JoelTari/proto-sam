@@ -8,9 +8,10 @@
 
 using Solver_t = typename sam::Inference::SolverSparseQR;
 // using solver_t = typename sam::Inference::SolverNaive;
-// using solver_t = typename sam::Inference::SolverCholesky;
-// using solver_t = typename sam::Inference::SolverPardiso;
+// using solver_t = typename sam::Inference::SolverSimplicialLLT;
+// using solver_t = typename sam::Inference::SolverPardisoLLT;
 // using solver_t = typename sam::Inference::SolverSPQR;
+// using solver_t = typename sam::Inference::SolverSupernodalLLT;
 using InferenceSystem_t = typename sam::Inference::System<Solver_t,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
 
 //------------------------------------------------------------------//

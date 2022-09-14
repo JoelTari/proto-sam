@@ -30,7 +30,7 @@ TEST(ToyPoseGraphSE2System, Square)
 
   cout << "\n\n Declaring a sam system:\n";
   // auto sys = ::sam::Inference::System<sam::Inference::SolverSparseQR, ::sam::Factor::AnchorSE2, ::sam::Factor::RelativeMatcherSE2>(
-  auto sys = ::sam::Inference::System<sam::Inference::SolverSparseCholesky, ::sam::Factor::AnchorSE2, ::sam::Factor::RelativeMatcherSE2>(
+  auto sys = ::sam::Inference::System<sam::Inference::SolverSparseSimplicialLLT, ::sam::Factor::AnchorSE2, ::sam::Factor::RelativeMatcherSE2>(
       "RelativeMatcherSLAM");
 
   //------------------------------------------------------------------//
