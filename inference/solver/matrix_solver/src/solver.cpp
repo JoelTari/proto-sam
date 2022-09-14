@@ -26,7 +26,8 @@ std::tuple<typename SolverSparseQR::MaP_t,
                           const Eigen::VectorXd&                    b,
                           const typename SolverSparseQR::Options_t& options)
 {
-  PROFILE_SCOPE("EigenSparseQR",sam_utils::JSONLogger::Instance());
+  std::string scope_name = "Solve with " + std::string(SolverSparseQR::name);
+  PROFILE_SCOPE(scope_name.c_str(),sam_utils::JSONLogger::Instance());
   // stats
   SolverStatsSparseQR stats;
   // solver
@@ -105,7 +106,8 @@ std::tuple<SolverSparseNaive::MaP_t,
                              const Eigen::VectorXd&              b,
                              const SolverSparseNaive::Options_t& options)
 {
-  PROFILE_SCOPE("Solve Eigen Sparse Naive", sam_utils::JSONLogger::Instance());
+  std::string scope_name = "Solve with " + std::string(SolverSparseNaive::name);
+  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   // stats
   SolverStatsSparseNaive stats;
 
@@ -148,7 +150,8 @@ std::tuple<SolverSparseCholesky::MaP_t,
           const Eigen::VectorXd&                 b,
           const SolverSparseCholesky::Options_t& options)
 {
-  PROFILE_SCOPE("solve Eigen Sparse Cholesky", sam_utils::JSONLogger::Instance());
+  std::string scope_name = "Solve with " + std::string(SolverSparseCholesky::name);
+  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
   SolverSparseCholesky::Stats_t                                           stats;
   Eigen::SparseMatrix<double>                       H = A.transpose() * A;
@@ -211,7 +214,8 @@ std::tuple<SolverSparsePardiso::MaP_t,
           const Eigen::VectorXd&                 b,
           const SolverSparsePardiso::Options_t& options)
 {
-  PROFILE_SCOPE("solve Eigen Sparse Pardiso", sam_utils::JSONLogger::Instance());
+  std::string scope_name = "Solve with " + std::string(SolverSparsePardiso::name);
+  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   Eigen::PardisoLLT<Eigen::SparseMatrix<double>> solver;
   SolverSparsePardiso::Stats_t                                           stats;
   Eigen::SparseMatrix<double>                       H = A.transpose() * A;
@@ -295,7 +299,8 @@ std::tuple<typename SolverSPQR::MaP_t,
                           const Eigen::VectorXd&                    b,
                           const typename SolverSPQR::Options_t& options)
 {
-  PROFILE_SCOPE("SPQR",sam_utils::JSONLogger::Instance());
+  std::string scope_name = "Solve with " + std::string(SolverSPQR::name);
+  PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
   // stats
   SolverStatsSPQR stats;
   // solver

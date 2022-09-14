@@ -259,7 +259,10 @@ namespace sam::Inference
 
 
 
-  // struct SolverOptionsSparseCholesky
+  // //------------------------------------------------------------------//
+  // //                  Sparse Cholmod simplicial LLT                   //
+  // //------------------------------------------------------------------//
+  // struct SolverOptionsSparseCholmodSupernodalLLT
   // {
   // //       members could be: cache_R or not , ordering method ect...
   // //       have sane default too
@@ -269,35 +272,35 @@ namespace sam::Inference
   //   bool use_default_ordering = true;
   //   std::optional< Eigen::SparseMatrix<double>> custom_ordering; // difficult
   //
-  //   SolverOptionsSparseCholesky(bool compute_covariance)
+  //   SolverOptionsSparseCholmodSupernodalLLT(bool compute_covariance)
   //     :compute_covariance(compute_covariance)
   //   {}
   //
-  //   SolverOptionsSparseCholesky(){}
+  //   SolverOptionsSparseCholmodSupernodalLLT(){}
   // };
   //
-  // struct SolverStatsSparseCholesky
+  // struct SolverStatsSparseCholmodSupernodalLLT
   // {
   //   bool success;
   //   int lnnz;
   //   // int rank; // no rank in cholesky
   //   std::string report_str;
   //   std::optional<double> residual; // different from the NLog from a constant
-  //   SolverOptionsSparseCholesky input_options;
+  //   SolverOptionsSparseCholmodSupernodalLLT input_options;
   // };
   //
-  // struct SolverSparseCholesky
+  // struct SolverSparseCholmodSupernodalLLT
   // {
-  //   using Stats_t = SolverStatsSparseCholesky;
-  //   using Options_t = SolverOptionsSparseCholesky;
+  //   using Stats_t = SolverStatsSparseCholmodSupernodalLLT;
+  //   using Options_t = SolverOptionsSparseCholmodSupernodalLLT;
   //   using MaP_t = Eigen::VectorXd;
   //   using Covariance_t = Eigen::MatrixXd;
   //
-  //   constexpr static const char name[] = "SparseSimplicialLLT";
+  //   constexpr static const char name[] = "SparseCholdmodSupernodalLLT";
   //
   //   static 
-  //   std::tuple<MaP_t,std::optional<Covariance_t>, SolverStatsSparseCholesky> 
-  //     solve(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b, const SolverOptionsSparseCholesky & options = SolverOptionsSparseCholesky() );
+  //   std::tuple<MaP_t,std::optional<Covariance_t>, SolverStatsSparseCholmodSupernodalLLT> 
+  //     solve(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b, const SolverOptionsSparseCholmodSupernodalLLT & options = SolverOptionsSparseCholmodSupernodalLLT() );
   // };
 
 }
