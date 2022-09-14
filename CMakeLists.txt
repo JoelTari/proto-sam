@@ -58,6 +58,11 @@ else()
   endif()
 endif()
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+find_package(Cholmod)
+find_package(SPQR)
+message("---->>> ${CMAKE_MODULE_PATH}")
+
 # letting the user know the compilation profile wrt low level libraries
 # ExIGraM : Exact Inference on Graphical Models
 message(STATUS "\n[  ] Low level definitions :\n\t ${LOW_LEVEL_DEFINITIONS}")

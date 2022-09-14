@@ -49,7 +49,9 @@ int main(int argc, char* argv[])
   using system_t =
       // typename sam::Inference::System<sam::Inference::SolverSparseQR,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
       // typename sam::Inference::System<sam::Inference::SolverSparseNaive,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
-      typename sam::Inference::System<sam::Inference::SolverSparseCholesky,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+      // typename sam::Inference::System<sam::Inference::SolverSparseCholesky,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+      // typename sam::Inference::System<sam::Inference::SolverSparsePardiso,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+      typename sam::Inference::System<sam::Inference::SolverSPQR,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
   auto syst = system_t(argId);
   int  fcount = 0;
 

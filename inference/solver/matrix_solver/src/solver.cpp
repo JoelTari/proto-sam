@@ -26,7 +26,7 @@ std::tuple<typename SolverSparseQR::MaP_t,
                           const Eigen::VectorXd&                    b,
                           const typename SolverSparseQR::Options_t& options)
 {
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE("EigenSparseQR",sam_utils::JSONLogger::Instance());
   // stats
   SolverStatsSparseQR stats;
   // solver
@@ -201,7 +201,6 @@ std::tuple<SolverSparseCholesky::MaP_t,
   return {map, optional_covariance, stats};
 }
 
-#if USE_MKL_PARDISO
 //------------------------------------------------------------------//
 //                      Sparse Pardiso Solver                      //
 //------------------------------------------------------------------//
@@ -229,13 +228,13 @@ std::tuple<SolverSparsePardiso::MaP_t,
     }
   }
 
-  auto back_substitution = [](auto& solver, auto& b)
+  auto back_substitution = [](auto& solver, const auto& b)
   {
     PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
     Eigen::VectorXd map = solver.solve(b);
     return map;
   };
-  Eigen::VectorXd map = back_substitution(solver, A.transpose() * b);
+  Eigen::VectorXd map = back_substitution(solver, Eigen::VectorXd(A.transpose() * b) );
 #if ENABLE_DEBUG_TRACE
   {
     std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
@@ -246,7 +245,7 @@ std::tuple<SolverSparsePardiso::MaP_t,
 
   stats.success       = (solver.info() == 0);
   stats.report_str    = "";   //  str(info);
-  stats.lnnz          = Eigen::SparseMatrix<double>(solver.matrixL()).nonZeros();
+  // stats.lnnz          = Eigen::SparseMatrix<double>(solver.()).nonZeros();
   stats.input_options = options;
   // stats.rank = solver.rank(); // no rank() in cholesky
   // stats.ordering = solver.colsPermutation(); (will depend on the desired structure)
@@ -266,4 +265,88 @@ std::tuple<SolverSparsePardiso::MaP_t,
 
   return {map, optional_covariance, stats};
 }
-#endif // USE_MKL_PARDISO
+
+//------------------------------------------------------------------//
+//             SPQR solver (eigen wrapper around SPQR)              //
+//------------------------------------------------------------------//
+Eigen::MatrixXd
+    sam::Inference::SolverSPQR::compute_covariance(const Eigen::SparseMatrix<double>& A)
+{
+  PROFILE_SCOPE("compute covariance: dense",sam_utils::JSONLogger::Instance());
+  Eigen::SparseMatrix<double>                       H = A.transpose() * A;
+  // Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
+  // invsolver.compute(H);
+  // Eigen::SparseMatrix<double> I(H.rows(), H.cols());
+  // I.setIdentity();
+  // auto H_inv = invsolver.solve(I);
+  // return H_inv;
+  return Eigen::MatrixXd(H).inverse();
+  // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SPQR takes way longer
+  // so the dense .inverse() method is best performing (all tests done with -o3 + mkl BLAS/LAPACK + TBB active)
+  // The dense method is the only one that manages to use all cores.
+}
+
+// https://eigen.tuxfamily.org/dox/classEigen_1_1SPQR.html
+
+std::tuple<typename SolverSPQR::MaP_t,
+           std::optional<typename SolverSPQR::Covariance_t>,
+           typename SolverSPQR::Stats_t>
+    SolverSPQR::solve(const Eigen::SparseMatrix<double>&        A,
+                          const Eigen::VectorXd&                    b,
+                          const typename SolverSPQR::Options_t& options)
+{
+  PROFILE_SCOPE("SPQR",sam_utils::JSONLogger::Instance());
+  // stats
+  SolverStatsSPQR stats;
+  // solver
+  auto declare_solver_and_attach_A = [](auto & A){ 
+    PROFILE_SCOPE("Create solver and decompose",sam_utils::JSONLogger::Instance());
+    return Eigen::SPQR<Eigen::SparseMatrix<double>>(A); 
+  };
+  auto solver = declare_solver_and_attach_A(A);
+  // MAP
+  // {
+    // PROFILE_SCOPE("QR decomposition", sam_utils::JSONLogger::Instance());
+    // solver.
+    // {
+    //   PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
+    //   solver.analyzePattern(A);
+    // }
+    // {
+    //   PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
+    //   solver.factorize(A);   // complex
+    // }
+  // }
+
+  auto back_substitution = [](auto& solver, auto& b)
+  {
+    PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
+    Eigen::VectorXd map = solver.solve(b);
+    return map;
+  };
+  auto map = back_substitution(solver, b);
+#if ENABLE_DEBUG_TRACE
+  {
+    std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
+    std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
+    // info : enum Success, NumericalIssue, NoConvergence, InvalidInput
+  }
+#endif
+  stats.success       = (solver.info() == 0);
+  stats.report_str    = "";   //  str(info);
+  // stats.rnnz          = solver.matrixR().nonZeros();
+  stats.input_options = options;
+  stats.rank          = solver.rank();
+  // stats.ordering = solver.colsPermutation(); (will depend on the desired structure)
+
+  // if options.cache save matrixR
+  // R = solver.matrixR().topLeftCorner(rank(),rank())
+
+  std::optional<Covariance_t> optional_covariance;
+  if (options.compute_covariance) { optional_covariance = SolverSPQR::compute_covariance(A); }
+  else
+    optional_covariance = std::nullopt;
+
+
+  return {map, optional_covariance, stats};   // R nnz number set at 0 (unused)
+}
