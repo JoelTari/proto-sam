@@ -1,0 +1,2 @@
+add_subdirectory(clique_tree_solver)
+add_subdirectory(matrix_solver)

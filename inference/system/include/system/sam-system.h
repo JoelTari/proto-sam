@@ -6,7 +6,7 @@
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"
 #include "system/MatrixConverter.hpp"
-#include "system/solver.h"
+#include "solver/solver.h"
 
 #include <functional>
 #include <execution>

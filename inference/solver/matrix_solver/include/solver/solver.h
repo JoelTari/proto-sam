@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Eigen/Sparse>
 #include <optional>
 #include "utils/config.h"
