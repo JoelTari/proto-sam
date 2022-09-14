@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Sparse>
+#include <Eigen/Dense>
 #include <optional>
 #include "utils/config.h"
 #include "utils/utils.h"

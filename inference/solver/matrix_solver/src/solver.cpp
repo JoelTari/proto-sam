@@ -5,18 +5,17 @@ using namespace ::sam::Inference;
 Eigen::MatrixXd
     sam::Inference::SolverSparseQR::compute_covariance(const Eigen::SparseMatrix<double>& A)
 {
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-
   Eigen::SparseMatrix<double>                       H = A.transpose() * A;
-  Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
-  invsolver.compute(H);
-  Eigen::SparseMatrix<double> I(H.rows(), H.cols());
-  I.setIdentity();
-  auto H_inv = invsolver.solve(I);
-  return H_inv;
-  // Eigen::MatrixXd Hdense(H);
-  // // Eigen::MatrixXd cov = Hdense.inverse();
-  // return Eigen::MatrixXd(H).inverse();   // inverse done through partial LU
+  // Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
+  // invsolver.compute(H);
+  // Eigen::SparseMatrix<double> I(H.rows(), H.cols());
+  // I.setIdentity();
+  // auto H_inv = invsolver.solve(I);
+  // return H_inv;
+  return Eigen::MatrixXd(H).inverse();
+  // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SparseQR takes way longer
+  // so the dense .inverse() method is best performing (with -o3 + mkl BLAS/LAPACK + TBB active)
+  // The dense method uses all cores
 }
 
 
@@ -84,15 +83,19 @@ std::tuple<typename SolverSparseQR::MaP_t,
 //------------------------------------------------------------------//
 Eigen::MatrixXd SolverSparseNaive::compute_covariance(const Eigen::SparseMatrix<double>& A)
 {
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE("compute_covariance: dense",sam_utils::JSONLogger::Instance());
 
   Eigen::SparseMatrix<double>                       H = A.transpose() * A;
-  Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
-  invsolver.compute(H);
-  Eigen::SparseMatrix<double> I(H.rows(), H.cols());
-  I.setIdentity();
-  auto H_inv = invsolver.solve(I);
-  return H_inv;
+  // Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
+  // invsolver.compute(H);
+  // Eigen::SparseMatrix<double> I(H.rows(), H.cols());
+  // I.setIdentity();
+  // auto H_inv = invsolver.solve(I);
+  // return H_inv;
+  return Eigen::MatrixXd(H).inverse();
+  // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SparseQR takes way longer
+  // so the dense .inverse() method is best performing (with -o3 + mkl BLAS/LAPACK + TBB active)
+  // The dense method uses all cores
 }
 
 std::tuple<SolverSparseNaive::MaP_t,
@@ -113,7 +116,7 @@ std::tuple<SolverSparseNaive::MaP_t,
   {
     PROFILE_SCOPE("Xmap = Covariance times information vector", sam_utils::JSONLogger::Instance());
 
-    X_map = S * A.transpose() * b;
+    X_map = S *( A.transpose() * b); // the parenthesis are important (e.g. : 11 ms vs 210 ms without !)
   }
 
 
@@ -130,7 +133,8 @@ std::tuple<SolverSparseNaive::MaP_t,
   else
     optional_covariance = std::nullopt;
 
-  // Note: return covariance value seems to create a copy
+  // FIX: return covariance value seems to create a copy:   110 ms, maybe just use a shared_ptr
+  // this is probably a quirk of optional that prevent RVO of the big underlying object
   return {X_map, optional_covariance, stats};
 }
 
@@ -188,10 +192,8 @@ std::tuple<SolverSparseCholesky::MaP_t,
   std::optional<SolverSparseCholesky::Covariance_t> optional_covariance;
   if (options.compute_covariance)
   {
-    PROFILE_SCOPE("compute covariance", sam_utils::JSONLogger::Instance());
-    Eigen::SparseMatrix<double> I(H.rows(), H.cols());
-    I.setIdentity();
-    optional_covariance = solver.solve(I);
+    PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
+    optional_covariance = Eigen::MatrixXd(H).inverse();
   }
   else
     optional_covariance = std::nullopt;
