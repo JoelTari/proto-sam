@@ -6,6 +6,13 @@
 #include <fstream>
 #include <iostream>
 
+using Solver_t = typename sam::Inference::SolverSparseQR;
+// using solver_t = typename sam::Inference::SolverNaive;
+// using solver_t = typename sam::Inference::SolverCholesky;
+// using solver_t = typename sam::Inference::SolverPardiso;
+// using solver_t = typename sam::Inference::SolverSPQR;
+using InferenceSystem_t = typename sam::Inference::System<Solver_t,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+
 //------------------------------------------------------------------//
 //                               MAIN                               //
 //------------------------------------------------------------------//
@@ -46,13 +53,7 @@ int main(int argc, char* argv[])
 #endif
 
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-  using system_t =
-      // typename sam::Inference::System<sam::Inference::SolverSparseQR,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
-      // typename sam::Inference::System<sam::Inference::SolverSparseNaive,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
-      // typename sam::Inference::System<sam::Inference::SolverSparseCholesky,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
-      // typename sam::Inference::System<sam::Inference::SolverSparsePardiso,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
-      typename sam::Inference::System<sam::Inference::SolverSPQR,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
-  auto syst = system_t(argId);
+  auto syst = InferenceSystem_t(argId);
   int  fcount = 0;
 
   {
@@ -109,7 +110,7 @@ int main(int argc, char* argv[])
   //   std::cout << "-----------\n";
   // }
 
-  Json::Value json_graph = SystemJsonify<system_t>::jsonify_graph(syst);
+  Json::Value json_graph = SystemJsonify<InferenceSystem_t>::jsonify_graph(syst);
   sam_utils::JSONLogger::Instance().writeGraph(json_graph);
 
   std::cout << sam_utils::JSONLogger::Instance().out();
