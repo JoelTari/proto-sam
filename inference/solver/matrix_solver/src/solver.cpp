@@ -14,8 +14,8 @@ Eigen::MatrixXd
   // return H_inv;
   return Eigen::MatrixXd(H).inverse();
   // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SparseQR takes way longer
-  // so the dense .inverse() method is best performing (with -o3 + mkl BLAS/LAPACK + TBB active)
-  // The dense method uses all cores
+  // so the dense .inverse() method is best performing (all tests done with -o3 + mkl BLAS/LAPACK + TBB active)
+  // The dense method is the only one that manages to use all cores.
 }
 
 
@@ -94,8 +94,8 @@ Eigen::MatrixXd SolverSparseNaive::compute_covariance(const Eigen::SparseMatrix<
   // return H_inv;
   return Eigen::MatrixXd(H).inverse();
   // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SparseQR takes way longer
-  // so the dense .inverse() method is best performing (with -o3 + mkl BLAS/LAPACK + TBB active)
-  // The dense method uses all cores
+  // so the dense .inverse() method is best performing (all tests done with -o3 + mkl BLAS/LAPACK + TBB active)
+  // The dense method is the only one that manages to use all cores.
 }
 
 std::tuple<SolverSparseNaive::MaP_t,
@@ -200,3 +200,70 @@ std::tuple<SolverSparseCholesky::MaP_t,
 
   return {map, optional_covariance, stats};
 }
+
+#if USE_MKL_PARDISO
+//------------------------------------------------------------------//
+//                      Sparse Pardiso Solver                      //
+//------------------------------------------------------------------//
+std::tuple<SolverSparsePardiso::MaP_t,
+           std::optional<SolverSparsePardiso::Covariance_t>,
+           SolverSparsePardiso::Stats_t>
+    SolverSparsePardiso::solve(const Eigen::SparseMatrix<double>&     A,
+          const Eigen::VectorXd&                 b,
+          const SolverSparsePardiso::Options_t& options)
+{
+  PROFILE_SCOPE("solve Eigen Sparse Pardiso", sam_utils::JSONLogger::Instance());
+  Eigen::PardisoLLT<Eigen::SparseMatrix<double>> solver;
+  SolverSparsePardiso::Stats_t                                           stats;
+  Eigen::SparseMatrix<double>                       H = A.transpose() * A;
+  // MAP
+  {
+    PROFILE_SCOPE("Pardiso decomposition", sam_utils::JSONLogger::Instance());
+    {
+      PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
+      solver.analyzePattern(H);
+    }
+    {
+      PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
+      solver.factorize(H);   // complex
+    }
+  }
+
+  auto back_substitution = [](auto& solver, auto& b)
+  {
+    PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
+    Eigen::VectorXd map = solver.solve(b);
+    return map;
+  };
+  Eigen::VectorXd map = back_substitution(solver, A.transpose() * b);
+#if ENABLE_DEBUG_TRACE
+  {
+    std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
+    std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
+  }
+#endif
+
+
+  stats.success       = (solver.info() == 0);
+  stats.report_str    = "";   //  str(info);
+  stats.lnnz          = Eigen::SparseMatrix<double>(solver.matrixL()).nonZeros();
+  stats.input_options = options;
+  // stats.rank = solver.rank(); // no rank() in cholesky
+  // stats.ordering = solver.colsPermutation(); (will depend on the desired structure)
+
+  // if options.cache save matrixL
+
+  std::optional<SolverSparsePardiso::Covariance_t> optional_covariance;
+  if (options.compute_covariance)
+  {
+    PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
+    // todo: maybe see if, by chance, pardiso solver over I exploits multiple cores
+    // (see the comment in the compute_covariance methods for reference)
+    optional_covariance = Eigen::MatrixXd(H).inverse();
+  }
+  else
+    optional_covariance = std::nullopt;
+
+  return {map, optional_covariance, stats};
+}
+#endif // USE_MKL_PARDISO

@@ -146,4 +146,54 @@ namespace sam::Inference
     
 
   };
+
+
+#define USE_MKL_PARDISO 0
+
+#if USE_MKL_PARDISO
+  //------------------------------------------------------------------//
+  //            PARDISIO SPARSE SOLVER (intel's cholesky)             //
+  //------------------------------------------------------------------//
+#include <Eigen/PardisoSupport>
+  struct SolverOptionsSparsePardiso
+  {
+  //       members could be: cache_R or not , ordering method ect...
+  //       have sane default too
+    bool compute_covariance = true;
+    bool compute_residual = true;
+
+    bool use_default_ordering = true;
+    std::optional< Eigen::SparseMatrix<double>> custom_ordering; // difficult
+
+    SolverOptionsSparsePardiso(bool compute_covariance)
+      :compute_covariance(compute_covariance)
+    {}
+
+    SolverOptionsSparsePardiso(){}
+  };
+
+  struct SolverStatsSparsePardiso
+  {
+    bool success;
+    int lnnz;
+    // int rank; // no rank in cholesky
+    std::string report_str;
+    std::optional<double> residual; // different from the NLog from a constant
+    SolverOptionsSparsePardiso input_options;
+  };
+
+  struct SolverSparsePardiso
+  {
+    using Stats_t = SolverStatsSparsePardiso;
+    using Options_t = SolverOptionsSparsePardiso;
+    using MaP_t = Eigen::VectorXd;
+    using Covariance_t = Eigen::MatrixXd;
+
+    static 
+    std::tuple<MaP_t,std::optional<Covariance_t>, SolverStatsSparsePardiso> 
+      solve(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b, const SolverOptionsSparsePardiso & options = SolverOptionsSparsePardiso() );
+    
+
+  };
+#endif // USE_MKL_PARDISO
 }
