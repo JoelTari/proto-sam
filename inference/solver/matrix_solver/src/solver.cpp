@@ -1,4 +1,5 @@
 #include "solver/solver.h"
+
 #include <future>
 
 using namespace ::sam::Inference;
@@ -6,7 +7,7 @@ using namespace ::sam::Inference;
 Eigen::MatrixXd
     sam::Inference::SolverSparseQR::compute_covariance(const Eigen::SparseMatrix<double>& A)
 {
-  Eigen::SparseMatrix<double>                       H = A.transpose() * A;
+  Eigen::SparseMatrix<double> H = A.transpose() * A;
   // Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
   // invsolver.compute(H);
   // Eigen::SparseMatrix<double> I(H.rows(), H.cols());
@@ -14,9 +15,9 @@ Eigen::MatrixXd
   // auto H_inv = invsolver.solve(I);
   // return H_inv;
   return Eigen::MatrixXd(H).inverse();
-  // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SparseQR takes way longer
-  // so the dense .inverse() method is best performing (all tests done with -o3 + mkl BLAS/LAPACK + TBB active)
-  // The dense method is the only one that manages to use all cores.
+  // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SparseQR takes way
+  // longer so the dense .inverse() method is best performing (all tests done with -o3 + mkl
+  // BLAS/LAPACK + TBB active) The dense method is the only one that manages to use all cores.
 }
 
 
@@ -28,7 +29,7 @@ std::tuple<typename SolverSparseQR::MaP_t,
                           const typename SolverSparseQR::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSparseQR::name);
-  PROFILE_SCOPE(scope_name.c_str(),sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   // stats
   SolverStatsSparseQR stats;
   // solver
@@ -85,9 +86,9 @@ std::tuple<typename SolverSparseQR::MaP_t,
 //------------------------------------------------------------------//
 Eigen::MatrixXd SolverSparseNaive::compute_covariance(const Eigen::SparseMatrix<double>& A)
 {
-  PROFILE_SCOPE("compute_covariance: dense",sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE("compute_covariance: dense", sam_utils::JSONLogger::Instance());
 
-  Eigen::SparseMatrix<double>                       H = A.transpose() * A;
+  Eigen::SparseMatrix<double> H = A.transpose() * A;
   // Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
   // invsolver.compute(H);
   // Eigen::SparseMatrix<double> I(H.rows(), H.cols());
@@ -95,9 +96,9 @@ Eigen::MatrixXd SolverSparseNaive::compute_covariance(const Eigen::SparseMatrix<
   // auto H_inv = invsolver.solve(I);
   // return H_inv;
   return Eigen::MatrixXd(H).inverse();
-  // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SparseQR takes way longer
-  // so the dense .inverse() method is best performing (all tests done with -o3 + mkl BLAS/LAPACK + TBB active)
-  // The dense method is the only one that manages to use all cores.
+  // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SparseQR takes way
+  // longer so the dense .inverse() method is best performing (all tests done with -o3 + mkl
+  // BLAS/LAPACK + TBB active) The dense method is the only one that manages to use all cores.
 }
 
 std::tuple<SolverSparseNaive::MaP_t,
@@ -119,7 +120,9 @@ std::tuple<SolverSparseNaive::MaP_t,
   {
     PROFILE_SCOPE("Xmap = Covariance times information vector", sam_utils::JSONLogger::Instance());
 
-    X_map = S *( A.transpose() * b); // the parenthesis are important (e.g. : 11 ms vs 210 ms without !)
+    X_map = S
+            * (A.transpose()
+               * b);   // the parenthesis are important (e.g. : 11 ms vs 210 ms without !)
   }
 
 
@@ -147,14 +150,14 @@ std::tuple<SolverSparseNaive::MaP_t,
 std::tuple<SolverSparseSimplicialLLT::MaP_t,
            std::optional<SolverSparseSimplicialLLT::Covariance_t>,
            SolverSparseSimplicialLLT::Stats_t>
-    SolverSparseSimplicialLLT::solve(const Eigen::SparseMatrix<double>&     A,
-          const Eigen::VectorXd&                 b,
-          const SolverSparseSimplicialLLT::Options_t& options)
+    SolverSparseSimplicialLLT::solve(const Eigen::SparseMatrix<double>&          A,
+                                     const Eigen::VectorXd&                      b,
+                                     const SolverSparseSimplicialLLT::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSparseSimplicialLLT::name);
   PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
-  SolverSparseSimplicialLLT::Stats_t                                           stats;
+  SolverSparseSimplicialLLT::Stats_t                stats;
   Eigen::SparseMatrix<double>                       H = A.transpose() * A;
   // MAP
   {
@@ -211,15 +214,15 @@ std::tuple<SolverSparseSimplicialLLT::MaP_t,
 std::tuple<SolverSparsePardisoLLT::MaP_t,
            std::optional<SolverSparsePardisoLLT::Covariance_t>,
            SolverSparsePardisoLLT::Stats_t>
-    SolverSparsePardisoLLT::solve(const Eigen::SparseMatrix<double>&     A,
-          const Eigen::VectorXd&                 b,
-          const SolverSparsePardisoLLT::Options_t& options)
+    SolverSparsePardisoLLT::solve(const Eigen::SparseMatrix<double>&       A,
+                                  const Eigen::VectorXd&                   b,
+                                  const SolverSparsePardisoLLT::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSparsePardisoLLT::name);
   PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   Eigen::PardisoLLT<Eigen::SparseMatrix<double>> solver;
-  SolverSparsePardisoLLT::Stats_t                                           stats;
-  Eigen::SparseMatrix<double>                       H = A.transpose() * A;
+  SolverSparsePardisoLLT::Stats_t                stats;
+  Eigen::SparseMatrix<double>                    H = A.transpose() * A;
   // MAP
   {
     PROFILE_SCOPE("PardisoLLT decomposition", sam_utils::JSONLogger::Instance());
@@ -239,7 +242,7 @@ std::tuple<SolverSparsePardisoLLT::MaP_t,
     Eigen::VectorXd map = solver.solve(b);
     return map;
   };
-  Eigen::VectorXd map = back_substitution(solver, Eigen::VectorXd(A.transpose() * b) );
+  Eigen::VectorXd map = back_substitution(solver, Eigen::VectorXd(A.transpose() * b));
 #if ENABLE_DEBUG_TRACE
   {
     std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
@@ -248,8 +251,8 @@ std::tuple<SolverSparsePardisoLLT::MaP_t,
 #endif
 
 
-  stats.success       = (solver.info() == 0);
-  stats.report_str    = "";   //  str(info);
+  stats.success    = (solver.info() == 0);
+  stats.report_str = "";   //  str(info);
   // stats.lnnz          = Eigen::SparseMatrix<double>(solver.()).nonZeros();
   stats.input_options = options;
   // stats.rank = solver.rank(); // no rank() in cholesky
@@ -274,11 +277,10 @@ std::tuple<SolverSparsePardisoLLT::MaP_t,
 //------------------------------------------------------------------//
 //             SPQR solver (eigen wrapper around SPQR)              //
 //------------------------------------------------------------------//
-Eigen::MatrixXd
-    sam::Inference::SolverSPQR::compute_covariance(const Eigen::SparseMatrix<double>& A)
+Eigen::MatrixXd sam::Inference::SolverSPQR::compute_covariance(const Eigen::SparseMatrix<double>& A)
 {
-  PROFILE_SCOPE("compute covariance: dense",sam_utils::JSONLogger::Instance());
-  Eigen::SparseMatrix<double>                       H = A.transpose() * A;
+  PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
+  Eigen::SparseMatrix<double> H = A.transpose() * A;
   // Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
   // invsolver.compute(H);
   // Eigen::SparseMatrix<double> I(H.rows(), H.cols());
@@ -286,9 +288,9 @@ Eigen::MatrixXd
   // auto H_inv = invsolver.solve(I);
   // return H_inv;
   return Eigen::MatrixXd(H).inverse();
-  // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SPQR takes way longer
-  // so the dense .inverse() method is best performing (all tests done with -o3 + mkl BLAS/LAPACK + TBB active)
-  // The dense method is the only one that manages to use all cores.
+  // roughly, when dense inverse takes 3s, SparseLU and SimplicialLLT takes 38s, SPQR takes way
+  // longer so the dense .inverse() method is best performing (all tests done with -o3 + mkl
+  // BLAS/LAPACK + TBB active) The dense method is the only one that manages to use all cores.
 }
 
 // https://eigen.tuxfamily.org/dox/classEigen_1_1SPQR.html
@@ -296,32 +298,33 @@ Eigen::MatrixXd
 std::tuple<typename SolverSPQR::MaP_t,
            std::optional<typename SolverSPQR::Covariance_t>,
            typename SolverSPQR::Stats_t>
-    SolverSPQR::solve(const Eigen::SparseMatrix<double>&        A,
-                          const Eigen::VectorXd&                    b,
-                          const typename SolverSPQR::Options_t& options)
+    SolverSPQR::solve(const Eigen::SparseMatrix<double>&    A,
+                      const Eigen::VectorXd&                b,
+                      const typename SolverSPQR::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSPQR::name);
-  PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   // stats
   SolverStatsSPQR stats;
   // solver
-  auto declare_solver_and_attach_A = [](auto & A){ 
-    PROFILE_SCOPE("Create solver and decompose",sam_utils::JSONLogger::Instance());
-    return Eigen::SPQR<Eigen::SparseMatrix<double>>(A); 
+  auto declare_solver_and_attach_A = [](auto& A)
+  {
+    PROFILE_SCOPE("Create solver and decompose", sam_utils::JSONLogger::Instance());
+    return Eigen::SPQR<Eigen::SparseMatrix<double>>(A);
   };
   auto solver = declare_solver_and_attach_A(A);
   // MAP
   // {
-    // PROFILE_SCOPE("QR decomposition", sam_utils::JSONLogger::Instance());
-    // solver.
-    // {
-    //   PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
-    //   solver.analyzePattern(A);
-    // }
-    // {
-    //   PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
-    //   solver.factorize(A);   // complex
-    // }
+  // PROFILE_SCOPE("QR decomposition", sam_utils::JSONLogger::Instance());
+  // solver.
+  // {
+  //   PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
+  //   solver.analyzePattern(A);
+  // }
+  // {
+  //   PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
+  //   solver.factorize(A);   // complex
+  // }
   // }
 
   auto back_substitution = [](auto& solver, auto& b)
@@ -338,8 +341,8 @@ std::tuple<typename SolverSPQR::MaP_t,
     // info : enum Success, NumericalIssue, NoConvergence, InvalidInput
   }
 #endif
-  stats.success       = (solver.info() == 0);
-  stats.report_str    = "";   //  str(info);
+  stats.success    = (solver.info() == 0);
+  stats.report_str = "";   //  str(info);
   // stats.rnnz          = solver.matrixR().nonZeros();
   stats.input_options = options;
   stats.rank          = solver.rank();
@@ -361,11 +364,11 @@ std::tuple<typename SolverSPQR::MaP_t,
 //------------------------------------------------------------------//
 //                    Sparse Cholmod supernodal                     //
 //------------------------------------------------------------------//
-Eigen::MatrixXd
-    sam::Inference::SolverSparseSupernodalLLT::compute_covariance(const Eigen::SparseMatrix<double>& A)
+Eigen::MatrixXd sam::Inference::SolverSparseSupernodalLLT::compute_covariance(
+    const Eigen::SparseMatrix<double>& A)
 {
-  PROFILE_SCOPE("compute covariance: dense",sam_utils::JSONLogger::Instance());
-  Eigen::SparseMatrix<double>                       H = A.transpose() * A;
+  PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
+  Eigen::SparseMatrix<double>                              H = A.transpose() * A;
   Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> invsolver;
   invsolver.compute(H);
   Eigen::SparseMatrix<double> I(A.cols(), A.cols());
@@ -377,45 +380,47 @@ Eigen::MatrixXd
   // roughly:
   // - dense inverse : 3s
   // - LLT supernodal : 2s
-  // - SparseLU and SimplicialLLT takes 38s, 
+  // - SparseLU and SimplicialLLT takes 38s,
   // - sparseQR takes way longer
-  // so the dense .inverse() method is best performing (all tests done with -o3 + mkl BLAS/LAPACK + TBB active)
-  // The dense method is the only one that manages to use all cores.
+  // so the dense .inverse() method is best performing (all tests done with -o3 + mkl BLAS/LAPACK +
+  // TBB active) The dense method is the only one that manages to use all cores.
 }
 
 std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
            std::optional<typename SolverSparseSupernodalLLT::Covariance_t>,
            typename SolverSparseSupernodalLLT::Stats_t>
-    SolverSparseSupernodalLLT::solve(const Eigen::SparseMatrix<double>&        A,
-                          const Eigen::VectorXd&                    b,
-                          const typename SolverSparseSupernodalLLT::Options_t& options)
+    SolverSparseSupernodalLLT::solve(const Eigen::SparseMatrix<double>&                   A,
+                                     const Eigen::VectorXd&                               b,
+                                     const typename SolverSparseSupernodalLLT::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSparseSupernodalLLT::name);
-  PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
   // stats
   Stats_t stats;
   // launching some future: AtA and Atb
-  std::future<Eigen::SparseMatrix<double>> H_future = std::async(std::launch::async, 
-      [&A]()-> Eigen::SparseMatrix<double>
-      { 
-        PROFILE_SCOPE("H = A^T * A", sam_utils::JSONLogger::Instance());
-        return A.transpose()*A; 
-      } );
-  std::future<Eigen::VectorXd> rhs_future = std::async(std::launch::async, 
-      [&A,&b]()-> Eigen::VectorXd
-      { 
-        PROFILE_SCOPE("A^T * b", sam_utils::JSONLogger::Instance());
-        return Eigen::VectorXd(A.transpose()*b); 
-      } );
+  std::future<Eigen::SparseMatrix<double>> H_future
+      = std::async(std::launch::async,
+                   [&A]() -> Eigen::SparseMatrix<double>
+                   {
+                     PROFILE_SCOPE("H = A^T * A", sam_utils::JSONLogger::Instance());
+                     return A.transpose() * A;
+                   });
+  std::future<Eigen::VectorXd> rhs_future
+      = std::async(std::launch::async,
+                   [&A, &b]() -> Eigen::VectorXd
+                   {
+                     PROFILE_SCOPE("A^T * b", sam_utils::JSONLogger::Instance());
+                     return Eigen::VectorXd(A.transpose() * b);
+                   });
   // declaring the solver
-  Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> solver; 
+  Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> solver;
   // MAP
   {
     PROFILE_SCOPE("Chol decomposition", sam_utils::JSONLogger::Instance());
-    auto H = H_future.get(); // can't call .get() twice
+    auto H = H_future.get();   // can't call .get() twice
     {
       PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
-      solver.analyzePattern(H); // 2.7 ms
+      solver.analyzePattern(H);   // 2.7 ms
     }
     {
       PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
@@ -423,7 +428,7 @@ std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
     }
   }
 
-  auto back_substitution = [](auto& solver,const auto& rhs)
+  auto back_substitution = [](auto& solver, const auto& rhs)
   {
     PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
     Eigen::VectorXd map = solver.solve(rhs);
@@ -438,8 +443,8 @@ std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
     // info : enum Success, NumericalIssue, NoConvergence, InvalidInput
   }
 #endif
-  stats.success       = (solver.info() == 0);
-  stats.report_str    = "";   //  str(info);
+  stats.success    = (solver.info() == 0);
+  stats.report_str = "";   //  str(info);
   // stats.rnnz          = solver.matrixR().nonZeros();
   stats.input_options = options;
   // stats.ordering = solver.colsPermutation(); (will depend on the desired structure)
@@ -448,10 +453,10 @@ std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
   // R = solver.matrixR().topLeftCorner(rank(),rank())
 
   std::optional<Covariance_t> optional_covariance;
-  if (options.compute_covariance) 
-  { 
+  if (options.compute_covariance)
+  {
     PROFILE_SCOPE("compute covariance: supernodalLLT", sam_utils::JSONLogger::Instance());
-    Eigen::SparseMatrix<double> I(A.cols(),A.cols());
+    Eigen::SparseMatrix<double> I(A.cols(), A.cols());
     I.setIdentity();
     optional_covariance = solver.solve(I);
   }
