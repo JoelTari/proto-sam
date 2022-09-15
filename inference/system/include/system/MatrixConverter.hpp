@@ -41,7 +41,7 @@ namespace sam::Inference::MatrixConverter
           [](const auto&... map_of_wmarg)
           {
             return (
-                (std::remove_cvref_t<decltype(map_of_wmarg)>::mapped_type::Marginal_t::KeyMeta_t::kN
+                (std::remove_cvref_t<decltype(map_of_wmarg)>::value_type::Marginal_t::KeyMeta_t::kN
                  * map_of_wmarg.size())
                 + ...);
           },
@@ -97,7 +97,7 @@ namespace sam::Inference::MatrixConverter
           {
             return array_t {
                 // size = dimension of key * number of keys
-                std::remove_cvref_t<decltype(map_of_wmarg)>::mapped_type::Marginal_t::KeyMeta_t::kN
+                std::remove_cvref_t<decltype(map_of_wmarg)>::value_type::Marginal_t::KeyMeta_t::kN
                 * map_of_wmarg.size()...};
           },
           tuple_map_wmarginals);

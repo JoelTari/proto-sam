@@ -103,9 +103,66 @@ namespace sam::Inference
     std::size_t natural_semantic_idx;
     std::size_t natural_scalar_idx;
     std::unordered_set<std::string> neighbours;
+
+
   };
 
+  template <typename VECT_WFT_COLLECTION, typename VECT_WMARG_COLLECTION>
+   std::unordered_map<std::string,KeyDispatchInfos> compute_keys_affectation(const VECT_WFT_COLLECTION & tup_vwf, const VECT_WMARG_COLLECTION & tup_vwm)
+   {
+     // result
+     std::unordered_map<std::string,KeyDispatchInfos> resultmap;
+     // small optimisation: regroup all these ? really micro
+     auto M_type_idx_offsets = MatrixConverter::Scalar::FactorTypeIndexesOffset(tup_vwf);
+     auto N_type_idx_offsets = MatrixConverter::Scalar::MarginalTypeIndexesOffset(tup_vwm);
+     auto semantic_M_type_idx_offsets = MatrixConverter::Semantic::FactorTypeIndexesOffset(tup_vwf);
+     auto semantic_N_type_idx_offsets = MatrixConverter::Semantic::MarginalTypeIndexesOffset(tup_vwm);
 
+     // zip_tuple_for (TUP_VECT_WMARG, N_type_idx_offsets,  semantic_N_type_idx_offsets) // yep, triple zip pattern
+     //    for each wmarg in vect_wmarg
+     //      KeyDispatchInfos keydispatchinfos;
+     //      keydispatchinfos.natural_semantic_idx = semantic_N_idx_base + i;
+     //      keydispatchinfos.natural_scalar_idx = N_idx_base + i*marg::kN;
+     //      resultmap.insert_or_assign(wmarg.key, keydispatckinfos)
+
+     std::apply(
+         [&](auto ... N_idx_base)
+         {
+         std::apply(
+             [&](auto ... semantic_N_idx_base)
+             {
+                 std::apply([&](const auto &... vwm)
+                     {
+                        auto lambda = [&](const auto & a_vwm, std::size_t scalar_idx_base, std::size_t semantic_idx_base)
+                        {
+                          std::size_t j=0;
+                          for(const auto & wm : a_vwm)
+                          {
+                            constexpr std::size_t kN = std::remove_cvref_t<decltype(wm)>::Marginal_t::KeyMeta_t::kN;
+                            KeyDispatchInfos keydispatchinfos;
+                            keydispatchinfos.natural_semantic_idx = semantic_idx_base + j;
+                            keydispatchinfos.natural_scalar_idx = scalar_idx_base + j*kN;
+                            resultmap.insert_or_assign(wm.key_id, keydispatchinfos);
+                            j++;
+                          }
+                        };
+                        (lambda(vwm, N_idx_base, semantic_N_idx_base), ...);
+                     },tup_vwm);
+             }
+             ,semantic_N_type_idx_offsets);
+         } ,N_type_idx_offsets
+         );
+
+     // Now, thanks to the factor, we add the neighbours
+     // tuple_for TUP_VECT_WFT
+     //   for each wfactor
+     //     for each keyid_of_interest : factors_key
+     //       for each other_keyid in the factor
+     //         if (other_keyid != keyid_of_interest)
+     //         resultmap[keyid_of_interest].insert(other_keyid)
+
+      return resultmap;
+   }
 
   template <typename SOLVER_T,
             typename FACTOR_T,
@@ -141,7 +198,7 @@ namespace sam::Inference
 
     SystemHeader header;
 
-    std::unordered_map<std::string,KeyDispatchInfos> keys_affectation;
+    std::unordered_map<std::string,KeyDispatchInfos> keys_affectation = {};
 
     static constexpr std::size_t kNbFactorTypes = 1 + sizeof...(FACTORS_Ts);
     static constexpr std::size_t kNbKeyTypes = std::tuple_size_v<KeyMetae_t>;
@@ -166,9 +223,9 @@ namespace sam::Inference
       PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
 
       size_t M = MatrixConverter::Scalar::M(this->all_factors_tuple_);
-      size_t N = MatrixConverter::Scalar::N(this->all_marginals_.data_map_tuple);
+      size_t N = MatrixConverter::Scalar::N(this->all_vectors_marginals_.vectors_of_marginals);
       size_t semantic_M = MatrixConverter::Semantic::M(this->all_factors_tuple_);
-      size_t semantic_N = MatrixConverter::Semantic::N(this->all_marginals_.data_map_tuple);
+      size_t semantic_N = MatrixConverter::Semantic::N(this->all_vectors_marginals_.vectors_of_marginals);
       size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
       size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
       size_t nnz_semantic_jacobian = MatrixConverter::Semantic::JacobianNNZ(this->all_factors_tuple_);
@@ -176,9 +233,9 @@ namespace sam::Inference
 
       
       auto M_type_idx_offsets = MatrixConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
-      auto N_type_idx_offsets = MatrixConverter::Scalar::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
+      auto N_type_idx_offsets = MatrixConverter::Scalar::MarginalTypeIndexesOffset(this->all_vectors_marginals_.vectors_of_marginals);
       auto semantic_M_type_idx_offsets = MatrixConverter::Semantic::FactorTypeIndexesOffset(this->all_factors_tuple_);
-      auto semantic_N_type_idx_offsets = MatrixConverter::Semantic::MarginalTypeIndexesOffset(this->all_marginals_.data_map_tuple);
+      auto semantic_N_type_idx_offsets = MatrixConverter::Semantic::MarginalTypeIndexesOffset(this->all_vectors_marginals_.vectors_of_marginals);
 
       Eigen::SparseMatrix<int> semantic_A = MatrixConverter::Sparse ::compute_semantic_A
                                               (this->all_factors_tuple_ , this->all_marginals_
@@ -244,7 +301,7 @@ namespace sam::Inference
         //                  POST SOLVER LOOP ON MARGINALS                   //
         //------------------------------------------------------------------//
         std::apply(
-            [this, &MaP,&options,optional_covariance_ptr,&nIter,&N_type_idx_offsets](auto & ... map_to_wmarginals)
+            [this, &MaP,&options,optional_covariance_ptr,&nIter,&N_type_idx_offsets](auto & ... vect_of_wmarginals)
             {
               std::apply(
                   [&,this](const auto & ... N_type_start_idx)
@@ -252,9 +309,9 @@ namespace sam::Inference
                       std::string scope_name = "save marginal updates";
                       PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
                       // define the function
-                      auto lambda_update_map_of_wmarginals = [&,this](auto & map_of_wrapped_marginals, std::size_t KeyTypeStartIdx)
+                      auto lambda_update_map_of_wmarginals = [&,this](auto & vector_of_wrapped_marginals, std::size_t KeyTypeStartIdx)
                       {
-                          using wrapped_marginal_t = typename std::decay_t<decltype(map_of_wrapped_marginals)>::mapped_type;
+                          using wrapped_marginal_t = typename std::remove_cvref_t<decltype(vector_of_wrapped_marginals)>::value_type;
                           using marginal_t = typename wrapped_marginal_t::Marginal_t;
                           using tangent_space_t = typename marginal_t::Tangent_Space_t;
                           using keymeta_t = typename marginal_t::KeyMeta_t;
@@ -266,10 +323,11 @@ namespace sam::Inference
                           //     , map_of_wrapped_marginals.end() 
                           //     , [&,this]( auto & kvpair)
                           std::size_t idx_marg = 0;
-                          for(auto it_marg =map_of_wrapped_marginals.begin(); it_marg!=map_of_wrapped_marginals.end(); it_marg++) // WARNING: marginal refactor: vector will speed up a bit (not much though)
+                          for(auto it_marg =vector_of_wrapped_marginals.begin(); it_marg!=vector_of_wrapped_marginals.end(); it_marg++) // WARNING: marginal refactor: vector will speed up a bit (not much though)
                           {
-                            std::string key_id = it_marg->first;
-                            wrapped_marginal_t & wrapped_marginal = it_marg->second;
+                            // std::string key_id = it_marg->first;
+                            std::string key_id = it_marg->key_id;
+                            wrapped_marginal_t & wrapped_marginal = *it_marg;
                             // get the subvector from the Maximum A Posteriori vector
                             auto sysidx = KeyTypeStartIdx + idx_marg * kN ;
                             idx_marg++;
@@ -309,11 +367,12 @@ namespace sam::Inference
                           }
                           // ); // for each
                       };
-                    ( lambda_update_map_of_wmarginals(map_to_wmarginals, N_type_start_idx), ...);
+                    ( lambda_update_map_of_wmarginals(vect_of_wmarginals, N_type_start_idx), ...);
                   }
                   , N_type_idx_offsets);
             }
-            , this->all_marginals_.data_map_tuple);
+            // , this->all_marginals_.data_map_tuple);
+            , this->all_vectors_marginals_.vectors_of_marginals);
 
         //------------------------------------------------------------------//
         //                   Post Solver loop on factors                    //
@@ -407,7 +466,8 @@ namespace sam::Inference
     auto get_marginals() const
     {
       // WARNING: after marginal refactor: return the vector of marginals. If you want the map of marginals, use get_marginals_as_map()
-      return all_marginals_.data_map_tuple;
+      // return all_marginals_.data_map_tuple;
+      return this->all_vectors_marginals_.vectors_of_marginals;
     }
 
     
@@ -420,7 +480,9 @@ namespace sam::Inference
     // }
 
     Marginals_t all_marginals_;
-    Marginal::MarginalsVectorCollection<KeyMetae_t> all_vectors_marginals_;
+    using Vectors_Marginals_t = Marginal::MarginalsVectorCollection<KeyMetae_t>;
+    Vectors_Marginals_t all_vectors_marginals_;
+    
 
     // there's at least one factor, the rest are expanded
     Wrapped_Factor_t all_factors_tuple_;
@@ -500,7 +562,10 @@ namespace sam::Inference
                     // yes ! => get the mean !
                     return std::optional<std::shared_ptr<typename keymeta_t::key_t>>(this->all_vectors_marginals_.template find_if<keymeta_t>(akcc.key_id).shared_mean);
                   }
-                  else return std::optional<std::shared_ptr<typename keymeta_t::key_t>>(std::nullopt);
+                  else 
+                  { // no, return nullopt
+                    return std::optional<std::shared_ptr<typename keymeta_t::key_t>>(std::nullopt);
+                  }
                 };
                 return std::make_tuple( lambda(kcc)... );
 
@@ -512,6 +577,7 @@ namespace sam::Inference
                 //        .template find_mean_ptr<typename decltype(kcc)::KeyMeta_t>(kcc.key_id) // WARNING: adverse cost when marginal refactor: perhaps transform vector of marginals in a std::map first (yes, in this method ! A slightly costlier emplace_factor method is not a big deal, this is not where bottleneck of the users API is)
                 //       ... 
                 //   );
+                //   FIX: remove old, keep only competing 
               }, KccSet);
           // It is often the case that the above tuple contains at least 1 std::nullopt.
 
@@ -548,6 +614,8 @@ namespace sam::Inference
                                   // insert the marginal we just created in the system's marginal container
                                   this->all_marginals_.
                                     template insert_in_marginal_container<wrapped_marginal_t> (wrapped_marginal); // WARNING: marginal refactor: push_back
+                                                                                                                  // FIX: remove old, keep only competing
+                                  this->all_vectors_marginals_.template push_back<wrapped_marginal_t>(wrapped_marginal);
                                 }
                               };
                               ((lambda(opt_mean_ptr,guessed_mean_ptr,kcc)),...);
@@ -566,6 +634,8 @@ namespace sam::Inference
           // emplace back in the structure
           vector_of_wrapped_factors.emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
               
+          // FIX: recompute/erase key dispatch
+          this->keys_affectation = compute_keys_affectation(this->all_factors_tuple_,this->all_vectors_marginals_.vectors_of_marginals);
       }
     }
 

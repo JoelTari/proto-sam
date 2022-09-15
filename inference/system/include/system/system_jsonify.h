@@ -69,7 +69,7 @@ class SystemJsonify
   }
 
   static Json::Value
-      jsonify_marginals(const typename SAM_SYS::Marginals_t::Marginals_Data_t& marginals_data_tuple)
+      jsonify_marginals(const typename SAM_SYS::Vectors_Marginals_t::Marginals_Data_t & marginals_data_tuple)
   {
     return std::apply(
         [](const auto&... map_of_wmarginals)
@@ -86,18 +86,18 @@ class SystemJsonify
   //------------------------------------------------------------------//
   //                           lower level                            //
   //------------------------------------------------------------------//
-  template <typename MAP_OF_WMARG_T>
-  static void jsonify_map_of_marginals(const MAP_OF_WMARG_T& map_of_wmarginals,
+  template <typename VECT_OF_WMARG_T>
+  static void jsonify_map_of_marginals(const VECT_OF_WMARG_T& vect_of_wmarginals,
                                        Json::Value&          json_marginals_out)
   {
-    using wrapped_marginal_t = typename MAP_OF_WMARG_T::mapped_type;
+    using wrapped_marginal_t = typename VECT_OF_WMARG_T::value_type;
     using marginal_t         = typename wrapped_marginal_t::Marginal_t;
     using keymeta_t          = typename marginal_t::KeyMeta_t;
-    for (const auto& [key_id, wrapped_marginal] : map_of_wmarginals) // WARNING: marginal refactor
+    for (const auto& wrapped_marginal : vect_of_wmarginals) // WARNING: marginal refactor
     {
       Json::Value json_marginal;
       // auto marg_hist = pair.second;
-      json_marginal["var_id"]   = key_id;
+      json_marginal["var_id"]   = wrapped_marginal.key_id;
       json_marginal["category"] = keymeta_t::kKeyName;
       Json::Value json_mean;
       for (std::size_t i = 0; i < keymeta_t::components.size(); i++)

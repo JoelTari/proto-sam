@@ -130,7 +130,7 @@ namespace sam::Marginal
     void push_back(const Q_WMARG_T& wmarg)
     {
       constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx_by_wmarg<Q_WMARG_T>();
-      std::get<TUPLE_IDX>(this->data_map_tuple).push_back(wmarg);
+      std::get<TUPLE_IDX>(this->vectors_of_marginals).push_back(wmarg);
       // TODO: run time assertion: verify that the key_id does not exist in other marginal type
       // (e.g. having "x0" as a pose and "x0" as something else in another part of the tuple)
     }
