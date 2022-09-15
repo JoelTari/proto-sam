@@ -299,7 +299,7 @@ namespace sam::Inference
 
     static Eigen::MatrixXd compute_covariance(const Eigen::SparseMatrix<double>& A);
 
-    static std::tuple<MaP_t, std::optional<Covariance_t>, SolverStatsSparseSupernodalLLT>
+    static std::tuple<MaP_t, std::shared_ptr<std::optional<Covariance_t>>, SolverStatsSparseSupernodalLLT>
         solve(const Eigen::SparseMatrix<double>&      A,
               const Eigen::VectorXd&                  b,
               const SolverOptionsSparseSupernodalLLT& options = SolverOptionsSparseSupernodalLLT());

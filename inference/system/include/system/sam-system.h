@@ -205,8 +205,8 @@ namespace sam::Inference
        // maximum a posteriori, may represent a \hat X or \delta \hat X (NL)
         Eigen::VectorXd MaP;
         typename SOLVER_T::Stats_t solver_stats;
-        std::optional<Eigen::MatrixXd> optional_covariance;
-        std::tie(MaP,optional_covariance,solver_stats) = SOLVER_T::solve(A,b,options.solver); 
+        std::shared_ptr<std::optional<Eigen::MatrixXd>> optional_covariance_ptr;
+        std::tie(MaP,optional_covariance_ptr,solver_stats) = SOLVER_T::solve(A,b,options.solver); 
 
 #if ENABLE_DEBUG_TRACE
       {
@@ -229,7 +229,7 @@ namespace sam::Inference
         //                  POST SOLVER LOOP ON MARGINALS                   //
         //------------------------------------------------------------------//
         std::apply(
-            [this, &MaP,&options,&optional_covariance,&nIter,&N_type_idx_offsets](auto & ... map_to_wmarginals)
+            [this, &MaP,&options,optional_covariance_ptr,&nIter,&N_type_idx_offsets](auto & ... map_to_wmarginals)
             {
               std::apply(
                   [&,this](const auto & ... N_type_start_idx)
@@ -265,7 +265,10 @@ namespace sam::Inference
                             std::optional<typename marginal_t::Covariance_t>  optional_subcovariance;
                             if (options.compute_covariance)
                             {
-                              optional_subcovariance = optional_covariance.value().block<kN,kN>(sysidx,sysidx);
+                              if (optional_covariance_ptr->has_value())
+                              {
+                                optional_subcovariance = optional_covariance_ptr->value().block<kN,kN>(sysidx,sysidx);
+                              }
                             }
                             else optional_subcovariance = std::nullopt;
 

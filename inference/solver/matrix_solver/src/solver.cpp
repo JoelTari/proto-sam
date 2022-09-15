@@ -387,7 +387,7 @@ Eigen::MatrixXd sam::Inference::SolverSparseSupernodalLLT::compute_covariance(
 }
 
 std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
-           std::optional<typename SolverSparseSupernodalLLT::Covariance_t>,
+           std::shared_ptr<std::optional<typename SolverSparseSupernodalLLT::Covariance_t>>,
            typename SolverSparseSupernodalLLT::Stats_t>
     SolverSparseSupernodalLLT::solve(const Eigen::SparseMatrix<double>&                   A,
                                      const Eigen::VectorXd&                               b,
@@ -452,17 +452,17 @@ std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
   // if options.cache save matrixR
   // R = solver.matrixR().topLeftCorner(rank(),rank())
 
-  std::optional<Covariance_t> optional_covariance;
+  std::shared_ptr<std::optional<Covariance_t>> optional_covariance_ptr;
   if (options.compute_covariance)
   {
     PROFILE_SCOPE("compute covariance: supernodalLLT", sam_utils::JSONLogger::Instance());
     Eigen::SparseMatrix<double> I(A.cols(), A.cols());
     I.setIdentity();
-    optional_covariance = solver.solve(I);
+    optional_covariance_ptr = std::make_shared<std::optional<Covariance_t>>(solver.solve(I));
   }
   else
-    optional_covariance = std::nullopt;
+    optional_covariance_ptr = std::make_shared<std::optional<Covariance_t>>(std::nullopt);
 
 
-  return {map, optional_covariance, stats};   // R nnz number set at 0 (unused)
+  return {map, optional_covariance_ptr, stats};   // R nnz number set at 0 (unused)
 }
