@@ -108,6 +108,105 @@ namespace sam::Marginal
     MARGINAL_T                    marginal;
   };
 
+  //------------------------------------------------------------------//
+  //              competing marginal collection : vector              //
+  //------------------------------------------------------------------//
+  template <typename KEYMETA_T, typename... KEYMETA_Ts>
+  class MarginalsVectorCollection
+  {
+    public:
+      using type = MarginalsVectorCollection<KEYMETA_T, KEYMETA_Ts...>;
+      using Marginals_Data_t = std::tuple<
+        std::vector< WrapperPersistentMarginal<BaseMarginal<KEYMETA_T>>>,
+        std::vector< WrapperPersistentMarginal<BaseMarginal<KEYMETA_Ts>>>...>;
+
+    static constexpr std::size_t kNbMarginals {std::tuple_size_v<Marginals_Data_t>};
+
+    // main structure
+    Marginals_Data_t vectors_of_marginals;
+
+    // push back in correct container
+    template <typename Q_WMARG_T>
+    void push_back(const Q_WMARG_T& wmarg)
+    {
+      constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx_by_wmarg<Q_WMARG_T>();
+      std::get<TUPLE_IDX>(this->data_map_tuple).push_back(wmarg);
+      // TODO: run time assertion: verify that the key_id does not exist in other marginal type
+      // (e.g. having "x0" as a pose and "x0" as something else in another part of the tuple)
+    }
+
+
+    /**
+     * @brief get an idx in a tuple statically using the key meta type  (recursive until the meta
+     * matches)
+     *
+     * @tparam Q_MARGINAL_T
+     * @tparam I
+     *
+     * @return
+     */
+    template <typename Q_KEYMETA_T, std::size_t TUPLE_IDX = 0>
+    static constexpr std::size_t get_correct_tuple_idx()
+    {
+      static_assert(TUPLE_IDX < kNbMarginals);
+      // template metaprogramming is still horrible (written in the times of cpp17)
+      if constexpr (std::is_same_v<typename std::tuple_element_t<TUPLE_IDX, Marginals_Data_t>::
+                                       value_type::Marginal_t::KeyMeta_t,
+                                   Q_KEYMETA_T>)
+      {
+        return TUPLE_IDX;
+      }
+      else { return get_correct_tuple_idx<Q_KEYMETA_T, TUPLE_IDX + 1>(); }
+    }
+    /**
+     * @brief get an idx in a tuple statically using the marginal type  (recursive until the meta
+     * matches)
+     *
+     * @tparam Q_MARGINAL_T
+     * @tparam I
+     *
+     * @return
+     */
+    template <typename Q_WMARG_T, std::size_t TUPLE_IDX = 0>
+    static constexpr std::size_t get_correct_tuple_idx_by_wmarg()
+    {
+      static_assert(TUPLE_IDX < kNbMarginals);
+      if constexpr (std::is_same_v<
+                        typename std::tuple_element_t<TUPLE_IDX, Marginals_Data_t>::value_type,
+                        Q_WMARG_T>)
+      {
+        return TUPLE_IDX;
+      }
+      else { return get_correct_tuple_idx_by_wmarg<Q_WMARG_T, TUPLE_IDX + 1>(); }
+    }
+
+    template <typename Q_KEYMETA_T>
+    WrapperPersistentMarginal<BaseMarginal<Q_KEYMETA_T>> find_if(const std::string & key_id )
+    {
+      constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx<Q_KEYMETA_T>();
+      auto & vwm = std::get<TUPLE_IDX> (this->vectors_of_marginals); // vector of wmarginals
+      auto it = std::find_if(vwm.begin(), vwm.end(), [&key_id](const auto & wmarg){ return wmarg.key_id == key_id; });
+      if (it !=vwm.end())
+      {
+        throw std::runtime_error("marginal collection find_if:  key not found : "+ key_id);
+      }
+      return *it;
+    }
+
+  };
+
+  // specialization: if tuple of marginals is given, then extract whats inside the tuple and
+  // fallback to the struct above
+  template <typename KEYMETA_T, typename... KEYMETA_Ts>
+  class MarginalsVectorCollection<std::tuple<KEYMETA_T, KEYMETA_Ts...>>
+      : public MarginalsVectorCollection<KEYMETA_T, KEYMETA_Ts...>   // WOW !!
+  {
+  };
+  // is this one necessary ???
+  template <typename KEYMETA_T>
+  class MarginalsVectorCollection<std::tuple<KEYMETA_T>> : public MarginalsVectorCollection<KEYMETA_T>   // WOW !!
+  {
+  };
 
   //------------------------------------------------------------------//
   //                       MARGINALS CONTAINER                        //

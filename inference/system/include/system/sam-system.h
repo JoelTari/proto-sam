@@ -93,6 +93,18 @@ namespace sam::Inference
     double NLog_value_after;
   };
 
+  struct KeyDispatchInfos
+  {
+    // 'natural' means the order is decided by the data structure holding key's marginal
+    // 'semantic' refer to . E.g. [x0, x1,l0, l1, x2] has l1 natural semantic idx at 3
+    // 'scalar' is the idx in terms of scalar, accounting for the dimensions of the keys
+    // E.g. [x0, x1,l0, l1, x2] has l1 natural scalar idx at 8 if x* are dim 3 and l* are dim 2
+    //       This is useful when converting in matrix
+    std::size_t natural_semantic_idx;
+    std::size_t natural_scalar_idx;
+    std::unordered_set<std::string> neighbours;
+  };
+
 
 
   template <typename SOLVER_T,
@@ -128,6 +140,8 @@ namespace sam::Inference
         >;
 
     SystemHeader header;
+
+    std::unordered_map<std::string,KeyDispatchInfos> keys_affectation;
 
     static constexpr std::size_t kNbFactorTypes = 1 + sizeof...(FACTORS_Ts);
     static constexpr std::size_t kNbKeyTypes = std::tuple_size_v<KeyMetae_t>;
@@ -173,6 +187,7 @@ namespace sam::Inference
                                               , nnz_semantic_jacobian
                                               , semantic_M_type_idx_offsets
                                               , semantic_N_type_idx_offsets);
+
       OptimStats optim_stats;
 
       // NOTE: SolverStats might have ratio rnnz/N*N
@@ -250,12 +265,14 @@ namespace sam::Inference
                           //     , map_of_wrapped_marginals.begin()
                           //     , map_of_wrapped_marginals.end() 
                           //     , [&,this]( auto & kvpair)
-                          for(auto it_marg =map_of_wrapped_marginals.begin(); it_marg!=map_of_wrapped_marginals.end(); it_marg++) // WARNING: marginal refactor: vector will speed up
+                          std::size_t idx_marg = 0;
+                          for(auto it_marg =map_of_wrapped_marginals.begin(); it_marg!=map_of_wrapped_marginals.end(); it_marg++) // WARNING: marginal refactor: vector will speed up a bit (not much though)
                           {
                             std::string key_id = it_marg->first;
                             wrapped_marginal_t & wrapped_marginal = it_marg->second;
                             // get the subvector from the Maximum A Posteriori vector
-                            auto sysidx = KeyTypeStartIdx + std::distance(map_of_wrapped_marginals.begin(), it_marg)* kN ; // WARNING: marginal refactor std::distance has linear cost
+                            auto sysidx = KeyTypeStartIdx + idx_marg * kN ;
+                            idx_marg++;
                             auto MaP_subvector = MaP.block<kN,1>(sysidx, 0);
 
                             // clear previous history at first iteration
@@ -403,6 +420,7 @@ namespace sam::Inference
     // }
 
     Marginals_t all_marginals_;
+    Marginal::MarginalsVectorCollection<KeyMetae_t> all_vectors_marginals_;
 
     // there's at least one factor, the rest are expanded
     Wrapped_Factor_t all_factors_tuple_;
@@ -472,14 +490,28 @@ namespace sam::Inference
           typename FT::composite_of_opt_state_ptr_t tuple_of_opt_means_ptr
             = std::apply(
               [this](auto ... kcc) // copy, no big deal
-              {
-                return
-                  std::make_tuple
-                  ( 
-                     this->all_marginals_
-                       .template find_mean_ptr<typename decltype(kcc)::KeyMeta_t>(kcc.key_id) // WARNING: adverse cost when marginal refactor: perhaps transform vector of marginals in a std::map first (yes, in this method ! A slightly costlier emplace_factor method is not a big deal, this is not where bottleneck of the users API is)
-                      ... 
-                  );
+              { 
+                auto lambda = [this] (const auto & akcc)// -> std::optional<>
+                {
+                  using keymeta_t = typename std::remove_cvref_t<decltype(akcc)>::KeyMeta_t;
+                  // does the key exist ?
+                  if (auto it {this->keys_affectation.find(akcc.key_id)}; it != this->keys_affectation.end())
+                  {
+                    // yes ! => get the mean !
+                    return std::optional<std::shared_ptr<typename keymeta_t::key_t>>(this->all_vectors_marginals_.template find_if<keymeta_t>(akcc.key_id).shared_mean);
+                  }
+                  else return std::optional<std::shared_ptr<typename keymeta_t::key_t>>(std::nullopt);
+                };
+                return std::make_tuple( lambda(kcc)... );
+
+                // return
+                //   std::make_tuple
+                //   ( 
+                //       // TODO: marginal refactor: use keydispatch, then (if exists) vector.find_if to get the mean
+                //      this->all_marginals_
+                //        .template find_mean_ptr<typename decltype(kcc)::KeyMeta_t>(kcc.key_id) // WARNING: adverse cost when marginal refactor: perhaps transform vector of marginals in a std::map first (yes, in this method ! A slightly costlier emplace_factor method is not a big deal, this is not where bottleneck of the users API is)
+                //       ... 
+                //   );
               }, KccSet);
           // It is often the case that the above tuple contains at least 1 std::nullopt.
 

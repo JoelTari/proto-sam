@@ -64,7 +64,7 @@ namespace sam::Inference::MatrixConverter
           wfactors_tuple);
 
       array_t Offsets = {};
-      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1);
+      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1); // NOTE: exclusive_scan better ?
 
 #if ENABLE_DEBUG_TRACE
       std::cout << "Sizes (scalar) of vector of factor, by type: \n";
@@ -556,7 +556,7 @@ namespace sam::Inference::MatrixConverter
                                               using keymeta_t = typename std::remove_cvref_t<decltype(akcc)>::KeyMeta_t;
                                               constexpr std::size_t tuple_idx
                                                   = MARGINAL_COLLECTION_T::template get_correct_tuple_idx<keymeta_t>();
-                                              auto        it = std::get<tuple_idx>(marginal_data_tuple).find(akcc.key_id);   // WARNING: mark marginal.find usage (marginal vectorisation)
+                                              auto        it = std::get<tuple_idx>(marginal_data_tuple).find(akcc.key_id);   // WARNING: mark marginal.find usage (marginal vectorisation). Use map of keydispatch instead.
                                               std::size_t iterator_distance
                                                   = std::distance(std::get<tuple_idx>(marginal_data_tuple).begin(), it); // WARNING: linear cost // WARNING: marginal refactor: map -> vector
                                               return N_semantic_type_idx_offsets[tuple_idx] + iterator_distance;
