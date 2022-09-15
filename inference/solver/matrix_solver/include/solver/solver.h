@@ -57,12 +57,14 @@ namespace sam::Inference
     using Options_t    = SolverOptionsSparseQR;
     using MaP_t        = Eigen::VectorXd;
     using Covariance_t = Eigen::MatrixXd;
+    using OptCovariance_t = std::optional<Covariance_t>;
+    using OptCovariance_ptr_t = std::shared_ptr<std::optional<Covariance_t>>;
 
     constexpr static const char name[] = "SparseQR";
 
     static Eigen::MatrixXd compute_covariance(const Eigen::SparseMatrix<double>& A);
 
-    static std::tuple<MaP_t, std::optional<Covariance_t>, SolverStatsSparseQR>
+    static std::tuple<MaP_t, OptCovariance_ptr_t, SolverStatsSparseQR>
         solve(const Eigen::SparseMatrix<double>& A,
               const Eigen::VectorXd&             b,
               const SolverOptionsSparseQR&       options = SolverOptionsSparseQR());
@@ -103,13 +105,15 @@ namespace sam::Inference
     using Options_t    = SolverOptionsSparseNaive;
     using MaP_t        = Eigen::VectorXd;
     using Covariance_t = Eigen::MatrixXd;
+    using OptCovariance_t = std::optional<Covariance_t>;
+    using OptCovariance_ptr_t = std::shared_ptr<std::optional<Covariance_t>>;
 
     constexpr static const char name[] = "SparseNaive";
 
     static Eigen::MatrixXd compute_covariance(const Eigen::SparseMatrix<double>& A);
 
 
-    static std::tuple<MaP_t, std::optional<Covariance_t>, SolverStatsSparseNaive>
+    static std::tuple<MaP_t, OptCovariance_ptr_t, SolverStatsSparseNaive>
         solve(const Eigen::SparseMatrix<double>& A,
               const Eigen::VectorXd&             b,
               const SolverOptionsSparseNaive&    options = SolverOptionsSparseNaive());
@@ -153,10 +157,12 @@ namespace sam::Inference
     using Options_t    = SolverOptionsSparseSimplicialLLT;
     using MaP_t        = Eigen::VectorXd;
     using Covariance_t = Eigen::MatrixXd;
+    using OptCovariance_t = std::optional<Covariance_t>;
+    using OptCovariance_ptr_t = std::shared_ptr<std::optional<Covariance_t>>;
 
     constexpr static const char name[] = "SparseSimplicialLLT";
 
-    static std::tuple<MaP_t, std::optional<Covariance_t>, SolverStatsSparseSimplicialLLT>
+    static std::tuple<MaP_t, OptCovariance_ptr_t, SolverStatsSparseSimplicialLLT>
         solve(const Eigen::SparseMatrix<double>&      A,
               const Eigen::VectorXd&                  b,
               const SolverOptionsSparseSimplicialLLT& options = SolverOptionsSparseSimplicialLLT());
@@ -199,10 +205,12 @@ namespace sam::Inference
     using Options_t    = SolverOptionsSparsePardisoLLT;
     using MaP_t        = Eigen::VectorXd;
     using Covariance_t = Eigen::MatrixXd;
+    using OptCovariance_t = std::optional<Covariance_t>;
+    using OptCovariance_ptr_t = std::shared_ptr<std::optional<Covariance_t>>;
 
     constexpr static const char name[] = "PardisoLLT";
 
-    static std::tuple<MaP_t, std::optional<Covariance_t>, SolverStatsSparsePardisoLLT>
+    static std::tuple<MaP_t, OptCovariance_ptr_t, SolverStatsSparsePardisoLLT>
         solve(const Eigen::SparseMatrix<double>&   A,
               const Eigen::VectorXd&               b,
               const SolverOptionsSparsePardisoLLT& options = SolverOptionsSparsePardisoLLT());
@@ -245,12 +253,14 @@ namespace sam::Inference
     using Options_t    = SolverOptionsSPQR;
     using MaP_t        = Eigen::VectorXd;
     using Covariance_t = Eigen::MatrixXd;
+    using OptCovariance_t = std::optional<Covariance_t>;
+    using OptCovariance_ptr_t = std::shared_ptr<std::optional<Covariance_t>>;
 
     constexpr static const char name[] = "SPQR";
 
     static Eigen::MatrixXd compute_covariance(const Eigen::SparseMatrix<double>& A);
 
-    static std::tuple<MaP_t, std::optional<Covariance_t>, SolverStatsSPQR>
+    static std::tuple<MaP_t, OptCovariance_ptr_t, SolverStatsSPQR>
         solve(const Eigen::SparseMatrix<double>& A,
               const Eigen::VectorXd&             b,
               const SolverOptionsSPQR&           options = SolverOptionsSPQR());
@@ -294,12 +304,14 @@ namespace sam::Inference
     using Options_t    = SolverOptionsSparseSupernodalLLT;
     using MaP_t        = Eigen::VectorXd;
     using Covariance_t = Eigen::MatrixXd;
+    using OptCovariance_t = std::optional<Covariance_t>;
+    using OptCovariance_ptr_t = std::shared_ptr<std::optional<Covariance_t>>;
 
     constexpr static const char name[] = "SparseCholdmodSupernodalLLT";
 
     static Eigen::MatrixXd compute_covariance(const Eigen::SparseMatrix<double>& A);
 
-    static std::tuple<MaP_t, std::shared_ptr<std::optional<Covariance_t>>, SolverStatsSparseSupernodalLLT>
+    static std::tuple<MaP_t, OptCovariance_ptr_t, SolverStatsSparseSupernodalLLT>
         solve(const Eigen::SparseMatrix<double>&      A,
               const Eigen::VectorXd&                  b,
               const SolverOptionsSparseSupernodalLLT& options = SolverOptionsSparseSupernodalLLT());

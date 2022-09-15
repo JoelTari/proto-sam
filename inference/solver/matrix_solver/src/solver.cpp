@@ -22,7 +22,7 @@ Eigen::MatrixXd
 
 
 std::tuple<typename SolverSparseQR::MaP_t,
-           std::optional<typename SolverSparseQR::Covariance_t>,
+           typename SolverSparseQR::OptCovariance_ptr_t,
            typename SolverSparseQR::Stats_t>
     SolverSparseQR::solve(const Eigen::SparseMatrix<double>&        A,
                           const Eigen::VectorXd&                    b,
@@ -71,13 +71,13 @@ std::tuple<typename SolverSparseQR::MaP_t,
   // if options.cache save matrixR
   // R = solver.matrixR().topLeftCorner(rank(),rank())
 
-  std::optional<Covariance_t> optional_covariance;
-  if (options.compute_covariance) { optional_covariance = SolverSparseQR::compute_covariance(A); }
+  OptCovariance_ptr_t optional_covariance_ptr;
+  if (options.compute_covariance) { optional_covariance_ptr = std::make_shared<OptCovariance_t>( SolverSparseQR::compute_covariance(A)); }
   else
-    optional_covariance = std::nullopt;
+    optional_covariance_ptr = std::make_shared<OptCovariance_t>( std::nullopt);
 
 
-  return {map, optional_covariance, stats};   // R nnz number set at 0 (unused)
+  return {map, optional_covariance_ptr, stats};   // R nnz number set at 0 (unused)
 }
 
 
@@ -101,9 +101,9 @@ Eigen::MatrixXd SolverSparseNaive::compute_covariance(const Eigen::SparseMatrix<
   // BLAS/LAPACK + TBB active) The dense method is the only one that manages to use all cores.
 }
 
-std::tuple<SolverSparseNaive::MaP_t,
-           std::optional<SolverSparseNaive::Covariance_t>,
-           SolverSparseNaive::Stats_t>
+std::tuple<typename SolverSparseNaive::MaP_t,
+           typename SolverSparseNaive::OptCovariance_ptr_t,
+           typename SolverSparseNaive::Stats_t>
     SolverSparseNaive::solve(const Eigen::SparseMatrix<double>&  A,
                              const Eigen::VectorXd&              b,
                              const SolverSparseNaive::Options_t& options)
@@ -113,16 +113,18 @@ std::tuple<SolverSparseNaive::MaP_t,
   // stats
   SolverStatsSparseNaive stats;
 
-  auto S = compute_covariance(A);
+  // (not really-)optional covariance
+  OptCovariance_ptr_t optional_covariance_ptr = std::make_shared<OptCovariance_t>( compute_covariance(A));
 
   // MAP
   Eigen::VectorXd X_map;
   {
     PROFILE_SCOPE("Xmap = Covariance times information vector", sam_utils::JSONLogger::Instance());
 
-    X_map = S
+    X_map = optional_covariance_ptr->value()
             * (A.transpose()
                * b);   // the parenthesis are important (e.g. : 11 ms vs 210 ms without !)
+    // OPTIMIZE: use future for At*b
   }
 
 
@@ -133,22 +135,15 @@ std::tuple<SolverSparseNaive::MaP_t,
 
   // if options.cache save covariance
   // R = solver.matrixR().topLeftCorner(rank(),rank())
-  std::optional<Covariance_t> optional_covariance;
-  if (options.compute_covariance)
-    optional_covariance = S;
-  else
-    optional_covariance = std::nullopt;
 
-  // FIX: return covariance value seems to create a copy:   110 ms, maybe just use a shared_ptr
-  // this is probably a quirk of optional that prevent RVO of the big underlying object
-  return {X_map, optional_covariance, stats};
+  return {X_map, optional_covariance_ptr, stats};
 }
 
 //------------------------------------------------------------------//
 //                      Sparse SimplicialLLT Solver                      //
 //------------------------------------------------------------------//
 std::tuple<SolverSparseSimplicialLLT::MaP_t,
-           std::optional<SolverSparseSimplicialLLT::Covariance_t>,
+           SolverSparseSimplicialLLT::OptCovariance_ptr_t,
            SolverSparseSimplicialLLT::Stats_t>
     SolverSparseSimplicialLLT::solve(const Eigen::SparseMatrix<double>&          A,
                                      const Eigen::VectorXd&                      b,
@@ -196,23 +191,23 @@ std::tuple<SolverSparseSimplicialLLT::MaP_t,
 
   // if options.cache save matrixL
 
-  std::optional<SolverSparseSimplicialLLT::Covariance_t> optional_covariance;
+  OptCovariance_ptr_t optional_covariance_ptr;
   if (options.compute_covariance)
   {
     PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
-    optional_covariance = Eigen::MatrixXd(H).inverse();
+    optional_covariance_ptr = std::make_shared<OptCovariance_t>( Eigen::MatrixXd(H).inverse());
   }
   else
-    optional_covariance = std::nullopt;
+    optional_covariance_ptr = std::make_shared<OptCovariance_t>( std::nullopt);
 
-  return {map, optional_covariance, stats};
+  return {map, optional_covariance_ptr, stats};
 }
 
 //------------------------------------------------------------------//
 //                      Sparse PardisoLLT Solver                      //
 //------------------------------------------------------------------//
 std::tuple<SolverSparsePardisoLLT::MaP_t,
-           std::optional<SolverSparsePardisoLLT::Covariance_t>,
+           SolverSparsePardisoLLT::OptCovariance_ptr_t,
            SolverSparsePardisoLLT::Stats_t>
     SolverSparsePardisoLLT::solve(const Eigen::SparseMatrix<double>&       A,
                                   const Eigen::VectorXd&                   b,
@@ -260,18 +255,18 @@ std::tuple<SolverSparsePardisoLLT::MaP_t,
 
   // if options.cache save matrixL
 
-  std::optional<SolverSparsePardisoLLT::Covariance_t> optional_covariance;
+  OptCovariance_ptr_t optional_covariance_ptr;
   if (options.compute_covariance)
   {
     PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
     // todo: maybe see if, by chance, pardiso solver over I exploits multiple cores
     // (see the comment in the compute_covariance methods for reference)
-    optional_covariance = Eigen::MatrixXd(H).inverse();
+    optional_covariance_ptr = std::make_shared<OptCovariance_t>( Eigen::MatrixXd(H).inverse());
   }
   else
-    optional_covariance = std::nullopt;
+    optional_covariance_ptr = std::make_shared<OptCovariance_t>( std::nullopt);
 
-  return {map, optional_covariance, stats};
+  return {map, optional_covariance_ptr, stats};
 }
 
 //------------------------------------------------------------------//
@@ -296,7 +291,7 @@ Eigen::MatrixXd sam::Inference::SolverSPQR::compute_covariance(const Eigen::Spar
 // https://eigen.tuxfamily.org/dox/classEigen_1_1SPQR.html
 
 std::tuple<typename SolverSPQR::MaP_t,
-           std::optional<typename SolverSPQR::Covariance_t>,
+           typename SolverSPQR::OptCovariance_ptr_t,
            typename SolverSPQR::Stats_t>
     SolverSPQR::solve(const Eigen::SparseMatrix<double>&    A,
                       const Eigen::VectorXd&                b,
@@ -351,13 +346,13 @@ std::tuple<typename SolverSPQR::MaP_t,
   // if options.cache save matrixR
   // R = solver.matrixR().topLeftCorner(rank(),rank())
 
-  std::optional<Covariance_t> optional_covariance;
-  if (options.compute_covariance) { optional_covariance = SolverSPQR::compute_covariance(A); }
+  OptCovariance_ptr_t optional_covariance_ptr;
+  if (options.compute_covariance) { optional_covariance_ptr = std::make_shared<OptCovariance_t>( SolverSPQR::compute_covariance(A)); }
   else
-    optional_covariance = std::nullopt;
+    optional_covariance_ptr = std::make_shared<OptCovariance_t>( std::nullopt);
 
 
-  return {map, optional_covariance, stats};   // R nnz number set at 0 (unused)
+  return {map, optional_covariance_ptr, stats};   // R nnz number set at 0 (unused)
 }
 
 
@@ -387,7 +382,7 @@ Eigen::MatrixXd sam::Inference::SolverSparseSupernodalLLT::compute_covariance(
 }
 
 std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
-           std::shared_ptr<std::optional<typename SolverSparseSupernodalLLT::Covariance_t>>,
+           typename SolverSparseSupernodalLLT::OptCovariance_ptr_t,
            typename SolverSparseSupernodalLLT::Stats_t>
     SolverSparseSupernodalLLT::solve(const Eigen::SparseMatrix<double>&                   A,
                                      const Eigen::VectorXd&                               b,
@@ -452,17 +447,23 @@ std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
   // if options.cache save matrixR
   // R = solver.matrixR().topLeftCorner(rank(),rank())
 
-  std::shared_ptr<std::optional<Covariance_t>> optional_covariance_ptr;
+  OptCovariance_ptr_t optional_covariance_ptr;
   if (options.compute_covariance)
   {
     PROFILE_SCOPE("compute covariance: supernodalLLT", sam_utils::JSONLogger::Instance());
     Eigen::SparseMatrix<double> I(A.cols(), A.cols());
     I.setIdentity();
-    optional_covariance_ptr = std::make_shared<std::optional<Covariance_t>>(solver.solve(I));
+    optional_covariance_ptr = std::make_shared<OptCovariance_t>(solver.solve(I));
   }
   else
-    optional_covariance_ptr = std::make_shared<std::optional<Covariance_t>>(std::nullopt);
+    optional_covariance_ptr = std::make_shared<OptCovariance_t>(std::nullopt);
 
-
+  // std::shared_ptr<OptCovariance_t> opt_cov_ptr;
+  // {
+  //   PROFILE_SCOPE("make shared opt cov", sam_utils::JSONLogger::Instance());
+  //   // WOW: this create a copy
+  //   // FIX: large  copy, it is best to compute covariance in the make_shared to leverage RVO (not before!)
+  //   opt_cov_ptr = std::make_shared<OptCovariance_t>(optional_covariance);
+  // }
   return {map, optional_covariance_ptr, stats};   // R nnz number set at 0 (unused)
 }
