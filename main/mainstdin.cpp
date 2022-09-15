@@ -6,12 +6,12 @@
 #include <fstream>
 #include <iostream>
 
-using Solver_t = typename sam::Inference::SolverSparseQR;
-// using solver_t = typename sam::Inference::SolverNaive;
-// using solver_t = typename sam::Inference::SolverSimplicialLLT;
-// using solver_t = typename sam::Inference::SolverPardisoLLT;
-// using solver_t = typename sam::Inference::SolverSPQR;
-// using solver_t = typename sam::Inference::SolverSupernodalLLT;
+// using Solver_t = typename sam::Inference::SolverSparseQR;
+// using Solver_t = typename sam::Inference::SolverSparseNaive;
+// using Solver_t = typename sam::Inference::SolverSparseSimplicialLLT;
+// using Solver_t = typename sam::Inference::SolverSparsePardisoLLT;
+// using Solver_t = typename sam::Inference::SolverSPQR;
+using Solver_t = typename sam::Inference::SolverSparseSupernodalLLT;
 using InferenceSystem_t = typename sam::Inference::System<Solver_t,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
 
 //------------------------------------------------------------------//

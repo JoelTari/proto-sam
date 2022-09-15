@@ -1,4 +1,5 @@
 #include "solver/solver.h"
+#include <future>
 
 using namespace ::sam::Inference;
 
@@ -349,6 +350,111 @@ std::tuple<typename SolverSPQR::MaP_t,
 
   std::optional<Covariance_t> optional_covariance;
   if (options.compute_covariance) { optional_covariance = SolverSPQR::compute_covariance(A); }
+  else
+    optional_covariance = std::nullopt;
+
+
+  return {map, optional_covariance, stats};   // R nnz number set at 0 (unused)
+}
+
+
+//------------------------------------------------------------------//
+//                    Sparse Cholmod supernodal                     //
+//------------------------------------------------------------------//
+Eigen::MatrixXd
+    sam::Inference::SolverSparseSupernodalLLT::compute_covariance(const Eigen::SparseMatrix<double>& A)
+{
+  PROFILE_SCOPE("compute covariance: dense",sam_utils::JSONLogger::Instance());
+  Eigen::SparseMatrix<double>                       H = A.transpose() * A;
+  Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> invsolver;
+  invsolver.compute(H);
+  Eigen::SparseMatrix<double> I(A.cols(), A.cols());
+  I.setIdentity();
+  // Eigen::MatrixXd H_inv = invsolver.solve(I);
+  // return Eigen::MatrixXd(H_inv);
+  return invsolver.solve(I);
+  // return Eigen::MatrixXd(H).inverse();
+  // roughly:
+  // - dense inverse : 3s
+  // - LLT supernodal : 2s
+  // - SparseLU and SimplicialLLT takes 38s, 
+  // - sparseQR takes way longer
+  // so the dense .inverse() method is best performing (all tests done with -o3 + mkl BLAS/LAPACK + TBB active)
+  // The dense method is the only one that manages to use all cores.
+}
+
+std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
+           std::optional<typename SolverSparseSupernodalLLT::Covariance_t>,
+           typename SolverSparseSupernodalLLT::Stats_t>
+    SolverSparseSupernodalLLT::solve(const Eigen::SparseMatrix<double>&        A,
+                          const Eigen::VectorXd&                    b,
+                          const typename SolverSparseSupernodalLLT::Options_t& options)
+{
+  std::string scope_name = "Solve with " + std::string(SolverSparseSupernodalLLT::name);
+  PROFILE_SCOPE( scope_name.c_str() ,sam_utils::JSONLogger::Instance());
+  // stats
+  Stats_t stats;
+  // launching some future: AtA and Atb
+  std::future<Eigen::SparseMatrix<double>> H_future = std::async(std::launch::async, 
+      [&A]()-> Eigen::SparseMatrix<double>
+      { 
+        PROFILE_SCOPE("H = A^T * A", sam_utils::JSONLogger::Instance());
+        return A.transpose()*A; 
+      } );
+  std::future<Eigen::VectorXd> rhs_future = std::async(std::launch::async, 
+      [&A,&b]()-> Eigen::VectorXd
+      { 
+        PROFILE_SCOPE("A^T * b", sam_utils::JSONLogger::Instance());
+        return Eigen::VectorXd(A.transpose()*b); 
+      } );
+  // declaring the solver
+  Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> solver; 
+  // MAP
+  {
+    PROFILE_SCOPE("Chol decomposition", sam_utils::JSONLogger::Instance());
+    auto H = H_future.get(); // can't call .get() twice
+    {
+      PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
+      solver.analyzePattern(H); // 2.7 ms
+    }
+    {
+      PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
+      solver.factorize(H);   // complex: 8 ms
+    }
+  }
+
+  auto back_substitution = [](auto& solver,const auto& rhs)
+  {
+    PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
+    Eigen::VectorXd map = solver.solve(rhs);
+    return map;
+  };
+
+  auto map = back_substitution(solver, rhs_future.get());
+#if ENABLE_DEBUG_TRACE
+  {
+    std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
+    std::cout << "### Syst solver : " << (solver.info() ? "FAIL" : "SUCCESS") << "\n";
+    // info : enum Success, NumericalIssue, NoConvergence, InvalidInput
+  }
+#endif
+  stats.success       = (solver.info() == 0);
+  stats.report_str    = "";   //  str(info);
+  // stats.rnnz          = solver.matrixR().nonZeros();
+  stats.input_options = options;
+  // stats.ordering = solver.colsPermutation(); (will depend on the desired structure)
+
+  // if options.cache save matrixR
+  // R = solver.matrixR().topLeftCorner(rank(),rank())
+
+  std::optional<Covariance_t> optional_covariance;
+  if (options.compute_covariance) 
+  { 
+    PROFILE_SCOPE("compute covariance: supernodalLLT", sam_utils::JSONLogger::Instance());
+    Eigen::SparseMatrix<double> I(A.cols(),A.cols());
+    I.setIdentity();
+    optional_covariance = solver.solve(I);
+  }
   else
     optional_covariance = std::nullopt;
 
