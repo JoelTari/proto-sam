@@ -108,7 +108,7 @@ namespace sam::Inference
                                     >::type;
 
     // declare marginal container type of those keymetas
-    using Marginals_t = typename ::sam::Marginal::MarginalsCollection<KeyMetae_t>::type ;
+    using MapMarginals_t = typename ::sam::Marginal::MarginalsCollection<KeyMetae_t>::type ;
 
     using type = System<SOLVER_T,FACTOR_T,FACTORS_Ts...>;
 
@@ -410,15 +410,33 @@ namespace sam::Inference
     }
 
     
-    // auto get_marginals_as_map() const
-    // {
-    //   // WARNING: translate the vector into a map (key is key_id)
-    //   // motivation: don't assume users utilisation of the key marginals collection
-    //   //             e.g. for json it is better to have a vector
-    //   //                  for most other purposes better to have a map
-    // }
+    MapMarginals_t get_marginals_as_map() const
+    {
+      // motivation: don't assume users utilisation of the key marginals collection
+      //             e.g. for json it is better to have a vector
+      //                  for most other purposes better to have a map
+      MapMarginals_t map_of_wmarginals;
+      std::apply([&](const auto & ...vwm)
+          {
+            ((
+              std::for_each(
+                vwm.begin(),vwm.end(),
+                [&](const auto & wm)
+                {
+                     map_of_wmarginals
+                    .template 
+                    insert_in_marginal_container
+                    <typename std::remove_cvref_t<decltype(wm)>::Marginal_t>
+                    (wm.key_id,wm);
+                }
+                )
+             ),...);
+          }
+          ,this->all_vectors_marginals_.vectors_of_marginals);
+      return map_of_wmarginals;
+    }
 
-    Marginals_t all_marginals_;
+    // Marginals_t all_marginals_;
     using Vectors_Marginals_t = Marginal::MarginalsVectorCollection<KeyMetae_t>;
     Vectors_Marginals_t all_vectors_marginals_;
     
