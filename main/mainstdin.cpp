@@ -11,8 +11,9 @@
 // using Solver_t = typename sam::Inference::SolverSparseSimplicialLLT;
 // using Solver_t = typename sam::Inference::SolverSparsePardisoLLT;
 // using Solver_t = typename sam::Inference::SolverSPQR;
-using Solver_t = typename sam::Inference::SolverSparseSupernodalLLT;
-using InferenceSystem_t = typename sam::Inference::System<Solver_t,sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+using Solver_t          = typename sam::Inference::SolverSparseSupernodalLLT;
+using InferenceSystem_t = typename sam::Inference::
+    System<Solver_t, sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
 
 //------------------------------------------------------------------//
 //                               MAIN                               //
@@ -54,7 +55,7 @@ int main(int argc, char* argv[])
 #endif
 
   PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
-  auto syst = InferenceSystem_t(argId);
+  auto syst   = InferenceSystem_t(argId);
   int  fcount = 0;
 
   {

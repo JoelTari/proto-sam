@@ -76,8 +76,8 @@ namespace sam::Marginal
 
     void clear_history() { this->marginal_histories.clear(); }
 
-    // // copy assignment (explicit otherwise default copy assignment fails because of const members)
-    // WrapperPersistentMarginal<MARGINAL_T>&
+    // // copy assignment (explicit otherwise default copy assignment fails because of const
+    // members) WrapperPersistentMarginal<MARGINAL_T>&
     //     operator=(const WrapperPersistentMarginal<MARGINAL_T>& other)
     // {
     //   if (this == &other) return *this;
@@ -92,20 +92,20 @@ namespace sam::Marginal
     //   return *this;
     // }
 
-  //   // copy ctor (ro3)
-  //   WrapperPersistentMarginal<MARGINAL_T>(const WrapperPersistentMarginal<MARGINAL_T>& other)
-  //       : shared_mean(other.shared_mean)
-  //       , key_id(other.key_id)
-  //       , marginal(other.marginal)
-  //       , marginal_histories(other.marginal_histories)
-  //   {
-  //   }
-  //
-  //   // destructor (ro3)
-  //   ~WrapperPersistentMarginal<MARGINAL_T>() {}
-  //
+    //   // copy ctor (ro3)
+    //   WrapperPersistentMarginal<MARGINAL_T>(const WrapperPersistentMarginal<MARGINAL_T>& other)
+    //       : shared_mean(other.shared_mean)
+    //       , key_id(other.key_id)
+    //       , marginal(other.marginal)
+    //       , marginal_histories(other.marginal_histories)
+    //   {
+    //   }
+    //
+    //   // destructor (ro3)
+    //   ~WrapperPersistentMarginal<MARGINAL_T>() {}
+    //
     std::shared_ptr<Mean_t> shared_mean;   // keep const ! seen by other system class (wfactors...)
-    MARGINAL_T                    marginal;
+    MARGINAL_T              marginal;
   };
 
   //------------------------------------------------------------------//
@@ -115,10 +115,10 @@ namespace sam::Marginal
   class MarginalsVectorCollection
   {
     public:
-      using type = MarginalsVectorCollection<KEYMETA_T, KEYMETA_Ts...>;
-      using Marginals_Data_t = std::tuple<
-        std::vector< WrapperPersistentMarginal<BaseMarginal<KEYMETA_T>>>,
-        std::vector< WrapperPersistentMarginal<BaseMarginal<KEYMETA_Ts>>>...>;
+    using type = MarginalsVectorCollection<KEYMETA_T, KEYMETA_Ts...>;
+    using Marginals_Data_t
+        = std::tuple<std::vector<WrapperPersistentMarginal<BaseMarginal<KEYMETA_T>>>,
+                     std::vector<WrapperPersistentMarginal<BaseMarginal<KEYMETA_Ts>>>...>;
 
     static constexpr std::size_t kNbMarginals {std::tuple_size_v<Marginals_Data_t>};
 
@@ -181,18 +181,19 @@ namespace sam::Marginal
     }
 
     template <typename Q_KEYMETA_T>
-    WrapperPersistentMarginal<BaseMarginal<Q_KEYMETA_T>> find_if(const std::string & key_id )
+    WrapperPersistentMarginal<BaseMarginal<Q_KEYMETA_T>> find_if(const std::string& key_id)
     {
       constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx<Q_KEYMETA_T>();
-      auto & vwm = std::get<TUPLE_IDX> (this->vectors_of_marginals); // vector of wmarginals
-      auto it = std::find_if(vwm.begin(), vwm.end(), [&key_id](const auto & wmarg){ return wmarg.key_id == key_id; });
-      if (it ==vwm.end())
+      auto& vwm = std::get<TUPLE_IDX>(this->vectors_of_marginals);   // vector of wmarginals
+      auto  it  = std::find_if(vwm.begin(),
+                             vwm.end(),
+                             [&key_id](const auto& wmarg) { return wmarg.key_id == key_id; });
+      if (it == vwm.end())
       {
-        throw std::runtime_error("marginal collection find_if:  key not found : "+ key_id);
+        throw std::runtime_error("marginal collection find_if:  key not found : " + key_id);
       }
       return *it;
     }
-
   };
 
   // specialization: if tuple of marginals is given, then extract whats inside the tuple and
@@ -204,7 +205,8 @@ namespace sam::Marginal
   };
   // is this one necessary ???
   template <typename KEYMETA_T>
-  class MarginalsVectorCollection<std::tuple<KEYMETA_T>> : public MarginalsVectorCollection<KEYMETA_T>   // WOW !!
+  class MarginalsVectorCollection<std::tuple<KEYMETA_T>>
+      : public MarginalsVectorCollection<KEYMETA_T>   // WOW !!
   {
   };
 
@@ -426,7 +428,8 @@ namespace sam::Marginal
   {
   };
   template <typename KEYMETA_T>
-  class MarginalsCollection<std::tuple<KEYMETA_T>> : public MarginalsCollection<KEYMETA_T>   // WOW !!
+  class MarginalsCollection<std::tuple<KEYMETA_T>>
+      : public MarginalsCollection<KEYMETA_T>   // WOW !!
   {
   };
 }   // namespace sam::Marginal
