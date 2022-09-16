@@ -76,8 +76,8 @@ TEST(ToyLinearSystem, Square)
 
   // std::this_thread::sleep_for(std::chrono::seconds(1));
   std::cout << " Pre Optimised points: \n";
-  auto sys_marginals = syst.get_marginals();
-  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
+  auto sys_marginals = syst.get_marginals_as_map();
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals.data_map_tuple);
 
   try
   {
@@ -90,9 +90,9 @@ TEST(ToyLinearSystem, Square)
 #endif
   }
   std::cout << " After optimisation: \n";
-  sys_marginals = syst.get_marginals();   // map {keyid : marginal} (tuple of maps, because
+  sys_marginals = syst.get_marginals_as_map();   // map {keyid : marginal} (tuple of maps, because
                                           // marginals are not all the same type)
-  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals.data_map_tuple);
 
   // test: print all marginals, register values, hardcode them, and google test them
   // after optim
@@ -102,25 +102,16 @@ TEST(ToyLinearSystem, Square)
   auto expected_x0map = ::sam::Key::Spatial2d_t(-4.034e-18, 1.862e-16);
 
   // sys_marginals is a 1-uple, let's simplify
-  auto all_position2d = std::get<0>(sys_marginals);
 
 
   std::cout << ::sam::Meta::Key::Spatial2d::stringify_key_oneliner(
-      *all_position2d.find("x3")->second.shared_mean)
+      *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("x3").value()))
             << '\n';
 
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x0",
-                                                 expected_x0map,
-                                                 *all_position2d.find("x0")->second.shared_mean,1e3); // 1000s precision, since we are close zero (1e-19), and the way the precision works, this is ok
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x1",
-                                                 expected_x1map,
-                                                 *all_position2d.find("x1")->second.shared_mean);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x2",
-                                                 expected_x2map,
-                                                 *all_position2d.find("x2")->second.shared_mean);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x3",
-                                                 expected_x3map,
-                                                 *all_position2d.find("x3")->second.shared_mean);
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x0", expected_x0map, *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("x0").value()),1e3); // 1000s precision, since we are close zero (1e-19), and the way the precision works, this is ok
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x1", expected_x1map, *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("x1").value()));
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x2", expected_x2map, *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("x2").value()));
+  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>("x3", expected_x3map, *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("x3").value()));
 
   // additional test: remove f5
   int nbfactors_before = 

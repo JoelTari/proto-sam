@@ -186,8 +186,8 @@ TEST(ToySLAMSE2System, Manif)
 
   // get init point before optimisation
   std::cout << "Before Optimisation:\n";
-  auto sys_marginals = sys.get_marginals();
-  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
+  auto sys_marginals = sys.get_marginals_as_map();
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals.data_map_tuple);
   auto expected_b4_init = ::sam::Key::Spatial2d_t(15.05, 4.589);
   auto expected_b2_init = ::sam::Key::Spatial2d_t(10.38, 4.332);
   auto expected_b3_init = ::sam::Key::Spatial2d_t(15.05, -5.006);
@@ -198,44 +198,44 @@ TEST(ToySLAMSE2System, Manif)
   auto expected_x0_init = ::sam::Key::SpatialSE2_t(10, 1, -0.5236);
 
   // auto all_positionSE2 =
-  auto all_positionSE2      = std::get<1>(sys_marginals);
-  auto all_positionLandmark = std::get<0>(sys_marginals);
+  // auto all_positionSE2      = std::get<1>(sys_marginals);
+  // auto all_positionLandmark = std::get<0>(sys_marginals);
   EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>("x0",
                                                   expected_x0_init,
-                                                  *all_positionSE2.find("x0")->second.shared_mean);
+                                                  *(sys_marginals.find_mean_ptr<sam::Meta::Key::SpatialSE2>("x0").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>("x1",
                                                   expected_x1_init,
-                                                  *all_positionSE2.find("x1")->second.shared_mean);
+                                                  *(sys_marginals.find_mean_ptr<sam::Meta::Key::SpatialSE2>("x1").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>("x2",
                                                   expected_x2_init,
-                                                  *all_positionSE2.find("x2")->second.shared_mean);
+                                                  *(sys_marginals.find_mean_ptr<sam::Meta::Key::SpatialSE2>("x2").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b0",
       expected_b0_init,
-      *all_positionLandmark.find("b0")->second.shared_mean);
+      *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b0").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b1",
       expected_b1_init,
-      *all_positionLandmark.find("b1")->second.shared_mean);
+      *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b1").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b2",
       expected_b2_init,
-      *all_positionLandmark.find("b2")->second.shared_mean);
+          *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b2").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b3",
       expected_b3_init,
-      *all_positionLandmark.find("b3")->second.shared_mean);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
+      *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b3").value()));
+EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b4",
       expected_b4_init,
-      *all_positionLandmark.find("b4")->second.shared_mean);
+    *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b4").value()));
 
   sys.sam_optimise();
 
   // get Keys after optimisation
   std::cout << "After Optimisation:\n";
-  sys_marginals        = sys.get_marginals();
-  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals);
+  sys_marginals        = sys.get_marginals_as_map();
+  std::cout << ::sam::Marginal::stringify_marginal_container_block(sys_marginals.data_map_tuple);
 
   auto expected_b4_map = ::sam::Key::Spatial2d_t(14.89, 4.983);
   auto expected_b2_map = ::sam::Key::Spatial2d_t(9.981, 5.01);
@@ -246,37 +246,37 @@ TEST(ToySLAMSE2System, Manif)
   auto expected_x1_map = ::sam::Key::SpatialSE2_t(12.32, -1.019, -0.9104);
   auto expected_x0_map = ::sam::Key::SpatialSE2_t(10, 1, -0.5236);
 
-  all_positionSE2      = std::get<1>(sys_marginals);
-  all_positionLandmark = std::get<0>(sys_marginals);
+  // all_positionSE2      = std::get<1>(sys_marginals);
+  // all_positionLandmark = std::get<0>(sys_marginals);
   EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>("x0",
                                                   expected_x0_map,
-                                                  *all_positionSE2.find("x0")->second.shared_mean);
+                                                  *(sys_marginals.find_mean_ptr<sam::Meta::Key::SpatialSE2>("x0").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>("x1",
                                                   expected_x1_map,
-                                                  *all_positionSE2.find("x1")->second.shared_mean);
+                                                  *(sys_marginals.find_mean_ptr<sam::Meta::Key::SpatialSE2>("x1").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::SpatialSE2>("x2",
                                                   expected_x2_map,
-                                                  *all_positionSE2.find("x2")->second.shared_mean);
+                                                  *(sys_marginals.find_mean_ptr<sam::Meta::Key::SpatialSE2>("x2").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b0",
       expected_b0_map,
-      *all_positionLandmark.find("b0")->second.shared_mean);
+      *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b0").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b1",
       expected_b1_map,
-      *all_positionLandmark.find("b1")->second.shared_mean);
+      *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b1").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b2",
       expected_b2_map,
-      *all_positionLandmark.find("b2")->second.shared_mean);
+          *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b2").value()));
   EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b3",
       expected_b3_map,
-      *all_positionLandmark.find("b3")->second.shared_mean);
-  EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
+      *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b3").value()));
+EXPECT_KEY_APPROX<::sam::Meta::Key::Spatial2d>(
       "b4",
       expected_b4_map,
-      *all_positionLandmark.find("b4")->second.shared_mean);
+    *(sys_marginals.find_mean_ptr<sam::Meta::Key::Spatial2d>("b4").value()));
 
   
   // additional test: remove f5

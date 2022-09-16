@@ -418,16 +418,16 @@ namespace sam::Inference
       MapMarginals_t map_of_wmarginals;
       std::apply([&](const auto & ...vwm)
           {
-            ((
-              std::for_each(
+            (
+              (std::for_each(
                 vwm.begin(),vwm.end(),
                 [&](const auto & wm)
                 {
                      map_of_wmarginals
                     .template 
                     insert_in_marginal_container
-                    <typename std::remove_cvref_t<decltype(wm)>::Marginal_t>
-                    (wm.key_id,wm);
+                    <typename std::remove_cvref_t<decltype(vwm)>::value_type>
+                    (wm);
                 }
                 )
              ),...);
