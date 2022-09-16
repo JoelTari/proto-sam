@@ -1,6 +1,5 @@
 #pragma once
 
-#include "MatrixConverter.hpp"
 #include "marginal/marginal.h"
 #include "utils/config.h"
 #include "utils/tuple_patterns.h"
@@ -257,7 +256,7 @@ namespace sam::Inference
                           //     , map_of_wrapped_marginals.end() 
                           //     , [&,this]( auto & kvpair)
                           std::size_t idx_marg = 0;
-                          for(auto it_marg =vector_of_wrapped_marginals.begin(); it_marg!=vector_of_wrapped_marginals.end(); it_marg++) // WARNING: marginal refactor: vector will speed up a bit (not much though)
+                          for(auto it_marg =vector_of_wrapped_marginals.begin(); it_marg!=vector_of_wrapped_marginals.end(); it_marg++)
                           {
                             // std::string key_id = it_marg->first;
                             std::string key_id = it_marg->key_id;
@@ -404,8 +403,6 @@ namespace sam::Inference
     // get all marginals
     auto get_marginals() const
     {
-      // WARNING: after marginal refactor: return the vector of marginals. If you want the map of marginals, use get_marginals_as_map()
-      // return all_marginals_.data_map_tuple;
       return this->all_vectors_marginals_.vectors_of_marginals;
     }
 
@@ -489,6 +486,9 @@ namespace sam::Inference
             , ...);
           }
           , this->all_factors_tuple_);
+      // recompute keys_affectation
+      // this takes longuer
+      this->keys_affectation = SystemConverter::compute_keys_affectation(this->all_factors_tuple_,this->all_vectors_marginals_.vectors_of_marginals);
     }
 
     private:
@@ -527,16 +527,6 @@ namespace sam::Inference
                   }
                 };
                 return std::make_tuple( lambda(kcc)... );
-
-                // return
-                //   std::make_tuple
-                //   ( 
-                //       // TODO: marginal refactor: use keydispatch, then (if exists) vector.find_if to get the mean
-                //      this->all_marginals_
-                //        .template find_mean_ptr<typename decltype(kcc)::KeyMeta_t>(kcc.key_id) // WARNING: adverse cost when marginal refactor: perhaps transform vector of marginals in a std::map first (yes, in this method ! A slightly costlier emplace_factor method is not a big deal, this is not where bottleneck of the users API is)
-                //       ... 
-                //   );
-                //   FIX: remove old, keep only competing 
               }, KccSet);
           // It is often the case that the above tuple contains at least 1 std::nullopt.
 
@@ -550,7 +540,7 @@ namespace sam::Inference
           // the means for keys that were missing
           if (opt_tuple_of_init_point_ptr.has_value())
           {
-            // HACK: triple zip tupple pattern
+            // hack: triple zip tupple pattern
             std::apply(
                 [&,this](const auto & ...opt_mean_ptr)
                 {
@@ -570,10 +560,6 @@ namespace sam::Inference
                                   using wrapped_marginal_t = ::sam::Marginal::WrapperPersistentMarginal<marginal_t>; 
                                   auto wrapped_marginal = wrapped_marginal_t(_kcc.key_id, _guessed_mean_ptr);
                                   // TODO: intermediary step before updating the marginal: infer a covariance (difficulty ***)
-                                  // insert the marginal we just created in the system's marginal container
-                                  // this->all_marginals_.
-                                  //   template insert_in_marginal_container<wrapped_marginal_t> (wrapped_marginal); // WARNING: marginal refactor: push_back
-                                                                                                                  // FIX: remove old, keep only competing
                                   this->all_vectors_marginals_.template push_back<wrapped_marginal_t>(wrapped_marginal);
                                 }
                               };
@@ -592,10 +578,6 @@ namespace sam::Inference
           }
           // emplace back in the structure
           vector_of_wrapped_factors.emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
-              
-          // recompute keys_affectation
-          // this takes longuer
-          this->keys_affectation = SystemConverter::compute_keys_affectation(this->all_factors_tuple_,this->all_vectors_marginals_.vectors_of_marginals);
       }
     }
 

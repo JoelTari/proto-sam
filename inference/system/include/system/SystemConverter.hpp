@@ -246,46 +246,53 @@ namespace sam::Inference::SystemConverter
      //      keydispatchinfos.natural_scalar_idx = N_idx_base + i*marg::kN;
      //      resultmap.insert_or_assign(wmarg.key, keydispatckinfos)
 
-     std::apply(
-         [&](auto ... N_idx_base)
-         {
-         std::apply(
-             [&](auto ... semantic_N_idx_base)
-             {
-                 std::apply([&](const auto &... vwm)
-                     {  
-                        PROFILE_SCOPE("Fill indexes", sam_utils::JSONLogger::Instance());
-                        auto lambda = [&](const auto & a_vwm, std::size_t scalar_idx_base, std::size_t semantic_idx_base)
-                        {
-                          std::size_t j=0;
-                          for(const auto & wm : a_vwm)
-                          {
-                            constexpr std::size_t kN = std::remove_cvref_t<decltype(wm)>::Marginal_t::KeyMeta_t::kN;
-                            KeyDispatchInfos keydispatchinfos;
-                            keydispatchinfos.natural_semantic_idx = semantic_idx_base + j;
-                            keydispatchinfos.natural_scalar_idx = scalar_idx_base + j*kN;
-                            keydispatchinfos.key_dim = kN;
-                            resultmap.insert_or_assign(wm.key_id, keydispatchinfos);
-                            j++;
-                          }
-                        };
-                        (lambda(vwm, N_idx_base, semantic_N_idx_base), ...);
-                     },tup_vwm);
-             }
-             ,semantic_N_type_idx_offsets);
-         } ,N_type_idx_offsets
-         );
+     // std::future<void> m = std::async(std::launch::async, 
+     //     [&]() -> void
+     //     {
+
+               std::apply(
+                   [&](auto ... N_idx_base)
+                   {
+                   std::apply(
+                       [&](auto ... semantic_N_idx_base)
+                       {
+                           std::apply([&](const auto &... vwm)
+                               {  
+                                  PROFILE_SCOPE("Fill indexes", sam_utils::JSONLogger::Instance());
+                                  auto lambda = [&](const auto & a_vwm, std::size_t scalar_idx_base, std::size_t semantic_idx_base)
+                                  {
+                                    std::size_t j=0;
+                                    for(const auto & wm : a_vwm)
+                                    {
+                                      constexpr std::size_t kN = std::remove_cvref_t<decltype(wm)>::Marginal_t::KeyMeta_t::kN;
+                                      KeyDispatchInfos keydispatchinfos;
+                                      keydispatchinfos.natural_semantic_idx = semantic_idx_base + j;
+                                      keydispatchinfos.natural_scalar_idx = scalar_idx_base + j*kN;
+                                      keydispatchinfos.key_dim = kN;
+                                      resultmap.insert_or_assign(wm.key_id, keydispatchinfos);
+                                      j++;
+                                    }
+                                  };
+                                  (lambda(vwm, N_idx_base, semantic_N_idx_base), ...);
+                               },tup_vwm);
+                       }
+                       ,semantic_N_type_idx_offsets);
+                   } ,N_type_idx_offsets
+                   );
+         // });
+      // m.get();
+
 
          // std::mutex lock;
          // note: perhaps it would be interesting to add the self key in the set ?(no use case for that atm)
-
+      std::unordered_map<std::string, std::unordered_set<std::string>> tmp_set;
       std::apply(
           [&](const auto & ...vwf)
           {
             PROFILE_SCOPE("discover neighbours", sam_utils::JSONLogger::Instance());
             (
              (
-              std::for_each(std::execution::unseq,vwf.begin(),vwf.end(),
+              std::for_each(vwf.begin(),vwf.end(),
                 [&](const auto & wf)
                 {
                  
@@ -330,6 +337,7 @@ namespace sam::Inference::SystemConverter
                           // std::lock_guard<std::mutex> l(lock);
                           neighbours_set.insert(other_key_in_factor);
                         }
+                        // tmp_set[key_id_of_interest].insert(other_key_in_factor);
                       }
                     }
                   }
@@ -338,41 +346,51 @@ namespace sam::Inference::SystemConverter
               )
              ,...);
           },tup_vwf);
+      
+      // // merge resultmap with tmp_set
+      // auto ittmp = tmp_set.begin();
+      // for (auto it = resultmap.begin(); it!=resultmap.end(); it++ )
+      // {
+      //   it->second.neighbours = ittmp->second;
+      //   ittmp++;
+      // }
+
       return resultmap;
    }
 
-  // FIX: uncommenting leads to linking errors in the tests, but not in mainstdin
-  // std::string stringify_key_dispatch_oneliner(const std::string & key_id, const KeyDispatchInfos & key_dispatch, int tab =4)
-  // {
-  //   std::stringstream ss;
-  //   ss << std::setw(tab) << "[" << key_id 
-  //     << "] : { scalar_idx = "<< key_dispatch.natural_scalar_idx <<" , semantic_idx = "
-  //     << key_dispatch.natural_semantic_idx <<" , neighbours = { ";
-  //   
-  //   if (key_dispatch.neighbours.empty())
-  //   {
-  //     ss << "none";
-  //   }
-  //   else
-  //   {
-  //     for (const auto & neigh_id : key_dispatch.neighbours ) //traverse the set of neighbours id
-  //     {
-  //       ss << neigh_id << " ,";
-  //     }
-  //     ss.seekp(-2, std::ios_base::end);
-  //   }
-  //   ss <<" } }" ;
-  //   return ss.str();
-  // }
-  //
-  // std::string stringify_keys_affectation_blockliner(const Keys_Affectation_t & keys_affectation, int tab =4)
-  // {
-  //   std::stringstream ss;
-  //   for (const auto & [key_id, key_dispatch] : keys_affectation)
-  //   {
-  //     ss << std::setw(tab) << stringify_key_dispatch_oneliner(key_id,key_dispatch) << '\n';
-  //   }
-  //   return ss.str();
-  // }
+  template <typename KEYDISPATCH_T>
+  std::string stringify_key_dispatch_oneliner(const std::string & key_id, const KEYDISPATCH_T & key_dispatch, int tab =4)
+  {
+    std::stringstream ss;
+    ss << std::setw(tab) << "[" << key_id 
+      << "] : { scalar_idx = "<< key_dispatch.natural_scalar_idx <<" , semantic_idx = "
+      << key_dispatch.natural_semantic_idx <<" , neighbours = { ";
+    
+    if (key_dispatch.neighbours.empty())
+    {
+      ss << "none";
+    }
+    else
+    {
+      for (const auto & neigh_id : key_dispatch.neighbours ) //traverse the set of neighbours id
+      {
+        ss << neigh_id << " ,";
+      }
+      ss.seekp(-2, std::ios_base::end);
+    }
+    ss <<" } }" ;
+    return ss.str();
+  }
+
+  template <typename KEY_AFFECTATIONS_T>
+  std::string stringify_keys_affectation_blockliner(const KEY_AFFECTATIONS_T & keys_affectation, int tab =4)
+  {
+    std::stringstream ss;
+    for (const auto & [key_id, key_dispatch] : keys_affectation)
+    {
+      ss << std::setw(tab) << stringify_key_dispatch_oneliner(key_id,key_dispatch) << '\n';
+    }
+    return ss.str();
+  }
 
 }

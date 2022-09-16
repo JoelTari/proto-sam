@@ -126,7 +126,11 @@ add_executable(aggregate_tests
   test/toy_linear_test.cpp 
   test/eigen_blas_routine_test.cpp 
   test/system_fail_test.cpp)
-target_link_libraries(aggregate_tests sam_system_interface ${FACTOR_STATIC_LIBRARIES} ${LOW_LEVEL_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(aggregate_tests 
+  ${FACTOR_STATIC_LIBRARIES} 
+  sam_system_interface 
+  ${LOW_LEVEL_LIBRARIES} 
+  ${GTEST_BOTH_LIBRARIES})
 target_include_directories(aggregate_tests PUBLIC ${GTEST_INCLUDE_DIRS})
 target_compile_definitions(aggregate_tests PUBLIC ENABLE_DEBUG_TRACE=0 ENABLE_TIMER=0 ${LOW_LEVEL_DEFINITIONS} ${COMPILED_WITH})
 target_compile_features(aggregate_tests PUBLIC cxx_std_20)
