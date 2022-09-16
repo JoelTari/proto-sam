@@ -157,9 +157,9 @@ namespace sam::Inference
       size_t semantic_M = SystemConverter::Semantic::M(this->all_factors_tuple_);
       size_t semantic_N = SystemConverter::Semantic::N(this->all_vectors_marginals_.vectors_of_marginals);
       size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
-      size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);
+      // size_t nnz_hessian = MatrixConverter::Scalar::HessianNNZ(this->all_factors_tuple_);        // a bit long
       size_t nnz_semantic_jacobian = MatrixConverter::Semantic::JacobianNNZ(this->all_factors_tuple_);
-      size_t nnz_semantic_hessian  = MatrixConverter::Semantic::HessianNNZ(this->all_factors_tuple_);
+      // size_t nnz_semantic_hessian  = MatrixConverter::Semantic::HessianNNZ(this->all_factors_tuple_); // a bit long
 
       
       auto natural_scalar_M_offsets = SystemConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
@@ -594,6 +594,7 @@ namespace sam::Inference
           vector_of_wrapped_factors.emplace_back(factor_id,mes_vect,measure_cov,keys_id,opt_tuple_of_init_point_ptr.value());
               
           // recompute keys_affectation
+          // this takes longuer
           this->keys_affectation = SystemConverter::compute_keys_affectation(this->all_factors_tuple_,this->all_vectors_marginals_.vectors_of_marginals);
       }
     }

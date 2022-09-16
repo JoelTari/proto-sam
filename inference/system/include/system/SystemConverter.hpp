@@ -7,6 +7,9 @@
 #include <numeric>
 #include <sstream>
 #include <iomanip>
+#include <execution>
+#include <mutex>
+#include <future>
 
 #include "utils/config.h"
 #include "utils/utils.h"
@@ -26,7 +29,7 @@ namespace sam::Inference::SystemConverter
     std::size_t natural_semantic_idx;
     std::size_t natural_scalar_idx;
     std::size_t key_dim;
-    std::unordered_set<std::string> neighbours;
+    std::unordered_set<std::string> neighbours; // TODO: for fun: safe_unordered_set with a mutex
   };
 
   // map that holds the dispatch info for all keys
@@ -250,7 +253,8 @@ namespace sam::Inference::SystemConverter
              [&](auto ... semantic_N_idx_base)
              {
                  std::apply([&](const auto &... vwm)
-                     {
+                     {  
+                        PROFILE_SCOPE("Fill indexes", sam_utils::JSONLogger::Instance());
                         auto lambda = [&](const auto & a_vwm, std::size_t scalar_idx_base, std::size_t semantic_idx_base)
                         {
                           std::size_t j=0;
@@ -272,36 +276,72 @@ namespace sam::Inference::SystemConverter
          } ,N_type_idx_offsets
          );
 
+         // std::mutex lock;
          // note: perhaps it would be interesting to add the self key in the set ?(no use case for that atm)
+
       std::apply(
           [&](const auto & ...vwf)
           {
+            PROFILE_SCOPE("discover neighbours", sam_utils::JSONLogger::Instance());
             (
              (
-              std::for_each(vwf.begin(),vwf.end(),
+              std::for_each(std::execution::unseq,vwf.begin(),vwf.end(),
                 [&](const auto & wf)
                 {
-                  for(const auto & key_id_of_interest : wf.factor.get_array_keys_id())
+                 
+                 // // static version (is no faster :(  )
+                 // std::apply([&](const auto & ... r_kcc)
+                 //     {
+                 //          auto lambda = [&](const auto & ar_kcc)
+                 //          {
+                 //             std::apply([&](const auto & ... l_kcc)
+                 //              {
+                 //                auto lambda2 = [&](const auto & ar_kcc,const auto & al_kcc)
+                 //                {
+                 //                  using r_kcc_t = std::remove_cvref_t<decltype(ar_kcc)>;
+                 //                  using l_kcc_t = std::remove_cvref_t<decltype(al_kcc)>;
+                 //                  if constexpr (!std::is_same_v<r_kcc_t,l_kcc_t>)
+                 //                  {
+                 //                    // if user input is correct, no need to check if string are different
+                 //                    resultmap[ar_kcc.key_id].neighbours.insert(al_kcc.key_id);
+                 //                    resultmap[al_kcc.key_id].neighbours.insert(ar_kcc.key_id);
+                 //                  }
+                 //                };
+                 //                ((lambda2(ar_kcc,l_kcc)),...);
+                 //              }, wf.factor.keys_set);
+                 //          };
+                 //      ((lambda(r_kcc)),...);
+                 //     }
+                 //     ,wf.factor.keys_set);
+
+                  // slightly faster than static method above
+                  auto keys =wf.factor.get_array_keys_id();
+                  for(const auto & key_id_of_interest : keys)
                   {
                     // loop over neighbours (including self)
-                    for(const auto & other_key_in_factor : wf.factor.get_array_keys_id())
+                    for(const auto & other_key_in_factor : keys)
                     {
                       // had the other key in the list of neighbours (unless it is self)
                       if (other_key_in_factor != key_id_of_interest)
                       {
                         // might double count, but has no effect on the set
-                        resultmap[key_id_of_interest].neighbours.insert(other_key_in_factor);
+                        auto & neighbours_set = resultmap[key_id_of_interest].neighbours;
+                        {
+                          // std::lock_guard<std::mutex> l(lock);
+                          neighbours_set.insert(other_key_in_factor);
+                        }
                       }
                     }
                   }
+
                 })
               )
              ,...);
           },tup_vwf);
-
       return resultmap;
    }
 
+  // FIX: uncommenting leads to linking errors in the tests, but not in mainstdin
   // std::string stringify_key_dispatch_oneliner(const std::string & key_id, const KeyDispatchInfos & key_dispatch, int tab =4)
   // {
   //   std::stringstream ss;
