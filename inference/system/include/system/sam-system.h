@@ -513,7 +513,9 @@ namespace sam::Inference
                 auto lambda = [this] (const auto & akcc)// -> std::optional<>
                 {
                   using keymeta_t = typename std::remove_cvref_t<decltype(akcc)>::KeyMeta_t;
-                  // does the key exist ?
+                  // // do the keys exist ?
+                  // std::cout << SystemConverter::stringify_keys_affectation_blockliner(this->keys_affectation);
+                  // std::cout << "size vectors marginal :" << SystemConverter::Semantic::N(this->all_vectors_marginals_.vectors_of_marginals) << '\n';
                   if (auto it {this->keys_affectation.find(akcc.key_id)}; it != this->keys_affectation.end())
                   {
                     // yes ! => get the mean !

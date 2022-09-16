@@ -5,6 +5,8 @@
 #include <string>
 #include <algorithm>
 #include <numeric>
+#include <sstream>
+#include <iomanip>
 
 #include "utils/config.h"
 #include "utils/utils.h"
@@ -75,7 +77,7 @@ namespace sam::Inference::SystemConverter
           wfactors_tuple);
 
       array_t Offsets = {};
-      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1); // NOTE: exclusive_scan better ?
+      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1); // TODO: exclusive_scan
 
 #if ENABLE_DEBUG_TRACE
       std::cout << "Sizes (scalar) of vector of factor, by type: \n";
@@ -114,7 +116,7 @@ namespace sam::Inference::SystemConverter
           tuple_vect_wmarginals);
 
       array_t Offsets = {};
-      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1);
+      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1); // TODO: exclusive_scan
 
 #if ENABLE_DEBUG_TRACE
       std::cout << "Sizes (scalar) of marginal vects, by type: \n";
@@ -165,7 +167,7 @@ namespace sam::Inference::SystemConverter
                        wfactors_tuple);
 
       array_t Offsets = {};
-      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1);
+      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1); // TODO: exclusive_scan
 
 #if ENABLE_DEBUG_TRACE
       std::cout << "Sizes (scalar) of vector of factor, by type: \n";
@@ -198,7 +200,7 @@ namespace sam::Inference::SystemConverter
                        tuple_vect_wmarginals);
 
       array_t Offsets = {};
-      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1);
+      std::partial_sum(Sizes.begin(), Sizes.end() - 1, Offsets.begin() + 1); // TODO: exclusive_scan
 
 #if ENABLE_DEBUG_TRACE
       std::cout << "Sizes (scalar) of marginal vects, by type: \n";
@@ -299,5 +301,38 @@ namespace sam::Inference::SystemConverter
 
       return resultmap;
    }
+
+  // std::string stringify_key_dispatch_oneliner(const std::string & key_id, const KeyDispatchInfos & key_dispatch, int tab =4)
+  // {
+  //   std::stringstream ss;
+  //   ss << std::setw(tab) << "[" << key_id 
+  //     << "] : { scalar_idx = "<< key_dispatch.natural_scalar_idx <<" , semantic_idx = "
+  //     << key_dispatch.natural_semantic_idx <<" , neighbours = { ";
+  //   
+  //   if (key_dispatch.neighbours.empty())
+  //   {
+  //     ss << "none";
+  //   }
+  //   else
+  //   {
+  //     for (const auto & neigh_id : key_dispatch.neighbours ) //traverse the set of neighbours id
+  //     {
+  //       ss << neigh_id << " ,";
+  //     }
+  //     ss.seekp(-2, std::ios_base::end);
+  //   }
+  //   ss <<" } }" ;
+  //   return ss.str();
+  // }
+  //
+  // std::string stringify_keys_affectation_blockliner(const Keys_Affectation_t & keys_affectation, int tab =4)
+  // {
+  //   std::stringstream ss;
+  //   for (const auto & [key_id, key_dispatch] : keys_affectation)
+  //   {
+  //     ss << std::setw(tab) << stringify_key_dispatch_oneliner(key_id,key_dispatch) << '\n';
+  //   }
+  //   return ss.str();
+  // }
 
 }

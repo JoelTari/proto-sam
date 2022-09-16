@@ -186,7 +186,7 @@ namespace sam::Marginal
       constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx<Q_KEYMETA_T>();
       auto & vwm = std::get<TUPLE_IDX> (this->vectors_of_marginals); // vector of wmarginals
       auto it = std::find_if(vwm.begin(), vwm.end(), [&key_id](const auto & wmarg){ return wmarg.key_id == key_id; });
-      if (it !=vwm.end())
+      if (it ==vwm.end())
       {
         throw std::runtime_error("marginal collection find_if:  key not found : "+ key_id);
       }
