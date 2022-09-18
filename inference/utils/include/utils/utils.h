@@ -74,16 +74,10 @@ namespace sam_utils
                       const std::string& pb_id,
                       const std::string& time_point = sam_utils::currentDateTime())
     {
-      std::lock_guard<std::mutex> lock(m_lock);
-      // if session already, start a new session
-      // if (m_activeSession) { endSession(); }
-
-      // m_activeSession = true;
-      // m_outputStream = ss;
-      // writeHeader();
+      // std::lock_guard<std::mutex> lock(m_lock);
       m_program_name      = program_name;
-      m_pb_id             = pb_id;
-      m_launch_time_point = time_point;
+      m_pb_id             = pb_id;      // not used
+      m_launch_time_point = time_point; // not used
     }
 
 #if ENABLE_TIMER
@@ -118,8 +112,6 @@ namespace sam_utils
     {
       std::lock_guard<std::mutex> lock(m_lock);
       m_JsonRoot["traceEvents"][spanIdx]["dur"] = std::to_string(duration);
-      // if(m_JsonRoot["traceEvents"][spanIdx]["name"] == "main")
-      //   std::cout << duration << '\n';
     }
 #endif
 
@@ -130,6 +122,12 @@ namespace sam_utils
       m_JsonRoot["header"]    = graph["header"];
       m_JsonRoot["factors"]   = graph["factors"];
       m_JsonRoot["marginals"] = graph["marginals"];
+    }
+
+    void add_custom_field(const std::string & name,const Json::Value & field)
+    {
+      std::lock_guard<std::mutex> lock(m_lock);
+      m_JsonRoot[name] = field;
     }
   };
 #endif

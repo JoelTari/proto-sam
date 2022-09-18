@@ -105,8 +105,7 @@ namespace sam::Inference::SystemConverter
     }
 
     template <typename TUPLE_VECT_WMARGINAL_T>
-    std::array<std::size_t, std::tuple_size_v<TUPLE_VECT_WMARGINAL_T>>   // WARNING: marginal
-                                                                         // refactor: map -> vector
+    std::array<std::size_t, std::tuple_size_v<TUPLE_VECT_WMARGINAL_T>>
         MarginalTypeIndexesOffset(const TUPLE_VECT_WMARGINAL_T& tuple_vect_wmarginals)
     {
       using array_t = std::array<std::size_t, std::tuple_size_v<TUPLE_VECT_WMARGINAL_T>>;
@@ -157,7 +156,7 @@ namespace sam::Inference::SystemConverter
                         wfactors_tuple);
     }
 
-    template <typename TUPLE_VECT_WMARGINAL_T>   // WARNING: marginal refactor: map -> vector
+    template <typename TUPLE_VECT_WMARGINAL_T>
     std::size_t N(const TUPLE_VECT_WMARGINAL_T& tuple_vect_wmarginals)
     {
       return std::apply([](const auto&... vect_of_wmarg) { return (vect_of_wmarg.size() + ...); },
@@ -200,8 +199,7 @@ namespace sam::Inference::SystemConverter
     }
 
     template <typename TUPLE_VECT_WMARGINAL_T>
-    std::array<std::size_t, std::tuple_size_v<TUPLE_VECT_WMARGINAL_T>>   // WARNING: marginal
-                                                                         // refactor: map -> vector
+    std::array<std::size_t, std::tuple_size_v<TUPLE_VECT_WMARGINAL_T>>
         MarginalTypeIndexesOffset(const TUPLE_VECT_WMARGINAL_T& tuple_vect_wmarginals)
     {
       using array_t = std::array<std::size_t, std::tuple_size_v<TUPLE_VECT_WMARGINAL_T>>;
@@ -249,18 +247,6 @@ namespace sam::Inference::SystemConverter
     auto semantic_M_type_idx_offsets = Semantic::FactorTypeIndexesOffset(tup_vwf);
     auto semantic_N_type_idx_offsets = Semantic::MarginalTypeIndexesOffset(tup_vwm);
 
-    // zip_tuple_for (TUP_VECT_WMARG, N_type_idx_offsets,  semantic_N_type_idx_offsets) // yep,
-    // triple zip pattern
-    //    for each wmarg in vect_wmarg
-    //      KeyDispatchInfos keydispatchinfos;
-    //      keydispatchinfos.natural_semantic_idx = semantic_N_idx_base + i;
-    //      keydispatchinfos.natural_scalar_idx = N_idx_base + i*marg::kN;
-    //      resultmap.insert_or_assign(wmarg.key, keydispatckinfos)
-
-    // std::future<void> m = std::async(std::launch::async,
-    //     [&]() -> void
-    //     {
-
     std::apply(
         [&](auto... N_idx_base)
         {
@@ -295,11 +281,7 @@ namespace sam::Inference::SystemConverter
               semantic_N_type_idx_offsets);
         },
         N_type_idx_offsets);
-    // });
-    // m.get();
 
-
-    // std::mutex lock;
     // note: perhaps it would be interesting to add the self key in the set ?(no use case for that
     // atm)
     std::unordered_map<std::string, std::unordered_set<std::string>> tmp_set;
