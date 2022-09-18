@@ -180,8 +180,9 @@ namespace sam::Marginal
       else { return get_correct_tuple_idx_by_wmarg<Q_WMARG_T, TUPLE_IDX + 1>(); }
     }
 
+    // return a pair: the iterator and true/false (if found)
     template <typename Q_KEYMETA_T>
-    WrapperPersistentMarginal<BaseMarginal<Q_KEYMETA_T>> find_if(const std::string& key_id)
+    std::pair<typename std::vector<WrapperPersistentMarginal<BaseMarginal<Q_KEYMETA_T>>>::iterator , bool > find_if(const std::string& key_id)
     {
       constexpr std::size_t TUPLE_IDX = get_correct_tuple_idx<Q_KEYMETA_T>();
       auto& vwm = std::get<TUPLE_IDX>(this->vectors_of_marginals);   // vector of wmarginals
@@ -190,9 +191,11 @@ namespace sam::Marginal
                              [&key_id](const auto& wmarg) { return wmarg.key_id == key_id; });
       if (it == vwm.end())
       {
-        throw std::runtime_error("marginal collection find_if:  key not found : " + key_id);
+        // throw std::runtime_error("marginal collection find_if:  key not found : " + key_id);
+        return { it, false };
       }
-      return *it;
+      // return *it;
+      return {it,true};
     }
   };
 

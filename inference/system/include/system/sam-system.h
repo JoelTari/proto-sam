@@ -159,7 +159,7 @@ namespace sam::Inference
       size_t nnz_semantic_jacobian
           = MatrixConverter::Semantic::JacobianNNZ(this->all_factors_tuple_);
       // size_t nnz_semantic_hessian  =
-      // MatrixConverter::Semantic::HessianNNZ(this->all_factors_tuple_); // a bit long
+      // MatrixConverter::Semantic::HessianNNZ(this->all_factors_tuple_); // a bit long, but (spyA.t*spyA)::nonzeros(); might be fast
 
 
       auto natural_scalar_M_offsets
@@ -170,6 +170,14 @@ namespace sam::Inference
           = SystemConverter::Semantic::FactorTypeIndexesOffset(this->all_factors_tuple_);
       // auto semantic_N_type_idx_offsets =
       // MatrixConverter::Semantic::MarginalTypeIndexesOffset(this->all_vectors_marginals_.vectors_of_marginals);
+
+      if (this->keys_affectation_unsync_)
+      {
+          this->keys_affectation = SystemConverter::compute_keys_affectation(
+              this->all_factors_tuple_,
+              this->all_vectors_marginals_.vectors_of_marginals);
+          this->keys_affectation_unsync_ = false;
+      }
 
       Eigen::SparseMatrix<int> semantic_A
           = MatrixConverter::Sparse::Semantic::spyJacobian(this->all_factors_tuple_,
@@ -394,7 +402,7 @@ namespace sam::Inference
     void remove_key(const std::string& key_id)
     {
       // remove associated factors?
-      // several mines here: what happen if graph becomes unconnected etc...
+      // several landmines here: what happen if graph becomes unconnected etc...
       // TODO: the valid of any cache data should be questioned after removing a factor
     }
 
@@ -463,7 +471,8 @@ namespace sam::Inference
     void register_new_factor(const std::string&                          factor_id,
                              const typename FT::measure_t&               mes_vect,
                              const typename FT::measure_cov_t&           measure_cov,
-                             const std::array<std::string, FT::kNbKeys>& keys_id)
+                             const std::array<std::string, FT::kNbKeys>& keys_id,
+                             const bool recompute_key_affectation = true)
     {
       static_assert(std::is_same_v<FT, FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
                     "This type of factor doesnt exist ");
@@ -498,13 +507,22 @@ namespace sam::Inference
           },
           this->all_factors_tuple_);
       // recompute keys_affectation
-      // this takes longuer
-      this->keys_affectation = SystemConverter::compute_keys_affectation(
-          this->all_factors_tuple_,
-          this->all_vectors_marginals_.vectors_of_marginals);
+      // this is wasteful IF many factors are registered at once (batch slam)
+      // because then it would just be easier to do it at the end
+      if (recompute_key_affectation)
+      {
+          this->keys_affectation = SystemConverter::compute_keys_affectation(
+              this->all_factors_tuple_,
+              this->all_vectors_marginals_.vectors_of_marginals);
+          this->keys_affectation_unsync_ = false;
+      }
+      else this->keys_affectation_unsync_ = true;
     }
 
     private:
+
+    bool keys_affectation_unsync_ = false;
+
     template <typename FT, typename VECT_OF_WFT>
     void emplace_factor_in(const std::string&                          factor_id,
                            const typename FT::measure_t&               mes_vect,
@@ -524,24 +542,13 @@ namespace sam::Inference
               auto lambda = [this](const auto& akcc)   // -> std::optional<>
               {
                 using keymeta_t = typename std::remove_cvref_t<decltype(akcc)>::KeyMeta_t;
-                // // do the keys exist ?
-                // std::cout <<
-                // SystemConverter::stringify_keys_affectation_blockliner(this->keys_affectation);
-                // std::cout << "size vectors marginal :" <<
-                // SystemConverter::Semantic::N(this->all_vectors_marginals_.vectors_of_marginals)
-                // << '\n';
-                if (auto it {this->keys_affectation.find(akcc.key_id)};
-                    it != this->keys_affectation.end())
+                // do the key exist ?
+                auto [it, marginal_found] = this->all_vectors_marginals_.template find_if<keymeta_t>(akcc.key_id);
+                if (marginal_found)
                 {
-                  // yes ! => get the mean !
-                  return std::optional<std::shared_ptr<typename keymeta_t::key_t>>(
-                      this->all_vectors_marginals_.template find_if<keymeta_t>(akcc.key_id)
-                          .shared_mean);
+                  return std::optional<std::shared_ptr<typename keymeta_t::key_t>>(it->shared_mean);
                 }
-                else
-                {   // no, return nullopt
-                  return std::optional<std::shared_ptr<typename keymeta_t::key_t>>(std::nullopt);
-                }
+                else return std::optional<std::shared_ptr<typename keymeta_t::key_t>>(std::nullopt);
               };
               return std::make_tuple(lambda(kcc)...);
             },

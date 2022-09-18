@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 
   {
     PROFILE_SCOPE("integrates factors", sam_utils::JSONLogger::Instance());
-    for (const auto& mesJson : rootJson)   // template it ?
+    for (const auto& mesJson : rootJson)
     {
       if (mesJson["type"] == "anchor")
       {
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
         syst.register_new_factor<sam::Factor::Anchor2d>(fid.str(),
                                                         z,
                                                         Sigma,
-                                                        {mesJson["vars_id"][0].asCString()});
+                                                        {mesJson["vars_id"][0].asCString()},false);
         fcount++;
       }
       else if (mesJson["type"] == "linear-translation")
@@ -88,12 +88,13 @@ int main(int argc, char* argv[])
             fid.str(),
             z,
             Sigma,
-            {mesJson["vars_id"][0].asCString(), mesJson["vars_id"][1].asCString()});
+            {mesJson["vars_id"][0].asCString(), mesJson["vars_id"][1].asCString()},false);
         fcount++;
       }
       else
         throw std::runtime_error("measure type not supported");
     }
+    // TODO: register_bundle<FT>( vect_fid, vect_z, vect_Sigma, vect_{factor_keys_id})
   }
 
   try
