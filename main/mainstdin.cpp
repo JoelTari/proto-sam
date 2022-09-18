@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
   // read measurements inputs
   if (argc > 2)
   {
-    PROFILE_SCOPE("read file", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("read file");
     // getting a filename as argument
     std::ifstream file = std::ifstream(argv[2]);
     file >> rootJson;
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   int  fcount = 0;
 
   {
-    PROFILE_SCOPE("integrates factors", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("integrates factors");
     for (const auto& mesJson : rootJson)
     {
       if (mesJson["type"] == "anchor")

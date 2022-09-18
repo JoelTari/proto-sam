@@ -199,7 +199,7 @@ namespace sam::Inference::MatrixConverter
       using FT  = typename WFT::Factor_t;
       std::string scope_name
           = "lay out factors of type " + std::string(FT::kFactorLabel) + " in triplet";
-      PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+      PROFILE_SCOPE(scope_name.c_str());
 
       for (auto it_wf = vect_of_wfactors.begin(); it_wf != vect_of_wfactors.end(); it_wf++)
       {

@@ -270,7 +270,7 @@ namespace sam::Inference::SystemConverter
                 std::apply(
                     [&](const auto&... vwm)
                     {
-                      PROFILE_SCOPE("Fill indexes", sam_utils::JSONLogger::Instance());
+                      PROFILE_SCOPE("Fill indexes");
                       auto lambda = [&](const auto& a_vwm,
                                         std::size_t scalar_idx_base,
                                         std::size_t semantic_idx_base)
@@ -306,7 +306,7 @@ namespace sam::Inference::SystemConverter
     std::apply(
         [&](const auto&... vwf)
         {
-          PROFILE_SCOPE("discover neighbours", sam_utils::JSONLogger::Instance());
+          PROFILE_SCOPE("discover neighbours");
           ((std::for_each(vwf.begin(),
                           vwf.end(),
                           [&](const auto& wf)

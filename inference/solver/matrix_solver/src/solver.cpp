@@ -29,27 +29,27 @@ std::tuple<typename SolverSparseQR::MaP_t,
                           const typename SolverSparseQR::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSparseQR::name);
-  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE(scope_name.c_str());
   // stats
   SolverStatsSparseQR stats;
   // solver
   Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> solver;
   // MAP
   {
-    PROFILE_SCOPE("QR decomposition", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("QR decomposition");
     {
-      PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
+      PROFILE_SCOPE("analyse pattern");
       solver.analyzePattern(A);
     }
     {
-      PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
+      PROFILE_SCOPE("factorization");
       solver.factorize(A);   // complex
     }
   }
 
   auto back_substitution = [](auto& solver, auto& b)
   {
-    PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("Back-Substitution");
     Eigen::VectorXd map = solver.solve(b);
     return map;
   };
@@ -86,7 +86,7 @@ std::tuple<typename SolverSparseQR::MaP_t,
 //------------------------------------------------------------------//
 Eigen::MatrixXd SolverSparseNaive::compute_covariance(const Eigen::SparseMatrix<double>& A)
 {
-  PROFILE_SCOPE("compute_covariance: dense", sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE("compute_covariance: dense");
 
   Eigen::SparseMatrix<double> H = A.transpose() * A;
   // Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
@@ -109,7 +109,7 @@ std::tuple<typename SolverSparseNaive::MaP_t,
                              const SolverSparseNaive::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSparseNaive::name);
-  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE(scope_name.c_str());
   // stats
   SolverStatsSparseNaive stats;
 
@@ -119,7 +119,7 @@ std::tuple<typename SolverSparseNaive::MaP_t,
   // MAP
   Eigen::VectorXd X_map;
   {
-    PROFILE_SCOPE("Xmap = Covariance times information vector", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("Xmap = Covariance times information vector");
 
     X_map = optional_covariance_ptr->value()
             * (A.transpose()
@@ -150,26 +150,26 @@ std::tuple<SolverSparseSimplicialLLT::MaP_t,
                                      const SolverSparseSimplicialLLT::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSparseSimplicialLLT::name);
-  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE(scope_name.c_str());
   Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
   SolverSparseSimplicialLLT::Stats_t                stats;
   Eigen::SparseMatrix<double>                       H = A.transpose() * A;
   // MAP
   {
-    PROFILE_SCOPE("SimplicialLLT decomposition", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("SimplicialLLT decomposition");
     {
-      PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
+      PROFILE_SCOPE("analyse pattern");
       solver.analyzePattern(H);
     }
     {
-      PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
+      PROFILE_SCOPE("factorization");
       solver.factorize(H);   // complex
     }
   }
 
   auto back_substitution = [](auto& solver, auto& b)
   {
-    PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("Back-Substitution");
     Eigen::VectorXd map = solver.solve(b);
     return map;
   };
@@ -194,7 +194,7 @@ std::tuple<SolverSparseSimplicialLLT::MaP_t,
   OptCovariance_ptr_t optional_covariance_ptr;
   if (options.compute_covariance)
   {
-    PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("compute covariance: dense");
     optional_covariance_ptr = std::make_shared<OptCovariance_t>( Eigen::MatrixXd(H).inverse());
   }
   else
@@ -214,26 +214,26 @@ std::tuple<SolverSparsePardisoLLT::MaP_t,
                                   const SolverSparsePardisoLLT::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSparsePardisoLLT::name);
-  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE(scope_name.c_str());
   Eigen::PardisoLLT<Eigen::SparseMatrix<double>> solver;
   SolverSparsePardisoLLT::Stats_t                stats;
   Eigen::SparseMatrix<double>                    H = A.transpose() * A;
   // MAP
   {
-    PROFILE_SCOPE("PardisoLLT decomposition", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("PardisoLLT decomposition");
     {
-      PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
+      PROFILE_SCOPE("analyse pattern");
       solver.analyzePattern(H);
     }
     {
-      PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
+      PROFILE_SCOPE("factorization");
       solver.factorize(H);   // complex
     }
   }
 
   auto back_substitution = [](auto& solver, const auto& b)
   {
-    PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("Back-Substitution");
     Eigen::VectorXd map = solver.solve(b);
     return map;
   };
@@ -258,7 +258,7 @@ std::tuple<SolverSparsePardisoLLT::MaP_t,
   OptCovariance_ptr_t optional_covariance_ptr;
   if (options.compute_covariance)
   {
-    PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("compute covariance: dense");
     // todo: maybe see if, by chance, pardiso solver over I exploits multiple cores
     // (see the comment in the compute_covariance methods for reference)
     optional_covariance_ptr = std::make_shared<OptCovariance_t>( Eigen::MatrixXd(H).inverse());
@@ -274,7 +274,7 @@ std::tuple<SolverSparsePardisoLLT::MaP_t,
 //------------------------------------------------------------------//
 Eigen::MatrixXd sam::Inference::SolverSPQR::compute_covariance(const Eigen::SparseMatrix<double>& A)
 {
-  PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE("compute covariance: dense");
   Eigen::SparseMatrix<double> H = A.transpose() * A;
   // Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> invsolver;
   // invsolver.compute(H);
@@ -298,13 +298,13 @@ std::tuple<typename SolverSPQR::MaP_t,
                       const typename SolverSPQR::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSPQR::name);
-  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE(scope_name.c_str());
   // stats
   SolverStatsSPQR stats;
   // solver
   auto declare_solver_and_attach_A = [](auto& A)
   {
-    PROFILE_SCOPE("Create solver and decompose", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("Create solver and decompose");
     return Eigen::SPQR<Eigen::SparseMatrix<double>>(A);
   };
   auto solver = declare_solver_and_attach_A(A);
@@ -324,7 +324,7 @@ std::tuple<typename SolverSPQR::MaP_t,
 
   auto back_substitution = [](auto& solver, auto& b)
   {
-    PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("Back-Substitution");
     Eigen::VectorXd map = solver.solve(b);
     return map;
   };
@@ -362,7 +362,7 @@ std::tuple<typename SolverSPQR::MaP_t,
 Eigen::MatrixXd sam::Inference::SolverSparseSupernodalLLT::compute_covariance(
     const Eigen::SparseMatrix<double>& A)
 {
-  PROFILE_SCOPE("compute covariance: dense", sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE("compute covariance: dense");
   Eigen::SparseMatrix<double>                              H = A.transpose() * A;
   Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> invsolver;
   invsolver.compute(H);
@@ -389,7 +389,7 @@ std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
                                      const typename SolverSparseSupernodalLLT::Options_t& options)
 {
   std::string scope_name = "Solve with " + std::string(SolverSparseSupernodalLLT::name);
-  PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+  PROFILE_SCOPE(scope_name.c_str());
   // stats
   Stats_t stats;
   // launching some future: AtA and Atb
@@ -397,35 +397,35 @@ std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
       = std::async(std::launch::async,
                    [&A]() -> Eigen::SparseMatrix<double>
                    {
-                     PROFILE_SCOPE("H = A^T * A", sam_utils::JSONLogger::Instance());
+                     PROFILE_SCOPE("H = A^T * A");
                      return A.transpose() * A;
                    });
   std::future<Eigen::VectorXd> rhs_future
       = std::async(std::launch::async,
                    [&A, &b]() -> Eigen::VectorXd
                    {
-                     PROFILE_SCOPE("A^T * b", sam_utils::JSONLogger::Instance());
+                     PROFILE_SCOPE("A^T * b");
                      return Eigen::VectorXd(A.transpose() * b);
                    });
   // declaring the solver
   Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> solver;
   // MAP
   {
-    PROFILE_SCOPE("Chol decomposition", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("Chol decomposition");
     auto H = H_future.get();   // can't call .get() twice
     {
-      PROFILE_SCOPE("analyse pattern", sam_utils::JSONLogger::Instance());
+      PROFILE_SCOPE("analyse pattern");
       solver.analyzePattern(H);   // 2.7 ms
     }
     {
-      PROFILE_SCOPE("factorization", sam_utils::JSONLogger::Instance());
+      PROFILE_SCOPE("factorization");
       solver.factorize(H);   // complex: 8 ms
     }
   }
 
   auto back_substitution = [](auto& solver, const auto& rhs)
   {
-    PROFILE_SCOPE("Back-Substitution", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("Back-Substitution");
     Eigen::VectorXd map = solver.solve(rhs);
     return map;
   };
@@ -450,7 +450,7 @@ std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
   OptCovariance_ptr_t optional_covariance_ptr;
   if (options.compute_covariance)
   {
-    PROFILE_SCOPE("compute covariance: supernodalLLT", sam_utils::JSONLogger::Instance());
+    PROFILE_SCOPE("compute covariance: supernodalLLT");
     Eigen::SparseMatrix<double> I(A.cols(), A.cols());
     I.setIdentity();
     optional_covariance_ptr = std::make_shared<OptCovariance_t>(solver.solve(I));

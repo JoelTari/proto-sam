@@ -214,7 +214,7 @@ namespace sam::Inference
       {
         // scoped timer
         std::string timer_name = "iter" + std::to_string(nIter);
-        PROFILE_SCOPE(timer_name.c_str(), sam_utils::JSONLogger::Instance());
+        PROFILE_SCOPE(timer_name.c_str());
 
         auto [b, A] = MatrixConverter::Sparse::compute_b_A(
             this->all_factors_tuple_,
@@ -234,7 +234,7 @@ namespace sam::Inference
 
 #if ENABLE_DEBUG_TRACE
         {
-          PROFILE_SCOPE("print console", sam_utils::JSONLogger::Instance());
+          PROFILE_SCOPE("print console");
           std::cout << "#### Iteration : " << nIter << '\n';
           std::cout << "#### Syst: A(" << A.rows() << "," << A.cols() << ") computed :\n";
           // only display if matrix not too big
@@ -261,7 +261,7 @@ namespace sam::Inference
                   [&, this](const auto&... N_type_start_idx)
                   {
                     std::string scope_name = "save marginal updates";
-                    PROFILE_SCOPE(scope_name.c_str(), sam_utils::JSONLogger::Instance());
+                    PROFILE_SCOPE(scope_name.c_str());
                     // define the function
                     auto lambda_update_map_of_wmarginals
                         = [&, this](auto& vector_of_wrapped_marginals, std::size_t KeyTypeStartIdx)
@@ -347,7 +347,7 @@ namespace sam::Inference
             [&accumulated_syst_squared_norm](auto&... vec_of_wfactors)
             {
               std::string title = "loop factor and update data";
-              PROFILE_SCOPE(title.c_str(), sam_utils::JSONLogger::Instance());
+              PROFILE_SCOPE(title.c_str());
               // on M3500, sequential policy is ~3.5 times faster (0.37 ms vs 1.25ms)
               // probably because of the lock !
               (std::for_each(   //  std::execution::par_unseq,  // linker failure if tbb not found
@@ -476,7 +476,8 @@ namespace sam::Inference
     {
       static_assert(std::is_same_v<FT, FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
                     "This type of factor doesnt exist ");
-      PROFILE_FUNCTION();
+      std::string scope_name = "register factor " + factor_id;
+      PROFILE_SCOPE(scope_name.c_str());
 
       // TODO: consistent management failure (throw ? return value false ?
 
