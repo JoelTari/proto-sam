@@ -240,7 +240,7 @@ namespace sam::Inference::SystemConverter
   Keys_Affectation_t compute_keys_affectation(const VECT_WFT_COLLECTION&   tup_vwf,
                                               const VECT_WMARG_COLLECTION& tup_vwm)
   {
-    PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+    PROFILE_FUNCTION();
     // result
     Keys_Affectation_t resultmap;
     // small optimisation: regroup all these ? really micro

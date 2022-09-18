@@ -30,7 +30,7 @@ TEST(ToyLinearSystem, Square)
   //  ┼
 
   // scoped Timer
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+  PROFILE_FUNCTION();
 
   std::cout << "\n\n Declaring a sam system:\n";
 

@@ -13,7 +13,7 @@ TEST(ToyPoseGraphSE2System, Square)
   // logger
   sam_utils::JSONLogger::Instance().beginSession("gtest_pose_graph", "toy_square_pose_graph_SE2");
   // scoped Timer
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+  PROFILE_FUNCTION();
 
   // random
   std::default_random_engine       generator;

@@ -283,7 +283,7 @@ namespace sam::Inference::MatrixConverter
                     const std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>&
                         natural_scalar_M_offsets)
     {
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+      PROFILE_FUNCTION();
       // declare A, b, and triplets for A data
       Eigen::SparseMatrix<double>         A(M, N);
       Eigen::VectorXd                     b(M);
@@ -327,7 +327,7 @@ namespace sam::Inference::MatrixConverter
           const std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>&
               M_semantic_type_idx_offsets)
       {
-        PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+        PROFILE_FUNCTION();
         // declare A, b, and triplets for A data
         Eigen::SparseMatrix<int>         spy_matrix_jacobian(semantic_M, semantic_N);
         std::vector<Eigen::Triplet<int>> sparse_semantic_A_triplets;

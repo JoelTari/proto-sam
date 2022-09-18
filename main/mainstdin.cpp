@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   std::cout << "\n\n Declaring a sam system:\n";
 #endif
 
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+  PROFILE_FUNCTION();
   auto syst   = InferenceSystem_t(argId);
   int  fcount = 0;
 

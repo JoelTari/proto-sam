@@ -15,7 +15,7 @@ TEST(ToySLAMSE2System, Manif)
   // logger
   sam_utils::JSONLogger::Instance().beginSession("gtest_slam_SE2", "manif_example_slam_SE2");
   // scoped Timer
-  PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+  PROFILE_FUNCTION();
 
   // DEBUG INFO
   cout << endl;

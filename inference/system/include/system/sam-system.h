@@ -146,7 +146,7 @@ namespace sam::Inference
     OptimStats sam_optimise(const OptimOptions& options = OptimOptions())
     {
       // scoped timer
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+      PROFILE_FUNCTION();
 
       size_t M = SystemConverter::Scalar::M(this->all_factors_tuple_);
       size_t N = SystemConverter::Scalar::N(this->all_vectors_marginals_.vectors_of_marginals);
@@ -476,7 +476,7 @@ namespace sam::Inference
     {
       static_assert(std::is_same_v<FT, FACTOR_T> || (std::is_same_v<FT, FACTORS_Ts> || ...),
                     "This type of factor doesnt exist ");
-      PROFILE_FUNCTION(sam_utils::JSONLogger::Instance());
+      PROFILE_FUNCTION();
 
       // TODO: consistent management failure (throw ? return value false ?
 
