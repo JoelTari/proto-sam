@@ -187,6 +187,8 @@ namespace sam::Inference
                                                            nnz_semantic_jacobian,
                                                            natural_semantic_M_offsets);
 
+      Eigen::SparseMatrix<int> semantic_H = MatrixConverter::Sparse::Semantic::spyHessian(this->keys_affectation);
+
       OptimStats optim_stats;
 
       // NOTE: SolverStats might have ratio rnnz/N*N

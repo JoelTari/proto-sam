@@ -87,7 +87,7 @@ target_link_libraries(mainstdin
   jsoncpp_static 
   factor_anchor2d 
   factor_relative_matcher_2d 
-  sam_system_interface
+  sam_system
   ${LOW_LEVEL_LIBRARIES})
 target_compile_features(mainstdin PUBLIC cxx_std_20)
 target_compile_definitions(mainstdin PUBLIC ${COMPILED_WITH})
@@ -98,7 +98,7 @@ target_compile_definitions(mainstdin PUBLIC ${COMPILED_WITH})
 #--------------------------------------------------------------------#
 # test: move in test subdirectory with dedicated cmake
 add_executable(marginal_test test/marginal_test.cpp)
-target_link_libraries(marginal_test PUBLIC sam_system_interface ${META_STATIC_LIBRARIES})
+target_link_libraries(marginal_test PUBLIC sam_system ${META_STATIC_LIBRARIES})
 target_include_directories(marginal_test PUBLIC ${EIGEN_INCLUDE_DIRS})
 target_compile_features(marginal_test PUBLIC cxx_std_20)
 
@@ -128,7 +128,7 @@ add_executable(aggregate_tests
   test/system_fail_test.cpp)
 target_link_libraries(aggregate_tests 
   ${FACTOR_STATIC_LIBRARIES} 
-  sam_system_interface 
+  sam_system 
   ${LOW_LEVEL_LIBRARIES} 
   ${GTEST_BOTH_LIBRARIES})
 target_include_directories(aggregate_tests PUBLIC ${GTEST_INCLUDE_DIRS})

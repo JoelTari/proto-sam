@@ -169,7 +169,7 @@ namespace sam::Inference::MatrixConverter
   namespace Sparse
   {
     template <typename MAT>
-    static void emplace_matrix_in_triplets(const MAT&                           A,
+    void emplace_matrix_in_triplets(const MAT&                           A,
                                            const std::size_t                    starting_column,
                                            const std::size_t                    starting_row,
                                            std::vector<Eigen::Triplet<double>>& triplets_out)
@@ -188,7 +188,7 @@ namespace sam::Inference::MatrixConverter
     }
 
     template <typename VECT_OF_WFT>
-    static void lay_out_factors_to_sparse_triplets(
+    void lay_out_factors_to_sparse_triplets(
         const VECT_OF_WFT&                   vect_of_wfactors,
         std::size_t                          M_FT_idx_offset,
         const Keys_Affectation_t&            keys_affectation,
@@ -263,8 +263,7 @@ namespace sam::Inference::MatrixConverter
 
         // QUESTION: is that a race condition if we write b at different places concurrently
         b_out.block<FT::kM, 1>(start_row_idx, 0) = bi;
-        // push Ai triplets into sparseA_triplets . WARNING: race condition on sparseA_triplets if
-        // parallel policy
+        // push Ai triplets into sparseA_triplets 
         sparseA_triplets_out.insert(std::end(sparseA_triplets_out),
                                     std::begin(Ai_triplets),
                                     std::end(Ai_triplets));
@@ -272,8 +271,8 @@ namespace sam::Inference::MatrixConverter
     }
 
     template <typename TUPLE_VECTORS_WFACTOR_T,
-              typename TUPLE_VECTORS_WMARGINALS_T>   // WARNING: marginal refactor: map -> vector
-    static std::tuple<Eigen::VectorXd, Eigen::SparseMatrix<double>>
+              typename TUPLE_VECTORS_WMARGINALS_T>
+    std::tuple<Eigen::VectorXd, Eigen::SparseMatrix<double>>
         compute_b_A(const TUPLE_VECTORS_WFACTOR_T&    factor_collection,
                     const TUPLE_VECTORS_WMARGINALS_T& vectors_of_wmarginals,
                     const Keys_Affectation_t&         keys_affectation,
@@ -316,16 +315,14 @@ namespace sam::Inference::MatrixConverter
 
     namespace Semantic
     {
-      template <typename TUPLE_VECTORS_WFACTOR_T>   // WARNING: marginal refactor: map -> vector
-      static Eigen::SparseMatrix<int> spyJacobian(
+      template <typename TUPLE_VECTORS_WFACTOR_T> 
+      Eigen::SparseMatrix<int> spyJacobian(
           const TUPLE_VECTORS_WFACTOR_T& factor_collection,
-          const std::unordered_map<std::string, typename SystemConverter::KeyDispatchInfos>&
-                      keys_affectation,
-          std::size_t semantic_M,
-          std::size_t semantic_N,
-          std::size_t semantic_jacobian_NNZ,
-          const std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>&
-              M_semantic_type_idx_offsets)
+          const Keys_Affectation_t& keys_affectation,
+          const std::size_t semantic_M,
+          const std::size_t semantic_N,
+          const std::size_t semantic_jacobian_NNZ,
+          const std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>& M_semantic_type_idx_offsets)
       {
         PROFILE_FUNCTION();
         // declare A, b, and triplets for A data
@@ -341,61 +338,6 @@ namespace sam::Inference::MatrixConverter
               std::apply(
                   [&](const auto&... type_row_idx_offset)
                   {
-                    // auto lambda = [&](const auto & vwf, auto row_offset)
-                    // {
-                    //   for (auto it_wf = vwf.begin(); it_wf != vwf.end(); it_wf++)
-                    //   {
-                    //     using VECT_OF_WFT = std::remove_cvref_t<decltype(vwf)>;
-                    //     using WFT = typename VECT_OF_WFT::value_type;
-                    //     using FT  = typename WFT::Factor_t;
-                    //     auto factor = it_wf->factor;
-                    //     std::array<std::size_t, FT::kNbKeys> array_of_column_idx =
-                    //                 std::apply(
-                    //                     [&](const auto & ...kcc)
-                    //                     {
-                    //                           // pre declare my expression
-                    //                           auto lambda2 = [&](const auto& akcc, const auto&
-                    //                           marginal_data_tuple) -> std::size_t
-                    //                           {
-                    //                             using keymeta_t = typename
-                    //                             std::remove_cvref_t<decltype(akcc)>::KeyMeta_t;
-                    //                             constexpr std::size_t tuple_idx
-                    //                                 = MARGINAL_COLLECTION_T::template
-                    //                                 get_correct_tuple_idx<keymeta_t>();
-                    //                             auto        it =
-                    //                             std::get<tuple_idx>(marginal_data_tuple).find(akcc.key_id);
-                    //                             // WARNING: mark marginal.find usage (marginal
-                    //                             vectorisation). Use map of keydispatch instead.
-                    //                             std::size_t iterator_distance
-                    //                                 =
-                    //                                 std::distance(std::get<tuple_idx>(marginal_data_tuple).begin(),
-                    //                                 it); // WARNING: linear cost // WARNING:
-                    //                                 marginal refactor: map -> vector
-                    //                             return N_semantic_type_idx_offsets[tuple_idx] +
-                    //                             iterator_distance;
-                    //                           };
-                    //                           return std::array<std::size_t, FT::kNbKeys> {
-                    //                           lambda2(kcc,
-                    //                           marginal_collection.data_map_tuple)...};
-                    //                     }
-                    //                     ,factor.keys_set);
-                    //     std::size_t row_idx = row_offset + std::distance( vwf.begin() ,it_wf );
-                    //
-                    //     for (auto col_idx: array_of_column_idx)
-                    //     {
-                    //         sparse_semantic_A_triplets.emplace_back(row_idx,col_idx,1);
-                    //     }
-                    //   }
-                    // };
-                    // (lambda(vect_of_wfactors, type_row_idx_offset) ,...);
-                    // compet
-                    // --
-                    // for each wf,
-                    //  for each kcc in wf.keyset
-                    //    emplace_back( row_idx, keys_affectations[kcc.key].natural_semantic_idx , 1
-                    //    );
-                    // --
-                    // end compet
                     ((std::for_each(vect_of_wfactors.begin(),
                                     vect_of_wfactors.end(),
                                     [&](const auto& wf)
@@ -412,14 +354,6 @@ namespace sam::Inference::MatrixConverter
                                               1);
                                         }
                                       }
-                                      // std::apply([&](const auto &...kcc)
-                                      //   {
-                                      //     (
-                                      //      (
-                                      //      sparse_semantic_A_triplets.emplace_back(type_row_idx_offset,keys_affectation[kcc.key_id].natural_semantic_idx,1
-                                      //      ) )
-                                      //      ,...);
-                                      //   },wf.factor.keys_set);
                                     })),
                      ...);
                   },
@@ -434,11 +368,23 @@ namespace sam::Inference::MatrixConverter
       }
 
 
-      // necessary for graph systems (we might do ordering of the graph this structure)
-      // Eigen::Sparse<int> spyHessian()
-      // {
-      //     return A.t A;
-      // }
+      // spy of the Hessian (based of spyJacobian)
+      template <typename TUPLE_VECTORS_WFACTOR_T> 
+      Eigen::SparseMatrix<int> spyHessian(
+          const TUPLE_VECTORS_WFACTOR_T& factor_collection,
+          const Keys_Affectation_t& keys_affectation,
+          const std::size_t semantic_M,
+          const std::size_t semantic_N,
+          const std::size_t semantic_jacobian_NNZ,
+          const std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>& M_semantic_type_idx_offsets)
+      {
+          auto A = spyJacobian(factor_collection, keys_affectation,semantic_M,semantic_N,semantic_jacobian_NNZ,M_semantic_type_idx_offsets);
+          return spyHessian(A);
+      }
+
+      Eigen::SparseMatrix<int> spyHessian(const Eigen::SparseMatrix<int> & spy_jacobian);
+
+      Eigen::SparseMatrix<int> spyHessian(const Keys_Affectation_t & keys_affectation, const std::size_t nnz = 0);
 
     }   // namespace Semantic
 
