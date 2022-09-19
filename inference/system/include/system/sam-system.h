@@ -449,6 +449,7 @@ namespace sam::Inference
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>
   {
+    public:
       using Base_System_t = typename BaseSystem<DenseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
                                         ,SOLVER_T
                                         ,FACTOR_T

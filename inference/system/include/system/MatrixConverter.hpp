@@ -425,7 +425,7 @@ namespace sam::Inference::MatrixConverter
                 std::size_t row = aM_offset + Factor_t::kM*j;
                 j++;
                 // b: easy emplacement
-                b.block<Factor_t::kM,1>(row) = bj;
+                b.block<Factor_t::kM,1>(row,0) = bj;
                 // [Ajk]s matrices more involved, each element has to be put in its correct block column
                 // => need to zip the [Ajk]s with the factors kcc
                 std::apply(
@@ -438,7 +438,7 @@ namespace sam::Inference::MatrixConverter
                           {
                             using KCC_t = std::remove_cvref_t<decltype(akcc)>;
                             auto it =  keys_affectation.find( akcc.key_id );
-                            std::size_t col = it->natural_scalar_idx;
+                            std::size_t col = it->second.natural_scalar_idx;
                             A.block<Factor_t::kM,KCC_t::kN>(row,col) = mat;
                           };
                           // expansion

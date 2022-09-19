@@ -255,3 +255,18 @@ TEST_F(ToyLinear2dSystem, SparsePardisoLLT)
   this->process_tests(syst);
 }
 #endif   // EIGEN_USE_MKL_VML
+
+// dense
+TEST_F(ToyLinear2dSystem, DenseNaive)
+{
+  // scoped Timer
+  PROFILE_FUNCTION();
+
+  std::cout << "\n\n Declaring a sam system:\n";
+
+  auto syst = ::sam::Inference::DenseSystem<sam::Inference::SolverDenseNaive,
+                                             sam::Factor::Anchor2d,
+                                             sam::Factor::RelativeMatcher2d>("A");
+
+  this->process_tests(syst);
+}
