@@ -81,11 +81,12 @@ class ToyLinear2dSystem : public ::testing::Test
   template <typename SYS_T>
   void process_tests(SYS_T& syst)
   {
-    // bundle anchor
+    // register bundle anchor
     syst.template register_factors_in_bundle<sam::Factor::Anchor2d>(AnchorBundle.vfid,
                                                                     AnchorBundle.vmeasure,
                                                                     AnchorBundle.vmeasure_cov,
                                                                     AnchorBundle.vkeys_id);
+    // register bundle RelativeMatcher
     syst.template register_factors_in_bundle<sam::Factor::RelativeMatcher2d>(
         RelativeMatcherBundle.vfid,
         RelativeMatcherBundle.vmeasure,
@@ -171,6 +172,13 @@ class ToyLinear2dSystem : public ::testing::Test
 };
 
 //------------------------------------------------------------------//
+//------------------------------------------------------------------//
+//------------------------------------------------------------------//
+//------------------------------------------------------------------//
+//------------------------------------------------------------------//
+//------------------------------------------------------------------//
+//------------------------------------------------------------------//
+//------------------------------------------------------------------//
 TEST_F(ToyLinear2dSystem, SparseNaive)
 {
   // scoped Timer
@@ -233,6 +241,7 @@ TEST_F(ToyLinear2dSystem, SparseSupernodalLLT)
 }
 
 // only for intel mkl
+#if EIGEN_USE_MKL_VML
 TEST_F(ToyLinear2dSystem, SparsePardisoLLT)
 {
   // scoped Timer
@@ -246,3 +255,4 @@ TEST_F(ToyLinear2dSystem, SparsePardisoLLT)
 
   this->process_tests(syst);
 }
+#endif // EIGEN_USE_MKL_VML

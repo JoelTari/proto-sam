@@ -82,4 +82,12 @@ struct PreRegistrationBundle
   std::vector<typename FT::measure_cov_t> vmeasure_cov = {};
   std::vector<std::array<std::string, FT::kNbKeys>> vkeys_id = {};
 
+  void push(const std::string& fid, const typename FT::measure_t & m, const typename FT::measure_cov_t & S, const std::array<std::string, FT::kNbKeys> & keys)
+  {
+    this->vfid.push_back(fid);
+    this->vmeasure.push_back(m);
+    this->vmeasure_cov.push_back(S);
+    this->vkeys_id.push_back(keys);
+  }
+
 };
