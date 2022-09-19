@@ -395,7 +395,7 @@ namespace sam::Inference::MatrixConverter
   {
     template <typename TUPLE_VECTORS_WFACTOR_T,
               typename TUPLE_VECTORS_WMARGINALS_T>
-    std::tuple<Eigen::VectorXd, Eigen::SparseMatrix<double>>
+    std::tuple<Eigen::VectorXd, Eigen::MatrixXd>
         compute_b_A(const TUPLE_VECTORS_WFACTOR_T&    factor_collection,
                     const TUPLE_VECTORS_WMARGINALS_T& vectors_of_wmarginals,
                     const Keys_Affectation_t&         keys_affectation,
@@ -404,7 +404,59 @@ namespace sam::Inference::MatrixConverter
                     const std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>&
                         natural_scalar_M_offsets)
     {
-      // FIX: urgent continue here
+      Eigen::VectorXd b(M);
+      Eigen::MatrixXd A(M,N);
+
+      std::apply(
+          [&](const auto & ...M_offset)
+          {
+      std::apply(
+          [&](const auto & ...vwf)
+          {
+            auto lambda = [&](const auto & avwf, const auto & aM_offset)
+            {
+              using Factor_t = typename std::remove_cvref_t<decltype(avwf)>::value_type::Factor_t; 
+              int j = 0;
+              for (const auto & wf : avwf)
+              {
+                // get Ai and bi (computations of Ai,bi not done here)
+                auto matrices_Ajk = wf.get_current_point_data().Aiks;
+                auto bj           = wf.get_current_point_data().bi;
+                std::size_t row = aM_offset + Factor_t::kM*j;
+                j++;
+                // b: easy emplacement
+                b.block<Factor_t::kM,1>(row) = bj;
+                // [Ajk]s matrices more involved, each element has to be put in its correct block column
+                // => need to zip the [Ajk]s with the factors kcc
+                std::apply(
+                    [&](const auto & ... Ajk)
+                    {
+                    std::apply([&](const auto & ...kcc)
+                        {
+                          // ask via keys_affectation where is the natural scalar idx
+                          auto lambda2 = [&](const auto & mat, const auto & akcc)
+                          {
+                            using KCC_t = std::remove_cvref_t<decltype(akcc)>;
+                            auto it =  keys_affectation.find( akcc.key_id );
+                            std::size_t col = it->natural_scalar_idx;
+                            A.block<Factor_t::kM,KCC_t::kN>(row,col) = mat;
+                          };
+                          // expansion
+                          ((lambda2(Ajk,kcc)),...);
+                        }
+                        ,wf.factor.keys_set);
+                    }
+                    ,matrices_Ajk);
+              }
+            };
+            // expansion
+            ((lambda(vwf,M_offset)),...);
+          }
+          ,factor_collection);
+          }
+      ,natural_scalar_M_offsets);
+
+      return {b,A};
     }
 
   }

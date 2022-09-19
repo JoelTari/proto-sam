@@ -458,12 +458,5 @@ std::tuple<typename SolverSparseSupernodalLLT::MaP_t,
   else
     optional_covariance_ptr = std::make_shared<OptCovariance_t>(std::nullopt);
 
-  // std::shared_ptr<OptCovariance_t> opt_cov_ptr;
-  // {
-  //   PROFILE_SCOPE("make shared opt cov", sam_utils::JSONLogger::Instance());
-  //   // WOW: this create a copy
-  //   // FIX: large  copy, it is best to compute covariance in the make_shared to leverage RVO (not before!)
-  //   opt_cov_ptr = std::make_shared<OptCovariance_t>(optional_covariance);
-  // }
   return {map, optional_covariance_ptr, stats};   // R nnz number set at 0 (unused)
 }
