@@ -393,6 +393,19 @@ namespace sam::Inference::MatrixConverter
 
   namespace Dense
   {
+    template <typename TUPLE_VECTORS_WFACTOR_T,
+              typename TUPLE_VECTORS_WMARGINALS_T>
+    std::tuple<Eigen::VectorXd, Eigen::SparseMatrix<double>>
+        compute_b_A(const TUPLE_VECTORS_WFACTOR_T&    factor_collection,
+                    const TUPLE_VECTORS_WMARGINALS_T& vectors_of_wmarginals,
+                    const Keys_Affectation_t&         keys_affectation,
+                    std::size_t                       M,
+                    std::size_t                       N,
+                    const std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>&
+                        natural_scalar_M_offsets)
+    {
+      // FIX: urgent continue here
+    }
 
   }
 

@@ -120,10 +120,17 @@ namespace sam::Inference
     using OptimStats   = OptimStats<SOLVER_T>;
     using SolverStats  = typename SOLVER_T::Stats_t;
 
+    // friend DerivedSystem;
+
+    // TODO: remove potential duplicates in the factor types (or alternatively trigger a static_assert fail)
+
     static constexpr const bool isSystFullyLinear
         = FACTOR_T::isLinear && (FACTORS_Ts::isLinear && ...);
 
-    using Wrapped_Factor_t = std::tuple<
+    static constexpr std::size_t kNbFactorTypes = 1 + sizeof...(FACTORS_Ts);
+    static constexpr std::size_t kNbKeyTypes    = std::tuple_size_v<KeyMetae_t>;
+
+    using Wrapped_Factors_t = std::tuple<
         std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T, isSystFullyLinear>>,
         std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts, isSystFullyLinear>>...>;
 
@@ -132,8 +139,6 @@ namespace sam::Inference
     std::unordered_map<std::string, typename SystemConverter::KeyDispatchInfos> keys_affectation
         = {};
 
-    static constexpr std::size_t kNbFactorTypes = 1 + sizeof...(FACTORS_Ts);
-    static constexpr std::size_t kNbKeyTypes    = std::tuple_size_v<KeyMetae_t>;
 
     /**
      * @brief constructor
@@ -226,7 +231,7 @@ namespace sam::Inference
 
 
     // there's at least one factor, the rest are expanded
-    Wrapped_Factor_t all_factors_tuple_;
+    Wrapped_Factors_t all_factors_tuple_;
 
     /**
      * @brief New factor registration
@@ -280,6 +285,40 @@ namespace sam::Inference
       // recompute keys_affectation
       // this is wasteful IF many factors are registered at once (batch slam)
       // because then it would just be easier to do it at the end
+      if (recompute_key_affectation)
+      {
+          this->keys_affectation = SystemConverter::compute_keys_affectation(
+              this->all_factors_tuple_,
+              this->all_vectors_marginals_.vectors_of_marginals);
+          this->keys_affectation_unsync_ = false;
+      }
+      else this->keys_affectation_unsync_ = true;
+    }
+
+
+    // bundle
+    template<typename FT>
+    void register_factors_in_bundle(
+         const std::vector<std::string                         > &                          v_factor_id,
+         const std::vector<typename FT::measure_t              > &               v_measure,
+         const std::vector<typename FT::measure_cov_t          > &           v_measure_cov,
+         const std::vector<std::array<std::string, FT::kNbKeys>> & v_keys_id,
+         const bool recompute_key_affectation = true)
+    {
+      PROFILE_FUNCTION();
+      auto it_fid = v_factor_id.begin();
+      auto it_measure = v_measure.begin();
+      auto it_measure_cov = v_measure_cov.begin();
+      auto it_keys_id = v_keys_id.begin();
+
+      while (it_fid != v_factor_id.end())
+      {
+        this->register_new_factor<FT>(*it_fid,*it_measure,*it_measure_cov,*it_keys_id,false);
+        it_fid ++;
+        it_measure ++;
+        it_measure_cov ++;
+        it_keys_id ++;
+      }
       if (recompute_key_affectation)
       {
           this->keys_affectation = SystemConverter::compute_keys_affectation(
@@ -410,6 +449,237 @@ namespace sam::Inference
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>
   {
+      using Base_System_t = typename BaseSystem<DenseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
+                                        ,SOLVER_T
+                                        ,FACTOR_T
+                                        ,FACTORS_Ts...>::type;
+      using type = DenseSystem<SOLVER_T, FACTOR_T, FACTORS_Ts...>;
+      using KeyMetae_t = typename Base_System_t::KeyMetae_t;
+      using Vectors_Marginals_t = typename Base_System_t::Vectors_Marginals_t;
+      using Map_Marginals_t = typename Base_System_t::Map_Marginals_t;
+      using Wrapped_Factors_t = typename Base_System_t::Wrapped_Factors_t;
+      using SystemHeader = typename Base_System_t::SystemHeader;
+      using OptimOptions = typename Base_System_t::OptimOptions;
+      using OptimStats   = typename Base_System_t::OptimStats;
+      using SolverStats  = typename Base_System_t::SolverStats;
+
+      static constexpr const bool isSystFullyLinear = Base_System_t::isSystFullyLinear;
+      static constexpr std::size_t kNbFactorTypes   = Base_System_t::kNbFactorTypes;
+      static constexpr std::size_t kNbKeyTypes      = Base_System_t::kNbKeyTypes;
+
+    /**
+     * @brief constructor
+     *
+     * @param agent id
+     */
+    DenseSystem(const std::string& agent_id, const std::string& system_label = "inference system")
+        : Base_System_t(agent_id,system_label)
+    {
+    }
+
+    OptimStats sam_optimise_specialized(const OptimOptions& options = OptimOptions())
+    {
+      // scoped timer
+      PROFILE_FUNCTION();
+      size_t M = SystemConverter::Scalar::M(this->all_factors_tuple_);
+      size_t N = SystemConverter::Scalar::N(this->all_vectors_marginals_.vectors_of_marginals);
+      size_t semantic_M = SystemConverter::Semantic::M(this->all_factors_tuple_);
+      size_t semantic_N = SystemConverter::Semantic::N(this->all_vectors_marginals_.vectors_of_marginals);
+
+      OptimStats optim_stats;
+      if (M == 0) return optim_stats;   // set success bool to false
+
+      auto natural_scalar_M_offsets = SystemConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
+      auto natural_scalar_N_offsets = SystemConverter::Scalar::MarginalTypeIndexesOffset( this->all_vectors_marginals_.vectors_of_marginals);
+      auto natural_semantic_M_offsets = SystemConverter::Semantic::FactorTypeIndexesOffset(this->all_factors_tuple_);
+      // auto semantic_N_type_idx_offsets =
+      // MatrixConverter::Semantic::MarginalTypeIndexesOffset(this->all_vectors_marginals_.vectors_of_marginals);
+
+      if (this->keys_affectation_unsync_)
+      {
+          this->keys_affectation = SystemConverter::compute_keys_affectation(
+              this->all_factors_tuple_,
+              this->all_vectors_marginals_.vectors_of_marginals);
+          this->keys_affectation_unsync_ = false;
+      }
+
+      //------------------------------------------------------------------//
+      //                            LOOP START                            //
+      //------------------------------------------------------------------//
+      // loop of the iterations
+      int max_iterations;
+      if constexpr (isSystFullyLinear)
+        max_iterations = 1;
+      else
+        max_iterations = options.max_iterations;
+
+      int nIter = 0;
+      while (nIter < max_iterations)
+      {
+        // scoped timer
+        std::string timer_name = "iter" + std::to_string(nIter);
+        PROFILE_SCOPE(timer_name.c_str());
+
+        auto [b, A] = MatrixConverter::Dense::compute_b_A(
+            this->all_factors_tuple_,
+            this->all_vectors_marginals_.vectors_of_marginals,
+            this->keys_affectation,
+            M,
+            N,
+            natural_scalar_M_offsets);
+
+        // maximum a posteriori, may represent a \hat X or \delta \hat X (NL)
+        Eigen::VectorXd                                 MaP;
+        typename SOLVER_T::Stats_t                      solver_stats;
+        std::shared_ptr<std::optional<Eigen::MatrixXd>> optional_covariance_ptr;
+        std::tie(MaP, optional_covariance_ptr, solver_stats)
+            = SOLVER_T::solve(A, b, options.solver);
+
+#if ENABLE_DEBUG_TRACE
+        {
+          PROFILE_SCOPE("print console");
+          std::cout << "#### Iteration : " << nIter << '\n';
+          std::cout << "#### Syst: A(" << A.rows() << "," << A.cols() << ") computed :\n";
+          // only display if matrix not too big
+          if (A.rows() < 22 && nIter == 0) std::cout << Eigen::MatrixXd(A) << "\n\n";
+          // std::cout << "#### Syst: R computed :\n" << Eigen::MatrixXd(A) <<
+          // "\n\n";
+          std::cout << "#### Syst: b computed :\n";
+          if (b.rows() < 22 && nIter == 0) std::cout << b << "\n";
+          std::cout << "#### Syst: MAP computed :\n" << MaP << '\n';
+          // std::cout << "#### Syst: Covariance Sigma("<< SigmaCovariance.rows() <<","<<
+          // SigmaCovariance.cols() <<") computed : \n" ; if (SigmaCovariance.rows()<15) std::cout
+          // << SigmaCovariance << '\n';
+        }
+#endif
+
+        //------------------------------------------------------------------//
+        //                  POST SOLVER LOOP ON MARGINALS                   //
+        //------------------------------------------------------------------//
+        std::apply(
+            [this, &MaP, &options, optional_covariance_ptr, &nIter, &natural_scalar_N_offsets](
+                auto&... vect_of_wmarginals)
+            {
+              std::apply(
+                  [&, this](const auto&... N_type_start_idx)
+                  {
+                    std::string scope_name = "save marginal updates";
+                    PROFILE_SCOPE(scope_name.c_str());
+                    // define the function
+                    auto lambda_update_map_of_wmarginals
+                        = [&, this](auto& vector_of_wrapped_marginals, std::size_t KeyTypeStartIdx)
+                    {
+                      using wrapped_marginal_t = typename std::remove_cvref_t<
+                          decltype(vector_of_wrapped_marginals)>::value_type;
+                      using marginal_t         = typename wrapped_marginal_t::Marginal_t;
+                      using tangent_space_t    = typename marginal_t::Tangent_Space_t;
+                      using keymeta_t          = typename marginal_t::KeyMeta_t;
+                      constexpr std::size_t kN = marginal_t::KeyMeta_t::kN;
+                      // looping over the marginal collection and updating them with the MAP result
+                      // std::for_each (
+                      //     // std::execution::par   // on M3500, sequential is still slightly
+                      //     faster than par_unseq (1.4 ms vs 1.625 ms) ,
+                      //     map_of_wrapped_marginals.begin() , map_of_wrapped_marginals.end() ,
+                      //     [&,this]( auto & kvpair)
+                      std::size_t idx_marg = 0;
+                      for (auto it_marg = vector_of_wrapped_marginals.begin();
+                           it_marg != vector_of_wrapped_marginals.end();
+                           it_marg++)
+                      {
+                        // std::string key_id = it_marg->first;
+                        std::string         key_id           = it_marg->key_id;
+                        wrapped_marginal_t& wrapped_marginal = *it_marg;
+                        // get the subvector from the Maximum A Posteriori vector
+                        auto sysidx = KeyTypeStartIdx + idx_marg * kN;
+                        idx_marg++;
+                        auto MaP_subvector = MaP.block<kN, 1>(sysidx, 0);
+
+                        // clear previous history at first iteration
+                        if (nIter == 0) wrapped_marginal.clear_history();
+
+                        // covariance, if option is set
+                        std::optional<typename marginal_t::Covariance_t> optional_subcovariance;
+                        if (options.compute_covariance)
+                        {
+                          if (optional_covariance_ptr->has_value())
+                          {
+                            optional_subcovariance
+                                = optional_covariance_ptr->value().block<kN, kN>(sysidx, sysidx);
+                          }
+                        }
+                        else
+                          optional_subcovariance = std::nullopt;
+
+                        // writes the new mean (or increment in NL systems) and the new covariance
+                        // in the marginal
+                        if constexpr (isSystFullyLinear)
+                        {
+                          // replace the mean by the maximum a posterior subvector, and save
+                          // previous marginal in history std::cout <<
+                          // optional_subcovariance.value() << '\n'; std::cout <<
+                          // ::sam::Marginal::stringify_marginal_blockliner(marginal_t(MaP_subvector,optional_subcovariance));
+                          wrapped_marginal.save_and_replace(
+                              marginal_t(MaP_subvector, optional_subcovariance));
+                          // std::cout << "post save_and_replace \n" <<
+                          // ::sam::Marginal::stringify_marginal_blockliner(wrapped_marginal.marginal);
+                        }
+                        else
+                        {
+                          // the Max a Posteriori is in the tangent space (R^kN technically, hat
+                          // operator must be used to be in the tangent space formally)
+                          wrapped_marginal.save_and_add(tangent_space_t(MaP_subvector),
+                                                        optional_subcovariance);
+                        }
+                      }
+                    };
+                    (lambda_update_map_of_wmarginals(vect_of_wmarginals, N_type_start_idx), ...);
+                  },
+                  natural_scalar_N_offsets);
+            }
+            ,
+            this->all_vectors_marginals_.vectors_of_marginals);
+
+        //------------------------------------------------------------------//
+        //                   Post Solver loop on factors                    //
+        //------------------------------------------------------------------//
+        // std::atomic<double> accumulated_syst_squared_norm  (0);
+        double accumulated_syst_squared_norm(0);
+        std::apply(
+            [&accumulated_syst_squared_norm](auto&... vec_of_wfactors)
+            {
+              std::string title = "loop factor and update data";
+              PROFILE_SCOPE(title.c_str());
+              // on M3500, sequential policy is ~3.5 times faster (0.37 ms vs 1.25ms)
+              // probably because of the lock !
+              (std::for_each(   //  std::execution::par_unseq,  // linker failure if tbb not found
+                                //  at cmake level
+                   vec_of_wfactors.begin(),
+                   vec_of_wfactors.end(),
+                   [&accumulated_syst_squared_norm](auto& wfactor)
+                   {
+                     // push the former norm
+                     wfactor.norm_history.push_back(wfactor.get_current_point_data().norm);
+                     // enforce new linearisation point on data (Ai)
+                     auto new_data_at_lin_point = wfactor.compute_persistent_data();
+                     wfactor.set_persistent_data(new_data_at_lin_point);
+                     accumulated_syst_squared_norm
+                         += new_data_at_lin_point.norm;   // fetch_add for atomic
+                   }),
+               ...);
+            },
+            this->all_factors_tuple_);
+
+        // NOTE: save accumulated squared norm in OptimStats
+
+        nIter++;
+      }
+
+      // update sequence number
+      this->header.nbSequence++;
+
+      return optim_stats;
+    }
+
   };
 
 
@@ -438,22 +708,19 @@ namespace sam::Inference
                                         ,SOLVER_T
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>::type;
-    using KeyMetae_t = typename Base_System_t::KeyMetae_t;
-    using Vectors_Marginals_t = typename Base_System_t::Vectors_Marginals_t;
-    using Map_Marginals_t = typename Base_System_t::Map_Marginals_t;
-    using SystemHeader = typename Base_System_t::SystemHeader;
-    using OptimOptions = typename Base_System_t::OptimOptions;
-    using OptimStats   = typename Base_System_t::OptimStats;
-    using SolverStats  = typename Base_System_t::SolverStats;
-    using type = SparseSystem<SOLVER_T, FACTOR_T, FACTORS_Ts...>;
+      using type = SparseSystem<SOLVER_T, FACTOR_T, FACTORS_Ts...>;
+      using KeyMetae_t = typename Base_System_t::KeyMetae_t;
+      using Vectors_Marginals_t = typename Base_System_t::Vectors_Marginals_t;
+      using Map_Marginals_t = typename Base_System_t::Map_Marginals_t;
+      using Wrapped_Factors_t = typename Base_System_t::Wrapped_Factors_t;
+      using SystemHeader = typename Base_System_t::SystemHeader;
+      using OptimOptions = typename Base_System_t::OptimOptions;
+      using OptimStats   = typename Base_System_t::OptimStats;
+      using SolverStats  = typename Base_System_t::SolverStats;
 
-    static constexpr const bool isSystFullyLinear
-        = FACTOR_T::isLinear && (FACTORS_Ts::isLinear && ...);
-
-    using Wrapped_Factor_t = std::tuple<
-        std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T, isSystFullyLinear>>,
-        std::vector<::sam::Factor::WrapperPersistentFactor<FACTORS_Ts, isSystFullyLinear>>...>;
-
+      static constexpr const bool isSystFullyLinear = Base_System_t::isSystFullyLinear;
+      static constexpr std::size_t kNbFactorTypes   = Base_System_t::kNbFactorTypes;
+      static constexpr std::size_t kNbKeyTypes      = Base_System_t::kNbKeyTypes;
     /**
      * @brief constructor
      *
@@ -477,10 +744,12 @@ namespace sam::Inference
       size_t semantic_M = SystemConverter::Semantic::M(this->all_factors_tuple_);
       size_t semantic_N
           = SystemConverter::Semantic::N(this->all_vectors_marginals_.vectors_of_marginals);
-      size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);  // WARNING: system split
+      size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
       size_t nnz_semantic_jacobian
-          = MatrixConverter::Semantic::JacobianNNZ(this->all_factors_tuple_);  // WARNING: system split
+          = MatrixConverter::Semantic::JacobianNNZ(this->all_factors_tuple_);
 
+      OptimStats optim_stats;
+      if (M == 0) return optim_stats;   // set success bool to false
 
       auto natural_scalar_M_offsets
           = SystemConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
@@ -505,21 +774,10 @@ namespace sam::Inference
                                                            semantic_M,
                                                            semantic_N,
                                                            nnz_semantic_jacobian,
-                                                           natural_semantic_M_offsets);  // WARNING: system split
+                                                           natural_semantic_M_offsets);
 
-      Eigen::SparseMatrix<int> semantic_H = MatrixConverter::Sparse::Semantic::spyHessian(this->keys_affectation);  // WARNING: system split
+      Eigen::SparseMatrix<int> semantic_H = MatrixConverter::Sparse::Semantic::spyHessian(this->keys_affectation);
 
-      OptimStats optim_stats;
-
-      // NOTE: SolverStats might have ratio rnnz/N*N
-
-      if (M == 0) return optim_stats;   // set success bool to false
-
-#if ENABLE_DEBUG_TRACE
-      std::cout << "### Syst: Starting an optimisation \n";
-      std::cout << "### Syst: size " << M << " * " << N << '\n';
-      std::cout << "### Semantic A: \n";
-#endif
 
       //------------------------------------------------------------------//
       //                            LOOP START                            //

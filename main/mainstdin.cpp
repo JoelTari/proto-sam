@@ -61,6 +61,10 @@ int main(int argc, char* argv[])
 
     {
       PROFILE_SCOPE("integrates factors");
+      std::vector<std::string> vfid;
+      std::vector<Eigen::Vector2d> vz;
+      std::vector<Eigen::Matrix2d> vSigma;
+      std::vector<std::array<std::string,2>> vKeysid;
       for (const auto& mesJson : rootJson)
       {
         if (mesJson["type"] == "anchor")
@@ -85,17 +89,21 @@ int main(int argc, char* argv[])
           Eigen::Map<Eigen::Matrix2d> Sigma(cov_vect.data());
           std::stringstream           fid;
           fid << "f" << fcount;
-          syst.register_new_factor<sam::Factor::RelativeMatcher2d>(
-              fid.str(),
-              z,
-              Sigma,
-              {mesJson["vars_id"][0].asCString(), mesJson["vars_id"][1].asCString()},false);
+          vfid.push_back(fid.str());
+          vz.push_back(z);
+          vSigma.push_back(Sigma);
+          vKeysid.push_back({mesJson["vars_id"][0].asCString(), mesJson["vars_id"][1].asCString()});
+          // syst.register_new_factor<sam::Factor::RelativeMatcher2d>(
+          //     fid.str(),
+          //     z,
+          //     Sigma,
+          //     {mesJson["vars_id"][0].asCString(), mesJson["vars_id"][1].asCString()},false);
           fcount++;
         }
         else
           throw std::runtime_error("measure type not supported");
       }
-      // TODO: register_bundle<FT>( vect_fid, vect_z, vect_Sigma, vect_{factor_keys_id})
+      syst.register_factors_in_bundle<sam::Factor::RelativeMatcher2d>(vfid, vz, vSigma, vKeysid);
     }
 
     try

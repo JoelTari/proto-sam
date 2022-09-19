@@ -53,7 +53,7 @@ class SystemJsonify
     return json_header;
   }
 
-  static Json::Value jsonify_factors(const typename SAM_SYS::Wrapped_Factor_t& wrapped_factors)
+  static Json::Value jsonify_factors(const typename SAM_SYS::Wrapped_Factors_t& wrapped_factors)
   {
     // input: a tuple of vectors of factors
 
@@ -156,7 +156,7 @@ class SystemJsonify
   static void jsonify_map_of_factors(const VECTOR_FACTORS_T& wfactors,
                                      Json::Value&            json_factors_out)
   {
-    using wrapped_factor_t = typename VECTOR_FACTORS_T::value_type;
+    using Wrapped_Factors_t = typename VECTOR_FACTORS_T::value_type;
     using factor_t         = typename VECTOR_FACTORS_T::value_type::Factor_t;
 
     for (const auto& wfactor : wfactors)
