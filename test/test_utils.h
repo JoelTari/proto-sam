@@ -88,6 +88,26 @@ struct PreRegistrationBundle
     this->vmeasure.push_back(m);
     this->vmeasure_cov.push_back(S);
     this->vkeys_id.push_back(keys);
+    this->dsize++;
+    this->isempty =false;
   }
 
+  bool isempty = true;
+  bool empty() const { return this->isempty ;}
+  std::size_t dsize = 0;
+  std::size_t size() const { return this->dsize; }
+
+
+};
+
+
+// use-case one collection per time tk
+// e.g. landmark slam: one factor for odometry, then several for landmark obs
+template <typename FT, typename ...FTs>
+struct PreRegistrationBundleCollection
+{
+  using tuple_t = std::tuple<PreRegistrationBundle<FT>, PreRegistrationBundle<FTs>...>;
+  std::vector< 
+    std::tuple<PreRegistrationBundle<FT>, PreRegistrationBundle<FTs>...>
+    > vector_of_collection;
 };
