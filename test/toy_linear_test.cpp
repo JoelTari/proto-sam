@@ -79,7 +79,7 @@ class ToyLinear2dSystem : public ::testing::Test
   // void TearDown() override
 
   template <typename SYS_T>
-  void process(SYS_T& syst)
+  void process_tests(SYS_T& syst)
   {
     // bundle anchor
     syst.template register_factors_in_bundle<sam::Factor::Anchor2d>(AnchorBundle.vfid,
@@ -173,9 +173,6 @@ class ToyLinear2dSystem : public ::testing::Test
 //------------------------------------------------------------------//
 TEST_F(ToyLinear2dSystem, SparseNaive)
 {
-  // logger
-  // std::string result_filename
-  //     = sam_utils::currentDateTime() + "_results_toy_linear_test.json";
   // scoped Timer
   PROFILE_FUNCTION();
 
@@ -186,23 +183,66 @@ TEST_F(ToyLinear2dSystem, SparseNaive)
   auto syst = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseNaive,
                                              sam::Factor::Anchor2d,
                                              sam::Factor::RelativeMatcher2d>("A");
-  // auto syst = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseCholesky,
-  // sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>("A");
 
-  this->process(syst);
+  this->process_tests(syst);
 }
 
-// TEST_F(ToyLinear2dSystem, SparseQR)
-// {
-//
-// }
-//
-// TEST_F(ToyLinear2dSystem, SparseQR)
-// {
-//
-// }
-//
-// TEST_F(ToyLinear2dSystem, SparseQR)
-// {
-//
-// }
+TEST_F(ToyLinear2dSystem, SparseQR)
+{
+  // scoped Timer
+  PROFILE_FUNCTION();
+
+  std::cout << "\n\n Declaring a sam system:\n";
+
+  // auto syst = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseQR,
+  // sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>("A");
+  auto syst = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseQR,
+                                             sam::Factor::Anchor2d,
+                                             sam::Factor::RelativeMatcher2d>("A");
+
+  this->process_tests(syst);
+}
+
+TEST_F(ToyLinear2dSystem, SparseSimplicialLLT)
+{
+  // scoped Timer
+  PROFILE_FUNCTION();
+
+  std::cout << "\n\n Declaring a sam system:\n";
+
+  auto syst = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseSimplicialLLT,
+                                             sam::Factor::Anchor2d,
+                                             sam::Factor::RelativeMatcher2d>("A");
+
+  this->process_tests(syst);
+}
+
+TEST_F(ToyLinear2dSystem, SparseSupernodalLLT)
+{
+
+  // scoped Timer
+  PROFILE_FUNCTION();
+
+  std::cout << "\n\n Declaring a sam system:\n";
+
+  auto syst = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseSupernodalLLT,
+                                             sam::Factor::Anchor2d,
+                                             sam::Factor::RelativeMatcher2d>("A");
+
+  this->process_tests(syst);
+}
+
+// only for intel mkl
+TEST_F(ToyLinear2dSystem, SparsePardisoLLT)
+{
+  // scoped Timer
+  PROFILE_FUNCTION();
+
+  std::cout << "\n\n Declaring a sam system:\n";
+
+  auto syst = ::sam::Inference::SparseSystem<sam::Inference::SolverSparsePardisoLLT,
+                                             sam::Factor::Anchor2d,
+                                             sam::Factor::RelativeMatcher2d>("A");
+
+  this->process_tests(syst);
+}
