@@ -407,3 +407,19 @@ TEST_F(ToySLAMSE2System, SparsePardisoLLT)
   this->process_tests(sys);
 }
 #endif   // EIGEN_USE_MKL_VML
+
+// dense
+TEST_F(ToySLAMSE2System, DenseNaive)
+{
+  // scoped Timer
+  PROFILE_FUNCTION();
+
+  std::cout << "\n\n Declaring a sam system:\n";
+
+  auto sys = ::sam::Inference::SparseSystem<sam::Inference::SolverDenseNaive,
+                                            ::sam::Factor::MotionModelSE2,
+                                            ::sam::Factor::AnchorSE2,
+                                            ::sam::Factor::LandmarkCartesianObsSE2>("slam system");
+
+  this->process_tests(sys);
+}

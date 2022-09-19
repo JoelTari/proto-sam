@@ -322,3 +322,19 @@ TEST_F(ToyPoseGraphSE2System, SparsePardisoLLT)
   this->process_tests(sys);
 }
 #endif   // EIGEN_USE_MKL_VML
+
+// dense
+TEST_F(ToyPoseGraphSE2System, DenseNaive)
+{
+  // scoped Timer
+  PROFILE_FUNCTION();
+
+  std::cout << "\n\n Declaring a sam system:\n";
+
+  auto sys
+      = ::sam::Inference::SparseSystem<sam::Inference::SolverDenseNaive,
+                                       ::sam::Factor::AnchorSE2,
+                                       ::sam::Factor::RelativeMatcherSE2>("RelativeMatcherSLAM");
+
+  this->process_tests(sys);
+}
