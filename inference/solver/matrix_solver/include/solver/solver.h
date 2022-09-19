@@ -317,4 +317,48 @@ namespace sam::Inference
               const SolverOptionsSparseSupernodalLLT& options = SolverOptionsSparseSupernodalLLT());
   };
 
+
+  //------------------------------------------------------------------//
+  //                           Naive Dense                            //
+  //------------------------------------------------------------------//
+  struct SolverOptionsDenseNaive
+  {
+    bool compute_covariance = true;
+    bool compute_residual   = true;
+    SolverOptionsDenseNaive(bool compute_covariance)
+        : compute_covariance(compute_covariance)
+    {
+    }
+    SolverOptionsDenseNaive() {}
+  };
+
+  struct SolverStatsDenseNaive
+  {
+    bool                     success;
+    int                      rank;
+    std::string              report_str;
+    std::optional<double>    residual;   // different from the NLog from a constant
+    SolverOptionsDenseNaive input_options;
+  };
+
+  struct SolverDenseNaive
+  {
+    using Stats_t      = SolverStatsDenseNaive;
+    using Options_t    = SolverOptionsDenseNaive;
+    using MaP_t        = Eigen::VectorXd;
+    using Covariance_t = Eigen::MatrixXd;
+    using OptCovariance_t = std::optional<Covariance_t>;
+    using OptCovariance_ptr_t = std::shared_ptr<std::optional<Covariance_t>>;
+
+    constexpr static const char name[] = "DenseNaive";
+
+    static Eigen::MatrixXd compute_covariance(const Eigen::MatrixXd& A);
+
+
+    static std::tuple<MaP_t, OptCovariance_ptr_t, SolverStatsDenseNaive>
+        solve(const Eigen::MatrixXd& A,
+              const Eigen::VectorXd&             b,
+              const SolverOptionsDenseNaive&    options = SolverOptionsDenseNaive());
+  };
+
 }   // namespace sam::Inference
