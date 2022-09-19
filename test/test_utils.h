@@ -73,3 +73,13 @@ void EXPECT_KEY_APPROX(const std::string&              id,
     std::cerr << "Actual key Value " << id << ": " << Key_Meta::stringify_key_oneliner(val) << '\n';
   }
 }
+
+template <typename FT>
+struct PreRegistrationBundle
+{
+  std::vector< std::string > vfid = {};
+  std::vector<typename FT::measure_t > vmeasure = {};
+  std::vector<typename FT::measure_cov_t> vmeasure_cov = {};
+  std::vector<std::array<std::string, FT::kNbKeys>> vkeys_id = {};
+
+};
