@@ -227,7 +227,6 @@ TEST_F(ToyLinear2dSystem, SparseSimplicialLLT)
 
 TEST_F(ToyLinear2dSystem, SparseSupernodalLLT)
 {
-
   // scoped Timer
   PROFILE_FUNCTION();
 
@@ -255,4 +254,4 @@ TEST_F(ToyLinear2dSystem, SparsePardisoLLT)
 
   this->process_tests(syst);
 }
-#endif // EIGEN_USE_MKL_VML
+#endif   // EIGEN_USE_MKL_VML

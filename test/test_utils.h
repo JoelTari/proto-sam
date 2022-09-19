@@ -77,37 +77,37 @@ void EXPECT_KEY_APPROX(const std::string&              id,
 template <typename FT>
 struct PreRegistrationBundle
 {
-  std::vector< std::string > vfid = {};
-  std::vector<typename FT::measure_t > vmeasure = {};
-  std::vector<typename FT::measure_cov_t> vmeasure_cov = {};
-  std::vector<std::array<std::string, FT::kNbKeys>> vkeys_id = {};
+  std::vector<std::string>                          vfid         = {};
+  std::vector<typename FT::measure_t>               vmeasure     = {};
+  std::vector<typename FT::measure_cov_t>           vmeasure_cov = {};
+  std::vector<std::array<std::string, FT::kNbKeys>> vkeys_id     = {};
 
-  void push(const std::string& fid, const typename FT::measure_t & m, const typename FT::measure_cov_t & S, const std::array<std::string, FT::kNbKeys> & keys)
+  void push(const std::string&                          fid,
+            const typename FT::measure_t&               m,
+            const typename FT::measure_cov_t&           S,
+            const std::array<std::string, FT::kNbKeys>& keys)
   {
     this->vfid.push_back(fid);
     this->vmeasure.push_back(m);
     this->vmeasure_cov.push_back(S);
     this->vkeys_id.push_back(keys);
     this->dsize++;
-    this->isempty =false;
+    this->isempty = false;
   }
 
-  bool isempty = true;
-  bool empty() const { return this->isempty ;}
+  bool        isempty = true;
+  bool        empty() const { return this->isempty; }
   std::size_t dsize = 0;
   std::size_t size() const { return this->dsize; }
-
-
 };
 
 
 // use-case one collection per time tk
 // e.g. landmark slam: one factor for odometry, then several for landmark obs
-template <typename FT, typename ...FTs>
+template <typename FT, typename... FTs>
 struct PreRegistrationBundleCollection
 {
   using tuple_t = std::tuple<PreRegistrationBundle<FT>, PreRegistrationBundle<FTs>...>;
-  std::vector< 
-    std::tuple<PreRegistrationBundle<FT>, PreRegistrationBundle<FTs>...>
-    > vector_of_collection;
+  std::vector<std::tuple<PreRegistrationBundle<FT>, PreRegistrationBundle<FTs>...>>
+      vector_of_collection;
 };
