@@ -136,6 +136,7 @@ namespace sam::Inference
 
     SystemHeader header;
 
+    // WARNING: change struct
     std::unordered_map<std::string, typename SystemConverter::KeyDispatchInfos> keys_affectation
         = {};
 

@@ -365,7 +365,7 @@ TEST_F(ToySLAMSE2System, SparseSimplicialLLT)
   PROFILE_FUNCTION();
 
   cout << "\n\n Declaring a sam system:\n";
-  auto sys = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseSimplicialLLT,
+  auto sys = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseSimplicialLLT,  // simplicial LLT
                                             ::sam::Factor::MotionModelSE2,
                                             ::sam::Factor::AnchorSE2,
                                             ::sam::Factor::LandmarkCartesianObsSE2>("slam system");
@@ -381,7 +381,7 @@ TEST_F(ToySLAMSE2System, SparseSupernodalLLT)
   PROFILE_FUNCTION();
 
   cout << "\n\n Declaring a sam system:\n";
-  auto sys = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseSupernodalLLT,
+  auto sys = ::sam::Inference::SparseSystem<sam::Inference::SolverSparseSupernodalLLT,  // Supernodal LLT    // le + rapide
                                             ::sam::Factor::MotionModelSE2,
                                             ::sam::Factor::AnchorSE2,
                                             ::sam::Factor::LandmarkCartesianObsSE2>("slam system");
@@ -399,7 +399,7 @@ TEST_F(ToySLAMSE2System, SparsePardisoLLT)
   PROFILE_FUNCTION();
 
   cout << "\n\n Declaring a sam system:\n";
-  auto sys = ::sam::Inference::SparseSystem<sam::Inference::SolverSparsePardisoLLT,
+  auto sys = ::sam::Inference::SparseSystem<sam::Inference::SolverSparsePardisoLLT,       // special Intel
                                             ::sam::Factor::MotionModelSE2,
                                             ::sam::Factor::AnchorSE2,
                                             ::sam::Factor::LandmarkCartesianObsSE2>("slam system");

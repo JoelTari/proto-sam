@@ -361,4 +361,10 @@ namespace sam::Inference
               const SolverOptionsDenseNaive&    options = SolverOptionsDenseNaive());
   };
 
+
+  //------------------------------------------------------------------//
+  //                             Dense QR                             //
+  //------------------------------------------------------------------//
+  // c
+
 }   // namespace sam::Inference

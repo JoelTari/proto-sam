@@ -99,7 +99,7 @@ target_compile_definitions(mainstdin PUBLIC ${COMPILED_WITH})
 # test: move in test subdirectory with dedicated cmake
 add_executable(marginal_test test/marginal_test.cpp)
 target_link_libraries(marginal_test PUBLIC sam_system ${META_STATIC_LIBRARIES})
-target_include_directories(marginal_test PUBLIC ${EIGEN_INCLUDE_DIRS})
+target_include_directories(marginal_test PUBLIC ${EIGEN3_INCLUDE_DIRS})
 target_compile_features(marginal_test PUBLIC cxx_std_20)
 
 include(FetchContent)

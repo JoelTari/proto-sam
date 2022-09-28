@@ -507,3 +507,46 @@ std::tuple<typename SolverDenseNaive::MaP_t,
 
   return {X_map, optional_covariance_ptr, stats};
 }
+
+
+// Eigen::MatrixXd SolverDenseNaive::compute_covariance(const Eigen::MatrixXd& A)
+// {
+//   PROFILE_SCOPE("compute_covariance: dense");
+//
+//   Eigen::MatrixXd H = A.transpose() * A;
+//   return Eigen::MatrixXd(H).inverse();
+// }
+//
+// std::tuple<typename SolverDenseNaive::MaP_t,
+//            typename SolverDenseNaive::OptCovariance_ptr_t,
+//            typename SolverDenseNaive::Stats_t>
+//     SolverDenseNaive::solve(const Eigen::MatrixXd&  A,
+//                              const Eigen::VectorXd&              b,
+//                              const SolverDenseNaive::Options_t& options)
+// {
+//   std::string scope_name = "Solve with " + std::string(SolverDenseNaive::name);
+//   PROFILE_SCOPE(scope_name.c_str());
+//   // stats
+//   SolverStatsDenseNaive stats;
+//
+//   // (not really-)optional covariance
+//   OptCovariance_ptr_t optional_covariance_ptr = std::make_shared<OptCovariance_t>( compute_covariance(A));
+//
+//   // MAP
+//   Eigen::VectorXd X_map;
+//   {
+//     PROFILE_SCOPE("Xmap = Covariance times information vector");
+//
+//     X_map = optional_covariance_ptr->value()
+//             * (A.transpose()
+//                * b);   // the parenthesis are important for perf (otherwise constly matrix*matrix)
+//     // OPTIMIZE: use future for At*b
+//   }
+//
+//
+//   stats.success       = 1;
+//   stats.report_str    = "";   //  str(info);
+//   stats.input_options = options;
+//
+//   return {X_map, optional_covariance_ptr, stats};
+// }
