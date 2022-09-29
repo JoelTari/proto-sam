@@ -7,13 +7,13 @@ pb_id=$1
 
 if [ $# -gt 1 ]
 then
-  if [[ "$2" = "--debug" ]]; then
-    flag_db="lldb"
+  if [[ "$2" = "graph" ]]; then
+    program="graphmainstdin"
   fi
 else
-  flag_db=""
+  program="mainstdin" # matricial by default
 fi
 
-cat examples/mes_"$pb_id".json | $flag_db build/mainstdin $pb_id "$(git rev-parse --short HEAD)" |\
+cat examples/mes_"$pb_id".json | $flag_db build/graphmainstdin $pb_id "$(git rev-parse --short HEAD)" |\
   tee "$(date '+%Y%m%d_%H-%M-%S')"_"$pb_id".json |\
   ./graph_publish.py #*_results_"$pb_id".json
