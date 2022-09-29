@@ -18,6 +18,7 @@ endif()
 # add_definitions("-Wfatal-errors")
 include(CMakePrintHelpers)
 
+find_package(Boost REQUIRED)
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(manif REQUIRED)
 find_package(jsoncpp 1.9.4 REQUIRED CONFIG)  # this sets 'jsoncpp_lib' and 'jsoncpp_static'

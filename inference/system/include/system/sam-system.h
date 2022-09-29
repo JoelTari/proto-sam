@@ -18,6 +18,15 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+// boost
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index_container.hpp>
+
+namespace bmi = ::boost::multi_index;
+
 
 namespace sam::Inference
 {
@@ -129,6 +138,26 @@ namespace sam::Inference
 
     static constexpr std::size_t kNbFactorTypes = 1 + sizeof...(FACTORS_Ts);
     static constexpr std::size_t kNbKeyTypes    = std::tuple_size_v<KeyMetae_t>;
+
+    // // for later
+    // using Wrapped_Factors_t = std::tuple<
+    //   bmi::multi_index_container< ::sam::Factor::WrapperPersistentFactor<FACTOR_T, isSystFullyLinear>, 
+    //                               bmi::indexed_by<
+    //                                         bmi::random_access<
+    //                                                           // bmi::identity< ::sam::Factor::WrapperPersistentFactor<FACTOR_T, isSystFullyLinear> >
+    //                                                           >
+    //                                             >
+    //                           >
+    //                           // >;
+    //                           ,
+    //   bmi::multi_index_container< ::sam::Factor::WrapperPersistentFactor<FACTORS_Ts, isSystFullyLinear>, 
+    //                               bmi::indexed_by<
+    //                                         bmi::random_access<
+    //                                                           // bmi::identity< ::sam::Factor::WrapperPersistentFactor<FACTORS_Ts, isSystFullyLinear> >
+    //                                                           >
+    //                                                 >
+    //                           >...
+    //                           >;
 
     using Wrapped_Factors_t = std::tuple<
         std::vector<::sam::Factor::WrapperPersistentFactor<FACTOR_T, isSystFullyLinear>>,
@@ -963,6 +992,121 @@ namespace sam::Inference
 
   };
 
+  //------------------------------------------------------------------//
+  //                          Sparse System                           //
+  //------------------------------------------------------------------//
+  template <typename SOLVER_T,
+            typename FACTOR_T,
+            typename... FACTORS_Ts>   // I need at least one type of factor
+  class GraphSystem : public BaseSystem<SparseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
+                                        ,SOLVER_T
+                                        ,FACTOR_T
+                                        ,FACTORS_Ts...>
+  {
+    
+    public:
+      using Base_System_t = typename BaseSystem<GraphSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
+                                        ,SOLVER_T
+                                        ,FACTOR_T
+                                        ,FACTORS_Ts...>::type;
+      using type = GraphSystem<SOLVER_T, FACTOR_T, FACTORS_Ts...>;
+      using KeyMetae_t = typename Base_System_t::KeyMetae_t;
+      using Vectors_Marginals_t = typename Base_System_t::Vectors_Marginals_t;
+      using Map_Marginals_t = typename Base_System_t::Map_Marginals_t;
+      using Wrapped_Factors_t = typename Base_System_t::Wrapped_Factors_t;
+      using SystemHeader = typename Base_System_t::SystemHeader;
+      using OptimOptions = typename Base_System_t::OptimOptions;
+      using OptimStats   = typename Base_System_t::OptimStats;
+      using SolverStats  = typename Base_System_t::SolverStats;
+
+      static constexpr const bool isSystFullyLinear = Base_System_t::isSystFullyLinear;
+      static constexpr std::size_t kNbFactorTypes   = Base_System_t::kNbFactorTypes;
+      static constexpr std::size_t kNbKeyTypes      = Base_System_t::kNbKeyTypes;
+    /**
+     * @brief constructor
+     *
+     * @param agent id
+     */
+    GraphSystem(const std::string& agent_id, const std::string& system_label = "inference system")
+        : Base_System_t(agent_id,system_label)
+    {
+    }
+
+    /**
+     * @brief optimisation method
+     */
+    OptimStats sam_optimise_specialized(const OptimOptions& options = OptimOptions())
+    {
+      // scoped timer
+      PROFILE_FUNCTION();
+
+      size_t M = SystemConverter::Scalar::M(this->all_factors_tuple_);
+      size_t N = SystemConverter::Scalar::N(this->all_vectors_marginals_.vectors_of_marginals);
+      size_t semantic_M = SystemConverter::Semantic::M(this->all_factors_tuple_);
+      size_t semantic_N
+          = SystemConverter::Semantic::N(this->all_vectors_marginals_.vectors_of_marginals);
+      size_t nnz_jacobian = MatrixConverter::Scalar::JacobianNNZ(this->all_factors_tuple_);
+      size_t nnz_semantic_jacobian
+          = MatrixConverter::Semantic::JacobianNNZ(this->all_factors_tuple_);
+
+      OptimStats optim_stats;
+      if (M == 0) return optim_stats;   // set success bool to false
+
+      auto natural_scalar_M_offsets
+          = SystemConverter::Scalar::FactorTypeIndexesOffset(this->all_factors_tuple_);
+      auto natural_scalar_N_offsets = SystemConverter::Scalar::MarginalTypeIndexesOffset(
+          this->all_vectors_marginals_.vectors_of_marginals);
+      auto natural_semantic_M_offsets
+          = SystemConverter::Semantic::FactorTypeIndexesOffset(this->all_factors_tuple_);
+      // auto semantic_N_type_idx_offsets =
+      // MatrixConverter::Semantic::MarginalTypeIndexesOffset(this->all_vectors_marginals_.vectors_of_marginals);
+
+      if (this->keys_affectation_unsync_)
+      {
+          this->keys_affectation = SystemConverter::compute_keys_affectation(
+              this->all_factors_tuple_,
+              this->all_vectors_marginals_.vectors_of_marginals);
+          this->keys_affectation_unsync_ = false;
+      }
+
+      Eigen::SparseMatrix<int> semantic_A
+          = MatrixConverter::Sparse::Semantic::spyJacobian(this->all_factors_tuple_,
+                                                           this->keys_affectation,
+                                                           semantic_M,
+                                                           semantic_N,
+                                                           nnz_semantic_jacobian,
+                                                           natural_semantic_M_offsets);
+
+      Eigen::SparseMatrix<int> semantic_H = MatrixConverter::Sparse::Semantic::spyHessian(this->keys_affectation);
+
+      // TODO: URGENT: continue here
+
+
+      //------------------------------------------------------------------//
+      //                            LOOP START                            //
+      //------------------------------------------------------------------//
+      // loop of the iterations
+      int max_iterations;
+      if constexpr (isSystFullyLinear)
+        max_iterations = 1;
+      else
+        max_iterations = options.max_iterations;
+
+      int nIter = 0;
+      while (nIter < max_iterations)
+      {
+        // TODO:
+        nIter++;
+      }
+
+      // update sequence number
+      this->header.nbSequence++;
+
+      return optim_stats;
+    }
+
+  };
+  
 
 
 };   // namespace sam::Inference
