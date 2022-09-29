@@ -82,6 +82,20 @@ add_subdirectory(inference)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
 
+# graph mainstdin
+add_executable(graphmainstdin main/graphmainstdin.cpp)
+target_link_libraries(graphmainstdin 
+  PUBLIC 
+  jsoncpp_static 
+  factor_anchor2d 
+  factor_relative_matcher_2d 
+  sam_system
+  ${LOW_LEVEL_LIBRARIES})
+target_compile_features(graphmainstdin PUBLIC cxx_std_20)
+target_compile_definitions(graphmainstdin PUBLIC ${COMPILED_WITH})
+
+
+# matrix mainstdin
 add_executable(mainstdin main/mainstdin.cpp)
 target_link_libraries(mainstdin 
   PUBLIC 

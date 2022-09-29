@@ -18,12 +18,13 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-// boost
+// boost (graph system only)
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index_container.hpp>
+#include <amd.h>
 
 namespace bmi = ::boost::multi_index;
 
@@ -998,7 +999,7 @@ namespace sam::Inference
   template <typename SOLVER_T,
             typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
-  class GraphSystem : public BaseSystem<SparseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
+  class GraphSystem : public BaseSystem<GraphSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
                                         ,SOLVER_T
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>
@@ -1080,7 +1081,28 @@ namespace sam::Inference
       Eigen::SparseMatrix<int> semantic_H = MatrixConverter::Sparse::Semantic::spyHessian(this->keys_affectation);
 
       // TODO: URGENT: continue here
+      // 1. AMD ( semantic_H )
+      // 2. fillin_edges vector
+      // 3. (from 1 to 2 in parallel)  boost graph G = MRF of factors (or use boost-graphetize  keys_affects ?? )
+      // 4. (once 2&3) G' = G_cpy + add fill edges
+      // 5. {C,S_c} = MCS (G') 
+      // 6. c_r = getRoot(S_c)
+      // 7. fwd message passing
 
+      // 1. AMD
+      std::vector<int> PermutationVector = {};
+      PermutationVector.reserve(semantic_N);
+      {
+        PROFILE_SCOPE("amd ordering");
+        amd_order(semantic_N, semantic_H.outerIndexPtr(), semantic_H.innerIndexPtr(), &PermutationVector[0], (double*)NULL,(double*)NULL);
+        // for (int k = 0; k < semantic_N; ++k) printf("P [%d] = %d\n", k, PermutationVector[k]);
+      }
+      // 2. fillin_edges vector
+      // std::vector<std::pair<std::string, std::string>> fillin_edges = {};
+      // {
+      //     fillin_edges = infer_fillinedges(PermutationVector, dispatch_container);
+      // }
+      // std::cout << "number of fillin edges: " << fillin_edges.size() << " out of " << semantic_H.nonZeros() <<" original edges.\n"; 
 
       //------------------------------------------------------------------//
       //                            LOOP START                            //
