@@ -46,64 +46,6 @@ namespace sam::Inference
     }
   };
 
-  template <typename SOLVER_T>
-  struct OptimOptions
-  {
-    // max number of iterations (no effect if linear system)
-    std::size_t max_iterations = 3;
-    // allow the solver to cache informations (mind the memory impact)
-    // to enable incremental inference
-    bool cache_incremental = false;
-    // compute the covariance (mind the time complexity)
-    bool compute_covariance = true;
-    // cache the full joint covariance (mind the memory impact, but allow for rapid joint covariance
-    // queries)
-    bool cache_covariance = this->compute_covariance
-                            && false;   // cache_covariance (moot if no computation of covariance)
-    // TODO: thresholding strategy (by key type?? -> leads to template)
-    // solver options
-    typename SOLVER_T::Options_t solver;
-    // ctor
-    OptimOptions() : solver(this->compute_covariance) {}
-
-    // ctor
-    OptimOptions(bool compute_covariance)
-        : compute_covariance(compute_covariance)
-        , solver(this->compute_covariance)
-    {
-    }
-  };
-
-
-  template <typename SOLVER_T>
-  struct OptimStats
-  {
-    // optimization success (or not)
-    bool success;
-    // forwards the options inputs (the rest is more output-ish)
-    OptimOptions<SOLVER_T> optim_options;
-    // the stats specifics to the solver
-    typename SOLVER_T::Stats_t solver;
-    // number of scalar nonzeros in the jacobian matrix
-    std::size_t nbNZ_jacobian_scalar;
-    // ratio of nonzeros in the jacobian matrix
-    std::size_t ratioNZ_jacobian_scalar;
-    // number of scalar nonzeros in the hessian matrix
-    std::size_t nbNZ_hessian_scalar;
-    // ratio of nonzeros in the hessian matrix
-    std::size_t ratioNZ_hessian_scalar;
-    // size M,N of the jacobian matrix
-    std::size_t M, N;
-    // size of the semantic jacobian matrix
-    std::size_t M_semantic, N_semantic;
-
-    // report message
-    std::string report_str;
-    // negative log likelihood of the product of factors
-    double NLog_value_before;
-    double NLog_value_after;
-  };
-
 
 
 
@@ -112,7 +54,7 @@ namespace sam::Inference
   //------------------------------------------------------------------//
   //                           Base System                            //
   //------------------------------------------------------------------//
-  template <typename DerivedSystem, typename SOLVER_T, typename FACTOR_T, typename... FACTORS_Ts>
+  template <typename DerivedSystem, typename OPTIM_STATS_T, typename OPTIM_OPTIONS_T, typename FACTOR_T, typename... FACTORS_Ts>
   class BaseSystem
   {
     public:
@@ -124,11 +66,11 @@ namespace sam::Inference
     // declare marginal container type of those keymetas
     using Vectors_Marginals_t = Marginal::MarginalsVectorCollection<KeyMetae_t>;
     using Map_Marginals_t = typename ::sam::Marginal::MarginalsCollection<KeyMetae_t>::type;
-    using type = BaseSystem<DerivedSystem, SOLVER_T, FACTOR_T, FACTORS_Ts...>;
+    using type = BaseSystem<DerivedSystem,OPTIM_STATS_T,OPTIM_OPTIONS_T, FACTOR_T, FACTORS_Ts...>;
     using SystemHeader = SystemHeader;
-    using OptimOptions = OptimOptions<SOLVER_T>;
-    using OptimStats   = OptimStats<SOLVER_T>;
-    using SolverStats  = typename SOLVER_T::Stats_t;
+    // using OptimOptions = OptimOptions<SOLVER_T>;
+    // using OptimStats   = OptimStats<SOLVER_T>;
+    // using SolverStats  = typename SOLVER_T::Stats_t;
 
     // friend DerivedSystem;
 
@@ -166,9 +108,9 @@ namespace sam::Inference
 
     SystemHeader header;
 
-    // WARNING: change struct
+    // WARNING: change struct to boost undirected graph
     std::unordered_map<std::string, typename SystemConverter::KeyDispatchInfos> keys_affectation
-        = {};
+        = {}; // FIX: keep it just for (sparse?) matrix based system
 
 
     /**
@@ -181,9 +123,9 @@ namespace sam::Inference
     {
     }
 
-    OptimStats sam_optimise(const OptimOptions& options = OptimOptions())
+    OPTIM_STATS_T sam_optimise(const OPTIM_OPTIONS_T& options = OPTIM_OPTIONS_T() )
     {
-      return static_cast<DerivedSystem*>(this)->sam_optimise_specialized();
+      return static_cast<DerivedSystem*>(this)->sam_optimise_specialized(options);
     }
 
     void remove_factor(const std::string& factor_id)
@@ -223,7 +165,7 @@ namespace sam::Inference
 
     auto get_all_factors() const { return this->all_factors_tuple_; }
 
-    auto get_keys_affectation() const { return this->keys_affectation; }
+    auto get_keys_affectation() const { return this->keys_affectation; } // FIX: keep it just for (sparse?) matrix based system
 
     // TODO: urgent get_joint-marginal etc...
     // joint_marginal<marginals_t> get_joint_marginal()
@@ -316,7 +258,7 @@ namespace sam::Inference
       // recompute keys_affectation
       // this is wasteful IF many factors are registered at once (batch slam)
       // because then it would just be easier to do it at the end
-      if (recompute_key_affectation)
+      if (recompute_key_affectation) // FIX: keep it just for (sparse?) matrix based system. Use a boost::graph for graph
       {
           this->keys_affectation = SystemConverter::compute_keys_affectation(
               this->all_factors_tuple_,
@@ -350,7 +292,7 @@ namespace sam::Inference
         it_measure_cov ++;
         it_keys_id ++;
       }
-      if (recompute_key_affectation)
+      if (recompute_key_affectation) // FIX: keep it just for (sparse?) matrix based system. Use a boost::graph for graph
       {
           this->keys_affectation = SystemConverter::compute_keys_affectation(
               this->all_factors_tuple_,
@@ -463,6 +405,116 @@ namespace sam::Inference
 
 
 
+  // FIX: move to matrix system
+  template <typename SOLVER_T>
+  struct OptimOptions
+  {
+    // max number of iterations (no effect if linear system)
+    std::size_t max_iterations = 3;
+    // allow the solver to cache informations (mind the memory impact)
+    // to enable incremental inference
+    bool cache_incremental = false;
+    // compute the covariance (mind the time complexity)
+    bool compute_covariance = true;
+    // cache the full joint covariance (mind the memory impact, but allow for rapid joint covariance
+    // queries)
+    bool cache_covariance = this->compute_covariance
+                            && false;   // cache_covariance (moot if no computation of covariance)
+    // TODO: thresholding strategy (by key type?? -> leads to template)
+    // solver options
+    typename SOLVER_T::Options_t solver;
+    // ctor
+    OptimOptions() : solver(this->compute_covariance) {}
+
+    // ctor
+    OptimOptions(bool compute_covariance)
+        : compute_covariance(compute_covariance)
+        , solver(this->compute_covariance)
+    {
+    }
+  };
+
+
+  // FIX: move to matrix system
+  template <typename SOLVER_T>
+  struct OptimStats
+  {
+    // optimization success (or not)
+    bool success;
+    // forwards the options inputs (the rest is more output-ish)
+    OptimOptions<SOLVER_T> optim_options;
+    // the stats specifics to the solver
+    typename SOLVER_T::Stats_t solver;
+    // number of scalar nonzeros in the jacobian matrix
+    std::size_t nbNZ_jacobian_scalar;
+    // ratio of nonzeros in the jacobian matrix
+    std::size_t ratioNZ_jacobian_scalar;
+    // number of scalar nonzeros in the hessian matrix
+    std::size_t nbNZ_hessian_scalar;
+    // ratio of nonzeros in the hessian matrix
+    std::size_t ratioNZ_hessian_scalar;
+    // size M,N of the jacobian matrix
+    std::size_t M, N;
+    // size of the semantic jacobian matrix
+    std::size_t M_semantic, N_semantic;
+
+    // report message
+    std::string report_str;
+    // negative log likelihood of the product of factors
+    double NLog_value_before;
+    double NLog_value_after;
+  };
+
+  //------------------------------------------------------------------//
+  //                        Matrix Base System                        //
+  //------------------------------------------------------------------//
+  template <typename DerivedMatrixSystem, typename SOLVER_T, typename FACTOR_T, typename... FACTORS_Ts>
+  class MatrixBaseSystem : public BaseSystem<MatrixBaseSystem<DerivedMatrixSystem,SOLVER_T,FACTOR_T,FACTORS_Ts...>
+                                            ,OptimStats<SOLVER_T>
+                                            ,OptimOptions<SOLVER_T>
+                                            ,FACTOR_T
+                                            ,FACTORS_Ts...>
+  {
+    public:
+      using Base_System_t = typename BaseSystem<MatrixBaseSystem<DerivedMatrixSystem,SOLVER_T,FACTOR_T,FACTORS_Ts...>
+                                            ,OptimStats<SOLVER_T>
+                                            ,OptimOptions<SOLVER_T>
+                                            ,FACTOR_T
+                                            ,FACTORS_Ts...>::type;
+
+      using type = MatrixBaseSystem<DerivedMatrixSystem, SOLVER_T, FACTOR_T, FACTORS_Ts...>;
+      using KeyMetae_t = typename Base_System_t::KeyMetae_t;
+      using Vectors_Marginals_t = typename Base_System_t::Vectors_Marginals_t;
+      using Map_Marginals_t = typename Base_System_t::Map_Marginals_t;
+      using Wrapped_Factors_t = typename Base_System_t::Wrapped_Factors_t;
+      using SystemHeader = typename Base_System_t::SystemHeader;
+      using OptimOptions = OptimOptions<SOLVER_T>;
+      using OptimStats   = OptimStats<SOLVER_T>;
+      using SolverStats  = typename SOLVER_T::Stats_t;
+      // using OptimOptions = typename Base_System_t::OptimOptions;
+      // using OptimStats   = typename Base_System_t::OptimStats;
+      // using SolverStats  = typename Base_System_t::SolverStats;
+
+      static constexpr const bool isSystFullyLinear = Base_System_t::isSystFullyLinear;
+      static constexpr std::size_t kNbFactorTypes   = Base_System_t::kNbFactorTypes;
+      static constexpr std::size_t kNbKeyTypes      = Base_System_t::kNbKeyTypes;
+
+    /**
+     * @brief constructor
+     *
+     * @param agent id
+     */
+    MatrixBaseSystem(const std::string& agent_id, const std::string& system_label = "matrix inference system")
+        : Base_System_t(agent_id,system_label)
+    {
+    }
+
+    OptimStats sam_optimise_specialized(const OptimOptions& options)
+    {
+      return static_cast<DerivedMatrixSystem*>(this)->sam_optimise_matrix_specialized(options);
+    }
+
+  };
 
 
 
@@ -475,41 +527,41 @@ namespace sam::Inference
   template <typename SOLVER_T,
             typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
-  class DenseSystem : public BaseSystem<DenseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
+  class DenseSystem : public MatrixBaseSystem<DenseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
                                         ,SOLVER_T
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>
   {
     public:
-      using Base_System_t = typename BaseSystem<DenseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
+      using Matrix_Base_System_t = typename MatrixBaseSystem<DenseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
                                         ,SOLVER_T
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>::type;
       using type = DenseSystem<SOLVER_T, FACTOR_T, FACTORS_Ts...>;
-      using KeyMetae_t = typename Base_System_t::KeyMetae_t;
-      using Vectors_Marginals_t = typename Base_System_t::Vectors_Marginals_t;
-      using Map_Marginals_t = typename Base_System_t::Map_Marginals_t;
-      using Wrapped_Factors_t = typename Base_System_t::Wrapped_Factors_t;
-      using SystemHeader = typename Base_System_t::SystemHeader;
-      using OptimOptions = typename Base_System_t::OptimOptions;
-      using OptimStats   = typename Base_System_t::OptimStats;
-      using SolverStats  = typename Base_System_t::SolverStats;
+      using KeyMetae_t = typename Matrix_Base_System_t::KeyMetae_t;
+      using Vectors_Marginals_t = typename Matrix_Base_System_t::Vectors_Marginals_t;
+      using Map_Marginals_t = typename Matrix_Base_System_t::Map_Marginals_t;
+      using Wrapped_Factors_t = typename Matrix_Base_System_t::Wrapped_Factors_t;
+      using SystemHeader = typename Matrix_Base_System_t::SystemHeader;
+      using OptimOptions = typename Matrix_Base_System_t::OptimOptions;
+      using OptimStats   = typename Matrix_Base_System_t::OptimStats;
+      using SolverStats  = typename Matrix_Base_System_t::SolverStats;
 
-      static constexpr const bool isSystFullyLinear = Base_System_t::isSystFullyLinear;
-      static constexpr std::size_t kNbFactorTypes   = Base_System_t::kNbFactorTypes;
-      static constexpr std::size_t kNbKeyTypes      = Base_System_t::kNbKeyTypes;
+      static constexpr const bool isSystFullyLinear = Matrix_Base_System_t::isSystFullyLinear;
+      static constexpr std::size_t kNbFactorTypes   = Matrix_Base_System_t::kNbFactorTypes;
+      static constexpr std::size_t kNbKeyTypes      = Matrix_Base_System_t::kNbKeyTypes;
 
     /**
      * @brief constructor
      *
      * @param agent id
      */
-    DenseSystem(const std::string& agent_id, const std::string& system_label = "inference system")
-        : Base_System_t(agent_id,system_label)
+    DenseSystem(const std::string& agent_id, const std::string& system_label = "dense matrix inference system")
+        : Matrix_Base_System_t(agent_id,system_label)
     {
     }
 
-    OptimStats sam_optimise_specialized(const OptimOptions& options = OptimOptions())
+    OptimStats sam_optimise_matrix_specialized(const OptimOptions& options = OptimOptions())
     {
       // scoped timer
       PROFILE_FUNCTION();
@@ -730,43 +782,43 @@ namespace sam::Inference
   template <typename SOLVER_T,
             typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
-  class SparseSystem : public BaseSystem<SparseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
+  class SparseSystem : public MatrixBaseSystem<SparseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
                                         ,SOLVER_T
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>
   {
     public:
-      using Base_System_t = typename BaseSystem<SparseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
+      using Matrix_Base_System_t = typename MatrixBaseSystem<SparseSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
                                         ,SOLVER_T
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>::type;
       using type = SparseSystem<SOLVER_T, FACTOR_T, FACTORS_Ts...>;
-      using KeyMetae_t = typename Base_System_t::KeyMetae_t;
-      using Vectors_Marginals_t = typename Base_System_t::Vectors_Marginals_t;
-      using Map_Marginals_t = typename Base_System_t::Map_Marginals_t;
-      using Wrapped_Factors_t = typename Base_System_t::Wrapped_Factors_t;
-      using SystemHeader = typename Base_System_t::SystemHeader;
-      using OptimOptions = typename Base_System_t::OptimOptions;
-      using OptimStats   = typename Base_System_t::OptimStats;
-      using SolverStats  = typename Base_System_t::SolverStats;
+      using KeyMetae_t = typename Matrix_Base_System_t::KeyMetae_t;
+      using Vectors_Marginals_t = typename Matrix_Base_System_t::Vectors_Marginals_t;
+      using Map_Marginals_t = typename Matrix_Base_System_t::Map_Marginals_t;
+      using Wrapped_Factors_t = typename Matrix_Base_System_t::Wrapped_Factors_t;
+      using SystemHeader = typename Matrix_Base_System_t::SystemHeader;
+      using OptimOptions = typename Matrix_Base_System_t::OptimOptions;
+      using OptimStats   = typename Matrix_Base_System_t::OptimStats;
+      using SolverStats  = typename Matrix_Base_System_t::SolverStats;
 
-      static constexpr const bool isSystFullyLinear = Base_System_t::isSystFullyLinear;
-      static constexpr std::size_t kNbFactorTypes   = Base_System_t::kNbFactorTypes;
-      static constexpr std::size_t kNbKeyTypes      = Base_System_t::kNbKeyTypes;
+      static constexpr const bool isSystFullyLinear = Matrix_Base_System_t::isSystFullyLinear;
+      static constexpr std::size_t kNbFactorTypes   = Matrix_Base_System_t::kNbFactorTypes;
+      static constexpr std::size_t kNbKeyTypes      = Matrix_Base_System_t::kNbKeyTypes;
     /**
      * @brief constructor
      *
      * @param agent id
      */
-    SparseSystem(const std::string& agent_id, const std::string& system_label = "inference system")
-        : Base_System_t(agent_id,system_label)
+    SparseSystem(const std::string& agent_id, const std::string& system_label = "sparse matrix inference system")
+        : Matrix_Base_System_t(agent_id,system_label)
     {
     }
 
     /**
      * @brief optimisation method
      */
-    OptimStats sam_optimise_specialized(const OptimOptions& options = OptimOptions())
+    OptimStats sam_optimise_matrix_specialized(const OptimOptions& options = OptimOptions())
     {
       // scoped timer
       PROFILE_FUNCTION();
@@ -994,31 +1046,34 @@ namespace sam::Inference
   };
 
   //------------------------------------------------------------------//
-  //                          Sparse System                           //
+  //                           Graph System                           //
   //------------------------------------------------------------------//
-  template <typename SOLVER_T,
+  template <typename OPTIM_STATS_T, // WARNING: arguments subject to breaking change
+            typename OPTIM_OPTIONS_T,
             typename FACTOR_T,
             typename... FACTORS_Ts>   // I need at least one type of factor
-  class GraphSystem : public BaseSystem<GraphSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
-                                        ,SOLVER_T
+  class GraphSystem : public BaseSystem<GraphSystem<OPTIM_STATS_T,OPTIM_OPTIONS_T,FACTOR_T,FACTORS_Ts...>
+                                        ,OPTIM_STATS_T
+                                        ,OPTIM_OPTIONS_T
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>
   {
     
     public:
-      using Base_System_t = typename BaseSystem<GraphSystem<SOLVER_T,FACTOR_T,FACTORS_Ts...>
-                                        ,SOLVER_T
+      using Base_System_t = typename BaseSystem<GraphSystem<OPTIM_STATS_T,OPTIM_OPTIONS_T,FACTOR_T,FACTORS_Ts...>
+                                        ,OPTIM_STATS_T
+                                        ,OPTIM_OPTIONS_T
                                         ,FACTOR_T
                                         ,FACTORS_Ts...>::type;
-      using type = GraphSystem<SOLVER_T, FACTOR_T, FACTORS_Ts...>;
+      using type = GraphSystem<OPTIM_STATS_T,OPTIM_OPTIONS_T, FACTOR_T, FACTORS_Ts...>;
       using KeyMetae_t = typename Base_System_t::KeyMetae_t;
       using Vectors_Marginals_t = typename Base_System_t::Vectors_Marginals_t;
       using Map_Marginals_t = typename Base_System_t::Map_Marginals_t;
       using Wrapped_Factors_t = typename Base_System_t::Wrapped_Factors_t;
       using SystemHeader = typename Base_System_t::SystemHeader;
-      using OptimOptions = typename Base_System_t::OptimOptions;
-      using OptimStats   = typename Base_System_t::OptimStats;
-      using SolverStats  = typename Base_System_t::SolverStats;
+      using OptimOptions = OPTIM_OPTIONS_T;
+      using OptimStats   = OPTIM_STATS_T;
+      // using SolverStats  = typename Base_System_t::SolverStats;
 
       static constexpr const bool isSystFullyLinear = Base_System_t::isSystFullyLinear;
       static constexpr std::size_t kNbFactorTypes   = Base_System_t::kNbFactorTypes;

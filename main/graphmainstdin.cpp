@@ -5,14 +5,14 @@
 #include <fstream>
 #include <iostream>
 
-// using Solver_t = typename sam::Inference::SolverSparseQR;
-// using Solver_t = typename sam::Inference::SolverSparseNaive;
-// using Solver_t = typename sam::Inference::SolverSparseSimplicialLLT;
-// using Solver_t = typename sam::Inference::SolverSparsePardisoLLT;
-// using Solver_t = typename sam::Inference::SolverSPQR;
-using Solver_t          = typename sam::Inference::SolverSparseSupernodalLLT;
+
+struct MockOptimOptions
+{};
+struct MockOptimStats
+{};
+
 using InferenceSystem_t = typename sam::Inference::
-    GraphSystem<Solver_t, sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+    GraphSystem<MockOptimStats, MockOptimOptions, sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
 
 //------------------------------------------------------------------//
 //                               MAIN                               //
