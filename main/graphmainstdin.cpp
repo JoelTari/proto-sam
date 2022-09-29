@@ -12,7 +12,7 @@
 // using Solver_t = typename sam::Inference::SolverSPQR;
 using Solver_t          = typename sam::Inference::SolverSparseSupernodalLLT;
 using InferenceSystem_t = typename sam::Inference::
-    SparseSystem<Solver_t, sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
+    GraphSystem<Solver_t, sam::Factor::Anchor2d, sam::Factor::RelativeMatcher2d>;
 
 //------------------------------------------------------------------//
 //                               MAIN                               //
