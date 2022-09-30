@@ -19,14 +19,9 @@
 #include <utility>
 #include <vector>
 // boost (graph system only)
-#include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/random_access_index.hpp>
-#include <boost/multi_index_container.hpp>
 #include <amd.h>
 
-namespace bmi = ::boost::multi_index;
+// namespace bmi = ::boost::multi_index;
 
 
 namespace sam::Inference
@@ -108,9 +103,14 @@ namespace sam::Inference
 
     SystemHeader header;
 
-    // WARNING: change struct to boost undirected graph
-    std::unordered_map<std::string, typename SystemConverter::KeyDispatchInfos> keys_affectation
-        = {}; // FIX: keep it just for (sparse?) matrix based system
+    // // WARNING: change struct to boost undirected graph
+    // std::unordered_map<std::string, typename SystemConverter::KeyDispatchInfos> keys_affectation
+    //     = {}; // FIX: keep it just for (sparse?) matrix based system
+
+    using DispatchContainer_t = typename SystemConverter::DispatchContainer_t;
+
+    DispatchContainer_t keys_affectation;
+        // = {}; // FIX: keep it just for (sparse?) matrix based system
 
 
     /**
@@ -860,7 +860,7 @@ namespace sam::Inference
                                                            nnz_semantic_jacobian,
                                                            natural_semantic_M_offsets);
 
-      Eigen::SparseMatrix<int> semantic_H = MatrixConverter::Sparse::Semantic::spyHessian(this->keys_affectation);
+      Eigen::SparseMatrix<int> semantic_H = MatrixConverter::Sparse::Semantic::spyHessian(this->keys_affectation,nnz_semantic_jacobian);
 
 
       //------------------------------------------------------------------//
@@ -1155,7 +1155,7 @@ namespace sam::Inference
       // 2. fillin_edges vector
       // std::vector<std::pair<std::string, std::string>> fillin_edges = {};
       // {
-      //     fillin_edges = infer_fillinedges(PermutationVector, dispatch_container);
+      //     fillin_edges = GraphConverter::infer_fillinedges(PermutationVector, dispatch_container);
       // }
       // std::cout << "number of fillin edges: " << fillin_edges.size() << " out of " << semantic_H.nonZeros() <<" original edges.\n"; 
 

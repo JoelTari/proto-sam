@@ -14,7 +14,15 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index_container.hpp>
 // Utility methods and structures that serves both matrix systems and graph systems
+
+namespace bmi = ::boost::multi_index;
 
 namespace sam::Inference::SystemConverter
 {
@@ -29,12 +37,21 @@ namespace sam::Inference::SystemConverter
     std::size_t                     natural_semantic_idx;
     std::size_t                     natural_scalar_idx;
     std::size_t                     key_dim;
+    std::string                     key_id;
     std::unordered_set<std::string> neighbours;   // TODO: for fun: safe_unordered_set with a mutex
   };
 
   // map that holds the dispatch info for all keys
     // WARNING: change struct
-  using Keys_Affectation_t = std::unordered_map<std::string, KeyDispatchInfos>;
+  // using Keys_Affectation_t = std::unordered_map<std::string, KeyDispatchInfos>;
+  using DispatchContainer_t = bmi::multi_index_container<typename SystemConverter::KeyDispatchInfos,
+          bmi::indexed_by<
+                    bmi::hashed_unique<
+                      bmi::member<typename SystemConverter::KeyDispatchInfos, std::string, &SystemConverter::KeyDispatchInfos::key_id>
+                    >
+                    ,bmi::random_access<> 
+            >
+            >;
 
   namespace Scalar
   {
@@ -236,18 +253,19 @@ namespace sam::Inference::SystemConverter
   }   // namespace Semantic
 
   template <typename VECT_WFT_COLLECTION, typename VECT_WMARG_COLLECTION>
-  Keys_Affectation_t compute_keys_affectation(const VECT_WFT_COLLECTION&   tup_vwf,
+  DispatchContainer_t compute_keys_affectation(const VECT_WFT_COLLECTION&   tup_vwf,
                                               const VECT_WMARG_COLLECTION& tup_vwm)
   {
     PROFILE_FUNCTION();
     // result
-    Keys_Affectation_t resultmap;
+    DispatchContainer_t resultmap;
     // small optimisation: regroup all these ? really micro
     auto M_type_idx_offsets          = Scalar::FactorTypeIndexesOffset(tup_vwf);
     auto N_type_idx_offsets          = Scalar::MarginalTypeIndexesOffset(tup_vwm);
     auto semantic_M_type_idx_offsets = Semantic::FactorTypeIndexesOffset(tup_vwf);
     auto semantic_N_type_idx_offsets = Semantic::MarginalTypeIndexesOffset(tup_vwm);
 
+    // loop over all the marginals (to define the 'vertices')
     std::apply(
         [&](auto... N_idx_base)
         {
@@ -271,7 +289,8 @@ namespace sam::Inference::SystemConverter
                           keydispatchinfos.natural_semantic_idx = semantic_idx_base + j;
                           keydispatchinfos.natural_scalar_idx   = scalar_idx_base + j * kN;
                           keydispatchinfos.key_dim              = kN;
-                          resultmap.insert_or_assign(wm.key_id, keydispatchinfos);
+                          keydispatchinfos.key_id               = wm.key_id;
+                          resultmap.insert(keydispatchinfos);
                           j++;
                         }
                       };
@@ -283,13 +302,18 @@ namespace sam::Inference::SystemConverter
         },
         N_type_idx_offsets);
 
-    // note: perhaps it would be interesting to add the self key in the set ?(no use case for that
     // atm)
+    // note: perhaps it would be interesting to add the self key in the set ?(no use case for that
     std::unordered_map<std::string, std::unordered_set<std::string>> tmp_set;
+    // loop over all the marginals (to define the 'edges')
     std::apply(
         [&](const auto&... vwf)
         {
           PROFILE_SCOPE("discover neighbours");
+          // profiling: PERFORMANCE: (M3500)
+          //  going from unordered_map to boost multi_index with <hashed unique>
+          //  made the discover neighbours scope to go from 1.185 ms to 2.188 ms  :(
+          //  multi index with <ordered_unique>  => 3.160 ms, and most other methods performance were adversly affected (2x)
           ((std::for_each(vwf.begin(),
                           vwf.end(),
                           [&](const auto& wf)
@@ -333,11 +357,16 @@ namespace sam::Inference::SystemConverter
                                 if (other_key_in_factor != key_id_of_interest)
                                 {
                                   // might double count, but has no effect on the set
-                                  auto& neighbours_set = resultmap[key_id_of_interest].neighbours;
+                                  auto it_key_id_of_interest_infos = resultmap.find(key_id_of_interest);
+                                  // explicit copy (because the elements of boost multi index container are immutable on access)
+                                  auto key_id_of_interest_infos_cpy = *it_key_id_of_interest_infos;
+                                  auto& neighbours_set = key_id_of_interest_infos_cpy.neighbours;
                                   {
                                     // std::lock_guard<std::mutex> l(lock);
                                     neighbours_set.insert(other_key_in_factor);
                                   }
+                                  // replace in the multi index container
+                                  resultmap.replace(it_key_id_of_interest_infos, key_id_of_interest_infos_cpy);
                                   // tmp_set[key_id_of_interest].insert(other_key_in_factor);
                                 }
                               }

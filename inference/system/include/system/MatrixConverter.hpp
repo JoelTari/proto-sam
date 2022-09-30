@@ -18,7 +18,7 @@
 
 namespace sam::Inference::MatrixConverter
 {
-  using Keys_Affectation_t = typename SystemConverter::Keys_Affectation_t;
+  using DispatchContainer_t = typename SystemConverter::DispatchContainer_t;
   // matrix for which one row or column is one scalar dimension (e.g. is a key's dimension is 3, it
   // takes 3 column)
   namespace Scalar
@@ -134,6 +134,7 @@ namespace sam::Inference::MatrixConverter
     template <typename TUPLE_VECTORS_WFACTOR_T>
     std::size_t HessianNNZ(const TUPLE_VECTORS_WFACTOR_T& wfactors_tuple)
     {
+      // warning: relatively high cost (not used, there are other means to get it faster, such as A.T*A::nonZeros())
       // std::vector<Eigen::Triplet<double>> semantic_triplet_A;
       std::unordered_map<std::string, std::unordered_set<std::string>> edges_from {};
       // loop factors, add to the edges
@@ -191,7 +192,7 @@ namespace sam::Inference::MatrixConverter
     void lay_out_factors_to_sparse_triplets(
         const VECT_OF_WFT&                   vect_of_wfactors,
         std::size_t                          M_FT_idx_offset,
-        const Keys_Affectation_t&            keys_affectation,
+        const DispatchContainer_t&            keys_affectation,
         std::vector<Eigen::Triplet<double>>& sparseA_triplets_out,
         Eigen::VectorXd&                     b_out)
     {
@@ -217,7 +218,7 @@ namespace sam::Inference::MatrixConverter
         //    start_column_idx = keytype_idx_offset + iterator_distance * kN
         std::array<std::size_t, FT::kNbKeys> array_of_start_column_idx = std::apply(
             [&](const auto&... kcc) -> std::array<std::size_t, FT::kNbKeys>
-            { return {keys_affectation.find(kcc.key_id)->second.natural_scalar_idx...}; },
+            { return {keys_affectation.find(kcc.key_id)->natural_scalar_idx...}; },
             factor.keys_set);
 
 #if ENABLE_DEBUG_TRACE
@@ -275,7 +276,7 @@ namespace sam::Inference::MatrixConverter
     std::tuple<Eigen::VectorXd, Eigen::SparseMatrix<double>>
         compute_b_A(const TUPLE_VECTORS_WFACTOR_T&    factor_collection,
                     const TUPLE_VECTORS_WMARGINALS_T& vectors_of_wmarginals,
-                    const Keys_Affectation_t&         keys_affectation,
+                    const DispatchContainer_t&         keys_affectation,
                     std::size_t                       M,
                     std::size_t                       N,
                     std::size_t                       scalar_jacobian_NNZ,
@@ -318,7 +319,7 @@ namespace sam::Inference::MatrixConverter
       template <typename TUPLE_VECTORS_WFACTOR_T> 
       Eigen::SparseMatrix<int> spyJacobian(
           const TUPLE_VECTORS_WFACTOR_T& factor_collection,
-          const Keys_Affectation_t& keys_affectation,
+          const DispatchContainer_t& keys_affectation,
           const std::size_t semantic_M,
           const std::size_t semantic_N,
           const std::size_t semantic_jacobian_NNZ,
@@ -347,10 +348,10 @@ namespace sam::Inference::MatrixConverter
                                         if (auto it = keys_affectation.find(key_id);
                                             it != keys_affectation.end())
                                         {
-                                          const auto& key_id_dispatch {it->second};
+                                          // const auto& key_id_dispatch {*it->second};
                                           sparse_semantic_A_triplets.emplace_back(
                                               type_row_idx_offset,
-                                              key_id_dispatch.natural_semantic_idx,
+                                              it->natural_semantic_idx,
                                               1);
                                         }
                                       }
@@ -372,7 +373,7 @@ namespace sam::Inference::MatrixConverter
       template <typename TUPLE_VECTORS_WFACTOR_T> 
       Eigen::SparseMatrix<int> spyHessian(
           const TUPLE_VECTORS_WFACTOR_T& factor_collection,
-          const Keys_Affectation_t& keys_affectation,
+          const DispatchContainer_t& keys_affectation,
           const std::size_t semantic_M,
           const std::size_t semantic_N,
           const std::size_t semantic_jacobian_NNZ,
@@ -384,7 +385,7 @@ namespace sam::Inference::MatrixConverter
 
       Eigen::SparseMatrix<int> spyHessian(const Eigen::SparseMatrix<int> & spy_jacobian);
 
-      Eigen::SparseMatrix<int> spyHessian(const Keys_Affectation_t & keys_affectation, const std::size_t nnz = 0);
+      Eigen::SparseMatrix<int> spyHessian(const DispatchContainer_t & keys_affectation, const std::size_t nnz = 0);
 
     }   // namespace Semantic
 
@@ -398,7 +399,7 @@ namespace sam::Inference::MatrixConverter
     std::tuple<Eigen::VectorXd, Eigen::MatrixXd>
         compute_b_A(const TUPLE_VECTORS_WFACTOR_T&    factor_collection,
                     const TUPLE_VECTORS_WMARGINALS_T& vectors_of_wmarginals,
-                    const Keys_Affectation_t&         keys_affectation,
+                    const DispatchContainer_t&         keys_affectation,
                     std::size_t                       M,
                     std::size_t                       N,
                     const std::array<std::size_t, std::tuple_size_v<TUPLE_VECTORS_WFACTOR_T>>&
@@ -438,7 +439,7 @@ namespace sam::Inference::MatrixConverter
                           {
                             using KCC_t = std::remove_cvref_t<decltype(akcc)>;
                             auto it =  keys_affectation.find( akcc.key_id );
-                            std::size_t col = it->second.natural_scalar_idx;
+                            std::size_t col = it->natural_scalar_idx;
                             A.block<Factor_t::kM,KCC_t::kN>(row,col) = mat;
                           };
                           // expansion
