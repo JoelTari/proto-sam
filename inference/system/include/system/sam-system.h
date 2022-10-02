@@ -5,6 +5,7 @@
 #include "system/MatrixConverter.hpp"
 #include "system/PersistentFactor.h"
 #include "system/SystemConverter.hpp"
+#include "system/GraphConverter.h"
 #include "system/system_jsonify.h"
 #include "utils/config.h"
 #include "utils/tuple_patterns.h"
@@ -176,6 +177,10 @@ namespace sam::Inference
     // get all marginals
     auto get_marginals() const { return this->all_vectors_marginals_.vectors_of_marginals; }
 
+    virtual void visitor_compute_keys_affectation()
+    {
+    }
+
 
     Map_Marginals_t get_marginals_as_map() const
     {
@@ -297,6 +302,7 @@ namespace sam::Inference
           this->keys_affectation = SystemConverter::compute_keys_affectation(
               this->all_factors_tuple_,
               this->all_vectors_marginals_.vectors_of_marginals);
+          this->visitor_compute_keys_affectation();
           this->keys_affectation_unsync_ = false;
       }
       else this->keys_affectation_unsync_ = true;
@@ -401,7 +407,7 @@ namespace sam::Inference
                                                opt_tuple_of_init_point_ptr.value());
       }
     }
-  };
+  }; // end BaseSystem<>
 
 
 
@@ -514,7 +520,7 @@ namespace sam::Inference
       return static_cast<DerivedMatrixSystem*>(this)->sam_optimise_matrix_specialized(options);
     }
 
-  };
+  }; // end MatrixBaseSystem<..>
 
 
 
@@ -584,6 +590,7 @@ namespace sam::Inference
           this->keys_affectation = SystemConverter::compute_keys_affectation(
               this->all_factors_tuple_,
               this->all_vectors_marginals_.vectors_of_marginals);
+          this->visitor_compute_keys_affectation();
           this->keys_affectation_unsync_ = false;
       }
 
@@ -764,7 +771,7 @@ namespace sam::Inference
       return optim_stats;
     }
 
-  };
+  }; // end DenseSystem
 
 
 
@@ -849,6 +856,7 @@ namespace sam::Inference
           this->keys_affectation = SystemConverter::compute_keys_affectation(
               this->all_factors_tuple_,
               this->all_vectors_marginals_.vectors_of_marginals);
+          this->visitor_compute_keys_affectation();
           this->keys_affectation_unsync_ = false;
       }
 
@@ -1043,7 +1051,7 @@ namespace sam::Inference
       return optim_stats;
     }
 
-  };
+  }; // end SparseSystem
 
   //------------------------------------------------------------------//
   //                           Graph System                           //
@@ -1088,6 +1096,14 @@ namespace sam::Inference
     {
     }
 
+    void visitor_compute_keys_affectation() override
+    {
+      // this->MRF = GraphConverter::build_undirected_graph(
+      //     this->all_factors_tuple_,
+      //     this->all_vectors_marginals_
+      //     );
+    }
+
     /**
      * @brief optimisation method
      */
@@ -1122,6 +1138,7 @@ namespace sam::Inference
           this->keys_affectation = SystemConverter::compute_keys_affectation(
               this->all_factors_tuple_,
               this->all_vectors_marginals_.vectors_of_marginals);
+          this->visitor_compute_keys_affectation();
           this->keys_affectation_unsync_ = false;
       }
 
@@ -1135,7 +1152,6 @@ namespace sam::Inference
 
       Eigen::SparseMatrix<int> semantic_H = MatrixConverter::Sparse::Semantic::spyHessian(this->keys_affectation);
 
-      // TODO: URGENT: continue here
       // 1. AMD ( semantic_H )
       // 2. fillin_edges vector
       // 3. (from 1 to 2 in parallel)  boost graph G = MRF of factors (or use boost-graphetize  keys_affects ?? )
@@ -1145,19 +1161,24 @@ namespace sam::Inference
       // 7. fwd message passing
 
       // 1. AMD
-      std::vector<int> PermutationVector = {};
-      PermutationVector.reserve(semantic_N);
-      {
-        PROFILE_SCOPE("amd ordering");
-        amd_order(semantic_N, semantic_H.outerIndexPtr(), semantic_H.innerIndexPtr(), &PermutationVector[0], (double*)NULL,(double*)NULL);
-        // for (int k = 0; k < semantic_N; ++k) printf("P [%d] = %d\n", k, PermutationVector[k]);
-      }
-      // 2. fillin_edges vector
-      // std::vector<std::pair<std::string, std::string>> fillin_edges = {};
+      std::vector<int> PermutationVector = GraphConverter::DIY::amd_order_permutation(semantic_N,semantic_H.outerIndexPtr(), semantic_H.innerIndexPtr());
+      // PermutationVector.reserve(semantic_N);
       // {
-      //     fillin_edges = GraphConverter::infer_fillinedges(PermutationVector, dispatch_container);
+      //   PROFILE_SCOPE("amd ordering");
+      //   amd_order(semantic_N, semantic_H.outerIndexPtr(), semantic_H.innerIndexPtr(), &PermutationVector[0], (double*)NULL,(double*)NULL);
       // }
-      // std::cout << "number of fillin edges: " << fillin_edges.size() << " out of " << semantic_H.nonZeros() <<" original edges.\n"; 
+      // for (int k = 0; k < semantic_N; ++k) printf("P [%d] = %d\n", k, PermutationVector[k]);
+
+      // 2. fillin_edges vector
+      std::vector<std::pair<std::string, std::string>> fillin_edges 
+        = GraphConverter::DIY::infer_fillinedges(PermutationVector, this->keys_affectation);
+      // std::cout << fillin_edges.size() <<" fill in edges !\n";
+      // for (auto & [e1,e2] : fillin_edges)
+      // {
+      //   std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
+      // }
+      
+      // 3. MCS
 
       //------------------------------------------------------------------//
       //                            LOOP START                            //

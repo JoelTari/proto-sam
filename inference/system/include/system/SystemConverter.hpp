@@ -42,13 +42,15 @@ namespace sam::Inference::SystemConverter
   };
 
   // map that holds the dispatch info for all keys
-    // WARNING: change struct
   // using Keys_Affectation_t = std::unordered_map<std::string, KeyDispatchInfos>;
   using DispatchContainer_t = bmi::multi_index_container<typename SystemConverter::KeyDispatchInfos,
           bmi::indexed_by<
                     bmi::hashed_unique<
                       bmi::member<typename SystemConverter::KeyDispatchInfos, std::string, &SystemConverter::KeyDispatchInfos::key_id>
                     >
+                    ,bmi::ordered_unique<
+                      bmi::member<typename SystemConverter::KeyDispatchInfos, std::size_t, &SystemConverter::KeyDispatchInfos::natural_semantic_idx>
+                      >
                     ,bmi::random_access<> 
             >
             >;

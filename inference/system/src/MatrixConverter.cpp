@@ -16,7 +16,7 @@ Eigen::SparseMatrix<int> Sparse::Semantic::spyHessian(const DispatchContainer_t&
   std::vector<Eigen::Triplet<int>> triplets;
   triplets.reserve(nnz);
   // loop keys affectations
-  for(const auto & dispatch : keys_affectation.get<1>())
+  for(const auto & dispatch : keys_affectation.get<2>()) // random_access iter of bmi
     // performance: (M3500) looping over the hashed_unique vs random_access
     // didn't change (about 0.355 ms)
   {
