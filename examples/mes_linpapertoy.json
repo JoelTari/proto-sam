@@ -1,0 +1,106 @@
+[
+  {
+    "type": "anchor",
+    "kind": "prior",
+    "vars_id": ["x0"],
+    "value": { "x": 0.08058151432657344, "y": 0.15741759498090063 },
+    "covariance": [0.0009, 0.0, 0.0, 0.0225],
+    "comment": "anchor 2d on x0"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x1", "x0"],
+    "value": { "dx": 1.1529190515522636, "dy": 0.09708175779625546 },
+    "covariance": [0.28090000000000004, 0.0, 0.0, 0.0225],
+    "comment": "linear-translation [x0, x1]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x2", "x1"],
+    "value": { "dx": 0.9436993177089351, "dy": -0.007532198443427219 },
+    "covariance": [0.28090000000000004, 0.0, 0.0, 0.0225],
+    "comment": "linear-translation [x1, x2]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x3", "x2"],
+    "value": { "dx": 0.12777878995294378, "dy": -1.126431507164164 },
+    "covariance": [0.0225, 0.0, 0.0, 0.0529],
+    "comment": "linear-translation [x2, x3]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x4", "x3"],
+    "value": { "dx": -0.9344087693239524, "dy": -2.063005282642033 },
+    "covariance": [0.0529, 0.0, 0.0, 0.17640000000000003],
+    "comment": "linear-translation [x3, x4]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x5", "x4"],
+    "value": { "dx": -1.0182263087179946, "dy": -0.24645232707748815 },
+    "covariance": [0.0529, 0.0, 0.0, 0.0225],
+    "comment": "linear-translation [x4, x100]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x5", "x6"],
+    "value": { "dx": 1.095490750490611, "dy": -0.5067995164890513 },
+    "covariance": [0.11559999999999998, 0.0, 0.0, 0.0016000000000000007],
+    "comment": "linear-translation [x100, x5]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x6", "x7"],
+    "value": { "dx": -0.05980941935025609, "dy": -1.7576405987607948 },
+    "covariance": [0.0225, 0.0, 0.0, 0.3721],
+    "comment": "linear-translation [x5, x200]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x1", "x5"],
+    "value": { "dx": -0.05980941935025609, "dy": -1.7576405987607948 },
+    "covariance": [0.0225, 0.0, 0.0, 0.3721],
+    "comment": "linear-translation [x5, x200]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x2", "x5"],
+    "value": { "dx": -0.05980941935025609, "dy": -1.7576405987607948 },
+    "covariance": [0.0225, 0.0, 0.0, 0.3721],
+    "comment": "linear-translation [x5, x200]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x3", "x7"],
+    "value": { "dx": -0.05980941935025609, "dy": -1.7576405987607948 },
+    "covariance": [0.0225, 0.0, 0.0, 0.3721],
+    "comment": "linear-translation [x5, x200]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x4", "x7"],
+    "value": { "dx": -0.05980941935025609, "dy": -1.7576405987607948 },
+    "covariance": [0.0225, 0.0, 0.0, 0.3721],
+    "comment": "linear-translation [x5, x200]"
+  },
+  {
+    "type": "linear-translation",
+    "kind": "odometry",
+    "vars_id": ["x5", "x7"],
+    "value": { "dx": -0.05980941935025609, "dy": -1.7576405987607948 },
+    "covariance": [0.0225, 0.0, 0.0, 0.3721],
+    "comment": "linear-translation [x5, x200]"
+  }
+]
