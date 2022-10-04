@@ -5,7 +5,8 @@
 #include "system/MatrixConverter.hpp"
 #include "system/PersistentFactor.h"
 #include "system/SystemConverter.hpp"
-#include "system/GraphConverter.h"
+#include "system/GraphConverter.hpp"
+#include "system/HybridConverter.h"
 #include "system/system_jsonify.h"
 #include "utils/config.h"
 #include "utils/tuple_patterns.h"
@@ -1096,12 +1097,14 @@ namespace sam::Inference
     {
     }
 
+    // MRF
+    using UndirectedGraph_t = GraphConverter::UndirectedGraph_t;
+
+    UndirectedGraph_t MRF;
+
     void visitor_compute_keys_affectation() override
     {
-      // this->MRF = GraphConverter::build_undirected_graph(
-      //     this->all_factors_tuple_,
-      //     this->all_vectors_marginals_
-      //     );
+      this->MRF = GraphConverter::build_undirected_graph(this->all_factors_tuple_, this->all_vectors_marginals_, this->keys_affectation);
     }
 
     /**
@@ -1161,7 +1164,7 @@ namespace sam::Inference
       // 7. fwd message passing
 
       // 1. AMD
-      std::vector<int> PermutationVector = GraphConverter::DIY::amd_order_permutation(semantic_N,semantic_H.outerIndexPtr(), semantic_H.innerIndexPtr());
+      std::vector<int> PermutationVector = HybridConverter::amd_order_permutation(semantic_N,semantic_H.outerIndexPtr(), semantic_H.innerIndexPtr());
       // PermutationVector.reserve(semantic_N);
       // {
       //   PROFILE_SCOPE("amd ordering");
@@ -1171,7 +1174,7 @@ namespace sam::Inference
 
       // 2. fillin_edges vector
       std::vector<std::pair<std::string, std::string>> fillin_edges 
-        = GraphConverter::DIY::infer_fillinedges(PermutationVector, this->keys_affectation);
+        = HybridConverter::infer_fillinedges(PermutationVector, this->keys_affectation);
       // std::cout << fillin_edges.size() <<" fill in edges !\n";
       // for (auto & [e1,e2] : fillin_edges)
       // {
