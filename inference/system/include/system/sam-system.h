@@ -1176,19 +1176,19 @@ namespace sam::Inference
       // 2. fillin_edges vector
       std::vector<std::pair<std::string, std::string>> fillin_edges 
         = HybridConverter::infer_fillinedges(PermutationVector, this->keys_affectation);
-      std::cout << fillin_edges.size() <<" fill in edges (Hybrid method) !\n";
-      for (auto & [e1,e2] : fillin_edges)
-      {
-        std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
-      }
+      // std::cout << fillin_edges.size() <<" fill in edges (Hybrid method) !\n";
+      // for (auto & [e1,e2] : fillin_edges)
+      // {
+      //   std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
+      // }
 
       // 2bis. fillin_edges in boost graph
       auto fillin_edges_bis = GraphConverter::infer_fillinedges(PermutationVector, this->MRF);
-      std::cout << fillin_edges_bis.size() <<" fill in edges (graph method) !\n";
-      for (auto & [e1,e2] : fillin_edges_bis)
-      {
-        std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
-      }
+      // std::cout << fillin_edges_bis.size() <<" fill in edges (graph method) !\n";
+      // for (auto & [e1,e2] : fillin_edges_bis)
+      // {
+      //   std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
+      // }
       
       // 3. MCS
 

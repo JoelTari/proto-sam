@@ -47,7 +47,7 @@ std::vector<std::pair<std::size_t, std::size_t>>
   for (int nat_idx = 0; nat_idx < permutation_ordering.size(); ++nat_idx)
   {
     int ord_idx = permutation_ordering[nat_idx];
-    std::cout << "ord idx " << v_bundle_map[ord_idx].key_id << '\n';
+    // std::cout << "ord idx " << v_bundle_map[ord_idx].key_id << '\n';
 
     // vertex of interest
     auto VoI = boost::vertex(ord_idx, g);
@@ -59,8 +59,8 @@ std::vector<std::pair<std::size_t, std::size_t>>
       auto NoI = *Vn_i;
       if (vcolor_map[v_index_map[NoI]] == ColorValue::White)
       {
-        std::cout << "  Make " << v_bundle_map[v_index_map[NoI]].key_id << " orange (neighbour of "
-                  << v_bundle_map[v_index_map[VoI]].key_id << ")\n";
+        // std::cout << "  Make " << v_bundle_map[v_index_map[NoI]].key_id << " orange (neighbour of "
+        //           << v_bundle_map[v_index_map[VoI]].key_id << ")\n";
         vcolor_map[v_index_map[NoI]] = Orange;
       }
       // orange is a temporary color -> they will be white afterwards
@@ -72,8 +72,8 @@ std::vector<std::pair<std::size_t, std::size_t>>
       auto NoI = *Vn_i;
       if (vcolor_map[v_index_map[NoI]] == ColorValue::Orange)
       {
-        std::cout << "  Connect " << v_bundle_map[NoI].key_id << " with every neighbours of "
-                  << v_bundle_map[VoI].key_id << "\n";
+        // std::cout << "  Connect " << v_bundle_map[NoI].key_id << " with every neighbours of "
+        //           << v_bundle_map[VoI].key_id << "\n";
         // this vertex becomes white again
         vcolor_map[v_index_map[NoI]] = White;
         // test if edge exist between NoI and others orange adj_of_VoI
@@ -88,10 +88,10 @@ std::vector<std::pair<std::size_t, std::size_t>>
             auto [ed, EdgeExistsAlready] = boost::edge(NoI, NoI2, g);
             if (!EdgeExistsAlready)
             {
-              std::cout << "     new edge : \t ";
+              // std::cout << "     new edge : \t ";
               r.emplace_back(source(ed, g), target(ed, g));   // TODO: add in the graph
-              std::cout << v_bundle_map[v_index_map[source(ed, g)]].key_id << ", "
-                        << v_bundle_map[v_index_map[target(ed, g)]].key_id << '\n';
+              // std::cout << v_bundle_map[v_index_map[source(ed, g)]].key_id << ", "
+              //           << v_bundle_map[v_index_map[target(ed, g)]].key_id << '\n';
               // update graph
               boost::add_edge(NoI,NoI2,g);
             }
