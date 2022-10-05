@@ -51,7 +51,7 @@ namespace sam::Inference::SystemConverter
                     ,bmi::ordered_unique<
                       bmi::member<typename SystemConverter::KeyDispatchInfos, std::size_t, &SystemConverter::KeyDispatchInfos::natural_semantic_idx>
                       >
-                    ,bmi::random_access<> 
+                    ,bmi::random_access<>  // so far using this didn't help performance
             >
             >;
 
