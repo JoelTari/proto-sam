@@ -4,7 +4,7 @@
 using namespace sam::Inference;
 
 // input : MRF, permutation vector
-std::vector<std::pair<std::size_t, std::size_t>>
+GraphConverter::UndirectedGraph_t
     GraphConverter::infer_fillinedges(const std::vector<int>&  permutation_ordering,
                                       const UndirectedGraph_t& g_org)
 {
@@ -20,7 +20,7 @@ std::vector<std::pair<std::size_t, std::size_t>>
   // copy graph
   auto g = g_org;
 
-  std::vector<std::pair<std::size_t, std::size_t>> r;
+  // std::vector<std::pair<std::size_t, std::size_t>> r;
   using ColorVector = std::vector<ColorValue>;
 
   using VIndexMap =
@@ -83,18 +83,19 @@ std::vector<std::pair<std::size_t, std::size_t>>
           // if NoI2 is orange
           if (vcolor_map[v_index_map[NoI2]] == ColorValue::Orange)
           {
-            // FIX: just do one boost::add_edge
-            // if no edge exists between NoI & NoI2
             auto [ed, EdgeExistsAlready] = boost::edge(NoI, NoI2, g);
-            if (!EdgeExistsAlready)
-            {
-              // std::cout << "     new edge : \t ";
-              r.emplace_back(source(ed, g), target(ed, g));   // TODO: add in the graph
-              // std::cout << v_bundle_map[v_index_map[source(ed, g)]].key_id << ", "
-              //           << v_bundle_map[v_index_map[target(ed, g)]].key_id << '\n';
-              // update graph
-              boost::add_edge(NoI,NoI2,g);
-            }
+            if (!EdgeExistsAlready) boost::add_edge(NoI,NoI2,g);
+            // // if no edge exists between NoI & NoI2
+            // auto [ed, EdgeExistsAlready] = boost::edge(NoI, NoI2, g);
+            // if (!EdgeExistsAlready)
+            // {
+            //   // std::cout << "     new edge : \t ";
+            //   r.emplace_back(source(ed, g), target(ed, g));   // TODO: add in the graph
+            //   // std::cout << v_bundle_map[v_index_map[source(ed, g)]].key_id << ", "
+            //   //           << v_bundle_map[v_index_map[target(ed, g)]].key_id << '\n';
+            //   // update graph
+            //   boost::add_edge(NoI,NoI2,g);
+            // }
           }
           // orange is a temporary color -> they will be white afterwards
         }
@@ -105,5 +106,5 @@ std::vector<std::pair<std::size_t, std::size_t>>
   }
   // std::cout << " added pairs : " << r.size() << '\n';
 
-  return r;
+  return g;
 }

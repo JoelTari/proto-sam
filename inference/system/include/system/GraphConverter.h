@@ -11,6 +11,6 @@
 namespace sam::Inference::GraphConverter
 {
 
-  std::vector<std::pair<std::size_t, std::size_t>> infer_fillinedges(const std::vector<int> & permutation_order, const UndirectedGraph_t & g);
+  UndirectedGraph_t infer_fillinedges(const std::vector<int> & permutation_order, const UndirectedGraph_t & g);
 
 }

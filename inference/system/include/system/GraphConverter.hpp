@@ -30,7 +30,7 @@ namespace sam::Inference::GraphConverter
   };
 
   // https://www.boost.org/doc/libs/1_80_0/libs/graph/doc/adjacency_list.html
-  using UndirectedGraph_t = boost::adjacency_list<boost::hash_setS, // OutEdgeList  (def vecS)
+  using UndirectedGraph_t = boost::adjacency_list<boost::vecS, // OutEdgeList  (def vecS)
                                                   boost::vecS,      // VertexList (def vecS)
                                                   boost::undirectedS,    // def directedS
                                                   MRFVertexBundle,  // prop
