@@ -1185,12 +1185,12 @@ namespace sam::Inference
       // 2bis. fillin_edges in boost graph
       // performance: (m3500) hybrid method takes 37 ms (slow) while
       //              - graph<hash_setS,vecS,[...],listS> takes 5.647 ms
+      //              - graph<setS,vecS,[...],listS> takes 6.393 ms
       //              - graph<vecS,vecS,[...], listS> takes 3.250 ms
-      //              - graph<vecS,vecS,[...], vecS> takes 3.235 ms 
-      //              - graph<vecS,hash_setS,[...], listS> takes
+      //              - graph<vecS,vecS,[...], vecS> takes 3.235 ms (no diff)
       auto cover_graph = GraphConverter::infer_fillinedges(PermutationVector, this->MRF);
-      // std::cout << fillin_edges_bis.size() <<" fill in edges (graph method) !\n";
-      // for (auto & [e1,e2] : fillin_edges_bis)
+      // std::cout << boost::num_edges(cover_graph)-boost::num_edges(this->MRF) <<" fill in edges (graph method) !\n";
+      // for ( auto [vi,vend] = boost::vertices(cover_graph) )
       // {
       //   std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
       // }

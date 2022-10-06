@@ -18,6 +18,7 @@ namespace sam::Inference::GraphConverter
   {
     std::string key_id ="";
     int         semantic_ordering_idx=0;
+    // int         idx=0;  // use if 
   };
 
   struct MRFEdgeBundle
@@ -31,9 +32,9 @@ namespace sam::Inference::GraphConverter
 
   // https://www.boost.org/doc/libs/1_80_0/libs/graph/doc/adjacency_list.html
   using UndirectedGraph_t = boost::adjacency_list<boost::vecS, // OutEdgeList  (def vecS)
-                                                  boost::vecS,      // VertexList (def vecS)
+                                                  boost::vecS,      // VertexList (def vecS) // associativecontainer not functional yet (because of map in inferfillinedges)
                                                   boost::undirectedS,    // def directedS
-                                                  MRFVertexBundle,  // prop
+                                                  boost::property<boost::vertex_index_t,std::size_t,MRFVertexBundle>,  // prop
                                                   MRFEdgeBundle,    // prop
                                                   MRFGraphBundle,   // prop
                                                   boost::listS>; // edge list (def listS)
@@ -150,7 +151,7 @@ namespace sam::Inference::GraphConverter
     {
       VertexMRF v = *pair_vertex_iter.first; // v is just an integer
       //boost::put(boost::vertex_bundle,MRF, pair_vertex_iter.first ,vb );
-      std::size_t natural_semantic_idx = vertex_index_map[v]; // this is the way I built the edge
+      std::size_t natural_semantic_idx = vertex_index_map[v]; // this is the way I built the edge // FIX: use boost::get()
       vertex_bundle_map[v].key_id = keys_affectation.get<1>().find(natural_semantic_idx)->key_id;
       // assert(keys_affectation.find(vertex_bundle_map[v].key_id).natural_semantic_idx == natural_semantic_idx );
       // std::cout << "-------\nPrint vertex: \n";
@@ -159,7 +160,7 @@ namespace sam::Inference::GraphConverter
       // std::cout << "\tgraph index: "  << vertex_index_map[v] << "\n";
       // std::cout << "\tthe descriptor: "  << v << "\n"; 
       // // interesting, v is the same as vertex_index_map[v] (because Im using vecS ? so in that case it is still safer to use the map wrapper if ever I change the structure)
-      boost::inv_adjacent_vertices(v,MRF);
+      // boost::inv_adjacent_vertices(v,MRF);
     }
 
     // // tmp: add edge and see if edge size change

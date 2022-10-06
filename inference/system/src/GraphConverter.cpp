@@ -24,7 +24,7 @@ GraphConverter::UndirectedGraph_t
   using ColorVector = std::vector<ColorValue>;
 
   using VIndexMap =
-      typename boost::property_map<UndirectedGraph_t, boost::vertex_index_t>::const_type;
+      typename boost::property_map<UndirectedGraph_t, boost::vertex_index_t>::type;
   using VBundleMap =
       typename boost::property_map<UndirectedGraph_t, boost::vertex_bundle_t>::type;
 
@@ -44,24 +44,26 @@ GraphConverter::UndirectedGraph_t
       = boost::make_iterator_property_map(permutation_ordering.begin(), v_index_map);
 
   // for each e in permutation vector
-  for (int nat_idx = 0; nat_idx < permutation_ordering.size(); ++nat_idx)
+  for (std::size_t nat_idx = 0; nat_idx < permutation_ordering.size(); ++nat_idx)
   {
-    int ord_idx = permutation_ordering[nat_idx];
+    std::size_t ord_idx = permutation_ordering[nat_idx];
     // std::cout << "ord idx " << v_bundle_map[ord_idx].key_id << '\n';
 
     // vertex of interest
-    auto VoI = boost::vertex(ord_idx, g);
+    // std::size_t vn = boost::get(v_index_map,ord_idx);
+    auto VoI = boost::vertex(ord_idx, g); // FIX: here is the failure point when VertexList=setS
     // connect all white neighbours of VoI between themselves
     // step1: some neighbours might have been eliminated alreaady: retain only the white vertices:
     // and make them orange
     for (auto [Vn_i, Vn_end] = boost::adjacent_vertices(VoI, g); Vn_i != Vn_end; ++Vn_i)
     {
       auto NoI = *Vn_i;
-      if (vcolor_map[v_index_map[NoI]] == ColorValue::White)
+      // if (vcolor_map[v_index_map[NoI]] == ColorValue::White)
+      if (boost::get(vcolor_map, NoI) == ColorValue::White)
       {
         // std::cout << "  Make " << v_bundle_map[v_index_map[NoI]].key_id << " orange (neighbour of "
         //           << v_bundle_map[v_index_map[VoI]].key_id << ")\n";
-        vcolor_map[v_index_map[NoI]] = Orange;
+        boost::put(vcolor_map,NoI, Orange);
       }
       // orange is a temporary color -> they will be white afterwards
     }
@@ -70,18 +72,19 @@ GraphConverter::UndirectedGraph_t
     for (auto [Vn_i, Vn_end] = boost::adjacent_vertices(VoI, g); Vn_i != Vn_end; ++Vn_i)
     {
       auto NoI = *Vn_i;
-      if (vcolor_map[v_index_map[NoI]] == ColorValue::Orange)
+      if (boost::get(vcolor_map, NoI) == ColorValue::Orange)
       {
         // std::cout << "  Connect " << v_bundle_map[NoI].key_id << " with every neighbours of "
         //           << v_bundle_map[VoI].key_id << "\n";
         // this vertex becomes white again
-        vcolor_map[v_index_map[NoI]] = White;
+        // vcolor_map[v_index_map[NoI]] = White;
+        boost::put(vcolor_map,NoI, White);
         // test if edge exist between NoI and others orange adj_of_VoI
         for (auto [Vn2_i, Vn2_end] = boost::adjacent_vertices(VoI, g); Vn2_i != Vn2_end; ++Vn2_i)
         {
           auto NoI2 = *Vn2_i;
           // if NoI2 is orange
-          if (vcolor_map[v_index_map[NoI2]] == ColorValue::Orange)
+          if ( boost::get(vcolor_map, NoI2) == ColorValue::Orange)
           {
             auto [ed, EdgeExistsAlready] = boost::edge(NoI, NoI2, g);
             if (!EdgeExistsAlready) boost::add_edge(NoI,NoI2,g);
@@ -102,7 +105,8 @@ GraphConverter::UndirectedGraph_t
       }
     }
     // step3: grey out VoI
-    vcolor_map[v_index_map[VoI]] = ColorValue::Grey;
+    // vcolor_map[VoI] = ColorValue::Grey;
+    boost::put(vcolor_map,VoI, ColorValue::Grey);
   }
   // std::cout << " added pairs : " << r.size() << '\n';
 
