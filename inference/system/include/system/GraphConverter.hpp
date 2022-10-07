@@ -17,13 +17,14 @@ namespace sam::Inference::GraphConverter
   struct MRFVertexBundle
   {
     std::string key_id ="";
-    int         semantic_ordering_idx=0;
-    // int         idx=0;  // use if 
+    int         ordering_idx=0;
+    // int         idx=0;  // use in case of associativearray vertex data structure
   };
 
   struct MRFEdgeBundle
   {
-    // perhaps pair of string of the key_id ?
+    bool fillInEdge = false; // for cover/induced graph: some edges are fill ins
+    // std::string factor_id="";
   };
 
   struct MRFGraphBundle
@@ -146,17 +147,16 @@ namespace sam::Inference::GraphConverter
     boost::property_map<UndirectedGraph_t, boost::vertex_index_t>::type vertex_index_map = boost::get(boost::vertex_index, MRF);
 
 
-    auto pair_vertex_iter = boost::vertices(MRF); // a pair of VertexMRF_iter
-    for (; pair_vertex_iter.first != pair_vertex_iter.second; ++pair_vertex_iter.first)
+    for (auto [vi,vend] = boost::vertices(MRF); vi != vend; ++vi)
     {
-      VertexMRF v = *pair_vertex_iter.first; // v is just an integer
-      //boost::put(boost::vertex_bundle,MRF, pair_vertex_iter.first ,vb );
-      std::size_t natural_semantic_idx = vertex_index_map[v]; // this is the way I built the edge // FIX: use boost::get()
+      VertexMRF v = *vi;
+      std::size_t natural_semantic_idx = boost::get(vertex_index_map,v); // this is the way I built the edge // FIX: use boost::get()
+      // std::size_t natural_semantic_idx = vertex_index_map[v]; // this is the way I built the edge // FIX: use boost::get()
       vertex_bundle_map[v].key_id = keys_affectation.get<1>().find(natural_semantic_idx)->key_id;
       // assert(keys_affectation.find(vertex_bundle_map[v].key_id).natural_semantic_idx == natural_semantic_idx );
       // std::cout << "-------\nPrint vertex: \n";
       // std::cout << "\tkey id : " << vertex_bundle_map[v].key_id << "\n";
-      // std::cout << "\tsemantic idx: " << vertex_bundle_map[v].semantic_ordering_idx << "\n";
+      // std::cout << "\tordering idx: " << boost::get(vertex_bundle_map,v).ordering_idx << "\n";
       // std::cout << "\tgraph index: "  << vertex_index_map[v] << "\n";
       // std::cout << "\tthe descriptor: "  << v << "\n"; 
       // // interesting, v is the same as vertex_index_map[v] (because Im using vecS ? so in that case it is still safer to use the map wrapper if ever I change the structure)

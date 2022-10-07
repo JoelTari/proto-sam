@@ -13,6 +13,7 @@
 #include "utils/tuple_patterns.h"
 #include "utils/utils.h"
 
+#include <boost/pending/property.hpp>
 #include <execution>
 #include <functional>
 #include <iomanip>
@@ -1166,21 +1167,20 @@ namespace sam::Inference
 
       // 1. AMD
       std::vector<int> PermutationVector = HybridConverter::amd_order_permutation(semantic_N,semantic_H.outerIndexPtr(), semantic_H.innerIndexPtr());
-      // PermutationVector.reserve(semantic_N);
-      // {
-      //   PROFILE_SCOPE("amd ordering");
-      //   amd_order(semantic_N, semantic_H.outerIndexPtr(), semantic_H.innerIndexPtr(), &PermutationVector[0], (double*)NULL,(double*)NULL);
-      // }
-      // for (int k = 0; k < semantic_N; ++k) printf("P [%d] = %d\n", k, PermutationVector[k]);
+#if ENABLE_DEBUG_TRACE
+      for (int k = 0; k < semantic_N; ++k) printf("P [%d] = %d\n", k, PermutationVector[k]);
+#endif
 
       // 2. fillin_edges vector
       std::vector<std::pair<std::string, std::string>> fillin_edges 
         = HybridConverter::infer_fillinedges(PermutationVector, this->keys_affectation);
-      // std::cout << fillin_edges.size() <<" fill in edges (Hybrid method) !\n";
-      // for (auto & [e1,e2] : fillin_edges)
-      // {
-      //   std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
-      // }
+#if ENABLE_DEBUG_TRACE
+      std::cout << fillin_edges.size() <<" fill in edges (Hybrid method) !\n";
+      for (auto & [e1,e2] : fillin_edges)
+      {
+        std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
+      }
+#endif
 
       // 2bis. fillin_edges in boost graph
       // performance: (m3500) hybrid method takes 37 ms (slow) while
@@ -1189,11 +1189,23 @@ namespace sam::Inference
       //              - graph<vecS,vecS,[...], listS> takes 3.250 ms
       //              - graph<vecS,vecS,[...], vecS> takes 3.235 ms (no diff)
       auto cover_graph = GraphConverter::infer_fillinedges(PermutationVector, this->MRF);
-      // std::cout << boost::num_edges(cover_graph)-boost::num_edges(this->MRF) <<" fill in edges (graph method) !\n";
-      // for ( auto [vi,vend] = boost::vertices(cover_graph) )
-      // {
-      //   std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
-      // }
+#if ENABLE_DEBUG_TRACE
+      std::cout << boost::num_edges(cover_graph)-boost::num_edges(this->MRF) <<" fill in edges (graph method) !\n";
+      auto edge_bundle_cover_graph_map = boost::get(boost::edge_bundle, cover_graph);
+      auto vertex_bundle_cover_graph_map = boost::get(boost::vertex_bundle_t(), cover_graph);
+      for ( auto [ei,eend] = boost::edges(cover_graph); ei!=eend; ++ei )
+      {
+        auto ed = *ei;
+        if (boost::get(edge_bundle_cover_graph_map,ed).fillInEdge)
+        {
+          auto svd = boost::source(ed,cover_graph);
+          auto tvd = boost::target(ed,cover_graph);
+          auto sid = boost::get(vertex_bundle_cover_graph_map, svd).key_id;
+          auto tid = boost::get(vertex_bundle_cover_graph_map, tvd).key_id;
+          std::cout << "\t [ " << sid << " <-> " << tid << " ]\n";
+        }
+      }
+#endif
       
       // 3. MCS
 

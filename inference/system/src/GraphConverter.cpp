@@ -87,7 +87,9 @@ GraphConverter::UndirectedGraph_t
           if ( boost::get(vcolor_map, NoI2) == ColorValue::Orange)
           {
             auto [ed, EdgeExistsAlready] = boost::edge(NoI, NoI2, g);
-            if (!EdgeExistsAlready) boost::add_edge(NoI,NoI2,g);
+            GraphConverter::MRFEdgeBundle edge_prop;
+            edge_prop.fillInEdge = true;
+            if (!EdgeExistsAlready) boost::add_edge(NoI,NoI2,edge_prop,g);
             // // if no edge exists between NoI & NoI2
             // auto [ed, EdgeExistsAlready] = boost::edge(NoI, NoI2, g);
             // if (!EdgeExistsAlready)
