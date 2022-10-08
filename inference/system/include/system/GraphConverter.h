@@ -13,4 +13,6 @@ namespace sam::Inference::GraphConverter
 
   UndirectedGraph_t infer_fillinedges(const std::vector<int> & permutation_order, const UndirectedGraph_t & g);
 
+  CliqueTree_t MaxCardinalitySearch(const UndirectedGraph_t & cover_graph);
+
 }

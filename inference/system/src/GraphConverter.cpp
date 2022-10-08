@@ -114,3 +114,8 @@ GraphConverter::UndirectedGraph_t
 
   return g;
 }
+
+GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const UndirectedGraph_t & cover_graph)
+{
+  return GraphConverter::CliqueTree_t();
+}
