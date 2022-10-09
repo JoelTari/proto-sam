@@ -1,5 +1,6 @@
 #include "system/GraphConverter.h"
 #include "system/GraphConverter.hpp"
+#include <boost/graph/graph_traits.hpp>
 
 using namespace sam::Inference;
 
@@ -115,7 +116,140 @@ GraphConverter::UndirectedGraph_t
   return g;
 }
 
-GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const UndirectedGraph_t & cover_graph)
+// internal
+std::tuple<std::size_t, std::vector<std::size_t> > find_appropriate_edge_clique(const GraphConverter::CliqueTree_t & ct, const std::vector<std::size_t> & keys)
 {
-  return GraphConverter::CliqueTree_t();
+  // maybe there is a way to "rangify"
+
+  std::size_t clique_index;
+
+  std::vector<std::size_t> sepset;
+  
+  using VertexCTBundleMap = typename boost::property_map<GraphConverter::CliqueTree_t, boost::vertex_bundle_t>::const_type;
+  using VertexCTIndexMap = typename boost::property_map<GraphConverter::CliqueTree_t, boost::vertex_index_t>::const_type;
+  VertexCTBundleMap v_bundle_map = boost::get(boost::vertex_bundle, ct);
+  VertexCTIndexMap v_index_map = boost::get(boost::vertex_index, ct);
+
+  // for each vertex in ct reverse order, register & count the size of common keys, until it 
+  auto [clique_first, clique_end] = boost::vertices(ct);
+  // most times (not always), the last clique is the one pushed last, so we will proceed in reverse other
+  // auto candidate_clique = *(clique_end-1);
+  //
+  // while( size of common key don't diminish && next node has more neighbours (out_degrees)) // if it's the same size: good, continue, we migth either reach a big sepset, or worst case, we increase clique tree branches by choosing a deeper node (look at a cross-like factor graph for a good understanding)
+  // {
+  //   // for every out_edges
+  //   //   test sepset, count
+  // }
+
+  // first version
+  while (clique_first != clique_end)
+  {
+    auto ci = *clique_first;
+    std::vector<std::size_t> sepset_candidate;
+    std::ranges::set_intersection( boost::get(v_bundle_map,ci).keys, keys, std::back_inserter(sepset_candidate)  ) ;
+
+    if (sepset_candidate.size() > sepset.size())
+    {
+      sepset=sepset_candidate;
+      clique_index = boost::get(v_index_map,ci);
+    }
+
+    ++clique_first;
+  }
+
+  return std::make_tuple(clique_index,sepset);
 }
+
+// TODO: also return symbolic tree of costs
+GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const UndirectedGraph_t & g)
+{
+  PROFILE_FUNCTION();
+  CliqueTree_t clique_tree;
+
+  // declare colors map (grey/white)
+  enum ColorValue { White, Grey };
+  using ColorVector = std::vector<ColorValue>;
+  using VIndexMap = typename boost::property_map<UndirectedGraph_t, boost::vertex_index_t>::type;
+  using ColorMap = boost::iterator_property_map<typename ColorVector::iterator, VIndexMap>;
+  using CardinalityMap = boost::iterator_property_map<typename std::vector<int>::iterator, VIndexMap>;
+  VIndexMap v_index_map = boost::get(boost::vertex_index, g);
+  ColorVector vcolors(boost::num_vertices(g), ColorValue::White);
+  ColorMap v_color_map = boost::make_iterator_property_map(vcolors.begin(), v_index_map);
+
+  // declare cardinality map (int)
+  std::vector<int> vcardinality(boost::num_vertices(g), 0);
+  CardinalityMap v_cardinality_map = boost::make_iterator_property_map(vcardinality.begin(), v_index_map);
+
+  // pick first node of cover graph (arbitrary)
+  auto [vi_it,vend_it] = boost::vertices(g);
+  auto vi = *vi_it;
+  decltype(vi) vi_prev;
+
+  // Declare returned graph (the clique tree) TODO: and symbolic tree of cost
+  // declare c_{i-1} empty
+  // boost::graph_traits<CliqueTree_t>::vertex_descriptor ci_prev;
+  boost::vertex_property_type<CliqueTree_t>::type ci_prev, ci;
+
+    std::size_t clique_idx=0; // clique idx, incremented each time a new clique is created
+   for (;vi_it != vend_it; ++vi_it) // for-loop 
+  {
+    // reset c_i, as an empty clique
+    ci = boost::vertex_property_type<CliqueTree_t>::type(); 
+    
+    
+    // loop the neighbours of vi 
+    for (auto [vni_it, vnend_it] = boost::adjacent_vertices(vi,g) ; vni_it != vnend_it; ++vni_it)
+    {
+      auto vni = * vni_it;
+      // if white, increment cardinality
+      if ( boost::get(v_color_map, vni) == ColorValue::White )
+      {
+        boost::put(v_cardinality_map, vni, boost::get(v_cardinality_map, vni)+1 );
+      }
+      // if grey append to c_i 
+      else
+      {
+        ci.m_base.keys.push_back( boost::get(v_index_map, vni) );
+      }
+    }
+
+    // OPTIONALLY: test that {vi \cup c_i} is complete
+
+
+    if ( ci.m_base.keys.size() <= ci_prev.m_base.keys.size() ) // 1st iteration won't trigger
+    {
+      ci_prev.m_value= clique_idx; // idx
+      ci_prev.m_base.keys.push_back(boost::get(v_index_map, vi_prev));
+      boost::add_vertex(ci_prev,clique_tree); 
+      auto [neighbour_clique_idx, sepset] = find_appropriate_edge_clique(clique_tree,ci_prev.m_base.keys);
+      using EdgeProp = typename boost::edge_property_type<CliqueTree_t>::type;
+      EdgeProp edge_prop; edge_prop.separator_keys=sepset;
+      boost::add_edge(clique_idx, boost::get(v_index_map, neighbour_clique_idx), edge_prop  , clique_tree);
+      clique_idx++;
+    }
+    // if c_i.size() <= c_{i-1}.size()
+    //    c_{i-1}.add(vi-1)
+    //    add vertex to clique tree and factors (difficult)
+
+    // mark vi as grey
+    boost::put(v_color_map, vi, ColorValue::Grey);
+
+    // save vi as v_{i-1} choose next vi = the node that has max cardinality (if there exists a white neighbour, which wont be the case on last node i=size)
+    vi_prev = vi;
+    // vi = // FIX: vi = max cardinality element amongst white  (use ranges)
+    // save c_i as c_{i-1}
+    ci_prev = ci;
+  }
+
+   // add last clique
+   ci.m_value = clique_idx;
+   ci.m_base.keys.push_back(boost::get(v_index_map, vi));
+   boost::add_vertex(ci,clique_tree);
+   auto [neighbour_clique_idx, sepset] = find_appropriate_edge_clique(clique_tree,ci.m_base.keys);
+   using EdgeProp = typename boost::edge_property_type<CliqueTree_t>::type;
+   EdgeProp edge_prop; edge_prop.separator_keys=sepset;
+   boost::add_edge(clique_idx, boost::get(v_index_map, neighbour_clique_idx), edge_prop  , clique_tree);
+
+  return clique_tree;
+}
+
