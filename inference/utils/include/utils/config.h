@@ -20,6 +20,8 @@ static_assert(ENABLE_JSON_OUTPUT, "JSON output must be enabled for timer to work
 #endif
 #endif
 
+#define ENABLE_DEBUG_TRACE_TMP 1 // convenience
+
 // #if ENABLE_DEBUG_TRACE // no let's include them anyway, no big deal
 #include <iomanip>
 #include <iostream>

@@ -1,6 +1,8 @@
 #include "system/GraphConverter.h"
 #include "system/GraphConverter.hpp"
+#include <algorithm>
 #include <boost/graph/graph_traits.hpp>
+#include <string>
 
 using namespace sam::Inference;
 
@@ -119,6 +121,7 @@ GraphConverter::UndirectedGraph_t
 // internal
 std::tuple<std::size_t, std::vector<std::size_t> > find_appropriate_edge_clique(const GraphConverter::CliqueTree_t & ct, const std::vector<std::size_t> & keys)
 {
+  PROFILE_FUNCTION();
   // maybe there is a way to "rangify"
 
   std::size_t clique_index;
@@ -141,24 +144,46 @@ std::tuple<std::size_t, std::vector<std::size_t> > find_appropriate_edge_clique(
   //   //   test sepset, count
   // }
 
-  // first version
-  while (clique_first != clique_end)
+  // // first version: while loop (65 ms)
+  // while (clique_first != clique_end)
+  // {
+  //   auto ci = *clique_first;
+  //   std::vector<std::size_t> sepset_candidate;
+  //   std::ranges::set_intersection( boost::get(v_bundle_map,ci).keys, keys, std::back_inserter(sepset_candidate)  ) ;
+  //
+  //   if (sepset_candidate.size() > sepset.size())
+  //   {
+  //     sepset=sepset_candidate;
+  //     clique_index = boost::get(v_index_map,ci);
+  //   }
+  //
+  //   ++clique_first;
+  // }
+
+  // second version: brut force for loop (on m3500: 109 ms, 68ms if par policy, 58ms if par_unseq policy)
+  auto lambda_sepset_candidancy_evaluate = [&]
+    (auto a
+      , auto b) ->bool 
   {
-    auto ci = *clique_first;
-    std::vector<std::size_t> sepset_candidate;
-    std::ranges::set_intersection( boost::get(v_bundle_map,ci).keys, keys, std::back_inserter(sepset_candidate)  ) ;
+    std::vector<std::size_t> keys_cap_a, keys_cap_b;
+    std::ranges::set_intersection( boost::get(v_bundle_map,a).keys, keys, std::back_inserter(keys_cap_a)  ) ;
+    std::ranges::set_intersection( boost::get(v_bundle_map,b).keys, keys, std::back_inserter(keys_cap_b)  ) ;
+    return ( keys_cap_a.size() < keys_cap_b.size() );
+  };
+  auto best_clique_it = 
+    std::max_element(std::execution::par_unseq,clique_first, clique_end, lambda_sepset_candidancy_evaluate );
+  // push in the sepset (this is a double recompution of the sepset)
+  std::ranges::set_intersection( boost::get(v_bundle_map,*best_clique_it).keys, keys, std::back_inserter(sepset)  ) ;
 
-    if (sepset_candidate.size() > sepset.size())
-    {
-      sepset=sepset_candidate;
-      clique_index = boost::get(v_index_map,ci);
-    }
+  // third version: traverse from most recent clique and evaluate separator
+  // while (size doesnt diminish)
 
-    ++clique_first;
-  }
+  // fourth version:  as clique are created,  evaluate somehow if we are connected in a junction
 
   return std::make_tuple(clique_index,sepset);
 }
+
+#define ENABLE_DEBUG_TRACE_TMP 0
 
 // TODO: also return symbolic tree of costs
 GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const UndirectedGraph_t & g)
@@ -170,9 +195,11 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
   enum ColorValue { White, Grey };
   using ColorVector = std::vector<ColorValue>;
   using VIndexMap = typename boost::property_map<UndirectedGraph_t, boost::vertex_index_t>::type;
+  using VBundleMap = typename boost::property_map<UndirectedGraph_t, boost::vertex_bundle_t>::const_type;
   using ColorMap = boost::iterator_property_map<typename ColorVector::iterator, VIndexMap>;
   using CardinalityMap = boost::iterator_property_map<typename std::vector<int>::iterator, VIndexMap>;
   VIndexMap v_index_map = boost::get(boost::vertex_index, g);
+  VBundleMap v_bundle_map = boost::get(boost::vertex_bundle, g);
   ColorVector vcolors(boost::num_vertices(g), ColorValue::White);
   ColorMap v_color_map = boost::make_iterator_property_map(vcolors.begin(), v_index_map);
 
@@ -190,13 +217,13 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
   // boost::graph_traits<CliqueTree_t>::vertex_descriptor ci_prev;
   boost::vertex_property_type<CliqueTree_t>::type ci_prev, ci;
 
-    std::size_t clique_idx=0; // clique idx, incremented each time a new clique is created
-   for (;vi_it != vend_it; ++vi_it) // for-loop 
+  std::size_t clique_idx=0; // clique idx, incremented each time a new clique is created
+  for (auto vii_it = vi_it;vii_it != vend_it; ++vii_it) // for-loop 
   {
     // reset c_i, as an empty clique
     ci = boost::vertex_property_type<CliqueTree_t>::type(); 
-    
-    
+
+
     // loop the neighbours of vi 
     for (auto [vni_it, vnend_it] = boost::adjacent_vertices(vi,g) ; vni_it != vnend_it; ++vni_it)
     {
@@ -216,11 +243,20 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
     // OPTIONALLY: test that {vi \cup c_i} is complete
 
 
-    if ( ci.m_base.keys.size() <= ci_prev.m_base.keys.size() ) // 1st iteration won't trigger
+    if ( (ci.m_base.keys.size() <= ci_prev.m_base.keys.size() ) 
+        && vii_it != vi_it) // 1st iteration won't trigger
     {
       ci_prev.m_value= clique_idx; // idx
       ci_prev.m_base.keys.push_back(boost::get(v_index_map, vi_prev));
       boost::add_vertex(ci_prev,clique_tree); 
+#if ENABLE_DEBUG_TRACE_TMP
+      std::cout << "New clique formed: c" << std::to_string(clique_idx) << " ( ";
+      for (auto k : ci_prev.m_base.keys)
+      {
+        std::cout << boost::get(v_bundle_map,boost::vertex(k, g)).key_id << ", ";
+      }
+      std::cout << ")\n"; // TODO: add edge connection, sepset etc..
+#endif
       auto [neighbour_clique_idx, sepset] = find_appropriate_edge_clique(clique_tree,ci_prev.m_base.keys);
       using EdgeProp = typename boost::edge_property_type<CliqueTree_t>::type;
       EdgeProp edge_prop; edge_prop.separator_keys=sepset;
@@ -231,20 +267,37 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
     //    c_{i-1}.add(vi-1)
     //    add vertex to clique tree and factors (difficult)
 
-    // mark vi as grey
+    // mark vi as grey, set its cardinality to 0 (to simplify max cardinality search below) 
     boost::put(v_color_map, vi, ColorValue::Grey);
+    boost::put(v_cardinality_map, vi, 0);
 
-    // save vi as v_{i-1} choose next vi = the node that has max cardinality (if there exists a white neighbour, which wont be the case on last node i=size)
-    vi_prev = vi;
     // vi = // FIX: vi = max cardinality element amongst white  (use ranges)
-    // save c_i as c_{i-1}
-    ci_prev = ci;
+    if (vii_it != vend_it -1)
+    {
+      // save vi as v_{i-1} choose next vi = the node that has max cardinality (if there exists a white neighbour, which wont be the case on last node i=size)
+      vi_prev = vi;
+      vi = boost::vertex( std::distance(vcardinality.begin() ,std::max_element(vcardinality.begin(),vcardinality.end()) ), g );
+#if ENABLE_DEBUG_TRACE_TMP
+      std::cout << "vi : " << boost::get(v_bundle_map, vi).key_id << '\n';
+#endif
+      // save c_i as c_{i-1}
+      ci_prev = ci;
+
+    }
   }
 
    // add last clique
    ci.m_value = clique_idx;
    ci.m_base.keys.push_back(boost::get(v_index_map, vi));
    boost::add_vertex(ci,clique_tree);
+#if ENABLE_DEBUG_TRACE_TMP
+      std::cout << "New (last) clique formed: c" << std::to_string(clique_idx) << " ( ";
+      for (auto k : ci.m_base.keys)
+      {
+        std::cout << boost::get(v_bundle_map,boost::vertex(k, g)).key_id << ", ";
+      }
+      std::cout << ")\n";
+#endif
    auto [neighbour_clique_idx, sepset] = find_appropriate_edge_clique(clique_tree,ci.m_base.keys);
    using EdgeProp = typename boost::edge_property_type<CliqueTree_t>::type;
    EdgeProp edge_prop; edge_prop.separator_keys=sepset;
