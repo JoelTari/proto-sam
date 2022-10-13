@@ -120,70 +120,70 @@ GraphConverter::UndirectedGraph_t
   return g;
 }
 
-// internal
-std::tuple<std::size_t, std::vector<std::size_t> > find_appropriate_edge_clique(const GraphConverter::CliqueTree_t & ct, const std::vector<std::size_t> & keys)
-{
-  PROFILE_FUNCTION();
-  // maybe there is a way to "rangify"
-
-  std::size_t clique_index;
-
-  std::vector<std::size_t> sepset;
-  
-  using VertexCTBundleMap = typename boost::property_map<GraphConverter::CliqueTree_t, boost::vertex_bundle_t>::const_type;
-  using VertexCTIndexMap = typename boost::property_map<GraphConverter::CliqueTree_t, boost::vertex_index_t>::const_type;
-  VertexCTBundleMap v_bundle_map = boost::get(boost::vertex_bundle, ct);
-  VertexCTIndexMap v_index_map = boost::get(boost::vertex_index, ct);
-
-  // for each vertex in ct reverse order, register & count the size of common keys, until it 
-  auto [clique_first, clique_end] = boost::vertices(ct);
-  // most times (not always), the last clique is the one pushed last, so we will proceed in reverse other
-  // auto candidate_clique = *(clique_end-1);
-  //
-  // while( size of common key don't diminish && next node has more neighbours (out_degrees)) // if it's the same size: good, continue, we migth either reach a big sepset, or worst case, we increase clique tree branches by choosing a deeper node (look at a cross-like factor graph for a good understanding)
-  // {
-  //   // for every out_edges
-  //   //   test sepset, count
-  // }
-
-  // // first version: while loop (65 ms)
-  // while (clique_first != clique_end)
-  // {
-  //   auto ci = *clique_first;
-  //   std::vector<std::size_t> sepset_candidate;
-  //   std::ranges::set_intersection( boost::get(v_bundle_map,ci).keys, keys, std::back_inserter(sepset_candidate)  ) ;
-  //
-  //   if (sepset_candidate.size() > sepset.size())
-  //   {
-  //     sepset=sepset_candidate;
-  //     clique_index = boost::get(v_index_map,ci);
-  //   }
-  //
-  //   ++clique_first;
-  // }
-
-  // second version: brut force for loop (on m3500: 109 ms, 68ms if par policy, 58ms if par_unseq policy)
-  auto lambda_sepset_candidancy_evaluate = [&]
-    (auto a
-      , auto b) ->bool 
-  {
-    std::vector<std::size_t> keys_cap_a, keys_cap_b;
-    std::ranges::set_intersection( boost::get(v_bundle_map,a).keys, keys, std::back_inserter(keys_cap_a)  ) ;
-    std::ranges::set_intersection( boost::get(v_bundle_map,b).keys, keys, std::back_inserter(keys_cap_b)  ) ;
-    return ( keys_cap_a.size() < keys_cap_b.size() );
-  };
-  auto best_clique_it = 
-    std::max_element(std::execution::par_unseq,clique_first, clique_end, lambda_sepset_candidancy_evaluate );
-  // push in the sepset (this is a double recompution of the sepset)
-  std::ranges::set_intersection( boost::get(v_bundle_map,*best_clique_it).keys, keys, std::back_inserter(sepset)  ) ;
-
-  // third version: traverse from most recent clique and evaluate separator
-  // while (size doesnt diminish)
-
-  // fourth version:  as clique are created,  evaluate somehow if we are connected in a junction
-
-  return std::make_tuple(clique_index,sepset);
-}
+// // internal
+// std::tuple<std::size_t, std::vector<std::size_t> > find_appropriate_edge_clique(const GraphConverter::CliqueTree_t & ct, const std::vector<std::size_t> & keys)
+// {
+//   PROFILE_FUNCTION();
+//   // maybe there is a way to "rangify"
+//
+//   std::size_t clique_index;
+//
+//   std::vector<std::size_t> sepset;
+//   
+//   using VertexCTBundleMap = typename boost::property_map<GraphConverter::CliqueTree_t, boost::vertex_bundle_t>::const_type;
+//   using VertexCTIndexMap = typename boost::property_map<GraphConverter::CliqueTree_t, boost::vertex_index_t>::const_type;
+//   VertexCTBundleMap v_bundle_map = boost::get(boost::vertex_bundle, ct);
+//   VertexCTIndexMap v_index_map = boost::get(boost::vertex_index, ct);
+//
+//   // for each vertex in ct reverse order, register & count the size of common keys, until it 
+//   auto [clique_first, clique_end] = boost::vertices(ct);
+//   // most times (not always), the last clique is the one pushed last, so we will proceed in reverse other
+//   // auto candidate_clique = *(clique_end-1);
+//   //
+//   // while( size of common key don't diminish && next node has more neighbours (out_degrees)) // if it's the same size: good, continue, we migth either reach a big sepset, or worst case, we increase clique tree branches by choosing a deeper node (look at a cross-like factor graph for a good understanding)
+//   // {
+//   //   // for every out_edges
+//   //   //   test sepset, count
+//   // }
+//
+//   // // first version: while loop (65 ms)
+//   // while (clique_first != clique_end)
+//   // {
+//   //   auto ci = *clique_first;
+//   //   std::vector<std::size_t> sepset_candidate;
+//   //   std::ranges::set_intersection( boost::get(v_bundle_map,ci).keys, keys, std::back_inserter(sepset_candidate)  ) ;
+//   //
+//   //   if (sepset_candidate.size() > sepset.size())
+//   //   {
+//   //     sepset=sepset_candidate;
+//   //     clique_index = boost::get(v_index_map,ci);
+//   //   }
+//   //
+//   //   ++clique_first;
+//   // }
+//
+//   // second version: brut force for loop (on m3500: 109 ms, 68ms if par policy, 58ms if par_unseq policy)
+//   auto lambda_sepset_candidancy_evaluate = [&]
+//     (auto a
+//       , auto b) ->bool 
+//   {
+//     std::vector<std::size_t> keys_cap_a, keys_cap_b;
+//     std::ranges::set_intersection( boost::get(v_bundle_map,a).keys, keys, std::back_inserter(keys_cap_a)  ) ;
+//     std::ranges::set_intersection( boost::get(v_bundle_map,b).keys, keys, std::back_inserter(keys_cap_b)  ) ;
+//     return ( keys_cap_a.size() < keys_cap_b.size() );
+//   };
+//   auto best_clique_it = 
+//     std::max_element(std::execution::par_unseq,clique_first, clique_end, lambda_sepset_candidancy_evaluate );
+//   // push in the sepset (this is a double recompution of the sepset)
+//   std::ranges::set_intersection( boost::get(v_bundle_map,*best_clique_it).keys, keys, std::back_inserter(sepset)  ) ;
+//
+//   // third version: traverse from most recent clique and evaluate separator
+//   // while (size doesnt diminish)
+//
+//   // fourth version:  as clique are created,  evaluate somehow if we are connected in a junction
+//
+//   return std::make_tuple(clique_index,sepset);
+// }
 
 
 

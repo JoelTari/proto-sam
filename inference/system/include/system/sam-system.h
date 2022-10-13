@@ -1171,16 +1171,16 @@ namespace sam::Inference
       for (int k = 0; k < semantic_N; ++k) printf("P [%d] = %d\n", k, PermutationVector[k]);
 #endif
 
-      // 2. fillin_edges vector
-      std::vector<std::pair<std::string, std::string>> fillin_edges 
-        = HybridConverter::infer_fillinedges(PermutationVector, this->keys_affectation);
-#if ENABLE_DEBUG_TRACE
-      std::cout << fillin_edges.size() <<" fill in edges (Hybrid method) !\n";
-      for (auto & [e1,e2] : fillin_edges)
-      {
-        std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
-      }
-#endif
+//       // 2. fillin_edges vector
+//       std::vector<std::pair<std::string, std::string>> fillin_edges 
+//         = HybridConverter::infer_fillinedges(PermutationVector, this->keys_affectation);
+// #if ENABLE_DEBUG_TRACE
+//       std::cout << fillin_edges.size() <<" fill in edges (Hybrid method) !\n";
+//       for (auto & [e1,e2] : fillin_edges)
+//       {
+//         std::cout << "\t [ " << e1 << " <-> " << e2 << " ]\n";
+//       }
+// #endif
 
       // 2bis. fillin_edges in boost graph
       // performance: (m3500) hybrid method takes 37 ms (slow) while
@@ -1207,7 +1207,8 @@ namespace sam::Inference
       }
 #endif
       
-      // 3. MCS
+      // 3. MCS (14.8 ms)
+      // TODO: returned symbolic tree of cost, 
       auto clique_tree = GraphConverter::MaxCardinalitySearch(cover_graph);
 
       //------------------------------------------------------------------//
