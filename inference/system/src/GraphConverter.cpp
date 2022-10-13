@@ -6,6 +6,8 @@
 
 using namespace sam::Inference;
 
+#define ENABLE_DEBUG_TRACE_TMP 0
+
 // input : MRF, permutation vector
 GraphConverter::UndirectedGraph_t
     GraphConverter::infer_fillinedges(const std::vector<int>&  permutation_ordering,
@@ -183,9 +185,119 @@ std::tuple<std::size_t, std::vector<std::size_t> > find_appropriate_edge_clique(
   return std::make_tuple(clique_index,sepset);
 }
 
-#define ENABLE_DEBUG_TRACE_TMP 0
 
+
+
+
+std::tuple<std::size_t, std::vector<std::size_t>> find_out_best_neighbour_clique_and_update_mapping
+  (
+    const std::vector<std::size_t> & new_clique_keysIdx_in_Gp
+    , const std::size_t new_cliqueIdx_ct 
+    , const GraphConverter::CliqueTree_t & ct
+    ,  std::unordered_map<std::size_t,std::vector<std::size_t>> & keysIdxGp_2_cliquesIdxCt
+    )
+// {
+//   return {0, {0,0}};
+// }
+
+{
+  // if (keysIdxGp_2_cliquesIdxCt.empty())
+  //   throw std::runtime_error("big map is empty");
+  PROFILE_FUNCTION();
+  auto v_bundle_map_CT = boost::get(boost::vertex_bundle, ct);
+  using score_t = std::size_t;
+  using clique_idx_t  = std::size_t;
+  std::unordered_map<clique_idx_t, score_t> candidates_clique_to_score={};
+  // find all the cliques that have nonzeros intersection
+  for (const auto new_clique_keyIdx_Gp : new_clique_keysIdx_in_Gp)
+  {
+#if ENABLE_DEBUG_TRACE_TMP == 2
+    std::cout << " finding all the cliques that have x"<< new_clique_keyIdx_Gp << "\n";
+#endif
+    // if the key exist in the mapping
+    // add the cliques that key is into in the potential candidate
+    if (auto it = keysIdxGp_2_cliquesIdxCt.find(new_clique_keyIdx_Gp); it != keysIdxGp_2_cliquesIdxCt.end())
+    {
+      auto list_of_cliquesIdxCt = it->second;
+      // now this clique also
+      it->second.push_back(new_cliqueIdx_ct);
+#if ENABLE_DEBUG_TRACE_TMP == 2
+      std::cout << "   there are " <<  list_of_cliquesIdxCt.size() << '\n';
+#endif
+      for (const auto cliqueIdxCt : list_of_cliquesIdxCt)
+      {
+#if ENABLE_DEBUG_TRACE_TMP == 2
+          std::cout << "     c" << cliqueIdxCt << "\n";
+#endif
+        // if this candidate clique exists already, increment its score
+        if (auto it_can = candidates_clique_to_score.find(cliqueIdxCt) ; it_can !=candidates_clique_to_score.end())
+        {
+          it_can->second++;
+        }
+        else // if this candidate clique doesn't exist, create it with a score of 1
+        {
+          candidates_clique_to_score.insert_or_assign(cliqueIdxCt, 1);
+        }
+      }
+    }
+    else // key doesn't exist in the CT yet, in anticipation we give it the new clique idx in ct 
+    {
+#if ENABLE_DEBUG_TRACE_TMP == 2
+      std::cout << "   there are none ! (Inserting in big map) \n";
+#endif
+      keysIdxGp_2_cliquesIdxCt.insert_or_assign(new_clique_keyIdx_Gp, std::vector<std::size_t>{ new_cliqueIdx_ct } );
+    }
+  }
+
+  // deduce best candidate (max score)
+#if ENABLE_DEBUG_TRACE_TMP == 2
+  std::cout << "  clique candidates [with score]: (";
+  for (auto p : candidates_clique_to_score)
+  {
+    std::cout << " c" << std::to_string(p.first) << "[" << p.second << "]" << ", ";
+  }
+  std::cout << ")\n";
+#endif
+  auto best_it = std::max_element(candidates_clique_to_score.begin(), candidates_clique_to_score.end(), 
+      [](const auto & c1, const auto & c2 ){ return c1.second < c2.second; });
+#if ENABLE_DEBUG_TRACE_TMP == 2
+  std::cout << "  The best clique is: c"; 
+  std::cout << best_it->first << "[" << best_it->second << "]\n";
+#endif
+  auto best_cliqueIdx_CT = best_it->first;
+
+  // TODO: several candidates might have the same score (see such examples in these graphs: butterfly dumbell, bow tie , pater cross)
+  //       among those, the best candidate in our sense is the one with most neighbours (to have big junctions + more concurrency)
+  //       this requires the clique tree in const argument
+
+  // TODO: assert that at least one of the key in the mapping didn't exist (because of running intersection property)
+  // TODO: assert that at least one of the key in the mapping did exist (because of running intersection property)
+
+  // compute the sepset (edge)
+  std::vector<std::size_t> sepset;
+#if ENABLE_DEBUG_TRACE_TMP == 2
+  std::cout << "  Intersection between c" << best_cliqueIdx_CT << " and c" << new_cliqueIdx_ct << " : {";
+  for (auto k : boost::get(v_bundle_map_CT, best_cliqueIdx_CT).keys) std::cout << " x"<< k <<" ";
+  std::cout << "}  -  {";
+  for (auto k : new_clique_keysIdx_in_Gp) std::cout << " x"<< k <<" ";
+  std::cout << "}\n"; 
+#endif
+  // WARNING: for set_intersection to work, the set have to be sorted
+  std::ranges::set_intersection( 
+        boost::get(v_bundle_map_CT, best_cliqueIdx_CT).keys
+      , new_clique_keysIdx_in_Gp
+      , std::back_inserter(sepset));
+  // idx clique in CT
+  return std::make_tuple(best_it->first, sepset) ;
+  // return {0, {0,0}};
+}
+
+
+//------------------------------------------------------------------//
+//                    Maximum Cardinality Search                    //
+//------------------------------------------------------------------//
 // TODO: also return symbolic tree of costs
+// TODO: return the mapping key to cliqueIdx(s)
 GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const UndirectedGraph_t & g)
 {
   PROFILE_FUNCTION();
@@ -216,6 +328,9 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
   // declare c_{i-1} empty
   // boost::graph_traits<CliqueTree_t>::vertex_descriptor ci_prev;
   boost::vertex_property_type<CliqueTree_t>::type ci_prev, ci;
+  
+  // mapping of key idx (in G' the cover graph) to list clique(s) idx (in clique tree) that contain said key
+  std::unordered_map<std::size_t, std::vector<std::size_t>> keysIdxGp_2_cliquesIdxCt = {};
 
   std::size_t clique_idx=0; // clique idx, incremented each time a new clique is created
   for (auto vii_it = vi_it;vii_it != vend_it; ++vii_it) // for-loop 
@@ -248,6 +363,7 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
     {
       ci_prev.m_value= clique_idx; // idx
       ci_prev.m_base.keys.push_back(boost::get(v_index_map, vi_prev));
+      std::ranges::sort(ci_prev.m_base.keys); //sort (necessary for set_intersection)
       boost::add_vertex(ci_prev,clique_tree); 
 #if ENABLE_DEBUG_TRACE_TMP
       std::cout << "New clique formed: c" << std::to_string(clique_idx) << " ( ";
@@ -257,10 +373,31 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
       }
       std::cout << ")\n"; // TODO: add edge connection, sepset etc..
 #endif
-      auto [neighbour_clique_idx, sepset] = find_appropriate_edge_clique(clique_tree,ci_prev.m_base.keys);
+      // auto [neighbour_clique_idx, sepset] = find_appropriate_edge_clique(clique_tree,ci_prev.m_base.keys);
       using EdgeProp = typename boost::edge_property_type<CliqueTree_t>::type;
-      EdgeProp edge_prop; edge_prop.separator_keys=sepset;
-      boost::add_edge(clique_idx, boost::get(v_index_map, neighbour_clique_idx), edge_prop  , clique_tree);
+      if ( boost::num_vertices(clique_tree) > 1 )
+      {
+        auto [neighbour_clique_idx, sepset] = find_out_best_neighbour_clique_and_update_mapping(ci_prev.m_base.keys, ci_prev.m_value, clique_tree, keysIdxGp_2_cliquesIdxCt);
+        EdgeProp edge_prop; edge_prop.separator_keys=sepset;
+        boost::add_edge(clique_idx, boost::get(v_index_map, neighbour_clique_idx), edge_prop  , clique_tree);
+#if ENABLE_DEBUG_TRACE_TMP
+        std::cout << "  Edge between  c" << neighbour_clique_idx << " - c" << clique_idx << " \n"; 
+        std::cout << "  Sepset: {"; for (auto s: sepset) { std::cout << "x" << s << ", "; } std::cout << "}\n";
+#endif
+      } // else (first cclique), don't add edge, but register the key to clique mapping
+      else
+      {
+#if ENABLE_DEBUG_TRACE_TMP==2
+        std::cout << "  special treatment for first clique \n";
+#endif
+        for( auto key : ci_prev.m_base.keys )
+        {
+#if ENABLE_DEBUG_TRACE_TMP==2
+          std::cout << "  insert x" << key << " in big map\n";
+#endif
+          keysIdxGp_2_cliquesIdxCt.insert_or_assign(key, std::vector<std::size_t>{clique_idx});
+        }
+      }
       clique_idx++;
     }
     // if c_i.size() <= c_{i-1}.size()
@@ -289,6 +426,7 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
    // add last clique
    ci.m_value = clique_idx;
    ci.m_base.keys.push_back(boost::get(v_index_map, vi));
+  std::ranges::sort(ci.m_base.keys); //sort (necessary for set_intersection)
    boost::add_vertex(ci,clique_tree);
 #if ENABLE_DEBUG_TRACE_TMP
       std::cout << "New (last) clique formed: c" << std::to_string(clique_idx) << " ( ";
@@ -298,10 +436,31 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
       }
       std::cout << ")\n";
 #endif
-   auto [neighbour_clique_idx, sepset] = find_appropriate_edge_clique(clique_tree,ci.m_base.keys);
+   // auto [neighbour_clique_idx, sepset] = find_appropriate_edge_clique(clique_tree,ci.m_base.keys);
    using EdgeProp = typename boost::edge_property_type<CliqueTree_t>::type;
-   EdgeProp edge_prop; edge_prop.separator_keys=sepset;
-   boost::add_edge(clique_idx, boost::get(v_index_map, neighbour_clique_idx), edge_prop  , clique_tree);
+    if ( boost::num_vertices(clique_tree) > 1 )
+    {
+       auto [neighbour_clique_idx, sepset] = find_out_best_neighbour_clique_and_update_mapping(ci.m_base.keys, ci.m_value, clique_tree, keysIdxGp_2_cliquesIdxCt);
+       EdgeProp edge_prop; edge_prop.separator_keys=sepset;
+       boost::add_edge(clique_idx, boost::get(v_index_map, neighbour_clique_idx), edge_prop  , clique_tree);
+#if ENABLE_DEBUG_TRACE_TMP
+        std::cout << "  Edge between  c" << neighbour_clique_idx << " - c" << clique_idx << " \n"; 
+        std::cout << "  Sepset: {"; for (auto s: sepset) { std::cout << "x" << s << ", "; } std::cout << "}\n";
+#endif
+    } // else (last clique is also first and therefore only clique), don't add edge, but register the key to clique mapping
+    else
+    {
+#if ENABLE_DEBUG_TRACE_TMP==2
+      std::cout << "  special treatment for first clique \n";
+#endif
+      for( auto key : ci_prev.m_base.keys )
+      {
+#if ENABLE_DEBUG_TRACE_TMP==2
+        std::cout << "  insert x" << key << " in big map\n";
+#endif
+        keysIdxGp_2_cliquesIdxCt.insert_or_assign(key, std::vector<std::size_t>{clique_idx});
+      }
+    }
 
   return clique_tree;
 }

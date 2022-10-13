@@ -181,7 +181,7 @@ namespace sam::Inference::GraphConverter
   struct CliqueBundle
   {
     std::vector<std::size_t> keys = {}; // index of the keys (index map in the cover graph)
-    std::vector<std::size_t> factors = {}; // index of factors this clique is responsible for
+    std::vector<std::size_t> factors = {}; // index of wrapped factors this clique is responsible for
   };
 
   struct SeparatorBundle
@@ -194,13 +194,13 @@ namespace sam::Inference::GraphConverter
     // number of junctions, number of leafes
   };
 
-  using CliqueTree_t = boost::adjacency_list<boost::vecS, // OutEdgeList  (def vecS)
-                                                  boost::vecS,      // VertexList (def vecS) // associativecontainer not functional yet (because of map in inferfillinedges)
-                                                  boost::undirectedS,    // def directedS
-                                                  boost::property<boost::vertex_index_t,std::size_t,CliqueBundle>,      // prop
-                                                  SeparatorBundle,   // prop
-                                                  CliqueTreeBundle,
-                                                  boost::listS>; // edge list (def listS)
+  using CliqueTree_t = boost::adjacency_list <boost::vecS, // OutEdgeList  (def vecS)
+                                              boost::vecS,      // VertexList (def vecS) // associativecontainer not functional yet (because of map in inferfillinedges)
+                                              boost::undirectedS,    // def directedS
+                                              boost::property<boost::vertex_index_t,std::size_t,CliqueBundle>,      // prop
+                                              SeparatorBundle,   // prop
+                                              CliqueTreeBundle,
+                                              boost::listS>; // edge list (def listS)
 
 
 }   // namespace sam::Inference::GraphConverter
