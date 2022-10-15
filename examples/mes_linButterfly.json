@@ -1,0 +1,107 @@
+[
+  {
+    "type": "anchor",
+    "vars_id": ["x0"],
+    "value": { "x": 0.0038846953079168475, "y": -0.005071875698181152 },
+    "covariance": [0.0009, 0.0, 0.0, 0.0225],
+    "comment": "anchor 2d on x0"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x0", "x1"],
+    "value": { "dx": -0.2411125576571831, "dy": 1.1822295869142343 },
+    "covariance": [0.0001908700427165119, 0.0, 0.0, 0.06513320883812408],
+    "comment": "linear-translation [x0, x1]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x1", "x2"],
+    "value": { "dx": -0.5852764283378913, "dy": 0.8788970739445516 },
+    "covariance": [0.002936437598520673, 0.0, 0.0, 0.0531120327572617],
+    "comment": "linear-translation [x1, x2]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x2", "x3"],
+    "value": { "dx": -1.0807828729544136, "dy": 1.0765579279429884 },
+    "covariance": [0.0120180058700767, 0.0, 0.0, 0.03383490822280453],
+    "comment": "linear-translation [x2, x3]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x3", "x4"],
+    "value": { "dx": -1.320259187924078, "dy": 0.459672176218317 },
+    "covariance": [0.021260874958457396, 0.0, 0.0, 0.014706269689370565],
+    "comment": "linear-translation [x3, x4]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x4", "x5"],
+    "value": { "dx": -1.3415856723645516, "dy": -0.047750458533046866 },
+    "covariance": [0.0250835317141143, 0.0, 0.0, 0.0024999999999999935],
+    "comment": "linear-translation [x4, x5]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x5", "x6"],
+    "value": { "dx": -1.2464578104464017, "dy": -0.45585536248619435 },
+    "covariance": [0.02126087495845743, 0.0, 0.0, 0.0004523877820382364],
+    "comment": "linear-translation [x5, x6]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x6", "x7"],
+    "value": { "dx": -0.9685111155042411, "dy": -0.8238667049003384 },
+    "covariance": [0.01201800587007667, 0.0, 0.0, 0.007046372931056646],
+    "comment": "linear-translation [x6, x7]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x7", "x8"],
+    "value": { "dx": -0.7844949583427236, "dy": -0.9548758047765502 },
+    "covariance": [0.002936437598520652, 0.0, 0.0, 0.017019936793957254],
+    "comment": "linear-translation [x7, x8]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x8", "x4"],
+    "value": { "dx": -0.24378746100206597, "dy": -1.3271003292170551 },
+    "covariance": [0.00019087004271651362, 0.0, 0.0, 0.024090791639043835],
+    "comment": "linear-translation [x8, x9]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x0", "x4"],
+    "value": { "dx": -0.24378746100206597, "dy": -1.3271003292170551 },
+    "covariance": [0.00019087004271651362, 0.0, 0.0, 0.024090791639043835],
+    "comment": "linear-translation [x8, x9]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x1", "x4"],
+    "value": { "dx": -0.24378746100206597, "dy": -1.3271003292170551 },
+    "covariance": [0.00019087004271651362, 0.0, 0.0, 0.024090791639043835],
+    "comment": "linear-translation [x8, x9]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x2", "x4"],
+    "value": { "dx": -0.24378746100206597, "dy": -1.3271003292170551 },
+    "covariance": [0.00019087004271651362, 0.0, 0.0, 0.024090791639043835],
+    "comment": "linear-translation [x8, x9]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x6", "x4"],
+    "value": { "dx": -0.24378746100206597, "dy": -1.3271003292170551 },
+    "covariance": [0.00019087004271651362, 0.0, 0.0, 0.024090791639043835],
+    "comment": "linear-translation [x8, x9]"
+  },
+  {
+    "type": "linear-translation",
+    "vars_id": ["x7", "x4"],
+    "value": { "dx": -0.24378746100206597, "dy": -1.3271003292170551 },
+    "covariance": [0.00019087004271651362, 0.0, 0.0, 0.024090791639043835],
+    "comment": "linear-translation [x8, x9]"
+  },
+]
