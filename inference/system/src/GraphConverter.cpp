@@ -1,12 +1,14 @@
 #include "system/GraphConverter.h"
 #include "system/GraphConverter.hpp"
 #include <algorithm>
+#include <boost/graph/detail/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <boost/graph/undirected_graph.hpp>
 #include <string>
 
 using namespace sam::Inference;
 
-#define ENABLE_DEBUG_TRACE_TMP 0
+// #define ENABLE_DEBUG_TRACE_TMP 1
 
 // input : MRF, permutation vector
 GraphConverter::UndirectedGraph_t
@@ -195,16 +197,15 @@ std::tuple<std::size_t, std::vector<std::size_t>> find_out_best_neighbour_clique
     , const std::size_t new_cliqueIdx_ct 
     , const GraphConverter::CliqueTree_t & ct
     ,  std::unordered_map<std::size_t,std::vector<std::size_t>> & keysIdxGp_2_cliquesIdxCt
+    , bool PreferBigJunction = true // if true, performance decreases from 14.8 to 15.4ms (4% slower)
     )
-// {
-//   return {0, {0,0}};
-// }
-
 {
   // if (keysIdxGp_2_cliquesIdxCt.empty())
   //   throw std::runtime_error("big map is empty");
   PROFILE_FUNCTION();
-  auto v_bundle_map_CT = boost::get(boost::vertex_bundle, ct);
+  // const auto v_bundle_map_CT = boost::get(boost::vertex_bundle, ct);
+  typename boost::property_map<GraphConverter::CliqueTree_t, boost::vertex_bundle_t>::const_type
+    v_bundle_map_CT = boost::get(boost::vertex_bundle, ct);;
   using score_t = std::size_t;
   using clique_idx_t  = std::size_t;
   std::unordered_map<clique_idx_t, score_t> candidates_clique_to_score={};
@@ -258,17 +259,47 @@ std::tuple<std::size_t, std::vector<std::size_t>> find_out_best_neighbour_clique
   }
   std::cout << ")\n";
 #endif
+  // choosing the best candidate this new clique will connect to
   auto best_it = std::max_element(candidates_clique_to_score.begin(), candidates_clique_to_score.end(), 
-      [](const auto & c1, const auto & c2 ){ return c1.second < c2.second; });
+      [PreferBigJunction,&v_bundle_map_CT,&ct](const auto & c1, const auto & c2 )
+      { 
+        if (!PreferBigJunction)
+        {
+          return c1.second < c2.second; 
+        }
+        else 
+        // more complex system that choose, among valid solutions, the one with most neighbour to help promote big junctions
+        // so that it helps create more paralellism.
+        // TODO: somehow limit the clique degrees given a cap on number of threads (given as a parameter)
+        //       This would not garantee an upper bound on clique degrees (because c1.second < c2.second still required for RIP)
+        //       Unless (if we really want to enfore that), we have non-max clique (spreading a maxclique into several cliques)
+        {
+          if (c1.second < c2.second)
+          {
+            return true;
+          }
+          else if ( c1.second > 0 && c1.second == c2.second)
+          {
+            // count vertex out_degrees return c1.out_degrees < c2.out_degrees
+          // boost::degree(boost::get(v_bundle_map_CT, c1.first), ct);
+            uint c1_degree = boost::out_degree( boost::vertex(c1.first,ct) , ct);
+            uint c2_degree = boost::out_degree( boost::vertex(c2.first,ct) , ct);
+#if ENABLE_DEBUG_TRACE_TMP == 2
+            if (c1_degree < c2_degree)
+            {
+              std::cout << "    prefer c" << c2.first << " ( " << c2_degree << " neighs) over c" << c1.first << " ( "<< c1_degree << " neighs)\n";
+            }
+#endif
+            return c1_degree < c2_degree;
+          }
+          else return false;
+        }
+      });
 #if ENABLE_DEBUG_TRACE_TMP == 2
   std::cout << "  The best clique is: c"; 
   std::cout << best_it->first << "[" << best_it->second << "]\n";
 #endif
   auto best_cliqueIdx_CT = best_it->first;
-
-  // TODO: several candidates might have the same score (see such examples in these graphs: butterfly dumbell, bow tie , pater cross)
-  //       among those, the best candidate in our sense is the one with most neighbours (to have big junctions + more concurrency)
-  //       this requires the clique tree in const argument
 
   // TODO: assert that at least one of the key in the mapping didn't exist (because of running intersection property)
   // TODO: assert that at least one of the key in the mapping did exist (because of running intersection property)
@@ -282,7 +313,7 @@ std::tuple<std::size_t, std::vector<std::size_t>> find_out_best_neighbour_clique
   for (auto k : new_clique_keysIdx_in_Gp) std::cout << " x"<< k <<" ";
   std::cout << "}\n"; 
 #endif
-  // WARNING: for set_intersection to work, the set have to be sorted
+  // WARNING: for set_intersection to work, the set have to be sorted (this is done upstream)
   std::ranges::set_intersection( 
         boost::get(v_bundle_map_CT, best_cliqueIdx_CT).keys
       , new_clique_keysIdx_in_Gp
@@ -371,7 +402,7 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
       {
         std::cout << boost::get(v_bundle_map,boost::vertex(k, g)).key_id << ", ";
       }
-      std::cout << ")\n"; // TODO: add edge connection, sepset etc..
+      std::cout << ")\n"; 
 #endif
       // auto [neighbour_clique_idx, sepset] = find_appropriate_edge_clique(clique_tree,ci_prev.m_base.keys);
       using EdgeProp = typename boost::edge_property_type<CliqueTree_t>::type;
@@ -400,15 +431,11 @@ GraphConverter::CliqueTree_t GraphConverter::MaxCardinalitySearch(const Undirect
       }
       clique_idx++;
     }
-    // if c_i.size() <= c_{i-1}.size()
-    //    c_{i-1}.add(vi-1)
-    //    add vertex to clique tree and factors (difficult)
 
     // mark vi as grey, set its cardinality to 0 (to simplify max cardinality search below) 
     boost::put(v_color_map, vi, ColorValue::Grey);
     boost::put(v_cardinality_map, vi, 0);
 
-    // vi = // FIX: vi = max cardinality element amongst white  (use ranges)
     if (vii_it != vend_it -1)
     {
       // save vi as v_{i-1} choose next vi = the node that has max cardinality (if there exists a white neighbour, which wont be the case on last node i=size)

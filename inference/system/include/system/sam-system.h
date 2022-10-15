@@ -1168,7 +1168,8 @@ namespace sam::Inference
       // 1. AMD
       std::vector<int> PermutationVector = HybridConverter::amd_order_permutation(semantic_N,semantic_H.outerIndexPtr(), semantic_H.innerIndexPtr());
 #if ENABLE_DEBUG_TRACE
-      for (int k = 0; k < semantic_N; ++k) printf("P [%d] = %d\n", k, PermutationVector[k]);
+      std::cout << "Ordering: \n";
+      for (int k = 0; k < semantic_N; ++k) printf("\tP [%d] = %d\n", k, PermutationVector[k]);
 #endif
 
 //       // 2. fillin_edges vector
