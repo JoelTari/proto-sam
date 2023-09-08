@@ -221,25 +221,25 @@ namespace sam::Inference::MatrixConverter
             { return {keys_affectation.find(kcc.key_id)->natural_scalar_idx...}; },
             factor.keys_set);
 
-#if ENABLE_DEBUG_TRACE
-        std::stringstream ss;
-        for (auto e : factor.get_array_keys_id()) ss << e << ", ";
-        ss.seekp(-2, std::ios_base::end);
-        ss << " --\n";
-        ss << "Previous [ ";
-        for (auto e : tuple_of_start_column_idx) ss << e << ", ";
-        ss.seekp(-2, std::ios_base::end);
-        ss << " ]\n";
-        std::cout << ss.str();
-        // reset stream
-        ss.str(std::string());
-        ss.clear();
-        ss << "New [ ";
-        for (auto e : array_of_start_column_idx) ss << e << ", ";
-        ss.seekp(-2, std::ios_base::end);
-        ss << " ]\n";
-        std::cout << ss.str();
-#endif
+// #if ENABLE_DEBUG_TRACE
+//         std::stringstream ss;
+//         for (auto e : factor.get_array_keys_id()) ss << e << ", ";
+//         ss.seekp(-2, std::ios_base::end);
+//         ss << " --\n";
+//         ss << "Previous [ ";
+//         for (auto e : tuple_of_start_column_idx) ss << e << ", ";
+//         ss.seekp(-2, std::ios_base::end);
+//         ss << " ]\n";
+//         std::cout << ss.str();
+//         // reset stream
+//         ss.str(std::string());
+//         ss.clear();
+//         ss << "New [ ";
+//         for (auto e : array_of_start_column_idx) ss << e << ", ";
+//         ss.seekp(-2, std::ios_base::end);
+//         ss << " ]\n";
+//         std::cout << ss.str();
+// #endif
 
 
         // start_row_idx = (the idx offset that depends on factor type) + iterator_distance * kM

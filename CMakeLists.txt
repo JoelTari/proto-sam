@@ -26,7 +26,7 @@ find_package(jsoncpp 1.9.4 REQUIRED CONFIG)  # this sets 'jsoncpp_lib' and 'json
 # attemp to find low level libraries to improve performance
 find_package(OpenMP)
 # set(BLA_STATIC on)
-set(BLA_VENDOR Intel10_64lp)
+set(BLA_VENDOR Intel10_64lp) # TODO: if MKL_FOUND -> set(BLA_VENDOR Intel10_64lp) so that there is still a possibility for non-intel-mkl systems
 # set(BLA_VENDOR Generic)
 find_package(BLAS)
 find_package(LAPACK)

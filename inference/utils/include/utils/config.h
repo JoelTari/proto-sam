@@ -2,7 +2,7 @@
 
 // compile definitions and their respective default values
 #ifndef ENABLE_DEBUG_TRACE
-#define ENABLE_DEBUG_TRACE 0
+#define ENABLE_DEBUG_TRACE 1
 #endif
 #ifndef ENABLE_RUNTIME_CONSISTENCY_CHECKS
 #define ENABLE_RUNTIME_CONSISTENCY_CHECKS 0
