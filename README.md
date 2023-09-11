@@ -15,3 +15,9 @@ Status: Work In Progress.
 - `mkdir build && cd build`
 - generate the make files via `cmake ..`
 - build the executables `cmake --build .`
+
+# Licence
+
+EUPL-1.2 -- Akka Techonologies & LAAS-CNRS.
+
+Compatibility with other open source licences described [here](https://joinup.ec.europa.eu/collection/eupl/matrix-eupl-compatible-open-source-licences).
